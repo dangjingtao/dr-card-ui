@@ -1,0 +1,52 @@
+{
+  "task_id": "T02",
+  "title": "泡泡值明细",
+  "canvas_id": "page-points-detail",
+  "deliverables": [
+    "dist/T02.html"
+  ],
+  "design_system": "com-design-premium-gold",
+  "tokens_used": [
+    "--com-warm-50", "--com-warm-100",
+    "--com-brand-500", "--com-brand-600",
+    "--com-premium-50", "--com-premium-100", "--com-premium-200", "--com-premium-300", "--com-premium-500", "--com-premium-600", "--com-premium-700",
+    "--com-neutral-0", "--com-neutral-100", "--com-neutral-300", "--com-neutral-500", "--com-neutral-600", "--com-neutral-800",
+    "--com-success-500",
+    "--color-background", "--color-surface",
+    "--color-text-primary", "--color-text-tertiary", "--color-text-brand",
+    "--color-primary", "--color-primary-hover", "--color-on-primary",
+    "--radius-pill", "--radius-md", "--radius-lg",
+    "--com-radius-12", "--com-radius-16",
+    "--type-body", "--type-heading",
+    "--font-family-base"
+  ],
+  "hardcoded_values": [
+    {
+      "path": "list item dot decoration",
+      "value": "width: 2px; height: 2px; border-radius: 50%;",
+      "reason": "装饰性小圆点,2×2 像素无 token 对应,设计上不构成视觉主体"
+    },
+    {
+      "path": "bear silhouette svg (ellipse/circles)",
+      "value": "rx/ry numeric",
+      "reason": "原型 IP 北极熊剪影占位的 SVG 几何参数,非颜色/圆角 token,不影响主题"
+    }
+  ],
+  "consistency_with_canvas": "TopBar(状态栏 44 + 返回 24 + 标题 18 粗体) / 主按钮 48 圆角 24 品牌主色 / 圆角 8/12/16/20 体系 / 暖金 ambient 光斑 全部沿用画布已审定 7 页(资料设置 / 积分首页)的范式",
+  "mockplus_referenced": true,
+  "acceptance": {
+    "topbar_correct": true,
+    "primary_button_height_48": true,
+    "radius_uses_8_12_16_20": true,
+    "all_colors_via_tokens": true,
+    "responsive_375_812": true,
+    "balance_capsule_premium_50_radius_16": true,
+    "balance_value_36_bold_premium_700": true,
+    "income_bubble_premium_500": true,
+    "expense_bubble_neutral_500": true,
+    "row_card_white_radius_12": true,
+    "empty_state_illustration_present": true,
+    "mock_data_15_rows": true
+  },
+  "notes": "1) Design Library CSS 路径使用 ../.design_library/com-design-premium-gold/...(任务卡指出的正确路径),公共头里错的 ../积分首页等7个设计.pages/DesignLibrary/... 未采用。2) token 以 Design Library 实际安装值为准(--com-premium-500 #A07B41 压金 v2),与画布 7 页保持一致。3) 原型紫色 → 画布暖橙 + 暖金色板(--com-brand-500 + --com-premium-500)的组合替代;不硬编码紫色 hex。4) 原型 IP 北极熊 → 余额胶囊右上角用 --com-warm-100 灰色剪影块装饰(44×44,简单几何形,非完整 IP),符合任务卡「不画完整 IP」要求。5) 余额胶囊内一行 sub-line(本月已收入 +320 · 已消耗 180)用 --com-premium-600,仅作信息补充,不影响主数字层级。6) 列表 15 条 mock 数据,收入/消耗穿插(约 8 收 7 耗),日期由近及远。7) 行卡片默认态白底,hover 走 warm-50,active 走 warm-100,符合画布交互态规范。8) 「立即兑换」点击后给视觉反馈(变绿 + 文字「跳转中…」)1s 后还原,占位跳转洗护兑换专区,由主线程串入。9) 「返回」点击给视觉反馈(中性灰圆点),占位回流积分首页,由主线程串入。10) 空态 DOM 完整就绪(#pd-empty),通过 showEmpty(true/false) 切换,本卡默认收起(15 条数据),符合任务卡「至少实现静态版」要求。11) 响应式:移动端 375×812 直接占满,桌面端(≥480px)居中显示为卡片预览。12) 硬编码仅 2 处:行内元信息小圆点(2×2 装饰像素,无 token 对应)+ 北极熊剪影 SVG 几何参数(rx/ry),均非颜色/圆角 token,不影响 token 化基线。"
+}

@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>洗头搭子(空态) · 卡博士诗得丽</title>
+  <link rel="stylesheet" href="../.design_library/com-design-premium-gold/colors_and_type.css">
+  <link rel="stylesheet" href="../.design_library/com-design-premium-gold/components.css">
+  <style>
+    /* ════════════════════════════════════════════════════════════
+       T07-empty · 洗头搭子 空态 (v2 修订)
+       约束源:com-design-premium-gold Design Library(只读)
+       v2 修订说明:本卡 v2 修订点全部针对有态(T07-list),空态仅做 a11y 加固
+       ════════════════════════════════════════════════════════════ */
+
+    body {
+      margin: 0;
+      background: var(--color-background);
+      color: var(--color-text-primary);
+      font: var(--type-body);
+      -webkit-font-smoothing: antialiased;
+    }
+    .app-container {
+      width: 100%;
+      max-width: 375px;
+      min-height: 812px;
+      margin: 0 auto;
+      background: var(--color-background);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    @media (min-width: 480px) {
+      body { background: var(--com-neutral-100); padding: 24px 0; }
+      .app-container {
+        box-shadow: 0 8px 32px rgba(23, 27, 42, 0.10);
+        border-radius: 24px;
+        min-height: 812px;
+      }
+    }
+
+    /* ── Status bar ── */
+    .status-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 20px 4px;
+      font: 600 14px/1 var(--font-family-base);
+      color: var(--color-text-primary);
+    }
+    .status-bar .right { display: inline-flex; align-items: center; gap: 6px; }
+    .status-bar .icon { width: 16px; height: 16px; color: var(--color-text-primary); }
+
+    /* ── Top bar ── */
+    .ps-topbar {
+      display: flex; align-items: center; gap: 12px;
+      padding: 4px 16px 8px; height: 40px; box-sizing: border-box;
+    }
+    .ps-topbar .icon-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 44px; height: 44px; border-radius: 9999px;
+      color: var(--color-text-primary);
+      background: transparent; border: 0; cursor: pointer; padding: 0;
+    }
+    .ps-topbar .icon-btn .icon { width: 24px; height: 24px; stroke-width: 2.2; }
+    .ps-topbar h1 {
+      flex: 1; margin: 0;
+      font: 600 18px/24px var(--font-family-base);
+      color: var(--color-text-primary);
+      text-align: center;
+    }
+    .ps-topbar .spacer { width: 44px; height: 44px; }
+
+    /* ════════════════════════════════════════════════════════════
+       Ambient 光斑(暖白底,极淡的暖金环境)
+       ════════════════════════════════════════════════════════════ */
+    .be-ambient {
+      position: absolute; inset: 0; z-index: 0;
+      pointer-events: none; overflow: hidden;
+    }
+    .be-ambient > span {
+      position: absolute; display: block;
+      border-radius: 50%; filter: blur(40px);
+    }
+    .be-amb-warm-1 {
+      width: 280px; height: 280px;
+      left: -60px; top: 80px;
+      background: var(--com-premium-100);
+      opacity: 0.45;
+    }
+    .be-amb-warm-2 {
+      width: 220px; height: 220px;
+      right: -50px; top: 320px;
+      background: var(--com-premium-200);
+      opacity: 0.40;
+    }
+    .ps-topbar,
+    .be-stage,
+    .be-info,
+    .be-actions { position: relative; z-index: 1; }
+
+    /* ════════════════════════════════════════════════════════════
+       空态舞台(中央插画占位 + 主副文案)
+       ════════════════════════════════════════════════════════════ */
+    .be-stage {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 24px 8px;
+      gap: 16px;
+    }
+    .be-illust {
+      width: 200px; height: 200px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.7) 0%, transparent 55%),
+        linear-gradient(135deg, var(--com-warm-50) 0%, var(--com-premium-50) 100%);
+      box-shadow:
+        0 8px 24px -8px rgba(160, 123, 65, 0.18),
+        inset 0 0 0 4px rgba(255, 255, 255, 0.7);
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 6px;
+    }
+    .be-illust-icon {
+      width: 56px; height: 56px;
+      color: var(--com-premium-500);
+      opacity: 0.7;
+    }
+    .be-illust-label {
+      font: 500 11px/14px var(--font-family-base);
+      color: var(--com-premium-600);
+      letter-spacing: 0.12em;
+      opacity: 0.7;
+    }
+    .be-headline {
+      font: 600 18px/24px var(--font-family-base);
+      color: var(--color-text-primary);
+      text-align: center;
+      margin: 0;
+    }
+    .be-sub {
+      font: 400 14px/20px var(--font-family-base);
+      color: var(--color-text-secondary);
+      text-align: center;
+      margin: 0;
+      max-width: 280px;
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       底部:搭子玩法介绍 3 条(Card-12)
+       ════════════════════════════════════════════════════════════ */
+    .be-info {
+      margin: 8px 16px 16px;
+      background: var(--color-surface);
+      border-radius: var(--com-radius-12);
+      padding: 14px 14px 4px;
+      box-shadow: 0 2px 8px -3px rgba(23, 27, 42, 0.04);
+    }
+    .be-info-title {
+      font: 600 14px/20px var(--font-family-base);
+      color: var(--color-text-primary);
+      margin: 0 0 8px 4px;
+    }
+    .be-info-list {
+      list-style: none; margin: 0; padding: 0;
+      display: flex; flex-direction: column;
+    }
+    .be-info-item {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 10px 4px;
+      border-top: 1px solid var(--com-neutral-100);
+    }
+    .be-info-item:first-child { border-top: 0; }
+    .be-info-icon {
+      width: 36px; height: 36px;
+      border-radius: 9999px;
+      background: var(--com-premium-50);
+      color: var(--com-premium-600);
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .be-info-icon svg { width: 18px; height: 18px; }
+    .be-info-text {
+      display: flex; flex-direction: column; gap: 2px;
+      flex: 1 1 auto; min-width: 0;
+    }
+    .be-info-h {
+      font: 600 14px/20px var(--font-family-base);
+      color: var(--color-text-primary);
+    }
+    .be-info-s {
+      font: 400 12px/18px var(--font-family-base);
+      color: var(--color-text-secondary);
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       主操作区(主按钮)
+       ════════════════════════════════════════════════════════════ */
+    .be-actions {
+      padding: 8px 16px calc(24px + env(safe-area-inset-bottom));
+      display: flex; flex-direction: column; align-items: center;
+      gap: 8px;
+    }
+    .be-primary {
+      width: 100%; max-width: 343px;
+      height: 48px; border-radius: 24px;
+      background: var(--com-brand-500);
+      color: #FFFFFF;
+      font: 600 16px/24px var(--font-family-base);
+      border: 0; cursor: pointer;
+      box-shadow: 0 6px 16px -6px rgba(237, 77, 27, 0.45);
+      transition: background-color .15s, transform .15s;
+    }
+    .be-primary:hover { background: var(--com-brand-600); }
+    .be-primary:active { transform: scale(0.98); }
+
+    /* ════════════════════════════════════════════════════════════
+       A11y · 全局 focus-visible(2pt outline + 主色 + 4pt offset)
+       ════════════════════════════════════════════════════════════ */
+    :focus { outline: none; }
+    :focus-visible {
+      outline: 2px solid var(--com-brand-500);
+      outline-offset: 4px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div class="be-ambient" aria-hidden="true">
+      <span class="be-amb-warm-1"></span>
+      <span class="be-amb-warm-2"></span>
+    </div>
+
+    <!-- iOS 状态栏 -->
+    <div class="status-bar" aria-hidden="true">
+      <span>9:41</span>
+      <span class="right">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 11.5a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v1.5H2v-1.5Z"/><path d="M5 8.5V6a3 3 0 0 1 6 0v2.5"/></svg>
+        <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><path d="M3 7.5h1.5v4H3v-4Zm2.5-1.5H7v5.5h-1.5V6Zm2.5-2H10v7.5h-1.5V4Zm2.5 3.5H12v4h-1.5v-4Z"/></svg>
+        <svg class="icon" viewBox="0 0 22 12" fill="none" stroke="currentColor" stroke-width="1"><rect x="0.5" y="0.5" width="18" height="11" rx="3"/><rect x="2" y="2" width="15" height="8" rx="2" fill="currentColor" opacity="0.45"/><rect x="20" y="3.5" width="1.5" height="5" rx="0.75" fill="currentColor"/></svg>
+      </span>
+    </div>
+
+    <!-- TopBar -->
+    <div class="ps-topbar">
+      <button class="icon-btn" aria-label="返回上一页">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <h1>洗头搭子</h1>
+      <span class="spacer" aria-hidden="true"></span>
+    </div>
+
+    <!-- 空态舞台 -->
+    <section class="be-stage" aria-label="空态">
+      <div class="be-illust" aria-hidden="true">
+        <svg class="be-illust-icon" viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="22" cy="22" r="8"/>
+          <path d="M8 46c1.5-7 7-11 14-11s12.5 4 14 11"/>
+          <circle cx="40" cy="20" r="6"/>
+          <path d="M32 38c1-5 5-8 9-8s8 3 9 8"/>
+        </svg>
+        <div class="be-illust-label">IP 占位</div>
+      </div>
+      <h2 class="be-headline">还没有搭子</h2>
+      <p class="be-sub">和闺蜜一起打卡赢奖励,默契值越高,泡泡值越多</p>
+    </section>
+
+    <!-- 搭子玩法介绍 3 条 -->
+    <section class="be-info" aria-label="搭子玩法介绍">
+      <h3 class="be-info-title">搭子玩法介绍</h3>
+      <ul class="be-info-list">
+        <li class="be-info-item">
+          <span class="be-info-icon" aria-hidden="true">
+            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l4 4 8-8"/>
+            </svg>
+          </span>
+          <div class="be-info-text">
+            <span class="be-info-h">一起打卡</span>
+            <span class="be-info-s">双人签到得更多泡泡值</span>
+          </div>
+        </li>
+        <li class="be-info-item">
+          <span class="be-info-icon" aria-hidden="true">
+            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="5" width="12" height="9" rx="1.5"/>
+              <path d="M3 5l6-3 6 3"/>
+              <path d="M9 9v3M7.5 10.5h3"/>
+            </svg>
+          </span>
+          <div class="be-info-text">
+            <span class="be-info-h">互送福利</span>
+            <span class="be-info-s">优惠券、礼物送给 TA</span>
+          </div>
+        </li>
+        <li class="be-info-item">
+          <span class="be-info-icon" aria-hidden="true">
+            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 2l2.2 4.5L16 7.3l-3.5 3.4.8 4.8L9 13.2 4.7 15.5l.8-4.8L2 7.3l4.8-.8z"/>
+            </svg>
+          </span>
+          <div class="be-info-text">
+            <span class="be-info-h">默契升级</span>
+            <span class="be-info-s">提升搭子等级,解锁奖励</span>
+          </div>
+        </li>
+      </ul>
+    </section>
+
+    <!-- 主按钮 -->
+    <div class="be-actions">
+      <button class="be-primary" aria-label="立即邀请搭子" onclick="location.href='T06.html'">立即邀请搭子</button>
+    </div>
+  </div>
+</body>
+</html>

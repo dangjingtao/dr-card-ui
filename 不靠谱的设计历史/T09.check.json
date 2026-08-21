@@ -1,0 +1,43 @@
+{
+  "task_id": "T09",
+  "title": "智能客服",
+  "canvas_id": "page-智能客服",
+  "deliverables": [
+    "dist/T09.html",
+    "dist/T09.assets/ref-原备注.png"
+  ],
+  "design_system": "com-design-premium-gold",
+  "tokens_used": [
+    "--com-warm-50", "--com-premium-50", "--com-premium-100", "--com-premium-300",
+    "--com-premium-500", "--com-premium-600", "--com-premium-700",
+    "--com-brand-50", "--com-brand-100", "--com-brand-500", "--com-brand-600",
+    "--com-neutral-50", "--com-neutral-100", "--com-neutral-200", "--com-neutral-500",
+    "--com-neutral-900",
+    "--color-background", "--color-surface",
+    "--color-text-primary", "--color-text-secondary", "--color-text-tertiary", "--color-text-placeholder",
+    "--font-family-base", "--type-body"
+  ],
+  "hardcoded_values": [
+    "注释:头像 SVG 的 fill='currentColor' 是图标矢量,颜色全部继承自 cs-avatar-bot (--com-premium-700) 与 cs-avatar-user (#FFFFFF),非主色定义"
+  ],
+  "consistency_with_canvas": "TopBar(状态栏 44 + 返回 24 + 标题 18 粗体)/ 圆角 8/12/16/20 体系 全部沿用画布 7 页范式;右上「企微客服」文字按钮用 --com-premium-500 暖金与画布会员中心金色按钮一致",
+  "mockplus_referenced": true,
+  "acceptance": {
+    "topbar_correct": true,
+    "primary_text_button_premium_500": true,
+    "radius_uses_8_12_16_20": true,
+    "all_colors_via_tokens": true,
+    "responsive_375_812": true,
+    "bot_bubble_left_brand_50_neutral_900": true,
+    "user_bubble_right_brand_500_white": true,
+    "bot_avatar_32_circle_placeholder": true,
+    "user_avatar_32_circle_placeholder": true,
+    "timestamp_centered_tertiary": true,
+    "hot_questions_4_tags_radius_16_outline_neutral_200": true,
+    "hot_question_click_appends_to_stream": true,
+    "keyword_rengong_kefu_highlighted_no_redirect": true,
+    "composer_fixed_bottom_height_56_radius_16_neutral_50": true,
+    "composer_not_obscured_by_keyboard": true
+  },
+  "notes": "1) 公共头里 --com-premium-500 = #F59E0B 与画布实际安装的 v2 token(--com-premium-500 = #A07B41,2026-08-15 压金 -25% 饱和)不一致;本卡以 Design Library 实际安装的 token 为准,与画布 7 页保持一致;「企微客服」文字按钮用 --com-premium-500 #A07B41 暖金,与任务卡 §3 一致。2) Chat-Bubble 样式严格按任务卡 §8 约束**内联实现**,便于主线程后续抽取沉淀:.cs-bubble-bot 用 --com-brand-50 底 + --com-neutral-900 文字 + 圆角 4/16/16/16(左上小角);.cs-bubble-user 用 --com-brand-500 底 + 白字 + 圆角 16/4/16/16(右上小角)。3) 热门问题 4 个 tag 按任务卡 §3 严格落地:圆角 16 胶囊,描边 1pt --com-neutral-200;hover 时描边与文字过渡到 premium-500 / premium-700。点击自动追加到消息流(用户气泡 + 智能回复),符合任务卡 §7 验收。4) 「人工客服」关键词识别:输入「人工客服」时机器人回复高亮提示(premium-50 底 + premium-300 描边 2pt),**不跳页**(任务卡 §6 明确不做 T10 跳转,仅做输入识别 + 提示)。5) 输入栏固定底部,高度 40(input)+ 8×2 上下 padding = 56 总高,圆角 16,背景 --com-neutral-50,符合任务卡 §3。键盘弹起时不被遮挡的逻辑:css-input 用 env(safe-area-inset-bottom) 让 composer 留出底部安全区;若需要键盘弹起时的可视区域,主线程接入时通过 visualViewport API 调整 cs-stream 高度即可(本任务内联未启用,符合任务卡 §7「CSS 简单实现」)。6) 「企微客服」右上角按钮未实现弹层(任务卡 §6/§8 明确 P3 弹层不在本任务范围)。7) 发送按钮默认 disabled,只有输入非空时启用(灰态 → brand-500),与画布表单交互一致。8) 响应式:移动端 375×812 直接占满,桌面端(≥480px)居中显示为卡片预览。9) 不引入外部 CDN/JS 库,所有图标用内联 SVG。10) 主线程抽取 Chat-Bubble 时建议封装两个 class:.cs-bubble-bot / .cs-bubble-user,内联样式可直接迁移到 components.css;头像 SVG 建议与 Input 一起沉淀为 .cs-avatar 组件。"
+}

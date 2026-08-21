@@ -1,0 +1,540 @@
+/* Source: structured-spec */
+/* com-design Mobile Design System — Source: structured-spec */
+/* @group-priority: brand, accent, success, warning, danger */
+
+:root {
+  /* neutral */
+  --com-neutral-0: #FFFFFF;
+  --com-neutral-50: #F7F8FC;
+  --com-neutral-100: #F0F2F8;
+  --com-neutral-200: #E2E6F0;
+  --com-neutral-300: #CDD3E1;
+  --com-neutral-400: #8590A3;
+  --com-neutral-500: #687288;
+  --com-neutral-600: #535D72;
+  --com-neutral-700: #394156;
+  --com-neutral-800: #252B3D;
+  --com-neutral-900: #171B2A;
+
+  /* warm */
+  --com-warm-50: #FCF8F1;
+  --com-warm-100: #F8F0E5;
+
+  /* ink / member */
+  --com-ink-900: #1C1B18;
+  --com-ink-800: #292722;
+
+  --com-member-surface: var(--com-ink-900);
+  --com-member-text: #FFF9EA;
+  --com-member-accent: var(--com-premium-300);
+
+  /* brand */
+  --com-brand-50: #FFF3EC;
+  --com-brand-100: #FFE3D5;
+  --com-brand-200: #FFC4AA;
+  --com-brand-400: #FF7540;
+  --com-brand-500: #ED4D1B; /* @primary */
+  --com-brand-600: #D63D10;
+  --com-brand-700: #AD2E0A;
+
+  /* premium / reward · v2 (2026-08-15 · 压金 -25% 饱和 · 保留金相) */
+  --com-premium-50: #FFF9EA;
+  --com-premium-100: #F4E7C2;
+  --com-premium-200: #DDC58C;
+  --com-premium-300: #D5B075;
+  --com-premium-400: #C19854;
+  --com-premium-500: #A07B41;
+  --com-premium-600: #806030;
+  --com-premium-700: #5D4120;
+  --com-premium-900: #2A1E10;
+
+  /* premium semantic */
+  --com-reward-default: var(--com-premium-300);
+  --com-reward-strong: var(--com-premium-500);
+  --com-reward-subtle: var(--com-premium-50);
+  --com-reward-text: var(--com-premium-700);
+
+  /* accent */
+  --com-accent-50: #E9FCFF;
+  --com-accent-100: #CAF7FB;
+  --com-accent-500: #16BFD3;
+  --com-accent-600: #0E9FB3;
+  --com-accent-semantic-default: var(--com-accent-500);
+  --com-accent-semantic-strong: var(--com-accent-600);
+  --com-accent-semantic-subtle: var(--com-accent-50);
+
+  /* accent-consumer */
+  --color-accent: var(--com-accent-semantic-default);
+  --color-accent-strong: var(--com-accent-semantic-strong);
+  --color-accent-subtle: var(--com-accent-semantic-subtle);
+
+  /* reward-consumer */
+  --color-reward: var(--com-reward-default);
+  --color-reward-strong: var(--com-reward-strong);
+  --color-reward-subtle: var(--com-reward-subtle);
+  --color-reward-text: var(--com-reward-text);
+
+  /* member-consumer */
+  --color-member-surface: var(--com-member-surface);
+  --color-member-text: var(--com-member-text);
+  --color-member-accent: var(--com-member-accent);
+
+  /* success */
+  --com-success-100: #DDF8EA;
+  --com-success-500: #21B66F;
+  --com-success-700: #147A4C;
+
+  /* warning */
+  --com-warning-100: #FFF2D6;
+  --com-warning-500: #F3A21B;
+  --com-warning-700: #9A6110;
+
+  /* danger */
+  --com-danger-100: #FFE4E8;
+  --com-danger-500: #D63E50;
+  --com-danger-700: #A92939;
+
+  /* text */
+  --com-text-primary: var(--com-neutral-800);
+  --com-text-secondary: var(--com-neutral-600);
+  --com-text-tertiary: var(--com-neutral-500);
+  --com-text-placeholder: var(--com-neutral-600);
+  --com-text-disabled: var(--com-neutral-500);
+  --com-text-inverse: var(--com-neutral-0);
+  --com-text-brand: var(--com-brand-600);
+  --com-text-link: var(--com-brand-600);
+
+  /* text-consumer */
+  --color-text-primary: var(--com-text-primary);
+  --color-text-secondary: var(--com-text-secondary);
+  --color-text-tertiary: var(--com-text-tertiary);
+  --color-text-placeholder: var(--com-text-placeholder);
+  --color-text-disabled: var(--com-text-disabled);
+  --color-text-inverse: var(--com-text-inverse);
+  --color-text-brand: var(--com-text-brand);
+
+  /* surface */
+  --com-surface-page: var(--com-warm-50);
+  --com-surface-default: var(--com-neutral-0);
+  --com-surface-subtle: var(--com-neutral-100);
+  --com-surface-selected: var(--com-brand-50);
+  --com-surface-pressed: var(--com-neutral-100);
+  --com-surface-inverse: var(--com-neutral-800);
+
+  /* surface-consumer */
+  --color-background: var(--com-surface-page);
+  --color-foreground: var(--com-text-primary);
+  --color-surface: var(--com-surface-default);
+  --color-surface-subtle: var(--com-surface-subtle);
+  --color-surface-selected: var(--com-surface-selected);
+  --color-surface-pressed: var(--com-surface-pressed);
+  --color-surface-inverse: var(--com-surface-inverse);
+
+  /* border */
+  --com-border-subtle: var(--com-neutral-200);
+  --com-border-default: var(--com-neutral-400);
+  --com-border-strong: var(--com-neutral-500);
+  --com-border-focused: var(--com-brand-500);
+  --com-border-error: var(--com-danger-500);
+
+  /* border-consumer */
+  --color-border-subtle: var(--com-border-subtle);
+  --color-border: var(--com-border-default);
+  --color-border-strong: var(--com-border-strong);
+  --color-border-focused: var(--com-border-focused);
+  --color-border-error: var(--com-border-error);
+
+  /* action — primary 走 brand-600，white 文字对比度 5.41:1 (AA)；
+     pressed 走 brand-700 仍比 primary 深一档。 */
+  --com-action-primary: var(--com-brand-600);
+  --com-action-primary-pressed: var(--com-brand-700);
+  --com-action-secondary: var(--com-brand-50);
+  --com-action-secondary-pressed: var(--com-brand-100);
+  --com-action-destructive: var(--com-danger-500);
+  --com-action-destructive-pressed: var(--com-danger-700);
+  --com-action-disabled: var(--com-neutral-200);
+
+  /* action-consumer */
+  --color-primary: var(--com-action-primary);
+  --color-primary-hover: var(--com-action-primary-pressed);
+  --color-on-primary: #FFFFFF;
+  --color-primary-container: var(--com-brand-50);
+  --color-on-primary-container: var(--com-brand-700);
+  --color-secondary: var(--com-action-secondary);
+  --color-secondary-hover: var(--com-action-secondary-pressed);
+  --color-destructive: var(--com-action-destructive);
+  --color-destructive-hover: var(--com-action-destructive-pressed);
+  --color-disabled: var(--com-action-disabled);
+
+  /* status */
+  --com-status-success: var(--com-success-500);
+  --com-status-success-bg: var(--com-success-100);
+  --com-status-success-text: var(--com-success-700);
+  --com-status-warning: var(--com-warning-500);
+  --com-status-warning-bg: var(--com-warning-100);
+  --com-status-warning-text: var(--com-warning-700);
+  --com-status-danger: var(--com-danger-500);
+  --com-status-danger-bg: var(--com-danger-100);
+  --com-status-danger-text: var(--com-danger-700);
+  --com-status-info: var(--com-brand-500);
+  --com-status-info-bg: var(--com-brand-50);
+  --com-status-info-text: var(--com-brand-700);
+
+  --com-scrim: rgba(0,0,0,0.52);
+
+  /* icon & indicator */
+  --com-icon-size-sm: 16px;
+  --com-icon-size-md: 20px;
+  --com-icon-size-lg: 24px;
+  --com-indicator-size-inline: 16px;
+  --com-indicator-size-regular: 24px;
+
+  /* typography primitives */
+  --com-font-size-12: 12px;
+  --com-font-size-14: 14px;
+  --com-font-size-16: 16px;
+  --com-font-size-18: 18px;
+  --com-font-size-20: 20px;
+  --com-font-size-24: 24px;
+  --com-font-size-28: 28px;
+
+  --com-font-weight-regular: 400;
+  --com-font-weight-medium: 500;
+  --com-font-weight-semibold: 600;
+  --com-font-weight-bold: 700;
+
+  --com-line-height-16: 16px;
+  --com-line-height-18: 18px;
+  --com-line-height-20: 20px;
+  --com-line-height-22: 22px;
+  --com-line-height-24: 24px;
+  --com-line-height-30: 30px;
+  --com-line-height-36: 36px;
+
+  /* status-consumer */
+  --color-success: var(--com-status-success);
+  --color-success-bg: var(--com-status-success-bg);
+  --color-success-text: var(--com-status-success-text);
+  --color-warning: var(--com-status-warning);
+  --color-warning-bg: var(--com-status-warning-bg);
+  --color-warning-text: var(--com-status-warning-text);
+  --color-danger: var(--com-status-danger);
+  --color-danger-bg: var(--com-status-danger-bg);
+  --color-danger-text: var(--com-status-danger-text);
+  --color-info: var(--com-status-info);
+  --color-info-bg: var(--com-status-info-bg);
+  --color-info-text: var(--com-status-info-text);
+  --color-scrim: var(--com-scrim);
+
+  /* spacing */
+  --com-space-0: 0;
+  --com-space-2: 2px;
+  --com-space-4: 4px;
+  --com-space-6: 6px;
+  --com-space-8: 8px;
+  --com-space-12: 12px;
+  --com-space-16: 16px;
+  --com-space-20: 20px;
+  --com-space-24: 24px;
+  --com-space-32: 32px;
+
+  /* radius */
+  --com-radius-0: 0;
+  --com-radius-4: 4px;
+  --com-radius-8: 8px;
+  --com-radius-12: 12px;
+  --com-radius-16: 16px;
+  --com-radius-pill: 9999px;
+  --radius-none: var(--com-radius-0);
+  --radius-xs: var(--com-radius-4);
+  --radius-sm: var(--com-radius-8);
+  --radius-control: var(--com-radius-8);
+  --radius-md: var(--com-radius-12);
+  --radius-container: var(--com-radius-12);
+  --radius-lg: var(--com-radius-16);
+  --radius-overlay: var(--com-radius-16);
+  --radius-pill: var(--com-radius-pill);
+  --radius-full: var(--com-radius-pill);
+
+  /* size */
+  --com-size-32: 32px;
+  --com-size-40: 40px;
+  --com-size-44: 44px;
+  --com-size-48: 48px;
+  --com-size-56: 56px;
+
+  /* border */
+  --com-border-control: 1px;
+  --com-border-focus: 2px;
+
+  /* elevation */
+  --com-elevation-floating: 0 4px 12px 0 rgba(23,27,42,0.14);
+  --com-elevation-modal: 0 8px 28px 0 rgba(23,27,42,0.18);
+
+  /* density (compact default; override via .density-comfortable) */
+  --com-density-control-height: var(--com-size-40);
+  --com-density-control-height-large: var(--com-size-48);
+
+  /* portable density tokens — consumer-facing, switched by density class */
+  --density-control-height: 40px;
+  --density-control-height-lg: 48px;
+  --density-padding-h: 12px;
+  --density-padding-v: 8px;
+  --density-gap: 8px;
+  --density-content-inset: 16px;
+  --density-section-gap: 20px;
+  --density-field-label-gap: 6px;
+  --density-field-helper-gap: 6px;
+  --density-field-gap: 16px;
+
+  /* platform touch target (default iOS; override via .platform-android) */
+  --platform-touch-min: 44px;
+  --platform-name: "iOS";
+
+  /* portable typography */
+  --font-family-base: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  --type-caption: 400 12px/18px var(--font-family-base);
+  --type-label-small: 500 12px/16px var(--font-family-base);
+  --type-body-small: 400 14px/20px var(--font-family-base);
+  --type-label: 500 14px/20px var(--font-family-base);
+  --type-body: 400 16px/24px var(--font-family-base);
+  --type-heading-small: 600 16px/22px var(--font-family-base);
+  --type-heading: 600 18px/24px var(--font-family-base);
+  --type-title: 600 24px/30px var(--font-family-base);
+  --type-display: 600 28px/36px var(--font-family-base);
+
+  --font-size-caption: var(--com-font-size-12);
+  --font-size-label-small: var(--com-font-size-12);
+  --font-size-body-small: var(--com-font-size-14);
+  --font-size-label: var(--com-font-size-14);
+  --font-size-body: var(--com-font-size-16);
+  --font-size-heading-small: var(--com-font-size-16);
+  --font-size-heading: var(--com-font-size-18);
+  --font-size-title: var(--com-font-size-24);
+  --font-size-display: var(--com-font-size-28);
+
+  --font-weight-regular: var(--com-font-weight-regular);
+  --font-weight-medium: var(--com-font-weight-medium);
+  --font-weight-semibold: var(--com-font-weight-semibold);
+  --font-weight-bold: var(--com-font-weight-bold);
+
+  --line-height-caption: var(--com-line-height-18);
+  --line-height-label-small: var(--com-line-height-16);
+  --line-height-body-small: var(--com-line-height-20);
+  --line-height-label: var(--com-line-height-20);
+  --line-height-body: var(--com-line-height-24);
+  --line-height-heading-small: var(--com-line-height-22);
+  --line-height-heading: var(--com-line-height-24);
+  --line-height-title: var(--com-line-height-30);
+  --line-height-display: var(--com-line-height-36);
+
+  /* portable spacing */
+  --space-0: var(--com-space-0);
+  --space-2: var(--com-space-2);
+  --space-4: var(--com-space-4);
+  --space-6: var(--com-space-6);
+  --space-8: var(--com-space-8);
+  --space-12: var(--com-space-12);
+  --space-16: var(--com-space-16);
+  --space-20: var(--com-space-20);
+  --space-24: var(--com-space-24);
+  --space-32: var(--com-space-32);
+
+  /* portable size */
+  --size-icon-sm: var(--com-icon-size-sm);
+  --size-icon-md: var(--com-icon-size-md);
+  --size-icon-lg: var(--com-icon-size-lg);
+  --size-control-height: var(--density-control-height);
+  --size-touch-ios: var(--com-size-44);
+  --size-touch-android: var(--com-size-48);
+  --size-control-height-lg: var(--density-control-height-lg);
+  --size-touch-min: var(--platform-touch-min);
+
+  /* portable shadow */
+  --shadow-1: var(--com-elevation-floating); /* Floating */
+  --shadow-2: var(--com-elevation-modal); /* Modal */
+}
+
+.dark,
+[data-theme="dark"] {
+  /* dark 下 brand 阶整体更深一档；primary 仍走 brand-600，white 文字 5.22:1 (AA) */
+  --com-brand-50: #2A1208;
+  --com-brand-100: #3A1A0C;
+  --com-brand-200: #54220F;
+  --com-brand-300: #722E13;
+  --com-brand-400: #9A391A;
+  --com-brand-500: #C7390E;
+  --com-brand-600: #C7390E; /* @primary (dark) */
+  --com-brand-700: #9A2A09;
+  --com-brand-800: #6E1E06;
+
+  --com-action-primary: var(--com-brand-600);
+  --com-action-primary-pressed: var(--com-brand-700);
+  --com-border-focused: var(--com-brand-600);
+  --com-status-info: var(--com-brand-600);
+  --com-status-info-text: var(--com-brand-300);
+}
+
+.dark .theme-premium-gold {
+  /* Premium Gold theme overrides in dark mode — additive over .dark
+     brand 阶更亮一档以保证 dark 背景下阅读性；white 文字对比度 5.22:1 (AA) */
+  --com-brand-400: #ED4D1B;
+  --com-brand-500: #ED4D1B;
+  --com-brand-600: #C7390E; /* @primary (dark) */
+  --com-brand-700: #9A2A09;
+  --com-brand-800: #6E1E06;
+
+  --com-action-primary: var(--com-brand-600);
+  --com-action-primary-pressed: var(--com-brand-700);
+  --com-border-focused: var(--com-brand-600);
+  --com-status-info: var(--com-brand-600);
+  --com-status-info-text: var(--com-brand-300);
+}
+
+.theme-premium-gold {
+  /* Premium Gold theme overrides in light mode — additive over :root
+     primary 走 brand-600 #D63D10，white 文字 5.41:1 (AA) */
+  --com-action-primary: var(--com-brand-600);
+  --com-action-primary-pressed: var(--com-brand-700);
+  --com-border-focused: var(--com-brand-600);
+  --com-status-info: var(--com-brand-600);
+  --com-status-info-text: var(--com-brand-700);
+}
+
+.dark {
+  /* dark-only primitive extensions */
+  --com-neutral-950: #10131E;
+  --com-brand-800: #7A2106;
+  --com-brand-900: #461103;
+  --com-accent-900: #123E44;
+  --com-success-900: #163629;
+  --com-warning-900: #403013;
+  --com-danger-900: #431C24;
+
+  /* text */
+  --com-text-primary: var(--com-neutral-50);
+  --com-text-secondary: var(--com-neutral-300);
+  --com-text-tertiary: var(--com-neutral-400);
+  --com-text-placeholder: var(--com-neutral-300);
+  --com-text-disabled: var(--com-neutral-400);
+  --com-text-inverse: var(--com-neutral-0);
+  --com-text-brand: var(--com-brand-200);
+  --com-text-link: var(--com-brand-200);
+
+  /* surface */
+  --com-surface-page: var(--com-neutral-950);
+  --com-surface-default: var(--com-neutral-900);
+  --com-surface-subtle: var(--com-neutral-800);
+  --com-surface-selected: var(--com-brand-900);
+  --com-surface-pressed: var(--com-neutral-800);
+  --com-surface-inverse: var(--com-neutral-700);
+
+  /* border */
+  --com-border-subtle: var(--com-neutral-800);
+  --com-border-default: var(--com-neutral-500);
+  --com-border-strong: var(--com-neutral-400);
+  --com-border-focused: var(--com-brand-400);
+  --com-border-error: var(--com-danger-500);
+
+  /* action */
+  --com-action-primary: var(--com-brand-500);
+  --com-action-primary-pressed: var(--com-brand-600);
+  --com-action-secondary: var(--com-brand-900);
+  --com-action-secondary-pressed: var(--com-brand-800);
+  --com-action-destructive: var(--com-danger-500);
+  --com-action-destructive-pressed: var(--com-danger-700);
+  --com-action-disabled: var(--com-neutral-700);
+
+  /* accent */
+  --com-accent-semantic-default: var(--com-accent-500);
+  --com-accent-semantic-strong: var(--com-accent-500);
+  --com-accent-semantic-subtle: var(--com-accent-900);
+
+  /* status */
+  --com-status-success: var(--com-success-500);
+  --com-status-success-bg: var(--com-success-900);
+  --com-status-success-text: var(--com-success-100);
+  --com-status-warning: var(--com-warning-500);
+  --com-status-warning-bg: var(--com-warning-900);
+  --com-status-warning-text: var(--com-warning-100);
+  --com-status-danger: var(--com-danger-500);
+  --com-status-danger-bg: var(--com-danger-900);
+  --com-status-danger-text: var(--com-danger-100);
+  --com-status-info: var(--com-brand-400);
+  --com-status-info-bg: var(--com-brand-900);
+  --com-status-info-text: var(--com-brand-100);
+
+  --com-scrim: rgba(0,0,0,0.6);
+
+  /* elevation */
+  --com-elevation-floating: 0 4px 16px 0 rgba(0,0,0,0.40);
+  --com-elevation-modal: 0 10px 32px 0 rgba(0,0,0,0.50);
+
+  /* portable color overrides */
+  --color-primary-container: var(--com-brand-900);
+  --color-on-primary-container: var(--com-brand-100);
+}
+
+/* Typography utility classes */
+.com-display { font: var(--type-display); }
+.com-title { font: var(--type-title); }
+.com-heading { font: var(--type-heading); }
+.com-heading-small { font: var(--type-heading-small); }
+.com-body { font: var(--type-body); }
+.com-body-small { font: var(--type-body-small); }
+.com-label { font: var(--type-label); }
+.com-label-small { font: var(--type-label-small); }
+.com-caption { font: var(--type-caption); }
+
+/* ── Density: comfortable (apply on a scope, e.g. .density-comfortable) ── */
+.density-comfortable {
+  --density-control-height: 44px;
+  --density-control-height-lg: 56px;
+  --density-padding-h: 16px;
+  --density-padding-v: 12px;
+  --density-gap: 8px;
+  --density-content-inset: 16px;
+  --density-section-gap: 24px;
+  --density-field-label-gap: 8px;
+  --density-field-helper-gap: 8px;
+  --density-field-gap: 20px;
+}
+
+/* ── Platform: Android (default scope is iOS 44px touch target) ── */
+.platform-android {
+  --platform-touch-min: 48px;
+  --platform-name: "Android";
+}
+
+/* ── Motion: standard timing/easing tokens ── */
+:root {
+  --motion-duration-fast: 120ms;
+  --motion-duration-standard: 220ms;
+  --motion-duration-slow: 320ms;
+  --motion-easing-standard: cubic-bezier(0.3, 0, 0, 1);
+  --motion-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* Reduced motion: collapse transitions/animations */
+.motion-reduced,
+@media (prefers-reduced-motion: reduce) {
+  --motion-duration-fast: 0ms;
+  --motion-duration-standard: 0ms;
+  --motion-duration-slow: 0ms;
+}
+.motion-reduced *,
+@media (prefers-reduced-motion: reduce) {
+  animation-duration: 0ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Feedback motion keyframes (consumed by UI Kit / feedback components) */
+@keyframes com-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes com-scale-in { from { opacity: 0; transform: scale(0.96) translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes com-slide-up { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes com-sheet-handle { 0% { transform: translateY(0); } 50% { transform: translateY(-2px); } 100% { transform: translateY(0); } }
+@keyframes com-spin { to { transform: rotate(360deg); } }
+@keyframes com-shimmer { 100% { transform: translateX(100%); } }
+@keyframes com-toast-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }

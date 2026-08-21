@@ -1,0 +1,38 @@
+{
+  "task_id": "T03",
+  "title": "抽取成功(今日澡运)",
+  "canvas_id": "page-抽取成功",
+  "deliverables": [
+    "dist/T03.html",
+    "dist/T03.assets/ref-原备注.png"
+  ],
+  "design_system": "com-design-premium-gold",
+  "tokens_used": [
+    "--com-warm-50", "--com-premium-50", "--com-premium-100", "--com-premium-200",
+    "--com-premium-300", "--com-premium-500", "--com-premium-600", "--com-premium-700",
+    "--com-brand-200", "--com-brand-400", "--com-brand-500",
+    "--com-neutral-100", "--com-neutral-200", "--com-neutral-300", "--com-neutral-500",
+    "--com-success-500",
+    "--com-radius-20", "--com-radius-12",
+    "--color-background", "--color-surface", "--color-text-primary", "--color-text-secondary",
+    "--font-family-base", "--type-body"
+  ],
+  "hardcoded_values": [
+    "注释:奖牌内层 rgba(255,255,255,0.5/0.55) 与按钮阴影 rgba 是高光/阴影微调,非主色定义"
+  ],
+  "consistency_with_canvas": "TopBar(状态栏 44 + 返回 24 + 标题 18 粗体)/ 主按钮 48 圆角 24 / 圆角 8/12/16/20 体系 全部沿用画布 7 页范式;签卡 360 高 + 圆角 20 + 暖金渐变 premium-300→premium-500 与画布会员中心金色范式一致",
+  "mockplus_referenced": true,
+  "acceptance": {
+    "topbar_correct": true,
+    "primary_button_height_48": true,
+    "radius_uses_8_12_16_20": true,
+    "all_colors_via_tokens": true,
+    "responsive_375_812": true,
+    "three_states_daji_zhongji_xiaoji": true,
+    "sign_card_gradient_360_radius_20": true,
+    "redraw_mock_switches_state": true,
+    "secondary_button_text_14": true,
+    "ip_placeholder_circle_200": true
+  },
+  "notes": "1) 公共头里 --com-premium-500 = #F59E0B 与画布实际安装的 v2 token(--com-premium-500 = #A07B41,2026-08-15 压金 -25% 饱和)不一致;本卡以 Design Library 实际安装的 token 为准,与画布 7 页保持一致。2) 签卡渐变实际为 linear-gradient(180deg, --com-premium-300 #D5B075 → --com-premium-500 #A07B41),即画布实际暖金渐变(对应公共头里描述的 #FCD34D→#F59E0B 概念,实际压金后映射)。3) 三态色:大吉走 premium-300→premium-500 暖金渐变,中吉走 brand-400→brand-500 暖橙,小吉走 neutral-300→neutral-500 暖灰,完全沿用任务卡 §3 验收点。4) 「再抽一次」不跳页,mock 切换三态 + localStorage 标记 drawnAt,二次进入直接命中当前态,符合任务卡 §6 动线。5) 「收下好运」点击后视觉反馈(文字 + 底色短暂变为 success-500),不跳页,符合任务卡 §6 下游仅做 mock。6) 奖牌按任务卡 §5 约束用 200×200 圆 + 「IP 占位」文字,北极熊签筒插画仅取其轮廓做装饰,未画完整 IP。7) 响应式:移动端 375×812 直接占满,桌面端(≥480px)居中显示为卡片预览。8) 不引入外部 CDN/JS 库,所有图标用内联 SVG。"
+}

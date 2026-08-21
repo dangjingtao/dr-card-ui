@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>兑换卡券 · 卡博士诗得丽</title>
+  <link rel="stylesheet" href="../.design_library/com-design-premium-gold/colors_and_type.css">
+  <link rel="stylesheet" href="../.design_library/com-design-premium-gold/components.css">
+  <style>
+    /* ════════════════════════════════════════════════════════════════
+       T12 · 兑换卡券 (com-design-premium-gold 暖金尊享)
+       画布 ID: page-兑换卡券
+       约束源:com-design-premium-gold Design Library(只读)
+       设计语言:白底 + 品牌主色 + Toast 反馈(任务卡 §5)
+       ════════════════════════════════════════════════════════════════ */
+
+    body {
+      margin: 0;
+      background: var(--color-background);
+      color: var(--color-text-primary);
+      font: var(--type-body);
+      -webkit-font-smoothing: antialiased;
+    }
+    .app-container {
+      width: 100%;
+      max-width: 375px;
+      min-height: 812px;
+      margin: 0 auto;
+      background: var(--color-background);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    @media (min-width: 480px) {
+      body { background: var(--com-neutral-100); padding: 24px 0; }
+      .app-container {
+        box-shadow: 0 8px 32px rgba(23, 27, 42, 0.10);
+        border-radius: 24px;
+      }
+    }
+
+    /* Status bar */
+    .status-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 20px 4px;
+      font: 600 14px/1 var(--font-family-base);
+      color: var(--color-text-primary);
+      flex: 0 0 auto;
+    }
+    .status-bar .right { display: inline-flex; align-items: center; gap: 6px; }
+    .status-bar .icon { width: 16px; height: 16px; }
+
+    /* Top bar */
+    .ps-topbar {
+      display: flex; align-items: center; gap: 12px;
+      padding: 4px 16px 8px; height: 40px;
+      box-sizing: border-box; flex: 0 0 auto;
+    }
+    .ps-topbar .icon-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 24px; height: 24px; border-radius: var(--radius-pill);
+      background: transparent; border: 0; padding: 0; cursor: pointer;
+      color: var(--color-text-primary);
+    }
+    .ps-topbar .icon-btn .icon { width: 24px; height: 24px; stroke-width: 2.2; }
+    .ps-topbar h1 {
+      flex: 1; margin: 0;
+      font: 600 18px/24px var(--font-family-base);
+      color: var(--color-text-primary);
+      text-align: center;
+    }
+    .ps-topbar .spacer { width: 24px; height: 24px; }
+    .ps-topbar .icon-btn:focus-visible {
+      outline: 2px solid var(--com-brand-500);
+      outline-offset: 4px;
+    }
+
+    /* ── 主体:大输入框 + 主按钮 + 提示文案 ── */
+    .t12-main {
+      flex: 1;
+      padding: 24px 16px;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+    .t12-hint {
+      font: 400 13px/20px var(--font-family-base);
+      color: var(--color-text-tertiary);
+    }
+
+    /* 大输入框(任务卡 §3:高度 56,圆角 16,背景 neutral-50) */
+    .t12-input-wrap {
+      position: relative;
+      width: 100%;
+    }
+    .t12-input {
+      width: 100%;
+      height: 56px;
+      padding: 0 48px 0 16px;
+      background: var(--com-neutral-50);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-lg);
+      font: var(--type-body);
+      color: var(--color-text-primary);
+      outline: none;
+      box-sizing: border-box;
+      transition: border-color 120ms ease, box-shadow 120ms ease;
+    }
+    .t12-input::placeholder { color: var(--color-text-placeholder); }
+    .t12-input:focus {
+      border-color: var(--com-brand-500);
+      box-shadow: 0 0 0 2px var(--com-brand-50);
+    }
+    .t12-input.error {
+      border-color: var(--color-border-error);
+      box-shadow: 0 0 0 2px var(--com-danger-bg);
+    }
+    .t12-clear {
+      position: absolute;
+      right: 12px; top: 50%;
+      transform: translateY(-50%);
+      width: 28px; height: 28px;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--com-neutral-200);
+      color: var(--color-text-secondary);
+      border: 0; border-radius: var(--radius-pill);
+      cursor: pointer; padding: 0;
+      display: none;
+    }
+    .t12-clear.is-show { display: inline-flex; }
+    .t12-clear:focus-visible {
+      outline: 2px solid var(--com-brand-500);
+      outline-offset: 2px;
+    }
+    .t12-clear .icon { width: 16px; height: 16px; }
+
+    /* 主按钮(任务卡 §3:48 圆角 24 品牌主色,空时 disabled) */
+    .t12-submit {
+      width: 100%;
+      height: 48px;
+      border: 0;
+      border-radius: 24px;
+      background: var(--color-primary);
+      color: var(--color-on-primary);
+      font: 600 16px/24px var(--font-family-base);
+      cursor: pointer;
+      transition: background 120ms ease;
+    }
+    .t12-submit:hover { background: var(--color-primary-hover); }
+    .t12-submit[disabled] {
+      background: var(--color-disabled);
+      color: var(--color-text-disabled);
+      cursor: not-allowed;
+    }
+    .t12-submit:focus-visible {
+      outline: 2px solid var(--com-brand-500);
+      outline-offset: 4px;
+    }
+
+    .t12-tips {
+      margin-top: 4px;
+      padding: 12px 14px;
+      background: var(--com-warm-50);
+      border-radius: var(--radius-md);
+      color: var(--color-text-secondary);
+      font: 400 12px/20px var(--font-family-base);
+    }
+    .t12-tips b { color: var(--color-text-primary); font-weight: 600; }
+
+    /* ── Toast(任务卡 §3:居中)── */
+    .t12-toast {
+      position: fixed;
+      left: 50%; top: 50%;
+      transform: translate(-50%, calc(-50% + 12px));
+      min-width: 160px;
+      max-width: 280px;
+      padding: 14px 20px;
+      background: var(--com-neutral-800);
+      color: var(--com-neutral-0);
+      font: 500 14px/20px var(--font-family-base);
+      border-radius: var(--radius-md);
+      box-shadow: 0 12px 32px -6px rgba(23, 27, 42, 0.30);
+      text-align: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 200ms ease, transform 200ms ease;
+      z-index: 99;
+    }
+    .t12-toast.is-show {
+      opacity: 1;
+      transform: translate(-50%, -50%);
+    }
+    .t12-toast.tone-error { background: var(--color-danger); }
+    .t12-toast.tone-success { background: var(--color-success); }
+
+    .t12-safe-bottom { height: 24px; flex: 0 0 auto; }
+  </style>
+</head>
+<body>
+  <main class="app-container" data-page-id="page-兑换卡券" data-task-id="T12">
+    <div class="status-bar" aria-hidden="true">
+      <span>9:41</span>
+      <span class="right">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 20h2c1 0 1.5-.5 2-1.5l3-7c.5-1 1-1.5 2-1.5h2c1 0 1.5.5 2 1.5l3 7c.5 1 1 1.5 2 1.5h2"/></svg>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.55a11 11 0 0 1 14 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="16" height="10" rx="2"/><line x1="22" y1="11" x2="22" y2="13"/><line x1="6" y1="10" x2="6" y2="10.01"/><line x1="10" y1="10" x2="10" y2="10.01"/><line x1="14" y1="10" x2="14" y2="10.01"/></svg>
+      </span>
+    </div>
+
+    <header class="ps-topbar">
+      <button type="button" class="icon-btn" id="t12-back" aria-label="返回上一级">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <h1>兑换卡券</h1>
+      <span class="spacer" aria-hidden="true"></span>
+    </header>
+
+    <section class="t12-main" aria-label="兑换码输入区">
+      <p class="t12-hint">请输入 12 位字母+数字兑换码,完成兑换后卡券将自动存入卡包。</p>
+
+      <form class="t12-input-wrap" id="t12-form" autocomplete="off" onsubmit="return false">
+        <label for="t12-input" style="position:absolute;left:-9999px;">兑换码</label>
+        <input type="text" class="t12-input" id="t12-input" placeholder="请输入兑换码" maxlength="14" inputmode="text" autocomplete="off" aria-describedby="t12-hint-text">
+        <button type="button" class="t12-clear" id="t12-clear" aria-label="清空兑换码">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </form>
+
+      <span id="t12-hint-text" class="t12-hint" hidden></span>
+
+      <button type="button" class="t12-submit" id="t12-submit" disabled>确认兑换</button>
+
+      <div class="t12-tips" aria-label="兑换须知">
+        兑换码格式:<b>12 位字母+数字组合</b>(不区分大小写),仅可使用一次。
+      </div>
+    </section>
+
+    <div class="t12-safe-bottom" aria-hidden="true"></div>
+
+    <!-- Toast -->
+    <div class="t12-toast" id="t12-toast" role="status" aria-live="polite">兑换码格式错误</div>
+  </main>
+
+  <script>
+    var input = document.getElementById('t12-input');
+    var clearBtn = document.getElementById('t12-clear');
+    var submitBtn = document.getElementById('t12-submit');
+    var toast = document.getElementById('t12-toast');
+    var hintText = document.getElementById('t12-hint-text');
+    var toastTimer = null;
+
+    function showToast(msg, tone, duration) {
+      toast.textContent = msg;
+      toast.classList.remove('tone-error', 'tone-success');
+      if (tone === 'error') toast.classList.add('tone-error');
+      if (tone === 'success') toast.classList.add('tone-success');
+      toast.classList.add('is-show');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () {
+        toast.classList.remove('is-show');
+      }, duration || 2000);
+    }
+
+    /* 校验:12 位 字母+数字(允许全字母/全数字混合) */
+    var RE = /^[A-Za-z0-9]{12}$/;
+
+    function refreshState() {
+      var v = (input.value || '').trim();
+      clearBtn.classList.toggle('is-show', v.length > 0);
+      submitBtn.disabled = v.length === 0;
+      input.classList.remove('error');
+      hintText.hidden = true;
+    }
+
+    input.addEventListener('input', function () {
+      /* 过滤非字母数字 */
+      var v = input.value.replace(/[^A-Za-z0-9]/g, '').slice(0, 12);
+      if (v !== input.value) input.value = v;
+      refreshState();
+    });
+
+    clearBtn.addEventListener('click', function () {
+      input.value = '';
+      refreshState();
+      input.focus();
+    });
+
+    submitBtn.addEventListener('click', function () {
+      if (submitBtn.disabled) return;
+      var v = (input.value || '').trim();
+      if (!RE.test(v)) {
+        input.classList.add('error');
+        hintText.textContent = '请输入 12 位字母+数字组合';
+        hintText.hidden = false;
+        showToast('兑换码格式错误', 'error', 2000);
+        return;
+      }
+      /* mock 成功 → Toast 居中 + 1.5s 后清空 */
+      showToast('兑换成功', 'success', 2000);
+      submitBtn.disabled = true;
+      setTimeout(function () {
+        input.value = '';
+        refreshState();
+        /* 任务卡 §8:不实现 popup-存入卡包,主线程串入 */
+      }, 1500);
+    });
+
+    /* Enter 提交 */
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); submitBtn.click(); }
+    });
+
+    document.getElementById('t12-back').addEventListener('click', function () {
+      if (window.history.length > 1) window.history.back();
+      else window.location.hash = '#/卡包';
+    });
+
+    refreshState();
+  </script>
+</body>
+</html>

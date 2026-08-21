@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>默契值 · 卡博士诗得丽</title>
+  <link rel="stylesheet" href="../.design_library/com-design-premium-gold/colors_and_type.css">
+  <link rel="stylesheet" href="../.design_library/com-design-premium-gold/components.css">
+  <style>
+    /* ════════════════════════════════════════════════════════════════
+       T14 · 搭子默契值 (com-design-premium-gold 暖金尊享)
+       画布 ID: page-搭子默契值
+       约束源:com-design-premium-gold Design Library(只读)
+       设计语言:白底 + premium-500 暖金主调(任务卡 §5)
+       ════════════════════════════════════════════════════════════════ */
+
+    body {
+      margin: 0;
+      background: var(--color-background);
+      color: var(--color-text-primary);
+      font: var(--type-body);
+      -webkit-font-smoothing: antialiased;
+    }
+    .app-container {
+      width: 100%;
+      max-width: 375px;
+      min-height: 812px;
+      margin: 0 auto;
+      background: var(--color-background);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    @media (min-width: 480px) {
+      body { background: var(--com-neutral-100); padding: 24px 0; }
+      .app-container {
+        box-shadow: 0 8px 32px rgba(23, 27, 42, 0.10);
+        border-radius: 24px;
+      }
+    }
+
+    /* Status bar */
+    .status-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 20px 4px;
+      font: 600 14px/1 var(--font-family-base);
+      color: var(--color-text-primary);
+      flex: 0 0 auto;
+    }
+    .status-bar .right { display: inline-flex; align-items: center; gap: 6px; }
+    .status-bar .icon { width: 16px; height: 16px; }
+
+    /* Top bar */
+    .ps-topbar {
+      display: flex; align-items: center; gap: 12px;
+      padding: 4px 16px 8px; height: 40px;
+      box-sizing: border-box; flex: 0 0 auto;
+    }
+    .ps-topbar .icon-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 24px; height: 24px; border-radius: var(--radius-pill);
+      background: transparent; border: 0; padding: 0; cursor: pointer;
+      color: var(--color-text-primary);
+    }
+    .ps-topbar .icon-btn .icon { width: 24px; height: 24px; stroke-width: 2.2; }
+    .ps-topbar h1 {
+      flex: 1; margin: 0;
+      font: 600 18px/24px var(--font-family-base);
+      color: var(--color-text-primary);
+      text-align: center;
+    }
+    .ps-topbar .spacer { width: 24px; height: 24px; }
+    .ps-topbar .icon-btn:focus-visible {
+      outline: 2px solid var(--com-brand-500);
+      outline-offset: 4px;
+    }
+
+    /* ── 头部:大数字 + 双头像 ── */
+    .t14-hero {
+      padding: 24px 16px 20px;
+      display: flex; flex-direction: column; align-items: center; gap: 12px;
+    }
+    .t14-score {
+      display: inline-flex; align-items: baseline; gap: 6px;
+    }
+    .t14-score-label {
+      font: 500 13px/20px var(--font-family-base);
+      color: var(--color-text-tertiary);
+    }
+    .t14-score-num {
+      font: 700 48px/56px var(--font-family-base);
+      color: var(--com-premium-500);
+      letter-spacing: -0.02em;
+    }
+    .t14-score-suffix {
+      font: 500 16px/24px var(--font-family-base);
+      color: var(--color-text-secondary);
+    }
+
+    /* 双头像重叠(任务卡 §3:64×64 圆,相切 16) */
+    .t14-avatars {
+      position: relative;
+      width: 144px; height: 64px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .t14-avatar {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      background: var(--com-warm-100);
+      color: var(--color-text-secondary);
+      font: 600 18px/24px var(--font-family-base);
+      display: inline-flex; align-items: center; justify-content: center;
+      border: 3px solid var(--com-neutral-0);
+      box-sizing: border-box;
+      position: absolute; top: 0;
+    }
+    .t14-avatar.left  { left: 0;   background: linear-gradient(135deg, #FFC4AA 0%, #FF7540 100%); color: #FFFFFF; }
+    .t14-avatar.right { right: 0;  background: linear-gradient(135deg, #DDC58C 0%, #A07B41 100%); color: #FFFFFF; }
+
+    /* ── 4 维度进度条(任务卡 §3:高 8,圆角 8,neutral-100 底,premium-500 填) ── */
+    .t14-dims {
+      padding: 0 16px 16px;
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .t14-dim {
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .t14-dim-head {
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .t14-dim-name {
+      font: 500 14px/20px var(--font-family-base);
+      color: var(--color-text-primary);
+    }
+    .t14-dim-value {
+      font: 600 14px/20px var(--font-family-base);
+      color: var(--com-premium-600);
+    }
+    .t14-bar {
+      position: relative;
+      width: 100%; height: 8px;
+      background: var(--com-neutral-100);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+    }
+    .t14-bar-fill {
+      position: absolute; left: 0; top: 0; bottom: 0;
+      background: linear-gradient(90deg, var(--com-premium-300) 0%, var(--com-premium-500) 100%);
+      border-radius: var(--radius-sm);
+      transition: width 600ms cubic-bezier(.2,.7,.2,1);
+    }
+
+    /* ── 7 天曲线图(任务卡 §3:高 80,7 点) ── */
+    .t14-chart-card {
+      margin: 4px 16px 24px;
+      background: var(--com-neutral-0);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      box-shadow: 0 4px 12px -8px rgba(23, 27, 42, 0.08);
+    }
+    .t14-chart-head {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .t14-chart-title {
+      font: 600 14px/20px var(--font-family-base);
+      color: var(--color-text-primary);
+    }
+    .t14-chart-sub {
+      font: 400 12px/18px var(--font-family-base);
+      color: var(--color-text-tertiary);
+    }
+    .t14-chart {
+      width: 100%; height: 80px;
+      display: block;
+    }
+    .t14-axis {
+      display: flex; justify-content: space-between;
+      padding: 4px 4px 0;
+    }
+    .t14-axis span {
+      font: 400 10px/14px var(--font-family-base);
+      color: var(--color-text-tertiary);
+    }
+
+    .t14-safe-bottom { height: 24px; flex: 0 0 auto; }
+  </style>
+</head>
+<body>
+  <main class="app-container" data-page-id="page-搭子默契值" data-task-id="T14">
+    <div class="status-bar" aria-hidden="true">
+      <span>9:41</span>
+      <span class="right">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 20h2c1 0 1.5-.5 2-1.5l3-7c.5-1 1-1.5 2-1.5h2c1 0 1.5.5 2 1.5l3 7c.5 1 1 1.5 2 1.5h2"/></svg>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.55a11 11 0 0 1 14 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="16" height="10" rx="2"/><line x1="22" y1="11" x2="22" y2="13"/><line x1="6" y1="10" x2="6" y2="10.01"/><line x1="10" y1="10" x2="10" y2="10.01"/><line x1="14" y1="10" x2="14" y2="10.01"/></svg>
+      </span>
+    </div>
+
+    <header class="ps-topbar">
+      <button type="button" class="icon-btn" id="t14-back" aria-label="返回上一级">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <h1>默契值</h1>
+      <span class="spacer" aria-hidden="true"></span>
+    </header>
+
+    <!-- 头部:大数字 + 双头像 -->
+    <section class="t14-hero" aria-label="默契值总览">
+      <div class="t14-score">
+        <span class="t14-score-label">默契值</span>
+        <span class="t14-score-num" id="t14-score-num">86</span>
+        <span class="t14-score-suffix">/ 100</span>
+      </div>
+      <div class="t14-avatars" aria-label="你与搭子">
+        <span class="t14-avatar left"  aria-hidden="true">我</span>
+        <span class="t14-avatar right" aria-hidden="true">搭</span>
+      </div>
+    </section>
+
+    <!-- 4 维度进度条 -->
+    <section class="t14-dims" aria-label="默契值维度评分">
+      <div class="t14-dim" data-v="80">
+        <div class="t14-dim-head">
+          <span class="t14-dim-name">共同打卡</span>
+          <span class="t14-dim-value">80 分</span>
+        </div>
+        <div class="t14-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="80" aria-label="共同打卡 80 / 100">
+          <div class="t14-bar-fill" style="width: 80%"></div>
+        </div>
+      </div>
+      <div class="t14-dim" data-v="90">
+        <div class="t14-dim-head">
+          <span class="t14-dim-name">互动</span>
+          <span class="t14-dim-value">90 分</span>
+        </div>
+        <div class="t14-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="90" aria-label="互动 90 / 100">
+          <div class="t14-bar-fill" style="width: 90%"></div>
+        </div>
+      </div>
+      <div class="t14-dim" data-v="70">
+        <div class="t14-dim-head">
+          <span class="t14-dim-name">任务完成</span>
+          <span class="t14-dim-value">70 分</span>
+        </div>
+        <div class="t14-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="70" aria-label="任务完成 70 / 100">
+          <div class="t14-bar-fill" style="width: 70%"></div>
+        </div>
+      </div>
+      <div class="t14-dim" data-v="85">
+        <div class="t14-dim-head">
+          <span class="t14-dim-name">收藏</span>
+          <span class="t14-dim-value">85 分</span>
+        </div>
+        <div class="t14-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="85" aria-label="收藏 85 / 100">
+          <div class="t14-bar-fill" style="width: 85%"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7 天曲线图 -->
+    <section class="t14-chart-card" aria-label="最近 7 天默契值曲线">
+      <div class="t14-chart-head">
+        <span class="t14-chart-title">最近 7 天</span>
+        <span class="t14-chart-sub">日均 81.4</span>
+      </div>
+      <svg class="t14-chart" viewBox="0 0 343 80" preserveAspectRatio="none" aria-hidden="true">
+        <!-- 网格 -->
+        <line x1="0"   y1="20" x2="343" y2="20" stroke="var(--com-neutral-200)" stroke-dasharray="2 4"/>
+        <line x1="0"   y1="40" x2="343" y2="40" stroke="var(--com-neutral-200)" stroke-dasharray="2 4"/>
+        <line x1="0"   y1="60" x2="343" y2="60" stroke="var(--com-neutral-200)" stroke-dasharray="2 4"/>
+        <!-- 7 个数据点 70,78,82,75,88,84,86 映射到 y=70-(-x) -->
+        <path d="M 0 30 C 30 22, 50 18, 80 22 S 130 14, 160 8 S 230 12, 280 6 S 330 10, 343 6"
+              fill="none" stroke="var(--com-premium-500)" stroke-width="2.5" stroke-linecap="round"/>
+        <!-- 圆点 -->
+        <g fill="var(--com-premium-500)">
+          <circle cx="0"   cy="30" r="3"/>
+          <circle cx="57"  cy="22" r="3"/>
+          <circle cx="114" cy="14" r="3"/>
+          <circle cx="171" cy="18" r="3"/>
+          <circle cx="228" cy="8"  r="3"/>
+          <circle cx="285" cy="12" r="3"/>
+          <circle cx="343" cy="6"  r="3"/>
+        </g>
+      </svg>
+      <div class="t14-axis" aria-hidden="true">
+        <span>10/15</span><span>10/16</span><span>10/17</span><span>10/18</span><span>10/19</span><span>10/20</span><span>10/21</span>
+      </div>
+    </section>
+
+    <div class="t14-safe-bottom" aria-hidden="true"></div>
+  </main>
+
+  <script>
+    /* 进入页面时进度条做一次 0 → 终值的轻量动画 */
+    document.querySelectorAll('.t14-bar-fill').forEach(function (el) {
+      var w = el.style.width;
+      el.style.width = '0%';
+      requestAnimationFrame(function () { setTimeout(function () { el.style.width = w; }, 80); });
+    });
+
+    document.getElementById('t14-back').addEventListener('click', function () {
+      if (window.history.length > 1) window.history.back();
+      else window.location.hash = '#/搭子';
+    });
+  </script>
+</body>
+</html>

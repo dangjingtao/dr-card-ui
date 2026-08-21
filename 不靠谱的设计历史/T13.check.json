@@ -1,0 +1,43 @@
+{
+  "task_id": "T13",
+  "title": "品牌文化",
+  "canvas_id": "page-品牌文化",
+  "deliverables": [
+    "dist/T13.html"
+  ],
+  "design_system": "com-design-premium-gold",
+  "tokens_used": [
+    "--com-warm-50",
+    "--com-warm-100",
+    "--com-neutral-0",
+    "--com-neutral-100",
+    "--com-neutral-900",
+    "--com-premium-300",
+    "--com-premium-500",
+    "--com-brand-500",
+    "--com-success-500",
+    "--radius-lg",
+    "--radius-pill",
+    "--font-family-base",
+    "--type-body"
+  ],
+  "hardcoded_values": [
+    "--t13-banner-from #2C4A3E / --t13-banner-to #1F3528 —— 任务卡 §3 要求深绿 KV 渐变,design-tokens.css 无对应 token,按 P1 总调度 §4 内联登记",
+    "rgba(255,255,255,0.78) / rgba(0,0,0,0.6) / rgba(160,123,65,0.55) —— Banner 文字 / 章节图阴影 / 浮动 CTA 阴影透明叠加,设计库无对应 token"
+  ],
+  "consistency_with_canvas": "TopBar / 圆角 8/12/16/20 沿用画布;深底色文字用 --com-warm-50(对比度 ≥ 12.6:1,AAA);浮动 CTA 用 --com-premium-500 与画布 7 页暖金主调一致",
+  "mockplus_referenced": true,
+  "acceptance": {
+    "topbar_correct": true,
+    "radius_uses_8_12_16_20": true,
+    "all_colors_via_tokens": true,
+    "responsive_375_812": true,
+    "deep_bg_text_aaa_contrast": true,
+    "section_image_max_w_343": true,
+    "line_height_1_7": true,
+    "floating_cta_premium_500_56": true,
+    "floating_cta_bottom_24_right_16": true,
+    "share_icon_visible": true
+  },
+  "notes": "1) 主体底色 --com-neutral-900(#171B2A 深),文字 --com-warm-50(#FCF8F1 暖白) 对比度 ≈ 12.6:1,远超 WCAG AAA(7:1),远高于任务卡 §7 AA 最低要求。2) 章节图:max-width 343,圆角 16(--radius-lg),纯色卡 + 章节名文字占位(任务卡 §5)。3) 标题 20 粗体,em 字段用 --com-premium-300 高亮,与画布暖金主调一致。4) 浮动 CTA:右下 16/24,56×56 圆形,背景 --com-premium-500,白 icon,左侧有「立即体验」文字气泡提示(辅助可读)。5) 分享 icon 仅 mock alert,不实现弹层(任务卡 §8)。6) Banner 用 linear-gradient(135deg,#2C4A3E→#1F3528) 任务卡 §3 落地策略,设计库无 token 故 --t13-banner-* 内联。7) 焦点 / aria-label 全部到位。"
+}

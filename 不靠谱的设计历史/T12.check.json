@@ -1,0 +1,59 @@
+{
+  "task_id": "T12",
+  "title": "兑换卡券",
+  "canvas_id": "page-兑换卡券",
+  "deliverables": [
+    "dist/T12.html"
+  ],
+  "design_system": "com-design-premium-gold",
+  "tokens_used": [
+    "--color-background",
+    "--color-text-primary",
+    "--color-text-secondary",
+    "--color-text-tertiary",
+    "--color-text-placeholder",
+    "--color-text-disabled",
+    "--color-on-primary",
+    "--color-primary",
+    "--color-primary-hover",
+    "--color-disabled",
+    "--color-border-subtle",
+    "--color-border-error",
+    "--color-danger",
+    "--color-success",
+    "--com-neutral-0",
+    "--com-neutral-50",
+    "--com-neutral-100",
+    "--com-neutral-200",
+    "--com-neutral-800",
+    "--com-warm-50",
+    "--com-brand-50",
+    "--com-brand-500",
+    "--com-danger-bg",
+    "--radius-md",
+    "--radius-lg",
+    "--radius-pill",
+    "--font-family-base",
+    "--type-body"
+  ],
+  "hardcoded_values": [
+    "rgba(23,27,42,0.30) —— Toast 阴影透明叠加,画布 T10 范式延续,设计库无对应 token"
+  ],
+  "consistency_with_canvas": "TopBar / 主按钮 48 圆角 24 品牌主色 / 圆角 8/12/16/20 体系 全部沿用画布;Toast 居中采用 --com-neutral-800,错误/成功分别用 --color-danger / --color-success,与任务卡 §5 落地策略一致",
+  "mockplus_referenced": true,
+  "acceptance": {
+    "topbar_correct": true,
+    "primary_button_height_48": true,
+    "radius_uses_8_12_16_20": true,
+    "all_colors_via_tokens": true,
+    "responsive_375_812": true,
+    "input_empty_disabled": true,
+    "format_validation_12_alnum": true,
+    "error_toast_danger": true,
+    "success_toast_success": true,
+    "toast_centered": true,
+    "toast_autodismiss_2s": true,
+    "success_clear_after_1_5s": true
+  },
+  "notes": "1) 校验规则:^[A-Za-z0-9]{12}$,输入实时过滤非字母数字字符,长度上限 12。2) 输入框聚焦态:2pt --com-brand-50 外环 + 1pt --com-brand-500 描边;错误态切换为 --color-border-error + --com-danger-bg 外环。3) 主按钮:输入空时 --color-disabled 灰底 + not-allowed;有值时 --color-primary 品牌色,聚焦态 2pt --com-brand-500 outline。4) Toast:tone-error = --color-danger;tone-success = --color-success;tone-default = --com-neutral-800;2s 自动消失,成功 1.5s 后清空输入(任务卡 §7 验收)。5) 不实现 popup-存入卡包(任务卡 §8)。6) 焦点 / aria-label / aria-live / 键盘 Enter 提交全部到位。"
+}

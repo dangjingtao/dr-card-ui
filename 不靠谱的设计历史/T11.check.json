@@ -1,0 +1,62 @@
+{
+  "task_id": "T11",
+  "title": "核心洗护兑换专区",
+  "canvas_id": "page-洗护兑换专区",
+  "deliverables": [
+    "dist/T11.html"
+  ],
+  "design_system": "com-design-premium-gold",
+  "tokens_used": [
+    "--color-background",
+    "--color-text-primary",
+    "--color-text-secondary",
+    "--color-text-tertiary",
+    "--color-text-placeholder",
+    "--color-text-brand",
+    "--color-primary",
+    "--color-border-subtle",
+    "--com-neutral-0",
+    "--com-neutral-100",
+    "--com-neutral-800",
+    "--com-warm-50",
+    "--com-warm-100",
+    "--com-brand-50",
+    "--com-brand-500",
+    "--com-brand-600",
+    "--com-brand-700",
+    "--com-premium-50",
+    "--com-premium-300",
+    "--com-premium-500",
+    "--com-premium-600",
+    "--com-premium-700",
+    "--radius-sm",
+    "--radius-md",
+    "--radius-lg",
+    "--radius-pill",
+    "--radius-xs",
+    "--font-family-base",
+    "--type-body",
+    "--type-caption"
+  ],
+  "hardcoded_values": [
+    "--t11-banner-from #2C4A3E / --t11-banner-to #4A6B5C / --t11-banner-gold #D5B075 —— 任务卡 §5 落地策略要求深绿 + 金,design-tokens.css 无对应 token,按 P1 总调度 §4 异常处理内联 CSS 变量,已在 :root 显式登记",
+    "rgba(255,255,255,0.78) / rgba(0,0,0,0.42) / rgba(23,27,42,0.10/0.35) —— Banner 文字 / IP 角标 / 阴影透明叠加,画布 T10 范式延续,设计库无对应 token"
+  ],
+  "consistency_with_canvas": "TopBar 状态栏 44pt / 返回 24×24 / 标题 18 粗体 / 圆角 8/12/16/20 体系 全部沿用画布;外层灰底预览(≥480px)沿用 T10 范式;Tab 用 token .tab 体系(line 变体)",
+  "mockplus_referenced": true,
+  "acceptance": {
+    "topbar_correct": true,
+    "primary_button_height_48": true,
+    "radius_uses_8_12_16_20": true,
+    "all_colors_via_tokens": true,
+    "responsive_375_812": true,
+    "tabs_data_driven": true,
+    "search_mock_keyword": true,
+    "card_radius_12_image_1to1": true,
+    "points_badge_premium_500": true,
+    "tab_volume_desc": true,
+    "tab_points_desc": true,
+    "card_active_brand_50_border": true
+  },
+  "notes": "1) KV Banner 按任务卡 §5 落地策略使用 linear-gradient(135deg,#2C4A3E→#4A6B5C) + 金色光斑;design-tokens.css 没有深绿 token,故用 --t11-banner-* 内联 CSS 变量登记。2) 3 Tab 全部数据驱动:综合为原序;兑换量 Tab 按 vol 降序;泡泡值 Tab 按 points 降序。3) 搜索 mock:输入 DearSeed/诗得丽 可过滤出对应 SKU;无结果时进入空态(插画占位 + 「重置筛选」文字按钮 → 还原 Tab + 清空搜索)。4) 商品卡:1:1 媒体位 + 名称 14 + 「200 泡泡值」徽标(premium-50 底 + premium-700 字 + 居左 pill) + 已兑换人次(中性灰次文字);active 态:2pt --com-brand-50 描边。5) 触控:每张卡 hit area ≥ 44pt(1:1 图 167.5pt 高 + 文字 body 56pt,远超阈值);焦点态:2pt --com-brand-500 + 2pt offset,符合 1.2.1 规范。6) 右上筛选 icon 仅 mock alert(任务卡 §8 不实现弹层)。7) 未实现 A11y 校验工具(无自动化器),但已按 §1.2.1 全部要点人工落实:aria-label/role/tabindex/aria-live/aria-selected/focus-visible 全部到位。"
+}

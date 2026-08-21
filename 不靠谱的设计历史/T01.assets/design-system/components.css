@@ -1,0 +1,110 @@
+/* ═══════════════════════════════════════════════════════════════
+   components.css — Design System Component Definitions
+   Auto-extracted from preview/component-*.html
+   DO NOT EDIT MANUALLY — regenerate via extract-components-css.mjs
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Avatar ────────────────────────────────────────────────── */
+/* @anatomy
+   <span class="avatar avatar-sm"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Ccircle cx='24' cy='24' r='24' fill='%23EDBC6C'/%3E%3Ccircle cx='24' cy='18' r='8' fill='%23ffffff'/%3E%3Cellipse cx='24' cy='43' rx='15' ry='13' fill='%23ffffff'/%3E%3C/svg%3E" alt="用户头像"></span><span class="avatar avatar-md"><img src="data:image/svg+xml,%3Csvg xmlns='h...
+*/
+/* Component definitions — extracted to components.css by deterministic script */
+  .avatar { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; background: var(--color-surface-subtle); color: var(--color-text-primary); border-radius: var(--radius-full); font-weight: var(--font-weight-medium); }
+  .avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .avatar .avatar-icon { width: 55%; height: 55%; object-fit: contain; }
+  .avatar-sm { width: var(--com-size-32); height: var(--com-size-32); font: var(--type-caption); }
+  .avatar-md { width: var(--com-size-40); height: var(--com-size-40); font: var(--type-label); }
+  .avatar-lg { width: var(--com-size-48); height: var(--com-size-48); font: var(--type-body); }
+  .avatar.vip { border: 2px solid var(--color-member-accent); }
+
+/* ── Badge ─────────────────────────────────────────────────── */
+/* @anatomy
+   <span class="label">色调</span> <span class="badge default">默认</span> <span class="badge brand">品牌</span> <span class="badge success">成功</span> <span class="badge warning">警告</span> <span class="badge danger">错误</span> <span class="badge reward">会员</span>
+*/
+.badge { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-4); height: 20px; min-width: 20px; padding: 0 var(--space-8); border-radius: var(--radius-xs); font: var(--type-label-small); white-space: nowrap; flex-shrink: 0; }
+  .badge .dot { width: 6px; height: 6px; border-radius: var(--radius-full); flex-shrink: 0; }
+  .badge.default { background: var(--color-surface-subtle); color: var(--color-text-primary); }
+  .badge.brand { background: var(--color-primary-container); color: var(--color-on-primary-container); }
+  .badge.success { background: var(--color-success-bg); color: var(--color-success-text); }
+  .badge.warning { background: var(--color-warning-bg); color: var(--color-warning-text); }
+  .badge.danger { background: var(--color-danger-bg); color: var(--color-danger-text); }
+  .badge.reward { background: var(--color-reward); color: var(--color-reward-text); }
+  .badge.default .dot { background: var(--color-text-secondary); }
+  .badge.brand .dot { background: var(--color-on-primary-container); }
+  .badge.success .dot { background: var(--color-success); }
+  .badge.warning .dot { background: var(--color-warning); }
+  .badge.danger .dot { background: var(--color-danger); }
+  .badge.reward .dot { background: var(--color-reward-text); }
+
+/* ── Button ────────────────────────────────────────────────── */
+/* @anatomy
+   <span class="label">主要操作</span><button class="btn btn-primary" data-evidence-sample="primary-md-default">立即开通</button><button class="btn btn-primary btn-lg" data-evidence-sample="primary-lg-default">立即开通</button>
+*/
+/* Component definitions — extracted to components.css by deterministic script */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-4); border: none; cursor: pointer; font: var(--type-label); white-space: nowrap; text-overflow: ellipsis; overflow: hidden; transition: background .15s, border-color .15s; flex-shrink: 0; min-width: var(--size-control-height); height: var(--size-control-height); padding: var(--density-padding-v) var(--density-padding-h); border-radius: var(--radius-control); color: var(--color-text-inverse); }
+.btn-primary { background: var(--color-primary); color: var(--color-on-primary); }
+.btn-primary:hover, .btn-primary:active { background: var(--color-primary-hover); }
+.btn-secondary { background: var(--color-secondary); color: var(--color-text-brand); }
+.btn-secondary:hover, .btn-secondary:active { background: var(--color-secondary-hover); }
+.btn-destructive { background: var(--color-destructive); color: var(--color-text-inverse); }
+.btn-destructive:hover, .btn-destructive:active { background: var(--color-destructive-hover); }
+.btn-sm { height: var(--com-size-32); min-width: var(--com-size-32); padding: var(--space-6) var(--space-12); font: var(--type-label-small); }
+.btn-lg { height: var(--size-control-height-lg); min-width: var(--size-control-height-lg); padding: var(--space-12) var(--space-20); font: var(--type-heading-small); }
+.btn[disabled] { background: var(--color-disabled); color: var(--color-text-disabled); cursor: not-allowed; pointer-events: none; }
+
+/* ── Card ──────────────────────────────────────────────────── */
+/* @anatomy
+   <div class="card padding-md"><div class="card-header"><h3 class="card-title">尊享礼遇</h3><button class="card-action">查看</button>
+*/
+.card { width: 100%; box-sizing: border-box; background: var(--color-surface); border-radius: var(--radius-container); overflow: hidden; }
+  .card.padding-md { padding: var(--space-16); }
+  .card.padding-lg { padding: var(--space-20); }
+  .card.elevated { box-shadow: var(--shadow-1); }
+  .card.member { background: var(--color-member-surface); color: var(--color-member-text); }
+  .card:hover { filter: brightness(0.97); transition: filter var(--motion-duration-fast); }
+  .card-header { display: flex; align-items: center; justify-content: space-between; gap: var(--space-8); margin-bottom: var(--space-12); }
+  .card-title { font: var(--type-heading-small); color: inherit; margin: 0; }
+  .card-action { font: var(--type-label-small); color: var(--color-text-brand); background: none; border: none; padding: 0; cursor: pointer; white-space: nowrap; transition: color var(--motion-duration-fast); }
+  .card-action:hover { color: var(--color-text-brand); }
+  .member .card-action { color: var(--color-member-accent); }
+  .card-body { font: var(--type-body-small); color: var(--color-text-secondary); line-height: var(--line-height-body-small); }
+  .member .card-body { color: var(--color-member-text); }
+  .card-footer { display: flex; gap: var(--space-8); margin-top: var(--space-16); }
+  .btn { display: inline-flex; align-items: center; justify-content: center; height: var(--size-control-height); min-width: var(--size-control-height); padding: 0 var(--space-16); border: none; border-radius: var(--radius-control); font: var(--type-label); color: var(--color-on-primary); background: var(--color-primary); cursor: pointer; white-space: nowrap; transition: background var(--motion-duration-fast); }
+  .btn:hover { background: var(--color-primary-hover); }
+
+/* ── Input ─────────────────────────────────────────────────── */
+/* @anatomy
+   <div class="field-group"> <label class="field-label">手机号</label> <input class="com-input" type="text" placeholder="请输入手机号">
+*/
+/* Component definitions — extracted to components.css by deterministic script */
+  .field-group { display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 320px; min-width: 120px; }
+  .field-label { font: var(--type-label-small); color: var(--color-text-secondary); }
+  .field-helper { font: var(--type-caption); color: var(--color-danger); }
+  .com-input { width: 100%; height: var(--size-control-height); padding: 0 var(--space-12); border: 1px solid var(--color-border); border-radius: var(--radius-control); background: var(--color-surface); color: var(--color-text-primary); font: var(--type-body); outline: none; transition: border-color .15s; box-sizing: border-box; }
+  .com-input::placeholder { color: var(--color-text-placeholder); }
+  .com-input:focus { border-color: var(--color-border-focused); }
+  .com-input.error { border-color: var(--color-border-error); }
+  .com-input:disabled { background: var(--color-surface-subtle); border-color: var(--color-border-subtle); color: var(--color-text-disabled); cursor: not-allowed; }
+  .input-icon-wrap { position: relative; width: 100%; max-width: 320px; height: var(--size-control-height); display: flex; align-items: center; }
+  .input-icon-wrap .com-input { padding-right: 40px; }
+  .input-icon { position: absolute; right: 12px; width: var(--com-icon-size-md); height: var(--com-icon-size-md); color: var(--color-text-tertiary); pointer-events: none; }
+
+/* ── Tabs ──────────────────────────────────────────────────── */
+/* @anatomy
+   <div class="tabs tabs-line" role="tablist" aria-label="内容分类"> <button class="tab active" role="tab" aria-selected="true">推荐</button> <button class="tab" role="tab" aria-selected="false">关注</button> <button class="tab" role="tab" aria-selected="false" disabled>精选</button>
+*/
+/* Component definitions — extracted to components.css by deterministic script */
+.tabs { display: flex; width: 100%; }
+.tab { display: inline-flex; align-items: center; justify-content: center; gap: 4px; border: none; background: transparent; cursor: pointer; font: var(--type-label); color: var(--color-text-secondary); white-space: nowrap; transition: background .15s, border-color .15s; flex-shrink: 0; }
+.tab:hover { background: var(--color-surface-subtle); }
+.tab:disabled { color: var(--color-text-disabled); cursor: not-allowed; }
+.tab:disabled:hover { background: transparent; }
+.tab-panel { width: 100%; padding: 12px; background: var(--color-surface); border-radius: var(--radius-md); font: var(--type-body-small); color: var(--color-text-secondary); }
+.tabs-line { border-bottom: 1px solid var(--color-border-subtle); }
+.tabs-line .tab { position: relative; flex: 1; height: var(--size-control-height); min-width: var(--size-control-height); padding: 0 var(--space-12); }
+.tabs-line .tab.active { color: var(--color-text-brand); }
+.tabs-line .tab.active::after { content: ""; position: absolute; bottom: -1px; left: 0; right: 0; height: 2px; background: var(--color-primary); }
+.tabs-pill { gap: 4px; padding: 4px; background: var(--color-surface-subtle); border-radius: var(--radius-full); }
+.tabs-pill .tab { height: calc(var(--size-control-height) - 8px); min-width: calc(var(--size-control-height) - 8px); padding: 0 var(--space-16); border-radius: var(--radius-full); }
+.tabs-pill .tab.active { background: var(--color-primary-container); color: var(--color-on-primary-container); }

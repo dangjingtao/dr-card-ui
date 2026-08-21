@@ -1,0 +1,47 @@
+{
+  "task_id": "T14",
+  "title": "搭子默契值",
+  "canvas_id": "page-搭子默契值",
+  "deliverables": [
+    "dist/T14.html"
+  ],
+  "design_system": "com-design-premium-gold",
+  "tokens_used": [
+    "--color-background",
+    "--color-text-primary",
+    "--color-text-secondary",
+    "--color-text-tertiary",
+    "--com-neutral-0",
+    "--com-neutral-100",
+    "--com-neutral-200",
+    "--com-warm-50",
+    "--com-warm-100",
+    "--com-brand-500",
+    "--com-premium-300",
+    "--com-premium-500",
+    "--com-premium-600",
+    "--radius-sm",
+    "--radius-md",
+    "--radius-pill",
+    "--font-family-base",
+    "--type-body"
+  ],
+  "hardcoded_values": [
+    "#FFC4AA→#FF7540 / #DDC58C→#A07B41 —— 双头像渐变(占位),design-tokens.css 无 avatar-gradient token,按 P1 总调度 §4 内联",
+    "rgba(23,27,42,0.08) / rgba(23,27,42,0.10) —— 卡片/外层阴影透明叠加,画布范式延续"
+  ],
+  "consistency_with_canvas": "TopBar / 圆角 8/12/16/20 沿用画布;暖金主色 --com-premium-500 与画布 7 页一致;白底设计语言符合任务卡 §5",
+  "mockplus_referenced": true,
+  "acceptance": {
+    "topbar_correct": true,
+    "radius_uses_8_12_16_20": true,
+    "all_colors_via_tokens": true,
+    "responsive_375_812": true,
+    "dim_80_90_70_85": true,
+    "progress_bar_height_8_radius_8": true,
+    "chart_7_data_points": true,
+    "dual_avatars_overlap": true,
+    "score_48_premium_500": true
+  },
+  "notes": "1) 4 维度 mock:共同打卡 80 / 互动 90 / 任务完成 70 / 收藏 85(任务卡 §7 验收)。2) 进度条:h 8,圆角 8(--radius-sm),底色 --com-neutral-100,填充 linear-gradient(premium-300→premium-500),进入页面有 0→终值的轻量动画(600ms)。3) 7 天曲线:viewBox 343×80,7 个数据点 (10/15→70, 10/16→78, 10/17→82, 10/18→75, 10/19→88, 10/20→84, 10/21→86),贝塞尔曲线圆滑,日均 81.4。4) 双头像:64×64 圆,3px 白色描边做相切,渐变占位色(暖橙 + 暖金),贴合任务卡「暖金 premium-500 渐变」语言。5) 数字 48 粗体 --com-premium-500,符合任务卡 §3。6) 进度条 role=progressbar,aria-valuenow / aria-label 齐全。7) 原型标「先不做」,已按任务卡 §3 完整实现静态版,未做 P3 弹层或真实接口。"
+}

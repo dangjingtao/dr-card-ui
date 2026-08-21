@@ -1,0 +1,41 @@
+{
+  "task_id": "T01",
+  "title": "完善信息",
+  "canvas_id": "page-完善信息",
+  "deliverables": [
+    "dist/T01.html",
+    "dist/T01.assets/ref-原备注.png"
+  ],
+  "design_system": "com-design-premium-gold",
+  "tokens_used": [
+    "--com-warm-50", "--com-warm-100",
+    "--com-brand-50", "--com-brand-100", "--com-brand-500", "--com-brand-600",
+    "--com-premium-100", "--com-premium-200", "--com-premium-300", "--com-premium-500",
+    "--com-neutral-100", "--com-neutral-200", "--com-neutral-400", "--com-neutral-900",
+    "--com-success-500", "--com-danger-500",
+    "--color-background", "--color-surface", "--color-surface-subtle",
+    "--color-text-primary", "--color-text-secondary", "--color-text-tertiary", "--color-text-placeholder",
+    "--color-primary", "--color-primary-hover", "--color-on-primary",
+    "--radius-md", "--radius-container", "--radius-lg",
+    "--space-4", "--space-6", "--space-8", "--space-12", "--space-16", "--space-20", "--space-24",
+    "--com-size-24", "--com-size-32", "--com-size-48",
+    "--type-body", "--type-label", "--type-caption"
+  ],
+  "hardcoded_values": [
+    "注释:7 处 # 十六进制均为 CSS var() 的 fallback(防 Design Library 未加载时仍可读),不是主色定义"
+  ],
+  "consistency_with_canvas": "TopBar(状态栏 44 + 返回 24 + 标题 18 粗体) / 主按钮 48 圆角 24 品牌主色 / 圆角 8/12/16/20 体系 / 暖金 ambient 光斑 全部沿用画布已审定 7 页(资料设置 / 积分首页)的范式",
+  "mockplus_referenced": true,
+  "acceptance": {
+    "topbar_correct": true,
+    "primary_button_height_48": true,
+    "radius_uses_8_12_16_20": true,
+    "all_colors_via_tokens": true,
+    "responsive_375_812": true,
+    "avatar_dashed_brand_100": true,
+    "pin_6_cells_focus_brand_500": true,
+    "radio_selected_brand_500_border_2pt": true,
+    "nickname_birthday_input_48_radius_12": true
+  },
+  "notes": "1) 公共头里的 token 名(--com-premium-500 #F59E0B)与画布实际安装的 v2 token(--com-premium-500 #A07B41,2026-08-15 压金 -25% 饱和)不一致;本卡以 Design Library 实际安装的 token 为准,与画布 7 页保持一致。2) 原型采用 line input,任务卡要求 token 圆角 12 输入 + 圆角 12 单选卡(描边 2pt brand-500),已按任务卡规范落地。3) 主按钮 hover 用 --color-primary-hover(--com-brand-700),与画布其他主按钮一致。4) 6 位密码方块聚焦态方块边框高亮 brand-500,符合任务卡 §7 验收点;默认焦点在第 1 格。5) 不引入外部 CDN/tailwind/lucide,所有图标用内联 SVG。6) 「确认信息」成功后不跳页,只给视觉反馈,弹层由主线程串入(任务卡 §7)。7) 响应式:移动端 375×812 直接占满,桌面端(≥480px)居中显示为卡片预览。"
+}

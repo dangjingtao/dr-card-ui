@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>智能客服 · 卡博士诗得丽</title>
+  <link rel="stylesheet" href="../.design_library/com-design-premium-gold/colors_and_type.css">
+  <link rel="stylesheet" href="../.design_library/com-design-premium-gold/components.css">
+  <style>
+    /* ════════════════════════════════════════════════════════════
+       T09 · 智能客服 (com-design-premium-gold 暖金尊享)
+       约束源:com-design-premium-gold Design Library(只读)
+       设计语言对齐:Mockplus 原型(白底 + 暖金点缀) + 画布(圆角 8/12/16/20)
+       Chat-Bubble 样式内联实现,等主线程沉淀后由主线程统一替换
+       ════════════════════════════════════════════════════════════ */
+
+    body {
+      margin: 0;
+      background: var(--color-background);
+      color: var(--color-text-primary);
+      font: var(--type-body);
+      -webkit-font-smoothing: antialiased;
+    }
+    .app-container {
+      width: 100%;
+      max-width: 375px;
+      min-height: 812px;
+      margin: 0 auto;
+      background: var(--color-background);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    @media (min-width: 480px) {
+      body { background: var(--com-neutral-100); padding: 24px 0; }
+      .app-container {
+        box-shadow: 0 8px 32px rgba(23, 27, 42, 0.10);
+        border-radius: 24px;
+        min-height: 812px;
+      }
+    }
+
+    /* ── Status bar ── */
+    .status-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 20px 4px;
+      font: 600 14px/1 var(--font-family-base);
+      color: var(--color-text-primary);
+    }
+    .status-bar .right { display: inline-flex; align-items: center; gap: 6px; }
+    .status-bar .icon { width: 16px; height: 16px; color: var(--color-text-primary); }
+
+    /* ── Top bar ── */
+    .ps-topbar {
+      display: flex; align-items: center; gap: 12px;
+      padding: 4px 16px 8px; height: 40px; box-sizing: border-box;
+    }
+    .ps-topbar .icon-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 24px; height: 24px; border-radius: 9999px;
+      color: var(--color-text-primary);
+      background: transparent; border: 0; cursor: pointer; padding: 0;
+    }
+    .ps-topbar .icon-btn .icon { width: 24px; height: 24px; stroke-width: 2.2; }
+    .ps-topbar h1 {
+      flex: 1; margin: 0;
+      font: 600 18px/24px var(--font-family-base);
+      color: var(--color-text-primary);
+      text-align: center;
+    }
+    .ps-topbar .text-btn {
+      background: transparent; border: 0; cursor: pointer; padding: 0;
+      font: 500 14px/20px var(--font-family-base);
+      color: var(--com-premium-500);
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .ps-topbar .text-btn:hover { color: var(--com-premium-600); }
+    .ps-topbar .text-btn svg { width: 16px; height: 16px; }
+
+    /* ════════════════════════════════════════════════════════════
+       Ambient 光斑(暖白底,极淡的暖金环境)
+       ════════════════════════════════════════════════════════════ */
+    .cs-ambient {
+      position: absolute; inset: 0; z-index: 0;
+      pointer-events: none; overflow: hidden;
+    }
+    .cs-ambient > span {
+      position: absolute; display: block;
+      border-radius: 50%; filter: blur(48px);
+    }
+    .cs-amb-warm-1 {
+      width: 240px; height: 240px;
+      left: -80px; top: 60px;
+      background: var(--com-premium-100);
+      opacity: 0.35;
+    }
+    .cs-amb-warm-2 {
+      width: 200px; height: 200px;
+      right: -60px; top: 320px;
+      background: var(--com-brand-100);
+      opacity: 0.30;
+    }
+    .ps-topbar,
+    .cs-stream { position: relative; z-index: 1; }
+
+    /* ════════════════════════════════════════════════════════════
+       对话流(纵向 flex;气泡 32 头像 + 16 圆角)
+       Chat-Bubble 内联样式,等主线程沉淀后替换
+       ════════════════════════════════════════════════════════════ */
+    .cs-stream {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      padding: 12px 16px 12px;
+      display: flex; flex-direction: column; gap: 14px;
+      scrollbar-width: thin;
+    }
+
+    /* 时间戳(居中) */
+    .cs-stamp {
+      align-self: center;
+      font: 400 11px/14px var(--font-family-base);
+      color: var(--color-text-tertiary);
+      letter-spacing: 0.04em;
+      padding: 2px 8px;
+    }
+
+    /* 通用气泡行 */
+    .cs-row {
+      display: flex; align-items: flex-start; gap: 8px;
+      max-width: 100%;
+    }
+    .cs-row.is-bot { justify-content: flex-start; }
+    .cs-row.is-user { justify-content: flex-end; }
+
+    .cs-avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      font: 600 12px/1 var(--font-family-base);
+    }
+    .cs-avatar-bot {
+      background: var(--com-premium-100);
+      color: var(--com-premium-700);
+    }
+    .cs-avatar-user {
+      background: var(--com-brand-500);
+      color: #FFFFFF;
+    }
+    .cs-avatar svg { width: 18px; height: 18px; }
+
+    /* 气泡:机器人(左)圆角左上 4 / 其他 16;底 brand-50;文字 neutral-900 */
+    .cs-bubble {
+      padding: 10px 12px;
+      max-width: 75%;
+      font: 400 14px/20px var(--font-family-base);
+      word-break: break-word;
+    }
+    .cs-bubble-bot {
+      background: var(--com-brand-50);
+      color: var(--com-neutral-900);
+      border-radius: 4px 16px 16px 16px;
+    }
+    /* 气泡:用户(右)圆角右上 4 / 其他 16;底 brand-500;白字 */
+    .cs-bubble-user {
+      background: var(--com-brand-500);
+      color: #FFFFFF;
+      border-radius: 16px 4px 16px 16px;
+    }
+    .cs-bubble-bot.is-highlight {
+      background: var(--com-premium-50);
+      color: var(--com-premium-700);
+      box-shadow: 0 0 0 2px var(--com-premium-300);
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       热门问题(4 个胶囊 tag,描边 neutral-200)
+       ════════════════════════════════════════════════════════════ */
+    .cs-hot {
+      display: flex; flex-direction: column;
+      gap: 8px; align-items: flex-start;
+      margin: 4px 0 4px 40px;
+    }
+    .cs-tag {
+      background: var(--color-surface);
+      color: var(--color-text-primary);
+      border: 1px solid var(--com-neutral-200);
+      border-radius: 16px;
+      padding: 8px 14px;
+      font: 400 13px/18px var(--font-family-base);
+      cursor: pointer;
+      transition: border-color .15s, color .15s, background-color .15s;
+    }
+    .cs-tag:hover {
+      border-color: var(--com-premium-500);
+      color: var(--com-premium-700);
+    }
+    .cs-tag:active {
+      background: var(--com-premium-50);
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       输入栏(底部固定;表情 + 输入框 + 发送)
+       56 高 圆角 16 背景 neutral-50
+       ════════════════════════════════════════════════════════════ */
+    .cs-composer {
+      flex-shrink: 0;
+      padding: 8px 12px calc(12px + env(safe-area-inset-bottom));
+      background: var(--color-surface);
+      border-top: 1px solid var(--com-neutral-100);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .cs-icon-btn {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: transparent;
+      color: var(--color-text-tertiary);
+      border: 0; cursor: pointer; padding: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: color .15s, background-color .15s;
+    }
+    .cs-icon-btn:hover {
+      color: var(--com-premium-500);
+      background: var(--com-premium-50);
+    }
+    .cs-icon-btn svg { width: 22px; height: 22px; }
+    .cs-input {
+      flex: 1 1 auto; min-width: 0;
+      height: 40px;
+      padding: 0 14px;
+      border: 1px solid var(--com-neutral-200);
+      border-radius: 16px;
+      background: var(--com-neutral-50);
+      color: var(--color-text-primary);
+      font: 400 14px/20px var(--font-family-base);
+      outline: none;
+      box-sizing: border-box;
+      transition: border-color .15s;
+    }
+    .cs-input::placeholder { color: var(--color-text-placeholder); }
+    .cs-input:focus { border-color: var(--com-premium-500); }
+    .cs-send {
+      background: var(--com-brand-500);
+      color: #FFFFFF;
+      width: 36px; height: 36px;
+      border: 0; border-radius: 50%;
+      cursor: pointer; padding: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: background-color .15s, transform .15s;
+    }
+    .cs-send:hover { background: var(--com-brand-600); }
+    .cs-send:active { transform: scale(0.94); }
+    .cs-send svg { width: 18px; height: 18px; }
+    .cs-send[disabled] {
+      background: var(--com-neutral-200);
+      color: var(--com-neutral-500);
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div class="cs-ambient" aria-hidden="true">
+      <span class="cs-amb-warm-1"></span>
+      <span class="cs-amb-warm-2"></span>
+    </div>
+
+    <!-- iOS 状态栏 -->
+    <div class="status-bar" aria-hidden="true">
+      <span>9:41</span>
+      <span class="right">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 11.5a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v1.5H2v-1.5Z"/><path d="M5 8.5V6a3 3 0 0 1 6 0v2.5"/></svg>
+        <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><path d="M3 7.5h1.5v4H3v-4Zm2.5-1.5H7v5.5h-1.5V6Zm2.5-2H10v7.5h-1.5V4Zm2.5 3.5H12v4h-1.5v-4Z"/></svg>
+        <svg class="icon" viewBox="0 0 22 12" fill="none" stroke="currentColor" stroke-width="1"><rect x="0.5" y="0.5" width="18" height="11" rx="3"/><rect x="2" y="2" width="15" height="8" rx="2" fill="currentColor" opacity="0.45"/><rect x="20" y="3.5" width="1.5" height="5" rx="0.75" fill="currentColor"/></svg>
+      </span>
+    </div>
+
+    <!-- TopBar: 左返回 / 中「智能客服」 / 右上「企微客服」 -->
+    <div class="ps-topbar">
+      <button class="icon-btn" aria-label="返回">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <h1>智能客服</h1>
+      <button class="text-btn" aria-label="企微客服">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="8" cy="6" r="3"/>
+          <path d="M2 14c1-2.5 3.4-4 6-4s5 1.5 6 4"/>
+        </svg>
+        <span>企微客服</span>
+      </button>
+    </div>
+
+    <!-- 对话流 -->
+    <div class="cs-stream" data-cs-stream>
+      <div class="cs-stamp">今天 09:41</div>
+
+      <!-- 机器人欢迎 -->
+      <div class="cs-row is-bot">
+        <div class="cs-avatar cs-avatar-bot" aria-hidden="true">
+          <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="6" width="12" height="9" rx="2"/>
+            <circle cx="7" cy="10.5" r="0.9" fill="currentColor"/>
+            <circle cx="11" cy="10.5" r="0.9" fill="currentColor"/>
+            <path d="M9 6V3.5"/>
+            <circle cx="9" cy="2.5" r="0.8" fill="currentColor"/>
+          </svg>
+        </div>
+        <div class="cs-bubble cs-bubble-bot">亲,我是 AI 智能客服小诗,很高兴为您服务!</div>
+      </div>
+
+      <!-- 机器人引导 -->
+      <div class="cs-row is-bot">
+        <div class="cs-avatar cs-avatar-bot" aria-hidden="true">
+          <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="6" width="12" height="9" rx="2"/>
+            <circle cx="7" cy="10.5" r="0.9" fill="currentColor"/>
+            <circle cx="11" cy="10.5" r="0.9" fill="currentColor"/>
+            <path d="M9 6V3.5"/>
+            <circle cx="9" cy="2.5" r="0.8" fill="currentColor"/>
+          </svg>
+        </div>
+        <div class="cs-bubble cs-bubble-bot">亲,您有任何疑问都可以向我资讯哦~</div>
+      </div>
+
+      <!-- 热门问题 4 个 tag -->
+      <div class="cs-hot" data-cs-hot>
+        <button class="cs-tag" data-cs-q="如何领取泡泡值?">热门问题 1 · 如何领取泡泡值?</button>
+        <button class="cs-tag" data-cs-q="签到在哪里?">热门问题 2 · 签到在哪里?</button>
+        <button class="cs-tag" data-cs-q="怎么兑换洗护券?">热门问题 3 · 怎么兑换洗护券?</button>
+        <button class="cs-tag" data-cs-q="洗澡扫码没反应怎么办?">热门问题 4 · 洗澡扫码没反应怎么办?</button>
+      </div>
+    </div>
+
+    <!-- 输入栏 -->
+    <div class="cs-composer">
+      <button class="cs-icon-btn" aria-label="表情">
+        <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8.5"/>
+          <circle cx="8" cy="9.5" r="0.8" fill="currentColor"/>
+          <circle cx="14" cy="9.5" r="0.8" fill="currentColor"/>
+          <path d="M7.5 13.5c.8 1.2 2 2 3.5 2s2.7-.8 3.5-2"/>
+        </svg>
+      </button>
+      <input class="cs-input" type="text" placeholder="请输入您想咨询的问题" data-cs-input>
+      <button class="cs-send" aria-label="发送" data-cs-send disabled>
+        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 9l14-6-5 14-2.5-6z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // ── 智能客服 · mock 对话流 + 关键词触发 ──
+    (function () {
+      const stream = document.querySelector('[data-cs-stream]');
+      const input = document.querySelector('[data-cs-input]');
+      const send = document.querySelector('[data-cs-send]');
+      const hot = document.querySelector('[data-cs-hot]');
+
+      // 关键词回复映射
+      const replies = {
+        '人工客服': {
+          text: '好的,正在为您转接人工客服,请稍候...(本任务不跳页,实际由主线程串入 T10)',
+          highlight: true
+        },
+        '洗澡扫码没反应怎么办?': {
+          text: '亲,扫码无反应请尝试:① 清理摄像头镜头 ② 检查网络 ③ 重启 App 后重试;若仍异常可在「企微客服」联系我们~'
+        }
+      };
+
+      // 通用兜底回复
+      const fallback = (q) => ({
+        text: '已收到您的问题 "' + q + '",智能客服小诗正在为您查询,请稍等~'
+      });
+
+      function timeStamp() {
+        const d = new Date();
+        const pad = (n) => (n < 10 ? '0' + n : '' + n);
+        return '今天 ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+      }
+
+      function appendUser(text) {
+        const row = document.createElement('div');
+        row.className = 'cs-row is-user';
+        row.innerHTML =
+          '<div class="cs-bubble cs-bubble-user">' + escapeHtml(text) + '</div>' +
+          '<div class="cs-avatar cs-avatar-user" aria-hidden="true">我</div>';
+        stream.appendChild(row);
+      }
+
+      function appendBot(reply) {
+        const row = document.createElement('div');
+        row.className = 'cs-row is-bot';
+        const highlightClass = reply.highlight ? ' is-highlight' : '';
+        row.innerHTML =
+          '<div class="cs-avatar cs-avatar-bot" aria-hidden="true">' +
+          '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' +
+          '<rect x="3" y="6" width="12" height="9" rx="2"/>' +
+          '<circle cx="7" cy="10.5" r="0.9" fill="currentColor"/>' +
+          '<circle cx="11" cy="10.5" r="0.9" fill="currentColor"/>' +
+          '<path d="M9 6V3.5"/><circle cx="9" cy="2.5" r="0.8" fill="currentColor"/>' +
+          '</svg></div>' +
+          '<div class="cs-bubble cs-bubble-bot' + highlightClass + '">' + escapeHtml(reply.text) + '</div>';
+        stream.appendChild(row);
+        stream.scrollTop = stream.scrollHeight;
+      }
+
+      function appendStamp() {
+        const s = document.createElement('div');
+        s.className = 'cs-stamp';
+        s.textContent = timeStamp();
+        stream.appendChild(s);
+      }
+
+      function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, function (c) {
+          return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+        });
+      }
+
+      function handleQuery(q) {
+        if (!q || !q.trim()) return;
+        appendStamp();
+        appendUser(q);
+        const reply = replies[q] || replies[q.trim()] || fallback(q);
+        setTimeout(function () { appendBot(reply); }, 350);
+      }
+
+      // 热门问题点击
+      hot.addEventListener('click', function (e) {
+        const btn = e.target.closest('[data-cs-q]');
+        if (!btn) return;
+        const q = btn.getAttribute('data-cs-q');
+        input.value = '';
+        updateSendState();
+        handleQuery(q);
+      });
+
+      // 输入 + 发送
+      function updateSendState() {
+        send.disabled = !input.value.trim();
+      }
+      input.addEventListener('input', updateSendState);
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' && !send.disabled) {
+          e.preventDefault();
+          doSend();
+        }
+      });
+      send.addEventListener('click', doSend);
+      function doSend() {
+        const q = input.value;
+        input.value = '';
+        updateSendState();
+        handleQuery(q);
+      }
+      updateSendState();
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>邀请搭子 · 卡博士诗得丽</title>
+  <link rel="stylesheet" href="../.design_library/com-design-premium-gold/colors_and_type.css">
+  <link rel="stylesheet" href="../.design_library/com-design-premium-gold/components.css">
+  <style>
+    /* ════════════════════════════════════════════════════════════
+       T06 · 邀请搭子 (com-design-premium-gold 暖金尊享)
+       约束源:com-design-premium-gold Design Library(只读)
+       设计语言对齐:Mockplus 原型(白底 + 暖金 + 北极熊剪影)
+                  + 画布(圆角 8/12/16/20)
+       ════════════════════════════════════════════════════════════ */
+
+    /* ── Mobile app shell ── */
+    body {
+      margin: 0;
+      background: var(--color-background);
+      color: var(--color-text-primary);
+      font: var(--type-body);
+      -webkit-font-smoothing: antialiased;
+    }
+    .app-container {
+      width: 100%;
+      max-width: 375px;
+      min-height: 812px;
+      margin: 0 auto;
+      background: var(--color-surface-page, var(--com-warm-50));
+      position: relative;
+      overflow: hidden;
+      padding-bottom: 0;
+    }
+
+    /* 外层灰底预览(供桌面查看) */
+    @media (min-width: 480px) {
+      body { background: var(--com-neutral-100); padding: 24px 0; }
+      .app-container {
+        box-shadow: 0 8px 32px rgba(23, 27, 42, 0.10);
+        border-radius: 24px;
+        min-height: 812px;
+      }
+    }
+
+    /* ── Status bar(iOS 风格占位) ── */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 20px 4px;
+      font: 600 14px/1 var(--font-family-base);
+      color: var(--color-text-primary);
+    }
+    .status-bar .right { display: inline-flex; align-items: center; gap: 6px; }
+    .status-bar .icon { width: 16px; height: 16px; color: var(--color-text-primary); }
+
+    /* ── Top bar(返回 + 标题) ── */
+    .ps-topbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 4px 16px 8px;
+      height: 44px;
+      box-sizing: border-box;
+      position: relative;
+      z-index: 3;
+    }
+    .ps-topbar .icon-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 9999px;
+      color: var(--color-text-primary);
+      background: transparent;
+      border: 0;
+      cursor: pointer;
+      padding: 0;
+    }
+    .ps-topbar .icon-btn .icon { width: 24px; height: 24px; stroke-width: 2.2; }
+    .ps-topbar h1 {
+      flex: 1;
+      margin: 0;
+      font: 600 18px/24px var(--font-family-base);
+      color: var(--color-text-primary);
+      text-align: center;
+    }
+    .ps-topbar .spacer { width: 24px; height: 24px; }
+
+    /* ════════════════════════════════════════════════════════════
+       装饰层:暖金光斑 + 北极熊剪影(绝对定位,铺底层)
+       ════════════════════════════════════════════════════════════ */
+    .iv-ambient {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .iv-ambient > span {
+      position: absolute;
+      display: block;
+      border-radius: 50%;
+      filter: blur(28px);
+    }
+    .iv-amb-gold-1 {
+      width: 260px; height: 260px;
+      right: -80px; top: 60px;
+      background: var(--com-premium-200);
+      opacity: 0.55;
+    }
+    .iv-amb-gold-2 {
+      width: 200px; height: 200px;
+      left: -60px; top: 240px;
+      background: var(--com-premium-300);
+      opacity: 0.40;
+    }
+    .iv-amb-warm {
+      width: 240px; height: 240px;
+      left: 50%;
+      bottom: -80px;
+      transform: translateX(-50%);
+      background: var(--com-warm-100);
+      opacity: 0.85;
+    }
+
+    /* ── 北极熊剪影(取轮廓,装饰右上) ── */
+    .iv-bear {
+      position: absolute;
+      top: 80px;
+      right: -24px;
+      width: 168px;
+      height: 168px;
+      z-index: 1;
+      pointer-events: none;
+      opacity: 0.55;
+    }
+    .iv-bear svg { width: 100%; height: 100%; display: block; }
+
+    /* 内容层高于装饰 */
+    .iv-content { position: relative; z-index: 2; }
+
+    /* ════════════════════════════════════════════════════════════
+       用户胶囊 · 圆角 12 卡片白底
+       ════════════════════════════════════════════════════════════ */
+    .iv-capsule {
+      margin: 8px 16px 0;
+      background: var(--color-surface);
+      border-radius: var(--com-radius-12);
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 4px 14px -6px rgba(89, 55, 15, 0.10);
+    }
+    .iv-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--com-warm-100);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 48px;
+      overflow: hidden;
+    }
+    .iv-avatar svg { width: 100%; height: 100%; display: block; }
+    .iv-capsule-text {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .iv-nick {
+      font: 600 16px/22px var(--font-family-base);
+      color: var(--color-text-primary);
+    }
+    .iv-invite {
+      font: 400 14px/20px var(--font-family-base);
+      color: var(--color-text-secondary);
+    }
+    .iv-invite .hl {
+      color: var(--com-premium-500);
+      font-weight: 600;
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       QR 卡片 · 200×200 占位
+       ════════════════════════════════════════════════════════════ */
+    .iv-qr-wrap {
+      margin: 28px 16px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+    .iv-qr-card {
+      width: 200px;
+      height: 200px;
+      border-radius: var(--com-radius-16);
+      background: var(--com-neutral-100);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      box-shadow: 0 6px 18px -8px rgba(89, 55, 15, 0.12);
+    }
+    /* 角落装饰定位点(暗示二维码) */
+    .iv-qr-card::before,
+    .iv-qr-card::after,
+    .iv-qr-card .corner {
+      content: "";
+      position: absolute;
+      width: 26px;
+      height: 26px;
+      border: 4px solid var(--com-neutral-300);
+      background: var(--com-neutral-0);
+    }
+    .iv-qr-card::before { top: 14px; left: 14px; }
+    .iv-qr-card::after  { top: 14px; right: 14px; }
+    .iv-qr-card .corner { bottom: 14px; left: 14px; }
+    .iv-qr-label {
+      position: relative;
+      font: 500 13px/18px var(--font-family-base);
+      color: var(--com-neutral-500);
+      letter-spacing: 0.02em;
+    }
+    .iv-hint {
+      font: 400 12px/16px var(--font-family-base);
+      color: var(--color-text-tertiary);
+      text-align: center;
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       底部双次按钮 · 等宽并排,间距 12,高度 44,圆角 24 描边
+       ════════════════════════════════════════════════════════════ */
+    .iv-actions {
+      margin: 28px 16px 0;
+      display: flex;
+      gap: 12px;
+    }
+    .iv-btn {
+      flex: 1;
+      height: 44px;
+      border-radius: 24px;
+      background: var(--color-surface);
+      color: var(--color-primary);
+      border: 1px solid var(--color-primary);
+      font: 600 14px/20px var(--font-family-base);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+      padding: 0;
+      transition: background 120ms ease, color 120ms ease;
+      box-sizing: border-box;
+    }
+    .iv-btn:hover,
+    .iv-btn:active {
+      background: var(--com-brand-50);
+    }
+    .iv-btn .icon { width: 16px; height: 16px; stroke-width: 2.2; }
+
+    /* ════════════════════════════════════════════════════════════
+       次级入口 · 手机号邀请(文字按钮)
+       ════════════════════════════════════════════════════════════ */
+    .iv-phone {
+      margin: 18px 16px 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background: transparent;
+      border: 0;
+      padding: 8px 0;
+      width: calc(100% - 32px);
+      cursor: pointer;
+      font: 500 14px/20px var(--font-family-base);
+      color: var(--com-premium-500);
+      transition: color 120ms ease;
+    }
+    .iv-phone:hover,
+    .iv-phone:active {
+      color: var(--com-premium-600);
+    }
+    .iv-phone .icon { width: 16px; height: 16px; stroke-width: 2.2; }
+
+    /* 底部安全区 */
+    .iv-safe-bottom { height: 24px; }
+  </style>
+</head>
+<body>
+  <main class="app-container" data-page-id="page-邀请搭子">
+    <!-- Status bar -->
+    <div class="status-bar" aria-hidden="true">
+      <span>9:41</span>
+      <span class="right">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 20h2c1 0 1.5-.5 2-1.5l3-7c.5-1 1-1.5 2-1.5h2c1 0 1.5.5 2 1.5l3 7c.5 1 1 1.5 2 1.5h2"/></svg>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.55a11 11 0 0 1 14 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="16" height="10" rx="2"/><line x1="22" y1="11" x2="22" y2="13"/><line x1="6" y1="10" x2="6" y2="10.01"/><line x1="10" y1="10" x2="10" y2="10.01"/><line x1="14" y1="10" x2="14" y2="10.01"/></svg>
+      </span>
+    </div>
+
+    <!-- Top bar -->
+    <header class="ps-topbar">
+      <button type="button" class="icon-btn" aria-label="返回">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <h1>邀请搭子</h1>
+      <span class="spacer" aria-hidden="true"></span>
+    </header>
+
+    <!-- Ambient 光斑 -->
+    <div class="iv-ambient" aria-hidden="true">
+      <span class="iv-amb-gold-1"></span>
+      <span class="iv-amb-gold-2"></span>
+      <span class="iv-amb-warm"></span>
+    </div>
+
+    <!-- 北极熊剪影装饰(取轮廓) -->
+    <div class="iv-bear" aria-hidden="true">
+      <svg viewBox="0 0 200 200" fill="var(--com-warm-100)">
+        <!-- 头 -->
+        <ellipse cx="105" cy="78" rx="46" ry="42"/>
+        <!-- 左耳 -->
+        <circle cx="68" cy="50" r="14"/>
+        <!-- 右耳 -->
+        <circle cx="142" cy="50" r="14"/>
+        <!-- 身体 -->
+        <ellipse cx="105" cy="142" rx="56" ry="46"/>
+        <!-- 鼻头 -->
+        <ellipse cx="105" cy="86" rx="8" ry="6" fill="var(--com-warm-200, var(--com-warm-100))"/>
+      </svg>
+    </div>
+
+    <div class="iv-content">
+      <!-- ══════════ 用户胶囊 ══════════ -->
+      <section class="iv-capsule" aria-label="邀请人">
+        <span class="iv-avatar" aria-hidden="true">
+          <svg viewBox="0 0 48 48" fill="var(--com-warm-100)">
+            <circle cx="24" cy="24" r="24"/>
+            <circle cx="24" cy="19" r="8" fill="#FFFFFF"/>
+            <ellipse cx="24" cy="42" rx="15" ry="11" fill="#FFFFFF"/>
+          </svg>
+        </span>
+        <div class="iv-capsule-text">
+          <span class="iv-nick">诗诗</span>
+          <span class="iv-invite">邀请你的<span class="hl">搭子</span>,一起洗护享福利</span>
+        </div>
+      </section>
+
+      <!-- ══════════ QR 占位 + 提示 ══════════ -->
+      <section class="iv-qr-wrap" aria-label="邀请二维码">
+        <div class="iv-qr-card" role="img" aria-label="QR Placeholder">
+          <span class="corner" aria-hidden="true"></span>
+          <span class="iv-qr-label">QR Placeholder</span>
+        </div>
+        <p class="iv-hint">长按或截图保存</p>
+      </section>
+
+      <!-- ══════════ 底部双次按钮 ══════════ -->
+      <div class="iv-actions">
+        <button type="button" class="iv-btn" id="iv-save">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          <span>保存到本地</span>
+        </button>
+        <button type="button" class="iv-btn" id="iv-copy">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+          </svg>
+          <span>复制链接</span>
+        </button>
+      </div>
+
+      <!-- ══════════ 次级入口 · 手机号邀请 ══════════ -->
+      <button type="button" class="iv-phone" id="iv-phone">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+        </svg>
+        <span>手机号邀请</span>
+      </button>
+    </div>
+
+    <div class="iv-safe-bottom" aria-hidden="true"></div>
+  </main>
+
+  <script>
+    /* ── 占位交互:按钮仅做视觉反馈,弹层由主线程(P3)补齐 ── */
+    function flash(btn, okText) {
+      var label = btn.querySelector('span');
+      var prev = label.textContent;
+      label.textContent = okText;
+      btn.style.background = 'var(--com-brand-50)';
+      setTimeout(function () {
+        label.textContent = prev;
+        btn.style.background = '';
+      }, 1000);
+    }
+
+    document.getElementById('iv-save').addEventListener('click', function () {
+      flash(this, '已保存');
+    });
+    document.getElementById('iv-copy').addEventListener('click', function () {
+      flash(this, '已复制');
+    });
+    document.getElementById('iv-phone').addEventListener('click', function () {
+      // 占位:跳转 T15 手机号邀请页(由主线程串入)
+    });
+  </script>
+</body>
+</html>

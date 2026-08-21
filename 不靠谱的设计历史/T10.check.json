@@ -1,0 +1,47 @@
+{
+  "task_id": "T10",
+  "title": "人工客服",
+  "canvas_id": "page-人工客服排队",
+  "deliverables": [
+    "dist/T10.html"
+  ],
+  "design_system": "com-design-premium-gold",
+  "tokens_used": [
+    "--com-brand-500",
+    "--com-brand-600",
+    "--com-brand-50",
+    "--com-brand-200",
+    "--com-warm-50",
+    "--com-warm-100",
+    "--com-premium-200",
+    "--com-premium-500",
+    "--com-neutral-0",
+    "--com-neutral-100",
+    "--com-neutral-300",
+    "--com-neutral-500",
+    "--com-neutral-800",
+    "--color-background",
+    "--color-surface",
+    "--color-primary",
+    "--color-on-primary",
+    "--color-text-primary",
+    "--color-text-tertiary",
+    "--type-body",
+    "--font-family-base"
+  ],
+  "hardcoded_values": [
+    "rgba(23,27,42,0.10) / rgba(89,55,15,0.10) / rgba(23,27,42,0.24) — 仅用于 box-shadow 透明叠加,沿用画布 T01 范式;设计库未提供 shadow 透明度 token,沿用已审定实现"
+  ],
+  "consistency_with_canvas": "TopBar 状态栏 44pt / 返回 24×24 / 标题 18 粗体 / 圆角 8/12/16/20 体系 全部沿用画布;外层灰底预览(≥480px)同样沿用",
+  "mockplus_referenced": true,
+  "acceptance": {
+    "topbar_correct": true,
+    "illustration_placeholder_200x200": true,
+    "queue_count_mock_shown": true,
+    "cancel_button_toast_feedback": true,
+    "radius_uses_8_12_16_20": true,
+    "all_colors_via_tokens": true,
+    "responsive_375_812": true
+  },
+  "notes": "1) 排队插画占位与 T07 策略一致(圆形 200 暖白底 + 文字「IP 占位」+ 右上角 8 圆点 brand-500 暖橙小角标)。2) Design Library CSS 路径已使用任务卡指正的 .design_library/com-design-premium-gold/... 而非公共头里的旧路径。3) 「取消排队」点击触发 Toast「已取消」+ 1.2s 后 mock 回流(history.back 或 hash 兜底),并附 6s 一次排队号递减的轻量 mock,增强真实感。4) 主文案数字(3 人 / 2 分钟)用 --com-premium-500 暖金高亮,符合「白底 + 暖金点缀」原型语言。5) box-shadow rgba 是画布 7 页既定范式,设计库尚未沉淀对应 token,故保留;颜色 100% 走 token。"
+}

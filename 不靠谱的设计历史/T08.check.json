@@ -1,0 +1,36 @@
+{
+  "task_id": "T08",
+  "title": "品牌福利官",
+  "canvas_id": "page-品牌福利官",
+  "deliverables": [
+    "dist/T08.html"
+  ],
+  "design_system": "com-design-premium-gold",
+  "tokens_used": [
+    "--com-warm-50", "--com-warm-100",
+    "--com-brand-50", "--com-brand-100", "--com-brand-200", "--com-brand-500", "--com-brand-600",
+    "--com-premium-200", "--com-premium-300", "--com-premium-500", "--com-premium-600",
+    "--com-neutral-100", "--com-neutral-200", "--com-neutral-500", "--com-neutral-800",
+    "--color-background", "--color-surface", "--color-surface-subtle",
+    "--color-text-primary", "--color-text-secondary", "--color-text-tertiary", "--color-text-placeholder",
+    "--color-border-subtle",
+    "--radius-md", "--radius-lg",
+    "--space-4", "--space-8", "--space-12", "--space-16", "--space-20", "--space-24",
+    "--com-size-32", "--com-size-48",
+    "--com-icon-size-md",
+    "--type-body", "--type-body-small", "--type-label", "--type-caption"
+  ],
+  "hardcoded_values": [],
+  "consistency_with_canvas": "TopBar(状态栏 44 + 返回 24 + 标题 18 粗体,右上无)/ 圆角 12 卡片(服务列表、人员信息)/ 圆角 16(QR 占位)/ 圆角 24(头像胶囊)/ 暖金 ambient 光斑 全部沿用画布已审定 7 页(资料设置 / 积分首页 / T01 完善信息)的范式",
+  "mockplus_referenced": true,
+  "acceptance": {
+    "topbar_correct": true,
+    "qr_placeholder_200x200": true,
+    "service_list_3_to_4_items": true,
+    "person_card_centered": true,
+    "radius_uses_8_12_16_20": true,
+    "all_colors_via_tokens": true,
+    "responsive_375_812": true
+  },
+  "notes": "1) Design Library 路径采用任务卡指定 .design_library/com-design-premium-gold(已修复公共头错误路径)。2) token 以 Design Library 实际安装的 v2 压金版本为准(--com-premium-500 #A07B41),与画布 7 页保持一致。3) 头部话术 16 主文字居中,QR 占位 200×200 居中(灰色矩形 + 8×8 网格 + QR Placeholder 文字,策略与 T06 一致),并附诗得丽品牌福利官·吴哥 副标题。4) 人员信息卡片:圆角 12 白底,头像 48(吴字占位)+ 姓名 16 粗体 + 简介 14 次级色 全部居中。5) 服务列表 4 条卡片(每日签到提醒/会员专享福利/新品体验优先购/节日活动预告),圆角 12 白底,icon 占位 32 圆形 + 单字(签/惠/新/节),标题 16 + 副文案 14 次级色,右侧 chevron 16 指示可点击;hover/active 态用 --com-brand-50 浅底 + --com-brand-100 描边。6) 不引入外部 CDN/tailwind/lucide,所有图标用内联 SVG;状态栏 9:41 / 信号 / 5G / 100% 全部用内联 SVG 占位。7) 响应式:移动端 375×812 直接占满,桌面端(≥480px)居中显示为卡片预览(灰底 + 圆角阴影)。8) 本任务不做企微唤起脚本(回流仅左上返回 → 资料设置)。"
+}

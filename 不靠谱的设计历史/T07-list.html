@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>洗头搭子(有态 v2) · 卡博士诗得丽</title>
+  <link rel="stylesheet" href="../.design_library/com-design-premium-gold/colors_and_type.css">
+  <link rel="stylesheet" href="../.design_library/com-design-premium-gold/components.css">
+  <style>
+    /* ════════════════════════════════════════════════════════════
+       T07-list · 洗头搭子 有态 (v2 重大修订)
+       约束源:com-design-premium-gold Design Library(只读)
+       v2 修订(用户拍板):
+         1. 删「头部用户胶囊 + 默契值徽标」(原型无头部)
+         2. 删「主按钮『邀请搭子』」
+         3. 新增「底部固定双按钮:📱 二维码邀请 / 手机号邀请」次按钮样式
+         4. 默契值徽标从「头部」下沉到「每个搭子卡片内」(金底白字圆角 8 胶囊)
+         5. mock 条数 3 → 4(对齐原型截图)
+       ════════════════════════════════════════════════════════════ */
+
+    body {
+      margin: 0;
+      background: var(--color-background);
+      color: var(--color-text-primary);
+      font: var(--type-body);
+      -webkit-font-smoothing: antialiased;
+    }
+    .app-container {
+      width: 100%;
+      max-width: 375px;
+      min-height: 812px;
+      margin: 0 auto;
+      background: var(--color-background);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    @media (min-width: 480px) {
+      body { background: var(--com-neutral-100); padding: 24px 0; }
+      .app-container {
+        box-shadow: 0 8px 32px rgba(23, 27, 42, 0.10);
+        border-radius: 24px;
+        min-height: 812px;
+      }
+    }
+
+    /* ── Status bar ── */
+    .status-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 20px 4px;
+      font: 600 14px/1 var(--font-family-base);
+      color: var(--color-text-primary);
+    }
+    .status-bar .right { display: inline-flex; align-items: center; gap: 6px; }
+    .status-bar .icon { width: 16px; height: 16px; color: var(--color-text-primary); }
+
+    /* ── Top bar ── */
+    .ps-topbar {
+      display: flex; align-items: center; gap: 12px;
+      padding: 4px 16px 8px; height: 40px; box-sizing: border-box;
+    }
+    .ps-topbar .icon-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 44px; height: 44px; border-radius: 9999px;
+      color: var(--color-text-primary);
+      background: transparent; border: 0; cursor: pointer; padding: 0;
+    }
+    .ps-topbar .icon-btn .icon { width: 24px; height: 24px; stroke-width: 2.2; }
+    .ps-topbar h1 {
+      flex: 1; margin: 0;
+      font: 600 18px/24px var(--font-family-base);
+      color: var(--color-text-primary);
+      text-align: center;
+    }
+    .ps-topbar .spacer { width: 44px; height: 44px; }
+
+    /* ════════════════════════════════════════════════════════════
+       Ambient 光斑(暖白底,极淡的暖金环境)
+       ════════════════════════════════════════════════════════════ */
+    .bl-ambient {
+      position: absolute; inset: 0; z-index: 0;
+      pointer-events: none; overflow: hidden;
+    }
+    .bl-ambient > span {
+      position: absolute; display: block;
+      border-radius: 50%; filter: blur(40px);
+    }
+    .bl-amb-warm-1 {
+      width: 280px; height: 280px;
+      left: -80px; top: 100px;
+      background: var(--com-premium-100);
+      opacity: 0.40;
+    }
+    .bl-amb-warm-2 {
+      width: 220px; height: 220px;
+      right: -60px; top: 360px;
+      background: var(--com-premium-200);
+      opacity: 0.35;
+    }
+    .ps-topbar,
+    .bl-list,
+    .bl-info,
+    .bl-actions { position: relative; z-index: 1; }
+
+    /* ════════════════════════════════════════════════════════════
+       搭子列表(按默契值倒序 mock 4 条)
+       v2 修订:每个卡片内「默契值 X」徽标 --com-premium-500 金底白字圆角 8 胶囊
+       ════════════════════════════════════════════════════════════ */
+    .bl-list {
+      margin: 4px 16px 12px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .bl-row {
+      background: var(--color-surface);
+      border-radius: var(--com-radius-12);
+      padding: 12px 14px;
+      display: flex; align-items: center; gap: 12px;
+      box-shadow: 0 1px 4px -1px rgba(23, 27, 42, 0.04);
+    }
+    .bl-row-avatar {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      color: #FFFFFF;
+      font: 600 14px/1 var(--font-family-base);
+      flex-shrink: 0;
+    }
+    .bl-row-info {
+      flex: 1 1 auto; min-width: 0;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .bl-row-name {
+      font: 600 15px/20px var(--font-family-base);
+      color: var(--color-text-primary);
+    }
+    .bl-row-tag {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      background: var(--com-brand-50);
+      color: var(--com-brand-600);
+      font: 500 11px/14px var(--font-family-base);
+      width: fit-content;
+    }
+    /* v2 修订:默契值徽标改金底白字胶囊(任务卡规格) */
+    .bl-row-tacit {
+      flex-shrink: 0;
+      display: inline-flex; align-items: center; gap: 4px;
+      min-width: 44px; min-height: 44px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      background: var(--com-premium-500);
+      color: #FFFFFF;
+      font: 600 12px/16px var(--font-family-base);
+      box-shadow: 0 2px 6px -2px rgba(245, 158, 11, 0.45);
+      cursor: pointer;
+      border: 0;
+      transition: background-color .15s, transform .12s;
+    }
+    .bl-row-tacit:hover { background: var(--com-premium-600); }
+    .bl-row-tacit:active { transform: scale(0.96); }
+    .bl-row-tacit svg { width: 12px; height: 12px; }
+
+    /* ════════════════════════════════════════════════════════════
+       搭子功能介绍(同空态)
+       ════════════════════════════════════════════════════════════ */
+    .bl-info {
+      margin: 0 16px 12px;
+      background: var(--color-surface);
+      border-radius: var(--com-radius-12);
+      padding: 14px 14px 4px;
+      box-shadow: 0 2px 8px -3px rgba(23, 27, 42, 0.04);
+    }
+    .bl-info-title {
+      font: 600 14px/20px var(--font-family-base);
+      color: var(--color-text-primary);
+      margin: 0 0 8px 4px;
+    }
+    .bl-info-list {
+      list-style: none; margin: 0; padding: 0;
+      display: flex; flex-direction: column;
+    }
+    .bl-info-item {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 10px 4px;
+      border-top: 1px solid var(--com-neutral-100);
+    }
+    .bl-info-item:first-child { border-top: 0; }
+    .bl-info-icon {
+      width: 36px; height: 36px;
+      border-radius: 9999px;
+      background: var(--com-premium-50);
+      color: var(--com-premium-600);
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .bl-info-icon svg { width: 18px; height: 18px; }
+    .bl-info-text {
+      display: flex; flex-direction: column; gap: 2px;
+      flex: 1 1 auto; min-width: 0;
+    }
+    .bl-info-h {
+      font: 600 14px/20px var(--font-family-base);
+      color: var(--color-text-primary);
+    }
+    .bl-info-s {
+      font: 400 12px/18px var(--font-family-base);
+      color: var(--color-text-secondary);
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       v2 重大修订:底部固定双次按钮(等宽 50%)
+       左「📱 二维码邀请」/ 右「手机号邀请」
+       次按钮样式:高 48 / 圆角 24 / 描边 1pt --com-brand-500 / 白底 / 主色文字
+       无主按钮(v2 已删)
+       ════════════════════════════════════════════════════════════ */
+    .bl-actions {
+      margin-top: auto;
+      padding: 4px 16px calc(24px + env(safe-area-inset-bottom));
+      display: flex; gap: 12px;
+      align-items: stretch;
+    }
+    .bl-secondary {
+      flex: 1 1 50%;
+      min-width: 0;
+      height: 48px; border-radius: 24px;
+      background: var(--color-surface);
+      color: var(--com-brand-500);
+      border: 1px solid var(--com-brand-500);
+      font: 600 14px/20px var(--font-family-base);
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+      padding: 0;
+      box-sizing: border-box;
+      transition: background-color .15s, color .15s, transform .12s;
+    }
+    .bl-secondary:hover {
+      background: var(--com-brand-50);
+    }
+    .bl-secondary:active { transform: scale(0.98); }
+    .bl-secondary .icon { width: 16px; height: 16px; stroke-width: 2.2; }
+
+    /* ════════════════════════════════════════════════════════════
+       A11y · 全局 focus-visible(2pt outline + 主色 + 4pt offset)
+       ════════════════════════════════════════════════════════════ */
+    :focus { outline: none; }
+    :focus-visible {
+      outline: 2px solid var(--com-brand-500);
+      outline-offset: 4px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div class="bl-ambient" aria-hidden="true">
+      <span class="bl-amb-warm-1"></span>
+      <span class="bl-amb-warm-2"></span>
+    </div>
+
+    <!-- iOS 状态栏 -->
+    <div class="status-bar" aria-hidden="true">
+      <span>9:41</span>
+      <span class="right">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 11.5a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v1.5H2v-1.5Z"/><path d="M5 8.5V6a3 3 0 0 1 6 0v2.5"/></svg>
+        <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><path d="M3 7.5h1.5v4H3v-4Zm2.5-1.5H7v5.5h-1.5V6Zm2.5-2H10v7.5h-1.5V4Zm2.5 3.5H12v4h-1.5v-4Z"/></svg>
+        <svg class="icon" viewBox="0 0 22 12" fill="none" stroke="currentColor" stroke-width="1"><rect x="0.5" y="0.5" width="18" height="11" rx="3"/><rect x="2" y="2" width="15" height="8" rx="2" fill="currentColor" opacity="0.45"/><rect x="20" y="3.5" width="1.5" height="5" rx="0.75" fill="currentColor"/></svg>
+      </span>
+    </div>
+
+    <!-- TopBar(v2 与旧版一致:左返回 / 中「洗头搭子」/ 右上无) -->
+    <div class="ps-topbar">
+      <button class="icon-btn" aria-label="返回上一页">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <h1>洗头搭子</h1>
+      <span class="spacer" aria-hidden="true"></span>
+    </div>
+
+    <!--
+      v2 修订:已删除原 .bl-capsule「头部用户胶囊 + 默契值徽标」
+    -->
+
+    <!-- 搭子列表(v2 修订:4 条 mock,按默契值降序,每卡内嵌「默契值 X」金底白字徽标) -->
+    <section class="bl-list" aria-label="搭子列表(按默契值降序)">
+      <article class="bl-row">
+        <div class="bl-row-avatar" style="background: linear-gradient(135deg, #FFC4AA 0%, #FF7540 100%);" aria-hidden="true">小</div>
+        <div class="bl-row-info">
+          <span class="bl-row-name">小美</span>
+          <span class="bl-row-tag">最近打卡:今天 09:12</span>
+        </div>
+        <button class="bl-row-tacit" aria-label="小美的默契值 98,查看默契详情" onclick="location.href='T14.html'">
+          <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M6 1l1.5 3 3.3.5-2.4 2.3.6 3.2L6 8.7 3 10l.6-3.2L1.2 4.5 4.5 4z"/></svg>
+          98
+        </button>
+      </article>
+      <article class="bl-row">
+        <div class="bl-row-avatar" style="background: linear-gradient(135deg, #CAF7FB 0%, #16BFD3 100%);" aria-hidden="true">阿</div>
+        <div class="bl-row-info">
+          <span class="bl-row-name">阿琳</span>
+          <span class="bl-row-tag">最近打卡:昨天 21:34</span>
+        </div>
+        <button class="bl-row-tacit" aria-label="阿琳的默契值 86,查看默契详情" onclick="location.href='T14.html'">
+          <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M6 1l1.5 3 3.3.5-2.4 2.3.6 3.2L6 8.7 3 10l.6-3.2L1.2 4.5 4.5 4z"/></svg>
+          86
+        </button>
+      </article>
+      <article class="bl-row">
+        <div class="bl-row-avatar" style="background: linear-gradient(135deg, #FDE68A 0%, #F59E0B 100%); color: #1C1B18;" aria-hidden="true">七</div>
+        <div class="bl-row-info">
+          <span class="bl-row-name">七月</span>
+          <span class="bl-row-tag">最近打卡:3 天前</span>
+        </div>
+        <button class="bl-row-tacit" aria-label="七月的默契值 72,查看默契详情" onclick="location.href='T14.html'">
+          <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M6 1l1.5 3 3.3.5-2.4 2.3.6 3.2L6 8.7 3 10l.6-3.2L1.2 4.5 4.5 4z"/></svg>
+          72
+        </button>
+      </article>
+      <article class="bl-row">
+        <div class="bl-row-avatar" style="background: linear-gradient(135deg, #CDD3E1 0%, #687288 100%);" aria-hidden="true">糖</div>
+        <div class="bl-row-info">
+          <span class="bl-row-name">糖糖</span>
+          <span class="bl-row-tag">最近打卡:上周</span>
+        </div>
+        <button class="bl-row-tacit" aria-label="糖糖的默契值 55,查看默契详情" onclick="location.href='T14.html'">
+          <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M6 1l1.5 3 3.3.5-2.4 2.3.6 3.2L6 8.7 3 10l.6-3.2L1.2 4.5 4.5 4z"/></svg>
+          55
+        </button>
+      </article>
+    </section>
+
+    <!-- 搭子功能介绍 -->
+    <section class="bl-info" aria-label="搭子功能介绍">
+      <h3 class="bl-info-title">搭子功能介绍</h3>
+      <ul class="bl-info-list">
+        <li class="bl-info-item">
+          <span class="bl-info-icon" aria-hidden="true">
+            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l4 4 8-8"/>
+            </svg>
+          </span>
+          <div class="bl-info-text">
+            <span class="bl-info-h">一起打卡</span>
+            <span class="bl-info-s">双人签到得更多泡泡值</span>
+          </div>
+        </li>
+        <li class="bl-info-item">
+          <span class="bl-info-icon" aria-hidden="true">
+            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="5" width="12" height="9" rx="1.5"/>
+              <path d="M3 5l6-3 6 3"/>
+              <path d="M9 9v3M7.5 10.5h3"/>
+            </svg>
+          </span>
+          <div class="bl-info-text">
+            <span class="bl-info-h">互送福利</span>
+            <span class="bl-info-s">优惠券、礼物送给 TA</span>
+          </div>
+        </li>
+        <li class="bl-info-item">
+          <span class="bl-info-icon" aria-hidden="true">
+            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 2l2.2 4.5L16 7.3l-3.5 3.4.8 4.8L9 13.2 4.7 15.5l.8-4.8L2 7.3l4.8-.8z"/>
+            </svg>
+          </span>
+          <div class="bl-info-text">
+            <span class="bl-info-h">默契升级</span>
+            <span class="bl-info-s">提升搭子等级,解锁奖励</span>
+          </div>
+        </li>
+      </ul>
+    </section>
+
+    <!--
+      v2 修订:已删除原 .bl-primary 主按钮「邀请搭子」
+      新增:底部固定双次按钮(等宽 50%,次按钮样式)
+    -->
+    <div class="bl-actions">
+      <button class="bl-secondary" aria-label="通过二维码邀请搭子" onclick="location.href='T06.html'">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="2" y="2" width="5" height="5" rx="0.5"/>
+          <rect x="9" y="2" width="5" height="5" rx="0.5"/>
+          <rect x="2" y="9" width="5" height="5" rx="0.5"/>
+          <path d="M9 9h2v2H9zm4 0v2h-2v-2zm-4 4h2v2H9zm4 0v2h-2v-2z"/>
+        </svg>
+        <span>二维码邀请</span>
+      </button>
+      <button class="bl-secondary" aria-label="通过手机号邀请搭子(弹层)">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="4" y="2" width="8" height="12" rx="1.5"/>
+          <path d="M7 12h2"/>
+        </svg>
+        <span>手机号邀请</span>
+      </button>
+    </div>
+  </div>
+</body>
+</html>

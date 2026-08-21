@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>核心洗护兑换专区 · 卡博士诗得丽</title>
+  <link rel="stylesheet" href="../.design_library/com-design-premium-gold/colors_and_type.css">
+  <link rel="stylesheet" href="../.design_library/com-design-premium-gold/components.css">
+  <style>
+    /* ════════════════════════════════════════════════════════════════
+       T11 · 核心洗护兑换专区 (com-design-premium-gold 暖金尊享)
+       画布 ID: page-洗护兑换专区
+       约束源:com-design-premium-gold Design Library(只读)
+       设计语言:Mockplus 原型(深绿+金) + 画布 TopBar/圆角 8/12/16/20
+       ════════════════════════════════════════════════════════════════ */
+
+    /* T11 私有 token —— 任务卡 §5 要求的深绿 KV 渐变,因 design-tokens.css 无对应 token
+       (只有暖橙/暖金/中性色),按 P1 总调度 §4 异常处理"内联 CSS 变量 + 收工回报列出" */
+    :root {
+      --t11-banner-from: #2C4A3E;
+      --t11-banner-to: #4A6B5C;
+      --t11-banner-gold: #D5B075;
+    }
+
+    body {
+      margin: 0;
+      background: var(--color-background);
+      color: var(--color-text-primary);
+      font: var(--type-body);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 375px;
+      min-height: 812px;
+      margin: 0 auto;
+      background: var(--color-background);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    @media (min-width: 480px) {
+      body { background: var(--com-neutral-100); padding: 24px 0; }
+      .app-container {
+        box-shadow: 0 8px 32px rgba(23, 27, 42, 0.10);
+        border-radius: 24px;
+      }
+    }
+
+    /* ── Status bar ── */
+    .status-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 20px 4px;
+      font: 600 14px/1 var(--font-family-base);
+      color: var(--color-text-primary);
+      flex: 0 0 auto;
+    }
+    .status-bar .right { display: inline-flex; align-items: center; gap: 6px; }
+    .status-bar .icon { width: 16px; height: 16px; }
+
+    /* ── Top bar ── */
+    .ps-topbar {
+      display: flex; align-items: center; gap: 12px;
+      padding: 4px 16px 8px; height: 40px;
+      box-sizing: border-box; flex: 0 0 auto;
+    }
+    .ps-topbar .icon-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 24px; height: 24px; border-radius: var(--radius-pill);
+      background: transparent; border: 0; padding: 0; cursor: pointer;
+      color: var(--color-text-primary);
+    }
+    .ps-topbar .icon-btn .icon { width: 24px; height: 24px; stroke-width: 2.2; }
+    .ps-topbar h1 {
+      flex: 1; margin: 0;
+      font: 600 18px/24px var(--font-family-base);
+      color: var(--color-text-primary);
+      text-align: center;
+    }
+    .ps-topbar .icon-btn:focus-visible {
+      outline: 2px solid var(--com-brand-500);
+      outline-offset: 4px;
+      border-radius: var(--radius-pill);
+    }
+
+    /* ── KV banner(深绿 + 金色点缀,任务卡 §5 落地策略)── */
+    .t11-banner {
+      position: relative;
+      margin: 8px 16px 12px;
+      height: 130px;
+      border-radius: var(--radius-lg);
+      background: linear-gradient(135deg, var(--t11-banner-from) 0%, var(--t11-banner-to) 100%);
+      overflow: hidden;
+      display: flex; align-items: center;
+      padding: 0 20px;
+      box-shadow: 0 6px 20px -10px rgba(23, 27, 42, 0.35);
+    }
+    .t11-banner::before {
+      content: "";
+      position: absolute;
+      right: -40px; top: -40px;
+      width: 160px; height: 160px;
+      border-radius: 50%;
+      background: var(--t11-banner-gold);
+      opacity: 0.18;
+      filter: blur(6px);
+    }
+    .t11-banner::after {
+      content: "";
+      position: absolute;
+      right: 60px; bottom: -30px;
+      width: 100px; height: 100px;
+      border-radius: 50%;
+      background: var(--com-premium-300);
+      opacity: 0.16;
+      filter: blur(4px);
+    }
+    .t11-banner-text {
+      position: relative; z-index: 1;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .t11-banner-eyebrow {
+      font: 500 12px/16px var(--font-family-base);
+      color: var(--com-premium-300);
+      letter-spacing: 0.06em;
+    }
+    .t11-banner-title {
+      font: 600 18px/24px var(--font-family-base);
+      color: #FFFFFF;
+    }
+    .t11-banner-sub {
+      font: 400 12px/18px var(--font-family-base);
+      color: rgba(255, 255, 255, 0.78);
+    }
+
+    /* ── 搜索框 ── */
+    .t11-search {
+      margin: 0 16px 12px;
+      height: 40px;
+      background: var(--com-neutral-100);
+      border-radius: var(--radius-md);
+      display: flex; align-items: center; gap: 8px;
+      padding: 0 12px;
+      box-sizing: border-box;
+    }
+    .t11-search .icon {
+      width: 20px; height: 20px;
+      color: var(--color-text-tertiary);
+      flex-shrink: 0;
+    }
+    .t11-search input {
+      flex: 1; min-width: 0;
+      background: transparent;
+      border: 0; outline: none;
+      font: var(--type-body);
+      color: var(--color-text-primary);
+    }
+    .t11-search input::placeholder { color: var(--color-text-placeholder); }
+    .t11-search:focus-within {
+      box-shadow: 0 0 0 2px var(--com-brand-500);
+    }
+
+    /* ── Tabs(顶部 3 段,token Tab 组件)── */
+    .t11-tabs {
+      display: flex;
+      margin: 0 16px;
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+    .t11-tabs .tab {
+      flex: 1; height: 44px;
+      display: inline-flex; align-items: center; justify-content: center; gap: 2px;
+      background: transparent; border: 0;
+      font: 500 14px/20px var(--font-family-base);
+      color: var(--color-text-secondary);
+      cursor: pointer; padding: 0 12px;
+      position: relative;
+    }
+    .t11-tabs .tab[aria-selected="true"] { color: var(--color-text-brand); }
+    .t11-tabs .tab[aria-selected="true"]::after {
+      content: "";
+      position: absolute;
+      left: 0; right: 0; bottom: -1px;
+      height: 2px;
+      background: var(--color-primary);
+    }
+    .t11-tabs .tab:focus-visible {
+      outline: 2px solid var(--com-brand-500);
+      outline-offset: 2px;
+      border-radius: var(--radius-sm);
+    }
+    .t11-tabs .tab .arrow { font-size: 10px; opacity: 0.7; }
+
+    /* ── 商品网格 2 列 ── */
+    .t11-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding: 12px 16px 24px;
+      flex: 1;
+    }
+    .t11-card {
+      background: var(--com-neutral-0);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      box-shadow: 0 4px 12px -8px rgba(23, 27, 42, 0.10);
+      border: 2px solid transparent;
+      transition: border-color 120ms ease;
+      cursor: pointer;
+      display: flex; flex-direction: column;
+    }
+    .t11-card.is-active { border-color: var(--com-brand-50); }
+    .t11-card:focus-visible {
+      outline: 2px solid var(--com-brand-500);
+      outline-offset: 2px;
+    }
+    .t11-card-media {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      background: var(--com-warm-100);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--color-text-tertiary);
+      font: 500 12px/16px var(--font-family-base);
+    }
+    .t11-card-media .ip-tag {
+      position: absolute; right: 8px; top: 8px;
+      padding: 2px 6px;
+      background: rgba(0, 0, 0, 0.42);
+      color: #FFFFFF;
+      font: 500 10px/14px var(--font-family-base);
+      border-radius: var(--radius-xs);
+    }
+    .t11-card-body {
+      padding: 8px 10px 12px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .t11-card-name {
+      font: 500 14px/20px var(--font-family-base);
+      color: var(--color-text-primary);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .t11-card-points {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 8px;
+      border-radius: var(--radius-pill);
+      background: var(--com-premium-50);
+      color: var(--com-premium-700);
+      font: 600 12px/16px var(--font-family-base);
+      align-self: flex-start;
+    }
+    .t11-card-points .num { color: var(--com-premium-600); font-weight: 700; }
+    .t11-card-meta {
+      font: 400 11px/14px var(--font-family-base);
+      color: var(--color-text-tertiary);
+    }
+
+    /* ── 空态 ── */
+    .t11-empty {
+      grid-column: 1 / -1;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 48px 16px;
+      gap: 16px;
+    }
+    .t11-empty-illus {
+      width: 96px; height: 96px;
+      border-radius: 50%;
+      background: var(--com-warm-100);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--color-text-tertiary);
+      font: 500 12px/16px var(--font-family-base);
+    }
+    .t11-empty-text {
+      font: 500 14px/20px var(--font-family-base);
+      color: var(--color-text-secondary);
+    }
+    .t11-reset {
+      background: transparent; border: 0; padding: 0;
+      font: 500 14px/20px var(--font-family-base);
+      color: var(--color-text-brand);
+      cursor: pointer;
+    }
+    .t11-reset:focus-visible {
+      outline: 2px solid var(--com-brand-500);
+      outline-offset: 4px;
+      border-radius: var(--radius-sm);
+    }
+
+    /* 底部安全区 */
+    .t11-safe-bottom { height: 24px; flex: 0 0 auto; }
+  </style>
+</head>
+<body>
+  <main class="app-container" data-page-id="page-洗护兑换专区" data-task-id="T11">
+    <!-- Status bar -->
+    <div class="status-bar" aria-hidden="true">
+      <span>9:41</span>
+      <span class="right">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 20h2c1 0 1.5-.5 2-1.5l3-7c.5-1 1-1.5 2-1.5h2c1 0 1.5.5 2 1.5l3 7c.5 1 1 1.5 2 1.5h2"/></svg>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.55a11 11 0 0 1 14 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="16" height="10" rx="2"/><line x1="22" y1="11" x2="22" y2="13"/><line x1="6" y1="10" x2="6" y2="10.01"/><line x1="10" y1="10" x2="10" y2="10.01"/><line x1="14" y1="10" x2="14" y2="10.01"/></svg>
+      </span>
+    </div>
+
+    <!-- Top bar -->
+    <header class="ps-topbar">
+      <button type="button" class="icon-btn" id="t11-back" aria-label="返回上一级">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <h1>核心洗护兑换专区</h1>
+      <button type="button" class="icon-btn" id="t11-filter" aria-label="筛选商品">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="3 4 21 4 14 13 14 20 10 18 10 13 3 4"/></svg>
+      </button>
+    </header>
+
+    <!-- Banner KV -->
+    <section class="t11-banner" aria-label="核心洗护兑换专区主 banner">
+      <div class="t11-banner-text">
+        <span class="t11-banner-eyebrow">DEARSEED · CORE CARE</span>
+        <span class="t11-banner-title">诗得丽核心洗护</span>
+        <span class="t11-banner-sub">积分兑换 · 限定 SKU 专区</span>
+      </div>
+    </section>
+
+    <!-- 搜索框 -->
+    <form class="t11-search" role="search" aria-label="搜索商品" onsubmit="return false">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="search" id="t11-search-input" placeholder="请输入内容" aria-label="搜索商品关键词" autocomplete="off">
+    </form>
+
+    <!-- Tabs -->
+    <div class="t11-tabs" role="tablist" aria-label="商品排序方式">
+      <button type="button" class="tab" role="tab" id="t11-tab-0" aria-selected="true" aria-controls="t11-panel">综合</button>
+      <button type="button" class="tab" role="tab" id="t11-tab-1" aria-selected="false" aria-controls="t11-panel">兑换量<span class="arrow">↓</span></button>
+      <button type="button" class="tab" role="tab" id="t11-tab-2" aria-selected="false" aria-controls="t11-panel">泡泡值<span class="arrow">↓</span></button>
+    </div>
+
+    <!-- 商品网格(2 列) -->
+    <section class="t11-grid" id="t11-panel" role="tabpanel" aria-live="polite" aria-label="商品列表"></section>
+
+    <div class="t11-safe-bottom" aria-hidden="true"></div>
+  </main>
+
+  <script>
+    /* ── mock 数据:8 条 ── */
+    var ALL = [
+      { id: 'p01', name: 'DearSeed 蓬松洗发水 500ml', points: 200, vol: 568, sku: 'DearSeed' },
+      { id: 'p02', name: 'DearSeed 柔顺护发素 500ml', points: 180, vol: 442, sku: 'DearSeed' },
+      { id: 'p03', name: '诗得丽氨基酸沐浴露 600ml', points: 150, vol: 401, sku: '诗得丽' },
+      { id: 'p04', name: 'DearSeed 头皮清洁精华 100ml', points: 320, vol: 287, sku: 'DearSeed' },
+      { id: 'p05', name: '诗得丽柔润洗手液 250ml',  points: 80,  vol: 612, sku: '诗得丽' },
+      { id: 'p06', name: 'DearSeed 旅行装洗护四件套', points: 260, vol: 198, sku: 'DearSeed' },
+      { id: 'p07', name: '诗得丽 婴儿二合一沐浴露', points: 220, vol: 354, sku: '诗得丽' },
+      { id: 'p08', name: 'DearSeed 免洗护发喷雾 200ml', points: 140, vol: 521, sku: 'DearSeed' }
+    ];
+    var currentTab = 0; /* 0 综合 / 1 兑换量降序 / 2 泡泡值降序 */
+    var currentKeyword = '';
+
+    function byTab(items, tab) {
+      var arr = items.slice();
+      if (tab === 1) arr.sort(function (a, b) { return b.vol - a.vol; });
+      else if (tab === 2) arr.sort(function (a, b) { return b.points - a.points; });
+      return arr;
+    }
+    function filterKeyword(items, kw) {
+      if (!kw) return items;
+      var k = kw.toLowerCase();
+      return items.filter(function (it) {
+        return (it.name + ' ' + it.sku).toLowerCase().indexOf(k) !== -1;
+      });
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, function (c) {
+        return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+      });
+    }
+
+    function render() {
+      var panel = document.getElementById('t11-panel');
+      var list = filterKeyword(byTab(ALL, currentTab), currentKeyword);
+      if (list.length === 0) {
+        panel.innerHTML =
+          '<div class="t11-empty" role="status">' +
+            '<div class="t11-empty-illus" aria-hidden="true">空</div>' +
+            '<p class="t11-empty-text">暂无商品</p>' +
+            '<button type="button" class="t11-reset" id="t11-reset">重置筛选</button>' +
+          '</div>';
+        var r = document.getElementById('t11-reset');
+        if (r) r.addEventListener('click', resetAll);
+        return;
+      }
+      panel.innerHTML = list.map(function (it) {
+        return (
+          '<article class="t11-card" role="button" tabindex="0" aria-label="' + escapeHtml(it.name) + ',需要 ' + it.points + ' 泡泡值" data-id="' + it.id + '">' +
+            '<div class="t11-card-media" aria-hidden="true">' +
+              '<span>商品图 1:1</span>' +
+              '<span class="ip-tag">' + escapeHtml(it.sku) + '</span>' +
+            '</div>' +
+            '<div class="t11-card-body">' +
+              '<h3 class="t11-card-name">' + escapeHtml(it.name) + '</h3>' +
+              '<span class="t11-card-points"><span class="num">' + it.points + '</span> 泡泡值</span>' +
+              '<span class="t11-card-meta">已兑换 ' + it.vol + ' 人次</span>' +
+            '</div>' +
+          '</article>'
+        );
+      }).join('');
+
+      /* 卡片点击 → active 描边 */
+      panel.querySelectorAll('.t11-card').forEach(function (el) {
+        el.addEventListener('click', function () {
+          panel.querySelectorAll('.t11-card.is-active').forEach(function (a) { a.classList.remove('is-active'); });
+          el.classList.add('is-active');
+        });
+        el.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el.click(); }
+        });
+      });
+    }
+
+    function selectTab(i) {
+      currentTab = i;
+      document.querySelectorAll('.t11-tabs .tab').forEach(function (t, idx) {
+        t.setAttribute('aria-selected', idx === i ? 'true' : 'false');
+      });
+      render();
+    }
+
+    function resetAll() {
+      currentTab = 0;
+      currentKeyword = '';
+      document.getElementById('t11-search-input').value = '';
+      selectTab(0);
+    }
+
+    /* 绑定 */
+    document.querySelectorAll('.t11-tabs .tab').forEach(function (t, idx) {
+      t.addEventListener('click', function () { selectTab(idx); });
+    });
+    var input = document.getElementById('t11-search-input');
+    input.addEventListener('input', function () {
+      currentKeyword = input.value.trim();
+      render();
+    });
+    document.getElementById('t11-back').addEventListener('click', function () {
+      if (window.history.length > 1) window.history.back();
+      else window.location.hash = '#/积分首页';
+    });
+    document.getElementById('t11-filter').addEventListener('click', function () {
+      /* 任务卡 §8 不实现弹层,仅 mock 提示 */
+      window.alert('筛选弹层由主线程串入(P3 阶段)');
+    });
+
+    render();
+  </script>
+</body>
+</html>

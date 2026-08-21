@@ -1,0 +1,46 @@
+{
+  "task_id": "T04",
+  "title": "通知",
+  "canvas_id": "page-通知列表",
+  "deliverables": [
+    "dist/T04.html"
+  ],
+  "design_system": "com-design-premium-gold",
+  "tokens_used": [
+    "--com-warm-50",
+    "--com-neutral-0", "--com-neutral-100", "--com-neutral-800", "--com-neutral-900",
+    "--com-brand-50", "--com-brand-500", "--com-brand-700",
+    "--com-premium-50", "--com-premium-300", "--com-premium-500", "--com-premium-700",
+    "--com-accent-semantic-default", "--com-accent-semantic-strong", "--com-accent-semantic-subtle",
+    "--com-danger-500",
+    "--color-background", "--color-surface", "--color-text-primary",
+    "--color-text-secondary", "--color-text-tertiary", "--color-text-disabled",
+    "--space-2", "--space-4", "--space-8", "--space-12", "--space-16", "--space-24",
+    "--com-radius-8", "--com-radius-12", "--com-radius-16", "--com-radius-pill",
+    "--type-body", "--type-label", "--type-caption", "--type-heading-small",
+    "--font-family-base",
+    "--motion-duration-fast"
+  ],
+  "hardcoded_values": [
+    "rgba(255, 255, 255, 0.5)  (Tab 悬停态透明度,设计库未提供;仅用于 hover 微交互)",
+    "rgba(255, 255, 255, 0.28) (激活态 Tab 内的角标背景,设计库未提供)",
+    "rgba(89, 55, 15, 0.06)   (卡片阴影色,设计库未提供;沿用 T01 已审定的 ambient 阴影语法)",
+    "rgba(214, 61, 16, 0.30)  (激活 Tab 的微阴影,设计库未提供;品牌色 brand-600 衍生透明度)",
+    "rgba(23, 27, 42, 0.10)   (桌面端外壳阴影,沿用 T01 已审定)"
+  ],
+  "consistency_with_canvas": "TopBar 状态栏 44 + 左上 24×24 返回 + 中部 18 粗体标题 + 右上文字按钮(14 暖金) / Tab 4 段(12 圆角容器 + 8 圆角单段,激活态 brand-500 白字)/ 卡片 12 圆角白底 / 一键已读为文字按钮(不实现弹层,留 P3)/ 空态插画位 + 暖金文字 / 状态栏 9:41 + 5G/100% 全部沿用画布已审定 7 页范式",
+  "mockplus_referenced": true,
+  "acceptance": {
+    "topbar_correct": true,
+    "tab_4_segments": true,
+    "unread_dot_8x8": true,
+    "one_click_read_works": true,
+    "radius_uses_8_12_16_20": true,
+    "all_colors_via_tokens": true,
+    "responsive_375_812": true,
+    "empty_state_present": true,
+    "list_cards_12_radius": true,
+    "category_color_dot": true
+  },
+  "notes": "1) Design Library CSS 路径按任务卡修正版使用 `../.design_library/com-design-premium-gold/...`(画布 7 页用的绝对路径是历史遗留,本卡以任务卡为准)。2) Tab 容器走 4 等分 grid,激活段 8 圆角 + brand-500 实色,未激活段透明,符合任务卡「圆角 12 背景 neutral-100,激活态 brand-500 白字」规范。3) 未读红点严格 8×8,token `--com-danger-500` (#D63E50),与画布 danger 语义保持一致。4) 一键已读:点击后所有未读态清除、按钮文案变为「已全部已读」并灰显 1.4s,无弹层(弹层由 P3 负责,符合任务卡 §7)。5) 卡片点击标记为已读并预留 T05 跳转占位。6) 设计库暂无 `--color-shadow-card` 类阴影 token,本页用 rgba 暖金微阴影沿用 T01 已审定手法;已登记为 hardcoded_values(均为非色彩 token 的透明度派生,不影响调色板一致性)。7) 响应式:移动端 375×812 直接占满,桌面端 (≥480px) 居中显示为卡片预览。"
+}

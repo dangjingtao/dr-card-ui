@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>今日澡运 · 卡博士诗得丽</title>
+  <link rel="stylesheet" href="../.design_library/com-design-premium-gold/colors_and_type.css">
+  <link rel="stylesheet" href="../.design_library/com-design-premium-gold/components.css">
+  <style>
+    /* ════════════════════════════════════════════════════════════
+       T03 · 抽取成功 (com-design-premium-gold 暖金尊享)
+       约束源:com-design-premium-gold Design Library(只读)
+       设计语言对齐:Mockplus 原型(暖金奖牌 + 暖橙) + 画布(圆角 8/12/16/20)
+       ════════════════════════════════════════════════════════════ */
+
+    /* ── Mobile app shell ── */
+    body {
+      margin: 0;
+      background: var(--color-background);
+      color: var(--color-text-primary);
+      font: var(--type-body);
+      -webkit-font-smoothing: antialiased;
+    }
+    .app-container {
+      width: 100%;
+      max-width: 375px;
+      min-height: 812px;
+      margin: 0 auto;
+      background: var(--color-background);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* 外层灰底预览(供桌面查看 ≥480px) */
+    @media (min-width: 480px) {
+      body { background: var(--com-neutral-100); padding: 24px 0; }
+      .app-container {
+        box-shadow: 0 8px 32px rgba(23, 27, 42, 0.10);
+        border-radius: 24px;
+        min-height: 812px;
+      }
+    }
+
+    /* ── Status bar(iOS 风格占位) ── */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 20px 4px;
+      font: 600 14px/1 var(--font-family-base);
+      color: var(--color-text-primary);
+    }
+    .status-bar .right { display: inline-flex; align-items: center; gap: 6px; }
+    .status-bar .icon { width: 16px; height: 16px; color: var(--color-text-primary); }
+
+    /* ── Top bar(返回 + 标题) ── */
+    .ps-topbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 4px 16px 8px;
+      height: 40px;
+      box-sizing: border-box;
+    }
+    .ps-topbar .icon-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 9999px;
+      color: var(--color-text-primary);
+      background: transparent;
+      border: 0;
+      cursor: pointer;
+      padding: 0;
+    }
+    .ps-topbar .icon-btn .icon { width: 24px; height: 24px; stroke-width: 2.2; }
+    .ps-topbar h1 {
+      flex: 1;
+      margin: 0;
+      font: 600 18px/24px var(--font-family-base);
+      color: var(--color-text-primary);
+      text-align: center;
+    }
+    .ps-topbar .spacer { width: 24px; height: 24px; }
+
+    /* ════════════════════════════════════════════════════════════
+       Ambient 光斑(暖金 + 暖橙,绝对定位铺在最底层)
+       ════════════════════════════════════════════════════════════ */
+    .qr-ambient {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .qr-ambient > span {
+      position: absolute;
+      display: block;
+      border-radius: 50%;
+      filter: blur(32px);
+    }
+    .qr-amb-warm-1 {
+      width: 320px; height: 320px;
+      left: -100px; top: 80px;
+      background: var(--com-premium-200);
+      opacity: 0.55;
+    }
+    .qr-amb-warm-2 {
+      width: 260px; height: 260px;
+      right: -80px; top: 220px;
+      background: var(--com-premium-300);
+      opacity: 0.45;
+    }
+    .qr-amb-brand {
+      width: 200px; height: 200px;
+      left: 50%; transform: translateX(-50%);
+      bottom: 60px;
+      background: var(--com-brand-200);
+      opacity: 0.35;
+    }
+
+    .ps-topbar,
+    .qr-stage,
+    .qr-verse,
+    .qr-actions { position: relative; z-index: 1; }
+
+    /* ════════════════════════════════════════════════════════════
+       签卡舞台(奖牌 + IP 占位 + 签筒剪影)
+       签卡 360 高,圆角 20,金渐变
+       ════════════════════════════════════════════════════════════ */
+    .qr-stage {
+      margin: 20px 16px 0;
+      position: relative;
+      height: 360px;
+      border-radius: var(--com-radius-20);
+      overflow: hidden;
+      background:
+        radial-gradient(ellipse at top, rgba(255, 255, 255, 0.45) 0%, transparent 60%),
+        linear-gradient(180deg, var(--com-premium-300) 0%, var(--com-premium-500) 100%);
+      box-shadow: 0 12px 28px -10px rgba(160, 123, 65, 0.45),
+                  inset 0 1px 0 rgba(255, 255, 255, 0.35);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 28px;
+    }
+    /* 卡内极淡光环(顶部) */
+    .qr-stage::before {
+      content: "";
+      position: absolute;
+      top: -40px; left: 50%;
+      transform: translateX(-50%);
+      width: 360px; height: 360px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.5) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    /* 顶部小印章徽标 */
+    .qr-stage-seal {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      background: rgba(255, 255, 255, 0.18);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      color: var(--com-premium-50);
+      font: 600 12px/16px var(--font-family-base);
+      letter-spacing: 0.06em;
+      position: relative;
+      z-index: 2;
+    }
+    .qr-stage-seal .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--com-premium-50);
+    }
+
+    /* 奖牌(IP 占位: 200 圆 + 文字,符合"取其轮廓做装饰"约束) */
+    .qr-medal {
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      margin-top: 18px;
+      background:
+        radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.55) 0%, transparent 55%),
+        linear-gradient(135deg, #FFF9EA 0%, #F4E7C2 60%, #DDC58C 100%);
+      box-shadow:
+        0 8px 24px -6px rgba(89, 55, 15, 0.35),
+        inset 0 0 0 6px rgba(255, 255, 255, 0.5),
+        inset 0 0 0 7px rgba(160, 123, 65, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 6px;
+      position: relative;
+      z-index: 2;
+    }
+    .qr-medal-icon {
+      width: 64px; height: 64px;
+      color: var(--com-premium-700);
+      opacity: 0.85;
+    }
+    .qr-medal-label {
+      font: 600 11px/14px var(--font-family-base);
+      color: var(--com-premium-700);
+      letter-spacing: 0.16em;
+      opacity: 0.75;
+    }
+
+    /* 签语(大字号 + 副文案) */
+    .qr-verse {
+      margin: 24px 16px 8px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .qr-verse-title {
+      font: 700 48px/56px var(--font-family-base);
+      background: linear-gradient(180deg, var(--com-premium-300) 0%, var(--com-premium-500) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      letter-spacing: 0.04em;
+    }
+    /* 三态色 */
+    .qr-verse-title.is-daji {
+      background: linear-gradient(180deg, var(--com-premium-300) 0%, var(--com-premium-500) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .qr-verse-title.is-zhongji {
+      background: linear-gradient(180deg, var(--com-brand-400) 0%, var(--com-brand-500) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .qr-verse-title.is-xiaoji {
+      background: linear-gradient(180deg, var(--com-neutral-300) 0%, var(--com-neutral-500) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .qr-verse-sub {
+      font: 400 14px/20px var(--font-family-base);
+      color: var(--com-warm-50);
+      opacity: 0.85;
+      max-width: 280px;
+    }
+
+    /* 签语副描述(三态文案) */
+    .qr-verse-desc {
+      margin: 4px 24px 0;
+      text-align: center;
+      font: 400 13px/20px var(--font-family-base);
+      color: var(--color-text-secondary);
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       操作区(主按钮 + 文字按钮)
+       ════════════════════════════════════════════════════════════ */
+    .qr-actions {
+      margin-top: auto;
+      padding: 24px 16px calc(24px + env(safe-area-inset-bottom));
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+    .qr-primary {
+      width: 100%;
+      max-width: 343px;
+      height: 48px;
+      border-radius: 24px;
+      background: var(--com-premium-500);
+      color: #FFFFFF;
+      font: 600 16px/24px var(--font-family-base);
+      border: 0;
+      cursor: pointer;
+      box-shadow: 0 6px 16px -6px rgba(160, 123, 65, 0.55);
+      transition: background-color .15s, transform .15s;
+    }
+    .qr-primary:hover { background: var(--com-premium-600); }
+    .qr-primary:active { transform: scale(0.98); }
+
+    .qr-secondary {
+      background: transparent;
+      border: 0;
+      color: var(--color-text-secondary);
+      font: 500 14px/20px var(--font-family-base);
+      cursor: pointer;
+      padding: 6px 12px;
+    }
+    .qr-secondary:hover { color: var(--color-text-primary); }
+
+    /* 三态指示点(细颗粒度) */
+    .qr-dots {
+      display: inline-flex;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .qr-dots span {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--com-neutral-200);
+      transition: background-color .2s, width .2s;
+    }
+    .qr-dots span.active {
+      background: var(--com-premium-500);
+      width: 18px;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Ambient 光斑层 -->
+    <div class="qr-ambient" aria-hidden="true">
+      <span class="qr-amb-warm-1"></span>
+      <span class="qr-amb-warm-2"></span>
+      <span class="qr-amb-brand"></span>
+    </div>
+
+    <!-- iOS 状态栏 -->
+    <div class="status-bar" aria-hidden="true">
+      <span>9:41</span>
+      <span class="right">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 11.5a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v1.5H2v-1.5Z"/><path d="M5 8.5V6a3 3 0 0 1 6 0v2.5"/></svg>
+        <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><path d="M3 7.5h1.5v4H3v-4Zm2.5-1.5H7v5.5h-1.5V6Zm2.5-2H10v7.5h-1.5V4Zm2.5 3.5H12v4h-1.5v-4Z"/></svg>
+        <svg class="icon" viewBox="0 0 22 12" fill="none" stroke="currentColor" stroke-width="1"><rect x="0.5" y="0.5" width="18" height="11" rx="3"/><rect x="2" y="2" width="15" height="8" rx="2" fill="currentColor" opacity="0.45"/><rect x="20" y="3.5" width="1.5" height="5" rx="0.75" fill="currentColor"/></svg>
+      </span>
+    </div>
+
+    <!-- TopBar: 左返回 / 中「今日澡运」 -->
+    <div class="ps-topbar">
+      <button class="icon-btn" aria-label="返回">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <h1>今日澡运</h1>
+      <span class="spacer"></span>
+    </div>
+
+    <!-- 签卡舞台 -->
+    <section class="qr-stage" aria-label="签卡">
+      <div class="qr-stage-seal">
+        <span class="dot"></span>
+        <span>今日抽签</span>
+      </div>
+      <div class="qr-medal" aria-hidden="true">
+        <svg class="qr-medal-icon" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="32" cy="32" r="22"/>
+          <path d="M22 32l6 6 14-14"/>
+        </svg>
+        <div class="qr-medal-label">IP 占位</div>
+      </div>
+    </section>
+
+    <!-- 签语 -->
+    <div class="qr-verse" data-qr-verse>
+      <div class="qr-verse-title is-daji" data-qr-title>大吉</div>
+      <div class="qr-verse-sub" data-qr-sub>万事胜意,所求皆得;心怀暖意,好运自来。</div>
+    </div>
+    <div class="qr-verse-desc" data-qr-desc>宜:分享喜悦、约一场 spa、与闺蜜小聚</div>
+
+    <!-- 操作区 -->
+    <div class="qr-actions">
+      <button class="qr-primary" data-qr-collect>收下好运</button>
+      <button class="qr-secondary" data-qr-redraw>再抽一次</button>
+      <div class="qr-dots" data-qr-dots aria-hidden="true">
+        <span class="active"></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ── 抽取成功 · 三态切换(localStorage 二次进入标记) ──
+    (function () {
+      const KEY = 'cardsui.t03.drawnAt';
+      const verses = [
+        {
+          key: 'daji',
+          title: '大吉',
+          className: 'is-daji',
+          sub: '万事胜意,所求皆得;心怀暖意,好运自来。',
+          desc: '宜:分享喜悦、约一场 spa、与闺蜜小聚'
+        },
+        {
+          key: 'zhongji',
+          title: '中吉',
+          className: 'is-zhongji',
+          sub: '稳步前行,小有所成;守住节奏,水到渠成。',
+          desc: '宜:做日常护理、整理卡包、回访老朋友'
+        },
+        {
+          key: 'xiaoji',
+          title: '小吉',
+          className: 'is-xiaoji',
+          sub: '平顺自在,小确幸;日常即惊喜,珍惜当下。',
+          desc: '宜:早睡早起、做一次头皮按摩、记录心情'
+        }
+      ];
+
+      const elTitle = document.querySelector('[data-qr-title]');
+      const elSub = document.querySelector('[data-qr-sub]');
+      const elDesc = document.querySelector('[data-qr-desc]');
+      const elDots = document.querySelectorAll('[data-qr-dots] span');
+      const btnRedraw = document.querySelector('[data-qr-redraw]');
+      const btnCollect = document.querySelector('[data-qr-collect]');
+
+      let idx = 0;
+      const drawn = localStorage.getItem(KEY);
+      if (drawn) {
+        // 二次进入:命中本次的 idx(基于 timestamp % 3)
+        idx = parseInt(drawn, 10) || 0;
+      }
+      apply(idx);
+
+      function apply(i) {
+        const v = verses[i];
+        elTitle.textContent = v.title;
+        elTitle.className = 'qr-verse-title ' + v.className;
+        elSub.textContent = v.sub;
+        elDesc.textContent = v.desc;
+        elDots.forEach(function (d, di) {
+          d.classList.toggle('active', di === i);
+        });
+      }
+
+      btnRedraw.addEventListener('click', function () {
+        idx = (idx + 1) % verses.length;
+        localStorage.setItem(KEY, String(idx));
+        apply(idx);
+      });
+
+      btnCollect.addEventListener('click', function () {
+        // 收下好运:简单视觉反馈,后续由主线程串入回流
+        btnCollect.textContent = '已收下 ✓';
+        btnCollect.style.background = 'var(--com-success-500)';
+        setTimeout(function () {
+          btnCollect.textContent = '收下好运';
+          btnCollect.style.background = '';
+        }, 1200);
+      });
+    })();
+  </script>
+</body>
+</html>

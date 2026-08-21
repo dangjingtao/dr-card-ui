@@ -1,0 +1,86 @@
+{
+  "task_id": "T07",
+  "title": "洗头搭子(空态 + 有态) · v2 重大修订",
+  "canvas_ids": [
+    "page-搭子空态",
+    "page-搭子"
+  ],
+  "deliverables": [
+    "dist/T07-empty.html",
+    "dist/T07-list.html",
+    "dist/T07.assets/ref-原备注-空态.png",
+    "dist/T07.assets/ref-原备注-有态.png"
+  ],
+  "design_system": "com-design-premium-gold",
+  "tokens_used": [
+    "--com-warm-50", "--com-warm-100", "--com-premium-50", "--com-premium-100", "--com-premium-200",
+    "--com-premium-300", "--com-premium-500", "--com-premium-600", "--com-premium-700",
+    "--com-brand-50", "--com-brand-100", "--com-brand-200", "--com-brand-500", "--com-brand-600",
+    "--com-accent-500",
+    "--com-neutral-0", "--com-neutral-100", "--com-neutral-200", "--com-neutral-500",
+    "--com-radius-8", "--com-radius-12", "--com-radius-16", "--com-radius-20", "--com-radius-24",
+    "--color-background", "--color-surface", "--color-text-primary", "--color-text-secondary",
+    "--font-family-base", "--type-body"
+  ],
+  "hardcoded_values": [
+    "注释:搭子头像 4 种渐变(brand-200/400, accent-100/500, premium-200/500, neutral-300/500)用 linear-gradient 在 avatar 上叠加,作为 mock 多样化区分,均与 design system 调色板一致;非主色定义"
+  ],
+  "v2_修订": {
+    "1_删头部胶囊": "✓ 已删 .bl-capsule「用户胶囊 + 默契值徽标」整段 section,同步删除对应 CSS,TopBar 直接接搭子列表",
+    "2_删主按钮邀请搭子": "✓ 已删有态原 .bl-primary「邀请搭子」主按钮,主流程改为底部双次按钮",
+    "3_新增底部双次按钮": "✓ 新增 .bl-actions 容器 + 两个 .bl-secondary(等宽 50% / 高 48 / 圆角 24 / 描边 1pt --com-brand-500 / 白底 / 主色文字),左「📱 二维码邀请」跳 T06.html,右「手机号邀请」等弹层(P3)",
+    "4_默契值徽标下沉到卡片内": "✓ 改 .bl-row-tacit 金底白字圆角 8 胶囊(--com-premium-500 #F59E0B 底 + 白字 + min 44×44 触控 + :focus-visible),逐卡显示 98/86/72/55,点击跳 T14.html",
+    "5_mock条数3→4": "✓ 4 条搭子按默契值降序 98(小美) > 86(阿琳) > 72(七月) > 55(糖糖),与原型截图一致"
+  },
+  "acceptance_v2": {
+    "有态无头部": true,
+    "有态无主按钮": true,
+    "底部双次按钮等宽50%": true,
+    "4条按默契值降序": true,
+    "每卡内默契值金底白字胶囊": true,
+    "默契值徽标onclick_T14": true,
+    "二维码邀请onclick_T06": true
+  },
+  "consistency_with_canvas": "TopBar(状态栏 44 + 返回 24 + 标题 18 粗体)/ 主按钮 48 圆角 24 brand-500(空态) / 次按钮 48 圆角 24 描边 1pt brand-500(有态双按钮) / 圆角 8(默契值徽标)/12(搭子卡)/16(信息卡片)/20(插画圆)/24(按钮) 体系 全部沿用画布 7 页范式;白底 + 暖金点缀与画布资料设置页视觉一致",
+  "mockplus_referenced": true,
+  "mock_data": {
+    "list_state_buddies": [
+      { "name": "小美", "tag": "最近打卡:今天 09:12", "tacit": 98, "avatar_tone": "brand-warm" },
+      { "name": "阿琳", "tag": "最近打卡:昨天 21:34", "tacit": 86, "avatar_tone": "accent-cool" },
+      { "name": "七月", "tag": "最近打卡:3 天前", "tacit": 72, "avatar_tone": "premium-gold" },
+      { "name": "糖糖", "tag": "最近打卡:上周", "tacit": 55, "avatar_tone": "neutral-gray" }
+    ],
+    "ordering": "按默契值倒序(98 > 86 > 72 > 55)",
+    "empty_state_illustration": "200×200 暖白底圆 + 文字「IP 占位」"
+  },
+  "accessibility": {
+    "focus_visible_outline_2pt_brand_500_offset_4": true,
+    "icon_buttons_aria_label": true,
+    "touch_target_min_44x44": true,
+    "all_interactive_buttons_have_aria_label": true
+  },
+  "flow": {
+    "upstream": "page-会员中心 金刚区「洗头搭子」入口",
+    "downstream_invite_qr": "dist/T06.html (邀请搭子页,本任务不重做)",
+    "downstream_invite_phone": "弹层 popup-手机号邀请 (P3,本任务不实现,按钮当前不绑跳转)",
+    "downstream_tacit_detail": "dist/T14.html (搭子默契值,可选跳转)",
+    "back": "左上返回 → 会员中心"
+  },
+  "self_check_7": {
+    "1_375x812_无溢出错位": "✓ .app-container max-width 375 + min-height 812 + overflow:hidden; .bl-list overflow-y:auto 单独滚",
+    "2_有态无头部无主按钮": "✓ .bl-capsule 与 .bl-primary 整段已删",
+    "3_有态底部双次按钮等宽50%": "✓ .bl-secondary flex:1 1 50% + min-width:0 + box-sizing:border-box",
+    "4_4条按默契值降序": "✓ 98/86/72/55",
+    "5_每卡内默契值徽标": "✓ .bl-row-tacit button 金底白字圆角 8 胶囊 onclick=T14.html",
+    "6_所有按钮focus_visible+aria_label": "✓ :focus-visible 全局规则 + 主/次/默契值/TopBar 返回 4 处均写 aria-label",
+    "7_控制台无报错": "✓ 无外链 JS / 无 CDN / 无 console 调用,内联 SVG icon"
+  },
+  "deviations": [
+    "默契值徽标用任务卡规定的 --com-premium-500 #F59E0B,与 T06 邀请搭子页 v2 压金 #A07B41 不同;本卡以本卡任务卡 §4 公共约束为准,不动 T06 既有 token",
+    "「原备注 PNG」沿用项目既有 200×200 占位素材(2026-08-17 已建,体积 135367B),非本次重生成,内容已与本卡双态视觉一致",
+    "「手机号邀请」按钮未绑跳转(等 P3 弹层);按钮当前有 aria-label + :focus-visible 但不触发路由,符合任务卡 §动线 注脚"
+  ],
+  "notes": "本卡为 v2 重大修订,已落实用户拍板修正(头部胶囊+主按钮 → 底部双次按钮);其余结构沿用 v1 既有落地,a11y 按强制规范加固。空态与有态各一份独立 HTML(T07-empty.html / T07-list.html),符合任务卡 §交付。不引入外部 CDN/JS 库,所有图标用内联 SVG。",
+  "version": "v2",
+  "updated_at": "2026-08-21"
+}
