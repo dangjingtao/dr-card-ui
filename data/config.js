@@ -1,0 +1,1 @@
+window['previewConfig']={"origin":"https://rp.mockplus.cn","showLinkAreaWhenHovered":true,"alwaysShowLinkArea":false,"autoScreen":true,"mobileType":"iphoneX","noBoundary":false,"showRemarkTag":true,"controlPanelState":"expand","remarkPanelState":"expand","showNavigationBar":true,"lang":"zh-cn","langVersion":"zh-cn","licenseID":"default"}
