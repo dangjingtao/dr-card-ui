@@ -1,1 +1,5 @@
-export default function Header({title='卡博士'}){return <header className="h-14 flex items-center px-4 font-semibold">{title}</header>}
+import { TopAppBar } from '../ui'
+
+export default function Header({ title = '卡博士', leading, actions = [], scrolled = false, className = '' }) {
+  return <TopAppBar title={title} leading={leading} actions={actions} scrolled={scrolled} className={className} />
+}

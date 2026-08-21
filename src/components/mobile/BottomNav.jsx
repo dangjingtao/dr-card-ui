@@ -1,5 +1,16 @@
-import { NavLink } from 'react-router-dom';
-import { CreditCard, Gift, Home, User } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom'
+import { CreditCard, Gift, Home, User } from 'lucide-react'
+import { BottomNavigation } from '../ui'
 
-const items=[['/','首页',Home],['/card','卡包',CreditCard],['/exchange','兑换',Gift],['/profile','我的',User]];
-export default function BottomNav(){return <nav className="fixed bottom-0 inset-x-0 h-16 bg-surface border-t border-border flex justify-around items-center">{items.map(([p,t,I])=><NavLink key={p} to={p} className="flex flex-col items-center text-xs"><I size={20}/>{t}</NavLink>)}</nav>}
+const items = [
+  { value: '/', label: '首页', icon: Home },
+  { value: '/card', label: '卡包', icon: CreditCard },
+  { value: '/exchange', label: '兑换', icon: Gift },
+  { value: '/profile', label: '我的', icon: User },
+]
+
+export default function BottomNav() {
+  const location = useLocation()
+  const navigate = useNavigate()
+  return <BottomNavigation items={items} value={location.pathname} onChange={navigate} className="fixed inset-x-0 bottom-0 z-40" />
+}

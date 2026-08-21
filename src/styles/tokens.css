@@ -1,20 +1,160 @@
+/* Com Design Premium Gold snapshot for dr-card-ui
+ * Core contract: com-design phase5 @ e28ba3fabfc8b0d836cb64531c75ad378ce59c8c
+ * Theme source: theme-premium-gold-v2 @ 958c604067800941734ef0866238c7659869a369
+ * Layering: Primitive -> Semantic -> Component
+ */
 :root {
-  /* Primitive */
-  --gold-500: #D9A441;
-  --orange-500: #F28C28;
-  --neutral-0: #FFFFFF;
-  --neutral-900: #2B2115;
+  /* Primitive: warm brand */
+  --brand-50: #FFF3EC;
+  --brand-100: #FFE3D5;
+  --brand-200: #FFC4AA;
+  --brand-400: #FF8355;
+  --brand-500: #F25B26;
+  --brand-600: #D63D10;
+  --brand-700: #AD2E0A;
+  --brand-800: #7A2106;
 
-  /* Semantic */
-  --color-brand-gold: var(--gold-500);
-  --color-brand-orange: var(--orange-500);
-  --color-background: #FFF8EC;
-  --color-surface: var(--neutral-0);
-  --color-text: var(--neutral-900);
-  --color-border: #EAD9B8;
+  /* Primitive: premium / reward */
+  --premium-50: #FFF9EA;
+  --premium-100: #FFF0C7;
+  --premium-200: #F8D992;
+  --premium-300: #EDBC6C;
+  --premium-400: #DFA348;
+  --premium-500: #C98A27;
+  --premium-600: #A96C19;
+  --premium-700: #7A4B12;
+  --premium-900: #332514;
 
-  /* Component */
-  --radius-card: 16px;
-  --radius-button: 12px;
-  --shadow-card: 0 8px 24px rgba(92,57,12,.12);
+  /* Primitive: warm surface + ink */
+  --warm-50: #FCF8F1;
+  --warm-100: #F8F0E5;
+  --warm-200: #EEE2D2;
+  --warm-300: #DDCDBA;
+  --ink-500: #7B7468;
+  --ink-600: #5C574E;
+  --ink-700: #403D36;
+  --ink-800: #292722;
+  --ink-900: #1C1B18;
+  --ink-950: #11100E;
+
+  /* Primitive: status */
+  --success-100: #DDF8EA;
+  --success-500: #21B66F;
+  --success-700: #147A4C;
+  --warning-100: #FFF2D6;
+  --warning-500: #F3A21B;
+  --warning-700: #9A6110;
+  --danger-100: #FFE4E8;
+  --danger-500: #D63E50;
+  --danger-700: #A92939;
+
+  /* Semantic: action */
+  --color-primary: var(--brand-600);
+  --color-primary-pressed: var(--brand-700);
+  --color-secondary: var(--brand-50);
+  --color-secondary-pressed: var(--brand-100);
+  --color-disabled: var(--warm-200);
+  --color-destructive: var(--danger-500);
+  --color-destructive-pressed: var(--danger-700);
+
+  /* Semantic: reward / member */
+  --color-reward: var(--premium-300);
+  --color-reward-strong: var(--premium-500);
+  --color-reward-subtle: var(--premium-50);
+  --color-reward-text: var(--premium-700);
+  --color-member-surface: var(--ink-900);
+  --color-member-text: var(--premium-50);
+  --color-member-accent: var(--premium-300);
+
+  /* Semantic: text */
+  --color-text-primary: var(--ink-800);
+  --color-text-secondary: var(--ink-600);
+  --color-text-tertiary: var(--ink-500);
+  --color-text-placeholder: var(--ink-500);
+  --color-text-disabled: var(--ink-500);
+  --color-text-inverse: #FFFFFF;
+  --color-text-brand: var(--brand-600);
+
+  /* Semantic: surface */
+  --color-background: var(--warm-50);
+  --color-surface: #FFFFFF;
+  --color-surface-subtle: var(--warm-100);
+  --color-surface-selected: var(--brand-50);
+  --color-surface-pressed: var(--warm-100);
+  --color-surface-inverse: var(--ink-900);
+  --color-surface-overlay-warm: #FFFBF5;
+
+  /* Semantic: border */
+  --color-border-subtle: var(--warm-200);
+  --color-border: var(--warm-300);
+  --color-border-strong: #A99884;
+  --color-border-focused: var(--brand-600);
+  --color-border-error: var(--danger-500);
+
+  /* Semantic: status */
+  --color-success: var(--success-500);
+  --color-success-bg: var(--success-100);
+  --color-success-text: var(--success-700);
+  --color-warning: var(--warning-500);
+  --color-warning-bg: var(--warning-100);
+  --color-warning-text: var(--warning-700);
+  --color-danger: var(--danger-500);
+  --color-danger-bg: var(--danger-100);
+  --color-danger-text: var(--danger-700);
+  --color-info: var(--brand-600);
+  --color-info-bg: var(--brand-50);
+  --color-info-text: var(--brand-700);
+  --color-scrim: rgba(0,0,0,.52);
+
+  /* Component geometry */
+  --radius-control: 8px;
+  --radius-container: 12px;
+  --radius-overlay: 16px;
+  --radius-pill: 9999px;
+  --radius-button: var(--radius-control);
+  --radius-card: var(--radius-container);
+
+  /* Component elevation: core stays flat; overlay/reward only */
+  --shadow-floating: 0 8px 24px rgba(41,39,34,.14);
+  --shadow-modal: 0 16px 40px rgba(17,16,14,.2);
+  --shadow-member-card: 0 12px 24px -8px rgba(237,188,108,.35);
+  --shadow-card: none;
+
+  /* Compatibility aliases used by early dr-card-ui */
+  --color-brand-gold: var(--color-reward);
+  --color-brand-orange: var(--brand-500);
+  --color-text: var(--color-text-primary);
+}
+
+.dark {
+  --brand-400: #FF7540;
+  --brand-500: #ED4D1B;
+  --brand-600: #C7390E;
+  --brand-700: #7A2106;
+  --brand-800: #5A1804;
+  --color-primary: var(--brand-600);
+  --color-primary-pressed: var(--brand-700);
+  --color-secondary: #461103;
+  --color-secondary-pressed: #5A1804;
+  --color-text-primary: var(--premium-50);
+  --color-text-secondary: #D9D0C4;
+  --color-text-tertiary: #AFA599;
+  --color-text-placeholder: #AFA599;
+  --color-text-disabled: #8D857B;
+  --color-text-brand: var(--brand-200);
+  --color-background: var(--ink-950);
+  --color-surface: var(--ink-900);
+  --color-surface-subtle: var(--ink-800);
+  --color-surface-selected: #461103;
+  --color-surface-pressed: var(--ink-800);
+  --color-surface-inverse: var(--ink-700);
+  --color-border-subtle: var(--ink-800);
+  --color-border: #71695E;
+  --color-border-strong: #9B9184;
+  --color-border-focused: var(--brand-400);
+  --color-info: var(--brand-400);
+  --color-info-bg: #461103;
+  --color-info-text: var(--brand-100);
+  --color-surface-overlay-warm: #292722;
+  --shadow-member-card: 0 12px 24px -8px rgba(0,0,0,.55);
 }
