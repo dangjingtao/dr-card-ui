@@ -25,8 +25,42 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
+      - name: Smoke test development server
+        shell: bash
+        run: |
+          npm run dev -- --port 4174 > /tmp/dr-card-vite-dev.log 2>&1 &
+          VITE_PID=$!
+          trap 'kill $VITE_PID || true' EXIT
+          for attempt in {1..20}; do
+            if curl --fail --silent --show-error http://127.0.0.1:4174/ > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/dr-card-vite-dev.log
+          exit 1
+
       - name: Build development bundle
         run: npm run build:dev
 
       - name: Build production bundle
         run: npm run build:prod
+
+      - name: Verify Cloudflare SPA fallback asset
+        run: test -f dist/_redirects && grep -F '/* /index.html 200' dist/_redirects
+
+      - name: Smoke test production preview
+        shell: bash
+        run: |
+          npm run preview -- --port 4173 > /tmp/dr-card-vite-preview.log 2>&1 &
+          PREVIEW_PID=$!
+          trap 'kill $PREVIEW_PID || true' EXIT
+          for attempt in {1..20}; do
+            if curl --fail --silent --show-error http://127.0.0.1:4173/ > /dev/null; then
+              curl --fail --silent --show-error http://127.0.0.1:4173/profile > /dev/null
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/dr-card-vite-preview.log
+          exit 1
