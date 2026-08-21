@@ -1,9 +1,20 @@
 :root {
-  --color-brand-gold: #C8922E;
-  --color-brand-orange: #F28C28;
-  --color-bg-page: #FFF9EF;
-  --color-surface: #FFFFFF;
-  --color-text-primary: #1F1F1F;
-  --color-text-secondary: #6B6B6B;
-  --radius-card: 20px;
+  /* Primitive */
+  --gold-500: #D9A441;
+  --orange-500: #F28C28;
+  --neutral-0: #FFFFFF;
+  --neutral-900: #2B2115;
+
+  /* Semantic */
+  --color-brand-gold: var(--gold-500);
+  --color-brand-orange: var(--orange-500);
+  --color-background: #FFF8EC;
+  --color-surface: var(--neutral-0);
+  --color-text: var(--neutral-900);
+  --color-border: #EAD9B8;
+
+  /* Component */
+  --radius-card: 16px;
+  --radius-button: 12px;
+  --shadow-card: 0 8px 24px rgba(92,57,12,.12);
 }
