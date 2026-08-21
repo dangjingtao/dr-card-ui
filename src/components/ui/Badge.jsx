@@ -1,1 +1,7 @@
-export default function Badge({children}){return <span className="rounded-full px-2 py-1 text-xs bg-orange/10 text-orange">{children}</span>}
+export default function Badge({ children, className = '' }) {
+  return (
+    <span className={`rounded-full bg-brand-orange/10 px-2 py-1 text-xs text-brand-orange ${className}`}>
+      {children}
+    </span>
+  )
+}
