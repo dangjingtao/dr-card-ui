@@ -1,0 +1,8 @@
+:root {
+  /* Card Doctor brand semantic layer */
+  --color-card-member-gold: var(--premium-300);
+  --color-card-member-gold-strong: var(--premium-500);
+  --color-card-member-green: #24594A;
+  --color-card-reward-red: #C84532;
+  --color-card-ip-surface: var(--warm-100);
+}
