@@ -14,6 +14,8 @@
 workbench/
 ├── README.md
 ├── task-ledger.md
+├── design-assessment.md
+├── tasks/
 ├── decisions/
 ├── reviews/
 └── archive/
@@ -26,3 +28,11 @@ workbench/
 - 设计问题先决策，再编码
 - 任务完成必须有验证方式
 - 保留关键设计讨论，避免重复争论
+
+## 当前 15 张任务卡
+
+- [实际评估与覆盖矩阵](./design-assessment.md)
+- [任务卡索引与全局验收契约](./tasks/README.md)
+- [任务状态规则](./task-ledger.md)
+
+智能体自审通过不等于项目通过。任务只能由智能体推进到 `User Review`，最终 `Accepted` 必须来自用户明确验收。

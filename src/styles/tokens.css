@@ -37,6 +37,18 @@
   --ink-900: #1C1B18;
   --ink-950: #11100E;
 
+  /* Primitive: neutral gray (sampled from Mockplus 中性灰: #F3F3F3 / #EDEDED / #8F8F8F / #999999 / #797979) */
+  --neutral-50: #FAFAFA;
+  --neutral-100: #F3F3F3;
+  --neutral-200: #EDEDED;
+  --neutral-300: #D9D9D9;
+  --neutral-400: #B3B3B3;
+  --neutral-500: #999999;
+  --neutral-600: #8F8F8F;
+  --neutral-700: #797979;
+  --neutral-800: #5C5C5C;
+  --neutral-900: #3D3D3D;
+
   /* Primitive: status */
   --success-100: #DDF8EA;
   --success-500: #21B66F;
@@ -91,6 +103,18 @@
   --color-border-focused: var(--brand-600);
   --color-border-error: var(--danger-500);
 
+  /* Semantic: inactive（失效/停用态）
+   * 失效态一律走中性阶，不用暖面/暖字，避免与金色权益语义混淆。
+   * 依据：摹客「卡包-已使用」中性为主、「卡包-已过期」#fafafa/#e2e2e2，
+   *       且 --neutral-* 是通用中性底色事实源，见 docs/design/token-sampling.md §2.3 / §2.6。
+   * 对比度：text-inactive 在 surface 上 7.0:1，text-inactive-muted 4.6:1，
+   *         icon-inactive 作图形用 ≥3:1。 */
+  --color-surface-inactive: var(--neutral-100);
+  --color-surface-inactive-strong: var(--neutral-200);
+  --color-text-inactive: var(--neutral-800);
+  --color-text-inactive-muted: var(--neutral-700);
+  --color-icon-inactive: var(--neutral-700);
+
   /* Semantic: status */
   --color-success: var(--success-500);
   --color-success-bg: var(--success-100);
@@ -119,6 +143,10 @@
   --shadow-modal: 0 16px 40px rgba(17,16,14,.2);
   --shadow-member-card: 0 12px 24px -8px rgba(237,188,108,.35);
   --shadow-card: none;
+  /* 主操作按钮投影：色相与填充同源（brand-600 #D63D10），避免出现填充一套色、
+   * 投影另一套色导致的浑浊感。原型 .rd-btn-primary 用的是 amber 投影配土金填充，
+   * 属原型近似，不作为取值依据。 */
+  --shadow-primary-button: 0 4px 12px rgba(214,61,16,.24);
 
   /* Compatibility aliases used by early dr-card-ui */
   --color-brand-gold: var(--color-reward);
@@ -156,5 +184,12 @@
   --color-info-bg: #461103;
   --color-info-text: var(--brand-100);
   --color-surface-overlay-warm: #292722;
+  /* 暗色失效态：中性阶反向，保持与暖色主体系可区分且不刺眼 */
+  --color-surface-inactive: #34322D;
+  --color-surface-inactive-strong: #423F39;
+  --color-text-inactive: var(--neutral-400);
+  --color-text-inactive-muted: var(--neutral-500);
+  --color-icon-inactive: var(--neutral-500);
   --shadow-member-card: 0 12px 24px -8px rgba(0,0,0,.55);
+  --shadow-primary-button: 0 4px 12px rgba(0,0,0,.45);
 }

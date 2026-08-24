@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>完善信息 · 卡博士诗得丽</title>
+    <style id="theme-vars">
+/* 积分首页等 7 个设计 - 共享设计令牌
+ * 来源: com-design Mobile Design System (structured-spec)
+ * 品牌前缀: cards (cardUI/积分会员设计语言)
+ * 6 页面共享(每日签到领福利使用局部 warm-cream 变体,见该页自身 tokens)
+ */
+
+:root {
+  /* neutral */
+  --cards-neutral-0: #FFFFFF;
+  --cards-neutral-50: #F7F8FC;
+  --cards-neutral-100: #F0F2F8;
+  --cards-neutral-200: #E2E6F0;
+  --cards-neutral-300: #CDD3E1;
+  --cards-neutral-400: #8590A3;
+  --cards-neutral-500: #687288;
+  --cards-neutral-600: #535D72;
+  --cards-neutral-700: #394156;
+  --cards-neutral-800: #252B3D;
+  --cards-neutral-900: #171B2A;
+
+  /* warm surface — 页面底色 */
+  --cards-warm-50: #FCF8F1;
+  --cards-warm-100: #F8F0E5;
+
+  /* brand — 橘色主品牌,行动色 */
+  --cards-brand-50: #FFF3EC;
+  --cards-brand-100: #FFE3D5;
+  --cards-brand-200: #FFC4AA;
+  --cards-brand-400: #FF7540;
+  --cards-brand-500: #ED4D1B; /* @primary */
+  --cards-brand-600: #D63D10;
+  --cards-brand-700: #AD2E0A;
+
+  /* accent — 青蓝强调 */
+  --cards-accent-50: #E9FCFF;
+  --cards-accent-100: #CAF7FB;
+  --cards-accent-500: #16BFD3;
+  --cards-accent-600: #0E9FB3;
+
+  /* premium / reward — 金色奖励 */
+  --cards-premium-50: #FFFBEB;
+  --cards-premium-100: #FEF3C7;
+  --cards-premium-300: #FCD34D;
+  --cards-premium-500: #F59E0B;
+  --cards-premium-700: #B45309;
+
+  /* status */
+  --cards-success-500: #21B66F;
+  --cards-warning-500: #F3A21B;
+  --cards-danger-500: #D63E50;
+
+  /* semantic aliases (apply-html-head-contract 必需) */
+  --cards-background: var(--cards-warm-50);
+  --cards-foreground: var(--cards-neutral-800);
+  --cards-card: var(--cards-neutral-0);
+  --cards-primary: var(--cards-brand-500);
+  --cards-border: var(--cards-neutral-200);
+  --cards-muted: var(--cards-neutral-400);
+  --cards-radius-sm: 8px;
+  --cards-radius-md: 12px;
+  --cards-radius-lg: 20px;
+}
+
+/* 每日签到领福利 局部 warm-cream 变体(覆盖在 :root 之上) */
+.page-checkin {
+  --ck-background: #FFF8F3;
+  --ck-foreground: #1F2937;
+  --ck-card: #FFFFFF;
+  --ck-primary: #FF7A33;
+  --ck-border: #F0E6DC;
+  --ck-muted: #8590A3;
+}
+
+    </style>
+    <style id="component-vars">
+/* ═══════════════════════════════════════════════════════════════
+   components.css — Design System Component Definitions
+   Auto-extracted from preview/component-*.html
+   DO NOT EDIT MANUALLY — regenerate via extract-components-css.mjs
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Avatar ────────────────────────────────────────────────── */
+/* @anatomy
+   <span class="avatar avatar-sm">用户头像缩略图(内联 SVG)</span>
+   <span class="avatar avatar-md">用户头像(内联 SVG)</span>
+*/
+/* Component definitions — extracted to components.css by deterministic script */
+  .avatar { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; background: var(--color-surface-subtle); color: var(--color-text-primary); border-radius: var(--radius-full); font-weight: var(--font-weight-medium); }
+  .avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .avatar .avatar-icon { width: 55%; height: 55%; object-fit: contain; }
+  .avatar-sm { width: var(--com-size-32); height: var(--com-size-32); font: var(--type-caption); }
+  .avatar-md { width: var(--com-size-40); height: var(--com-size-40); font: var(--type-label); }
+  .avatar-lg { width: var(--com-size-48); height: var(--com-size-48); font: var(--type-body); }
+  .avatar.vip { border: 2px solid var(--color-member-accent); }
+
+/* ── Badge ─────────────────────────────────────────────────── */
+/* @anatomy
+   <span class="label">色调</span> <span class="badge default">默认</span> <span class="badge brand">品牌</span> <span class="badge success">成功</span> <span class="badge warning">警告</span> <span class="badge danger">错误</span> <span class="badge reward">会员</span>
+*/
+.badge { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-4); height: 20px; min-width: 20px; padding: 0 var(--space-8); border-radius: var(--radius-xs); font: var(--type-label-small); white-space: nowrap; flex-shrink: 0; }
+  .badge .dot { width: 6px; height: 6px; border-radius: var(--radius-full); flex-shrink: 0; }
+  .badge.default { background: var(--color-surface-subtle); color: var(--color-text-primary); }
+  .badge.brand { background: var(--color-primary-container); color: var(--color-on-primary-container); }
+  .badge.success { background: var(--color-success-bg); color: var(--color-success-text); }
+  .badge.warning { background: var(--color-warning-bg); color: var(--color-warning-text); }
+  .badge.danger { background: var(--color-danger-bg); color: var(--color-danger-text); }
+  .badge.reward { background: var(--color-reward); color: var(--color-reward-text); }
+  .badge.default .dot { background: var(--color-text-secondary); }
+  .badge.brand .dot { background: var(--color-on-primary-container); }
+  .badge.success .dot { background: var(--color-success); }
+  .badge.warning .dot { background: var(--color-warning); }
+  .badge.danger .dot { background: var(--color-danger); }
+  .badge.reward .dot { background: var(--color-reward-text); }
+
+/* ── Button ────────────────────────────────────────────────── */
+/* @anatomy
+   <span class="label">主要操作</span><button class="btn btn-primary" data-evidence-sample="primary-md-default">立即开通</button><button class="btn btn-primary btn-lg" data-evidence-sample="primary-lg-default">立即开通</button>
+*/
+/* Component definitions — extracted to components.css by deterministic script */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-4); border: none; cursor: pointer; font: var(--type-label); white-space: nowrap; text-overflow: ellipsis; overflow: hidden; transition: background .15s, border-color .15s; flex-shrink: 0; min-width: var(--size-control-height); height: var(--size-control-height); padding: var(--density-padding-v) var(--density-padding-h); border-radius: var(--radius-control); color: var(--color-text-inverse); }
+.btn-primary { background: var(--color-primary); color: var(--color-on-primary); }
+.btn-primary:hover, .btn-primary:active { background: var(--color-primary-hover); }
+.btn-secondary { background: var(--color-secondary); color: var(--color-text-brand); }
+.btn-secondary:hover, .btn-secondary:active { background: var(--color-secondary-hover); }
+.btn-destructive { background: var(--color-destructive); color: var(--color-text-inverse); }
+.btn-destructive:hover, .btn-destructive:active { background: var(--color-destructive-hover); }
+.btn-sm { height: var(--com-size-32); min-width: var(--com-size-32); padding: var(--space-6) var(--space-12); font: var(--type-label-small); }
+.btn-lg { height: var(--size-control-height-lg); min-width: var(--size-control-height-lg); padding: var(--space-12) var(--space-20); font: var(--type-heading-small); }
+.btn[disabled] { background: var(--color-disabled); color: var(--color-text-disabled); cursor: not-allowed; pointer-events: none; }
+
+/* ── Card ──────────────────────────────────────────────────── */
+/* @anatomy
+   <div class="card padding-md"><div class="card-header"><h3 class="card-title">尊享礼遇</h3><button class="card-action">查看</button>
+*/
+.card { width: 100%; box-sizing: border-box; background: var(--color-surface); border-radius: var(--radius-container); overflow: hidden; }
+  .card.padding-md { padding: var(--space-16); }
+  .card.padding-lg { padding: var(--space-20); }
+  .card.elevated { box-shadow: var(--shadow-1); }
+  .card.member { background: var(--color-member-surface); color: var(--color-member-text); }
+  .card:hover { filter: brightness(0.97); transition: filter var(--motion-duration-fast); }
+  .card-header { display: flex; align-items: center; justify-content: space-between; gap: var(--space-8); margin-bottom: var(--space-12); }
+  .card-title { font: var(--type-heading-small); color: inherit; margin: 0; }
+  .card-action { font: var(--type-label-small); color: var(--color-text-brand); background: none; border: none; padding: 0; cursor: pointer; white-space: nowrap; transition: color var(--motion-duration-fast); }
+  .card-action:hover { color: var(--color-text-brand); }
+  .member .card-action { color: var(--color-member-accent); }
+  .card-body { font: var(--type-body-small); color: var(--color-text-secondary); line-height: var(--line-height-body-small); }
+  .member .card-body { color: var(--color-member-text); }
+  .card-footer { display: flex; gap: var(--space-8); margin-top: var(--space-16); }
+  .btn { display: inline-flex; align-items: center; justify-content: center; height: var(--size-control-height); min-width: var(--size-control-height); padding: 0 var(--space-16); border: none; border-radius: var(--radius-control); font: var(--type-label); color: var(--color-on-primary); background: var(--color-primary); cursor: pointer; white-space: nowrap; transition: background var(--motion-duration-fast); }
+  .btn:hover { background: var(--color-primary-hover); }
+
+/* ── Input ─────────────────────────────────────────────────── */
+/* @anatomy
+   <div class="field-group"> <label class="field-label">手机号</label> <input class="com-input" type="text" placeholder="请输入手机号">
+*/
+/* Component definitions — extracted to components.css by deterministic script */
+  .field-group { display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 320px; min-width: 120px; }
+  .field-label { font: var(--type-label-small); color: var(--color-text-secondary); }
+  .field-helper { font: var(--type-caption); color: var(--color-danger); }
+  .com-input { width: 100%; height: var(--size-control-height); padding: 0 var(--space-12); border: 1px solid var(--color-border); border-radius: var(--radius-control); background: var(--color-surface); color: var(--color-text-primary); font: var(--type-body); outline: none; transition: border-color .15s; box-sizing: border-box; }
+  .com-input::placeholder { color: var(--color-text-placeholder); }
+  .com-input:focus { border-color: var(--color-border-focused); }
+  .com-input.error { border-color: var(--color-border-error); }
+  .com-input:disabled { background: var(--color-surface-subtle); border-color: var(--color-border-subtle); color: var(--color-text-disabled); cursor: not-allowed; }
+  .input-icon-wrap { position: relative; width: 100%; max-width: 320px; height: var(--size-control-height); display: flex; align-items: center; }
+  .input-icon-wrap .com-input { padding-right: 40px; }
+  .input-icon { position: absolute; right: 12px; width: var(--com-icon-size-md); height: var(--com-icon-size-md); color: var(--color-text-tertiary); pointer-events: none; }
+
+/* ── Tabs ──────────────────────────────────────────────────── */
+/* @anatomy
+   <div class="tabs tabs-line" role="tablist" aria-label="内容分类"> <button class="tab active" role="tab" aria-selected="true">推荐</button> <button class="tab" role="tab" aria-selected="false">关注</button> <button class="tab" role="tab" aria-selected="false" disabled>精选</button>
+*/
+/* Component definitions — extracted to components.css by deterministic script */
+.tabs { display: flex; width: 100%; }
+.tab { display: inline-flex; align-items: center; justify-content: center; gap: 4px; border: none; background: transparent; cursor: pointer; font: var(--type-label); color: var(--color-text-secondary); white-space: nowrap; transition: background .15s, border-color .15s; flex-shrink: 0; }
+.tab:hover { background: var(--color-surface-subtle); }
+.tab:disabled { color: var(--color-text-disabled); cursor: not-allowed; }
+.tab:disabled:hover { background: transparent; }
+.tab-panel { width: 100%; padding: 12px; background: var(--color-surface); border-radius: var(--radius-md); font: var(--type-body-small); color: var(--color-text-secondary); }
+.tabs-line { border-bottom: 1px solid var(--color-border-subtle); }
+.tabs-line .tab { position: relative; flex: 1; height: var(--size-control-height); min-width: var(--size-control-height); padding: 0 var(--space-12); }
+.tabs-line .tab.active { color: var(--color-text-brand); }
+.tabs-line .tab.active::after { content: ""; position: absolute; bottom: -1px; left: 0; right: 0; height: 2px; background: var(--color-primary); }
+.tabs-pill { gap: 4px; padding: 4px; background: var(--color-surface-subtle); border-radius: var(--radius-full); }
+.tabs-pill .tab { height: calc(var(--size-control-height) - 8px); min-width: calc(var(--size-control-height) - 8px); padding: 0 var(--space-16); border-radius: var(--radius-full); }
+.tabs-pill .tab.active { background: var(--color-primary-container); color: var(--color-on-primary-container); }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--cards-background);
+    --color-foreground: var(--cards-foreground);
+    --color-card: var(--cards-card);
+    --color-primary: var(--cards-primary);
+    --color-muted: var(--cards-muted);
+    --color-border: var(--cards-border);
+    --radius-sm: var(--cards-radius-sm);
+    --radius-md: var(--cards-radius-md);
+    --radius-lg: var(--cards-radius-lg);
+  }
+  @layer base {
+    body { background: var(--cards-background); color: var(--cards-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--cards-background); }
+      .text-background { color: var(--cards-background); }
+      .border-background { border-color: var(--cards-background); }
+      .ring-background { --tw-ring-color: var(--cards-background); }
+      .bg-foreground { background-color: var(--cards-foreground); }
+      .text-foreground { color: var(--cards-foreground); }
+      .border-foreground { border-color: var(--cards-foreground); }
+      .ring-foreground { --tw-ring-color: var(--cards-foreground); }
+      .bg-card { background-color: var(--cards-card); }
+      .text-card { color: var(--cards-card); }
+      .border-card { border-color: var(--cards-card); }
+      .ring-card { --tw-ring-color: var(--cards-card); }
+      .bg-primary { background-color: var(--cards-primary); }
+      .text-primary { color: var(--cards-primary); }
+      .border-primary { border-color: var(--cards-primary); }
+      .ring-primary { --tw-ring-color: var(--cards-primary); }
+      .bg-muted { background-color: var(--cards-muted); }
+      .text-muted { color: var(--cards-muted); }
+      .border-muted { border-color: var(--cards-muted); }
+      .ring-muted { --tw-ring-color: var(--cards-muted); }
+      .bg-border { background-color: var(--cards-border); }
+      .text-border { color: var(--cards-border); }
+      .border-border { border-color: var(--cards-border); }
+      .ring-border { --tw-ring-color: var(--cards-border); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+</head>
+<body>
+    <main class="app-container" data-page-id="page-完善信息">
+        <!-- Status bar -->
+        <div class="status-bar" aria-hidden="true">
+            <span>9:41</span>
+            <span class="right">
+                <i data-lucide="signal" class="icon"></i>
+                <i data-lucide="wifi" class="icon"></i>
+                <i data-lucide="battery-full" class="icon"></i>
+            </span>
+        </div>
+
+        <!-- Top bar(左返回 / 中「完善信息」/ 右上无) -->
+        <header class="ps-topbar">
+            <button type="button" class="icon-btn" aria-label="返回上级页面" data-dom-id="t01-back">
+                <i data-lucide="chevron-left" class="icon"></i>
+            </button>
+            <h1>完善信息</h1>
+            <span class="spacer" aria-hidden="true"></span>
+        </header>
+
+        <!-- Ambient 光斑 -->
+        <div class="me-ambient" aria-hidden="true">
+            <span class="me-amb-warm"></span>
+            <span class="me-amb-brand-1"></span>
+            <span class="me-amb-brand-2"></span>
+        </div>
+
+        <!-- ══════════ 主体卡片(头像 + 5 个字段) ══════════ -->
+        <section class="pf-card" aria-label="完善个人信息表单">
+
+            <!-- 头像上传 -->
+            <div class="pf-head">
+                <button type="button" class="pf-avatar" aria-label="上传头像" data-dom-id="t01-avatar">
+                    <span class="plus" aria-hidden="true">+</span>
+                </button>
+                <span class="pf-avatar-hint">点击上传头像</span>
+            </div>
+
+            <!-- 字段组 -->
+            <div class="pf-fields">
+
+                <!-- 昵称 -->
+                <div class="pf-field">
+                    <label class="pf-label" for="pf-nick">昵称<span class="req" aria-hidden="true">*</span></label>
+                    <div class="pf-input">
+                        <input id="pf-nick" type="text" placeholder="请输入昵称" maxlength="20" autocomplete="nickname" aria-required="true">
+                    </div>
+                </div>
+
+                <!-- 生日 -->
+                <div class="pf-field">
+                    <label class="pf-label" for="pf-birth">生日</label>
+                    <div class="pf-input">
+                        <input id="pf-birth" type="text" placeholder="请选择生日" readonly aria-haspopup="dialog">
+                        <i data-lucide="calendar" class="pf-icon" aria-hidden="true"></i>
+                    </div>
+                </div>
+
+                <!-- 身份(单选) -->
+                <div class="pf-field">
+                    <span class="pf-label" id="pf-role-label">身份</span>
+                    <div class="pf-radios" role="radiogroup" aria-labelledby="pf-role-label" data-name="role">
+                        <button type="button" class="pf-radio is-checked" role="radio" aria-checked="true" data-value="学生" data-dom-id="t01-role-student">
+                            <span class="dot" aria-hidden="true"></span>
+                            <span>学生</span>
+                        </button>
+                        <button type="button" class="pf-radio" role="radio" aria-checked="false" data-value="职场" data-dom-id="t01-role-worker">
+                            <span class="dot" aria-hidden="true"></span>
+                            <span>职场</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 性别(单选) -->
+                <div class="pf-field">
+                    <span class="pf-label" id="pf-gender-label">性别</span>
+                    <div class="pf-radios" role="radiogroup" aria-labelledby="pf-gender-label" data-name="gender">
+                        <button type="button" class="pf-radio" role="radio" aria-checked="false" data-value="男" data-dom-id="t01-gender-male">
+                            <span class="dot" aria-hidden="true"></span>
+                            <span>男</span>
+                        </button>
+                        <button type="button" class="pf-radio" role="radio" aria-checked="false" data-value="女" data-dom-id="t01-gender-female">
+                            <span class="dot" aria-hidden="true"></span>
+                            <span>女</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 消费密码(6 位) -->
+                <div class="pf-field">
+                    <label class="pf-label" for="pf-pin">消费密码<span class="req" aria-hidden="true">*</span></label>
+                    <div class="pf-pin" id="pf-pin" role="group" aria-label="6 位消费密码" tabindex="0" inputmode="numeric" data-dom-id="t01-pin">
+                        <span class="pf-pin-cell is-focus" data-index="0"><span class="caret" aria-hidden="true"></span></span>
+                        <span class="pf-pin-cell" data-index="1"></span>
+                        <span class="pf-pin-cell" data-index="2"></span>
+                        <span class="pf-pin-cell" data-index="3"></span>
+                        <span class="pf-pin-cell" data-index="4"></span>
+                        <span class="pf-pin-cell" data-index="5"></span>
+                    </div>
+                    <span class="pf-helper" id="pf-pin-helper" aria-live="polite">6 位数字 · 用于门店消费核验</span>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- 底部主按钮(高 48 圆角 24 brand-500 白字 · 宽 100% max 343) -->
+        <div class="pf-submit-wrap">
+            <button type="button" class="pf-submit" id="pf-submit" data-dom-id="t01-submit" disabled aria-label="确认信息">
+                <span>确认信息</span>
+                <i data-lucide="chevron-right" class="icon" aria-hidden="true"></i>
+            </button>
+        </div>
+
+        <div class="pf-safe-bottom" aria-hidden="true"></div>
+    </main>
+
+    <div class="app-tabbar-spacer" aria-hidden="true"></div>
+
+    <!-- 底部 TabBar · 5 项,中间扫码 FAB 凸起(沿用画布范式) -->
+    <nav class="app-tabbar" aria-label="底部导航">
+        <button type="button" class="app-tabbar-item" aria-label="首页" data-dom-id="t01-tab-home">
+            <i data-lucide="home" class="icon"></i>
+            <span class="app-tabbar-label">首页</span>
+        </button>
+        <button type="button" class="app-tabbar-item" aria-label="积分" data-dom-id="t01-tab-points">
+            <i data-lucide="coins" class="icon"></i>
+            <span class="app-tabbar-label">积分</span>
+        </button>
+        <button type="button" class="app-tabbar-item is-fab" aria-label="扫码" data-dom-id="t01-tab-scan">
+            <span class="fab-bubble"><i data-lucide="qr-code" class="icon"></i></span>
+            <span class="app-tabbar-label">扫码</span>
+        </button>
+        <button type="button" class="app-tabbar-item" aria-label="消息" data-dom-id="t01-tab-msg">
+            <i data-lucide="message-circle" class="icon"></i>
+            <span class="app-tabbar-label">消息</span>
+        </button>
+        <button type="button" class="app-tabbar-item is-active" aria-label="我的" aria-current="page" data-dom-id="t01-tab-me">
+            <i data-lucide="user" class="icon"></i>
+            <span class="app-tabbar-label">我的</span>
+        </button>
+    </nav>
+
+    <script>
+    (function () {
+        'use strict';
+
+        // Lucide 图标初始化
+        function bootLucide() {
+            if (window.lucide && typeof window.lucide.createIcons === 'function') {
+                window.lucide.createIcons();
+            }
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', bootLucide);
+        } else {
+            bootLucide();
+        }
+        setTimeout(bootLucide, 50);
+
+        // ── Radio 切换(身份 / 性别) ──
+        document.querySelectorAll('.pf-radios').forEach(function (group) {
+            group.addEventListener('click', function (e) {
+                var btn = e.target.closest('.pf-radio');
+                if (!btn) return;
+                group.querySelectorAll('.pf-radio').forEach(function (b) {
+                    b.classList.remove('is-checked');
+                    b.setAttribute('aria-checked', 'false');
+                });
+                btn.classList.add('is-checked');
+                btn.setAttribute('aria-checked', 'true');
+                refreshSubmit();
+            });
+        });
+
+        // ── 头像上传占位 ──
+        document.getElementById('t01-avatar').addEventListener('click', function () {
+            // 占位:真实项目会唤起相册/拍照,此处仅给视觉反馈
+            var btn = this;
+            btn.style.background = 'var(--cards-brand-50)';
+            setTimeout(function () { btn.style.background = ''; }, 220);
+        });
+
+        // ── 6 位消费密码:容器 focus → 监听 keydown ──
+        var pin = document.getElementById('pf-pin');
+        var cells = pin.querySelectorAll('.pf-pin-cell');
+        var pinValue = '';
+        var pinLocked = false;
+        var pinHelper = document.getElementById('pf-pin-helper');
+
+        function renderPin() {
+            var len = pinValue.length;
+            cells.forEach(function (cell, i) {
+                cell.classList.remove('is-filled', 'is-focus');
+                cell.innerHTML = '';
+                if (i < len) {
+                    cell.classList.add('is-filled');
+                    cell.textContent = '•';
+                }
+            });
+            if (len < 6) {
+                cells[len].classList.add('is-focus');
+                cells[len].innerHTML = '<span class="caret" aria-hidden="true"></span>';
+            }
+        }
+
+        function pinHandleKey(e) {
+            if (pinLocked) return;
+            if (/^[0-9]$/.test(e.key)) {
+                if (pinValue.length < 6) {
+                    pinValue += e.key;
+                    renderPin();
+                    e.preventDefault();
+                }
+            } else if (e.key === 'Backspace') {
+                if (pinValue.length > 0) {
+                    pinValue = pinValue.slice(0, -1);
+                    renderPin();
+                    e.preventDefault();
+                }
+            }
+            refreshSubmit();
+        }
+
+        pin.addEventListener('click', function () { pin.focus(); });
+        pin.addEventListener('keydown', pinHandleKey);
+        document.addEventListener('keydown', function (e) {
+            if (document.activeElement === pin) pinHandleKey(e);
+        });
+
+        // ── 昵称:input 事件 → refresh submit 可用性 ──
+        document.getElementById('pf-nick').addEventListener('input', refreshSubmit);
+
+        // ── 生日:点击唤起 date picker 占位 ──
+        document.getElementById('pf-birth').addEventListener('click', function () {
+            // 占位:真实项目会唤起底部 sheet
+            if (this.value) return;
+            // 用 iOS 风格的 native date picker
+            try {
+                var tmp = document.createElement('input');
+                tmp.type = 'date';
+                tmp.style.position = 'absolute';
+                tmp.style.left = '-9999px';
+                document.body.appendChild(tmp);
+                tmp.addEventListener('change', function () {
+                    if (tmp.value) document.getElementById('pf-birth').value = tmp.value;
+                    tmp.remove();
+                });
+                tmp.showPicker ? tmp.showPicker() : tmp.click();
+            } catch (err) {
+                // 兜底:不做操作
+            }
+        });
+
+        // ── 提交按钮可用性:昵称非空 + 密码 6 位才允许点击 ──
+        var submitBtn = document.getElementById('pf-submit');
+        function refreshSubmit() {
+            var nick = document.getElementById('pf-nick').value.trim();
+            var ok = nick.length > 0 && pinValue.length === 6;
+            submitBtn.disabled = !ok;
+        }
+
+        // ── 提交:保存成功占位反馈(画布不跳页) ──
+        submitBtn.addEventListener('click', function () {
+            if (submitBtn.disabled) return;
+            pinLocked = true;
+            submitBtn.disabled = true;
+            submitBtn.querySelector('span').textContent = '已确认';
+            submitBtn.style.background = 'var(--cards-success-500, #21B66F)';
+            pinHelper.textContent = '已保存';
+            setTimeout(function () {
+                submitBtn.querySelector('span').textContent = '确认信息';
+                submitBtn.style.background = '';
+                pinHelper.textContent = '6 位数字 · 用于门店消费核验';
+                pinLocked = false;
+                refreshSubmit();
+            }, 1500);
+        });
+
+        // ── 初始化 ──
+        renderPin();
+        refreshSubmit();
+    })();
+    </script>
+
+    <style id="theme-aliases">
+        /* v2 内联主题别名 — 仅补齐本页需要的语义变量,所有值引用画布根 --cards-* 原子 token */
+        :root {
+            /* 文本 */
+            --color-text-primary:   var(--cards-neutral-800);   /* #252B3D · 正文主色 */
+            --color-text-secondary: var(--cards-neutral-600);   /* #535D72 · 副文 */
+            --color-text-tertiary:  var(--cards-neutral-500);   /* #687288 · 三级 */
+            --color-text-placeholder: var(--cards-neutral-500); /* placeholder */
+            --color-on-primary:     var(--cards-neutral-0);     /* 按钮文字 */
+            --color-text-inverse:   var(--cards-neutral-0);
+
+            /* 表面 */
+            --color-background:    var(--cards-warm-50);        /* #FCF8F1 · 页面底色 */
+            --color-surface:       var(--cards-neutral-0);      /* #FFFFFF · 卡片 */
+            --color-surface-subtle: #F7F4ED;                    /* 极淡暖灰 · 输入框默认 */
+            --color-surface-selected: var(--cards-brand-50);
+
+            /* 边框 */
+            --color-border:        var(--cards-neutral-200);    /* 默认 */
+            --color-border-subtle: var(--cards-neutral-200);
+            --color-border-focused: var(--cards-brand-500);     /* focus 切品牌色 */
+            --color-border-error:  var(--cards-danger-500);
+
+            /* 行动 */
+            --color-primary:       var(--cards-brand-500);      /* #ED4D1B */
+            --color-primary-hover: var(--cards-brand-600);      /* #D63D10 */
+
+            /* 字号 · 沿用画布 18/16/14/12 */
+            --type-caption: 400 12px/18px system-ui, -apple-system, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+            --type-label-small: 500 12px/16px system-ui, -apple-system, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+            --type-body-small: 400 14px/20px system-ui, -apple-system, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+            --type-label: 500 14px/20px system-ui, -apple-system, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+            --type-body: 400 16px/24px system-ui, -apple-system, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+            --type-heading-small: 600 16px/22px system-ui, -apple-system, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+            --type-heading: 600 18px/24px system-ui, -apple-system, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+            --font-family-base: system-ui, -apple-system, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+
+            /* 间距 / 圆角 / 触控 */
+            --space-4: 4px;
+            --space-8: 8px;
+            --space-12: 12px;
+            --space-16: 16px;
+            --space-20: 20px;
+            --space-24: 24px;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 20px;
+            --radius-pill: 9999px;
+        }
+    </style>
+    <style>
+        /* ════════════════════════════════════════════════════════════
+           T01 · 完善信息 (v2 修订 · 沿用画布现状)
+           设计语言对齐:画布 settings-edit.html 卡片行 + Mock 暖橙金主按钮
+           画布根 CSS 提供 --cards-* 原子 token,本页内联仅补语义别名
+           ════════════════════════════════════════════════════════════ */
+
+        body {
+            margin: 0;
+            background: var(--color-background);
+            color: var(--color-text-primary);
+            font: var(--type-body);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 480px;
+            min-height: 100vh;
+            margin: 0 auto;
+            background: var(--color-background);
+            position: relative;
+            overflow: hidden;
+            padding-bottom: 100px;
+        }
+
+        @media (min-width: 480px) {
+            body { background: var(--cards-neutral-100); padding: 24px 0; }
+            .app-container {
+                box-shadow: 0 8px 32px rgba(23, 27, 42, 0.10);
+                border-radius: 24px;
+                min-height: 100vh;
+            }
+        }
+
+        /* ── Status bar ── */
+        .status-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px 6px;
+            font: 600 14px/1 var(--font-family-base);
+            color: var(--color-text-primary);
+        }
+        .status-bar .right { display: inline-flex; align-items: center; gap: 6px; }
+        .status-bar .icon { width: 16px; height: 16px; }
+
+        /* ── Top bar(44pt 状态栏 + TopBar,沿用画布) ── */
+        .ps-topbar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 16px 12px;
+            height: 44px;
+            box-sizing: border-box;
+        }
+        .ps-topbar .icon-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: var(--radius-pill);
+            color: var(--color-text-primary);
+            background: transparent;
+            border: 0;
+            cursor: pointer;
+            padding: 0;
+        }
+        .ps-topbar .icon-btn:focus-visible {
+            outline: 2px solid var(--cards-brand-500);
+            outline-offset: 4px;
+        }
+        .ps-topbar .icon-btn .icon { width: 24px; height: 24px; stroke-width: 2.2; }
+        .ps-topbar h1 {
+            flex: 1;
+            margin: 0;
+            font: 600 18px/24px var(--font-family-base);
+            color: var(--color-text-primary);
+            text-align: center;
+        }
+        .ps-topbar .spacer { width: 24px; height: 24px; }
+
+        /* ════════════════════════════════════════════════════════════
+           Ambient 光斑(暖金 + 品牌橙,绝对定位铺在最底层)
+           ════════════════════════════════════════════════════════════ */
+        .me-ambient {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .me-ambient > span {
+            position: absolute;
+            display: block;
+            border-radius: 50%;
+            filter: blur(28px);
+        }
+        .me-amb-warm {
+            width: 280px; height: 280px;
+            left: -80px; top: 80px;
+            background: var(--cards-premium-100);
+            opacity: 0.65;
+        }
+        .me-amb-brand-1 {
+            width: 220px; height: 220px;
+            right: -60px; top: 280px;
+            background: var(--cards-premium-300);
+            opacity: 0.45;
+        }
+        .me-amb-brand-2 {
+            width: 200px; height: 200px;
+            right: -40px; bottom: 100px;
+            background: var(--cards-brand-200);
+            opacity: 0.40;
+        }
+
+        .ps-topbar,
+        .pf-card,
+        .pf-submit-wrap { position: relative; z-index: 1; }
+
+        /* ════════════════════════════════════════════════════════════
+           主体卡片 · 暖白长卡(头部头像 + 5 字段)
+           ════════════════════════════════════════════════════════════ */
+        .pf-card {
+            margin: 4px 16px 0;
+            background: var(--color-surface);
+            border-radius: var(--radius-lg);
+            padding: 20px 16px 20px;
+            box-shadow: 0 4px 16px -4px rgba(89, 55, 15, 0.08);
+        }
+
+        /* ── 头部:头像上传(圆形 64,2pt 虚线 brand-100) ── */
+        .pf-head {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 0 0 16px;
+        }
+        .pf-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            border: 2px dashed var(--cards-brand-100);
+            background: var(--cards-warm-50);
+            color: var(--color-text-tertiary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 0;
+            cursor: pointer;
+            box-sizing: border-box;
+            transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
+            padding: 0;
+        }
+        .pf-avatar:hover { border-color: var(--cards-brand-500); background: var(--cards-brand-50); }
+        .pf-avatar:active { transform: scale(0.98); }
+        .pf-avatar:focus-visible {
+            outline: 2px solid var(--cards-brand-500);
+            outline-offset: 4px;
+        }
+        .pf-avatar .plus {
+            font: 600 28px/1 var(--font-family-base);
+            color: var(--cards-brand-500);
+            line-height: 1;
+        }
+        .pf-avatar-hint {
+            font: 500 12px/16px var(--font-family-base);
+            color: var(--color-text-tertiary);
+            letter-spacing: 0.04em;
+        }
+
+        /* ── 字段通用 ── */
+        .pf-fields {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .pf-field {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .pf-label {
+            font: 500 13px/18px var(--font-family-base);
+            color: var(--color-text-secondary);
+            padding-left: 2px;
+        }
+        .pf-label .req { color: var(--cards-danger-500); margin-left: 2px; }
+
+        /* ── Input(昵称 / 生日) ── */
+        .pf-input {
+            width: 100%;
+            height: 48px;
+            padding: 0 14px;
+            background: var(--color-surface-subtle);
+            border: 1px solid transparent;
+            border-radius: var(--radius-md);
+            color: var(--color-text-primary);
+            font: var(--type-body);
+            outline: none;
+            box-sizing: border-box;
+            transition: border-color 120ms ease, background 120ms ease;
+            display: flex;
+            align-items: center;
+        }
+        .pf-input input {
+            flex: 1;
+            border: 0;
+            background: transparent;
+            font: var(--type-body);
+            color: var(--color-text-primary);
+            outline: none;
+            min-width: 0;
+            width: 100%;
+        }
+        .pf-input input::placeholder { color: var(--color-text-placeholder); }
+        .pf-input .pf-icon { width: 18px; height: 18px; color: var(--color-text-tertiary); flex: 0 0 auto; margin-left: 8px; }
+        .pf-input:focus-within {
+            border-color: var(--cards-brand-500);
+            background: var(--color-surface);
+        }
+
+        /* ── Radio card(身份 / 性别) ── */
+        .pf-radios {
+            display: flex;
+            gap: 10px;
+        }
+        .pf-radio {
+            flex: 1;
+            min-height: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            background: var(--color-surface-subtle);
+            border: 2px solid transparent;
+            border-radius: var(--radius-md);
+            color: var(--color-text-primary);
+            font: 500 15px/20px var(--font-family-base);
+            cursor: pointer;
+            transition: border-color 120ms ease, background 120ms ease, color 120ms ease;
+            box-sizing: border-box;
+            padding: 0;
+        }
+        .pf-radio:hover { background: var(--cards-warm-50); }
+        .pf-radio:focus-visible {
+            outline: 2px solid var(--cards-brand-500);
+            outline-offset: 4px;
+        }
+        .pf-radio.is-checked {
+            border-color: var(--cards-brand-500);
+            background: var(--cards-brand-50);
+            color: var(--cards-brand-600);
+        }
+        .pf-radio .dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 1.5px solid var(--cards-neutral-400);
+            flex: 0 0 auto;
+            box-sizing: border-box;
+            position: relative;
+            background: var(--color-surface);
+        }
+        .pf-radio.is-checked .dot { border-color: var(--cards-brand-500); }
+        .pf-radio.is-checked .dot::after {
+            content: "";
+            position: absolute;
+            inset: 3px;
+            border-radius: 50%;
+            background: var(--cards-brand-500);
+        }
+
+        /* ── 6 位消费密码方块 ── */
+        .pf-pin {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            outline: none;
+        }
+        .pf-pin:focus-visible {
+            outline: 2px solid var(--cards-brand-500);
+            outline-offset: 4px;
+            border-radius: 8px;
+        }
+        .pf-pin-cell {
+            height: 48px;
+            width: 100%;
+            background: var(--cards-warm-50);
+            border: 1.5px solid var(--cards-warm-100);
+            border-radius: var(--radius-sm);
+            color: var(--color-text-primary);
+            font: 600 20px/24px var(--font-family-base);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+            transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
+        }
+        .pf-pin-cell.is-filled {
+            background: var(--color-surface);
+            border-color: var(--cards-premium-100);
+        }
+        .pf-pin-cell.is-focus {
+            border-color: var(--cards-brand-500);
+            background: var(--cards-brand-50);
+        }
+        .pf-pin-cell .caret {
+            display: block;
+            width: 1.5px;
+            height: 18px;
+            background: var(--cards-brand-500);
+            animation: caret-blink 1s steps(2, start) infinite;
+        }
+        @keyframes caret-blink { to { visibility: hidden; } }
+
+        /* ── 字段说明文字 ── */
+        .pf-helper {
+            font: 400 12px/16px var(--font-family-base);
+            color: var(--color-text-tertiary);
+            padding-left: 2px;
+        }
+
+        /* ════════════════════════════════════════════════════════════
+           底部主按钮(高 48 · 圆角 24 · 品牌主色 · 宽 100% 最大 343)
+           ════════════════════════════════════════════════════════════ */
+        .pf-submit-wrap {
+            margin: 24px 16px 0;
+        }
+        .pf-submit {
+            width: 100%;
+            max-width: 343px;
+            margin: 0 auto;
+            display: flex;
+            height: 48px;
+            border-radius: 24px;
+            background: var(--color-primary);
+            color: var(--color-on-primary);
+            font: 600 16px/24px var(--font-family-base);
+            border: 0;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: background 120ms ease, transform 120ms ease, box-shadow 120ms ease;
+            box-shadow: 0 4px 12px -2px rgba(237, 77, 27, 0.30);
+        }
+        .pf-submit:hover { background: var(--color-primary-hover); }
+        .pf-submit:active { transform: scale(0.99); box-shadow: 0 2px 6px -1px rgba(237, 77, 27, 0.24); }
+        .pf-submit:focus-visible {
+            outline: 2px solid var(--cards-brand-500);
+            outline-offset: 4px;
+        }
+        .pf-submit[disabled] {
+            background: var(--cards-neutral-200);
+            color: var(--cards-neutral-500);
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .pf-submit .icon { width: 18px; height: 18px; }
+
+        .pf-safe-bottom { height: 24px; }
+
+        /* ════════════════════════════════════════════════════════════
+           底部 TabBar(沿用画布范式,中间扫码 FAB)
+           ════════════════════════════════════════════════════════════ */
+        .app-tabbar-spacer { height: 84px; }
+        .app-tabbar {
+            position: fixed; left: 0; right: 0; bottom: 0;
+            z-index: 100; display: flex; align-items: stretch; justify-content: space-around;
+            background: var(--cards-neutral-0); border-top: 1px solid var(--cards-neutral-200);
+            padding: 6px 0 calc(6px + env(safe-area-inset-bottom));
+            box-shadow: 0 -2px 8px rgba(23, 27, 42, 0.04);
+        }
+        .app-tabbar-item {
+            flex: 1 1 0; display: inline-flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 2px;
+            padding: 4px 0; text-decoration: none; color: var(--cards-neutral-500);
+            font: 500 11px/14px var(--font-family-base);
+            cursor: pointer; border: 0; background: transparent;
+            transition: color 120ms ease, transform 120ms ease;
+        }
+        .app-tabbar-item:active { transform: scale(0.96); }
+        .app-tabbar-item .icon { width: 22px; height: 22px; color: inherit; stroke-width: 1.8; }
+        .app-tabbar-item.is-active { color: var(--cards-brand-500); }
+        .app-tabbar-item.is-active .icon { stroke-width: 2.4; }
+        .app-tabbar-item.is-fab { position: relative; flex: 0 0 64px; margin: 0 4px; }
+        .app-tabbar-item.is-fab .fab-bubble {
+            position: absolute; left: 50%; top: -22px; transform: translateX(-50%);
+            width: 52px; height: 52px; border-radius: 50%;
+            background: linear-gradient(180deg, var(--cards-premium-300) 0%, var(--cards-premium-500) 100%);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--cards-neutral-0);
+            box-shadow: 0 6px 14px rgba(245, 158, 11, 0.35), 0 0 0 4px var(--cards-neutral-0) inset;
+            border: 2px solid var(--cards-neutral-0);
+        }
+        .app-tabbar-item.is-fab .fab-bubble .icon { width: 26px; height: 26px; color: var(--cards-neutral-0); stroke-width: 2.2; }
+        .app-tabbar-item.is-fab .app-tabbar-label { color: var(--cards-premium-500); font-weight: 600; }
+
+        /* 减少动效 */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</body>
+</html>

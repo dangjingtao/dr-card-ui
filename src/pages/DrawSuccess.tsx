@@ -1,65 +1,85 @@
-import { useState } from 'react'
-import Header from '../components/mobile/Header'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { X } from 'lucide-react'
+import DebugPanel from '../components/mobile/DebugPanel'
 import PageContainer from '../components/mobile/PageContainer'
-import { Button } from '../components/ui'
+import { findRouteByPathname } from '../app/router/routes'
+import { LUCK_REWARD_BUBBLE, LUCK_RULE_STATUS, resolveLuck } from '../app/fixtures'
 
-const states = [
-  { name: '大吉', gradient: 'from-[var(--com-premium-300)] to-[var(--com-premium-500)]' },
-  { name: '中吉', gradient: 'from-[var(--com-brand-400)] to-[var(--com-brand-500)]' },
-  { name: '小吉', gradient: 'from-[var(--com-neutral-300)] to-[var(--com-neutral-500)]' },
-]
-
+/**
+ * 抽取成功（#41）
+ * -------------------------------------------------------------
+ * 事实源：docs/prototype/02-membership-and-checkin.md §9
+ * 已确认：结果为「恭喜你获得 50🫧」；关闭后回到会员中心。
+ * ⚠️ B-003 未决（隔离处理）：
+ *    - 大吉/中吉/小吉三档、「再抽一次」重抽、结果当天持久化，全部来自历史稿倾向，未确认；
+ *    - 默认视图只呈现摹客确认的泡泡值奖励，不出现档位名称，也不提供重抽按钮；
+ *    - 三档仅在显式 `?state=great|good|minor` 夹具参数下作为隔离演示出现，并强制带未定稿标识；
+ *    - 隔离期内页面不写入任何抽签概率、次数或冷却规则。
+ */
 export default function DrawSuccess() {
-  const [index, setIndex] = useState(0)
-  const [message, setMessage] = useState('')
-  const current = states[index]
+  const navigate = useNavigate()
+  const route = findRouteByPathname('/luck/result')
+  const [searchParams] = useSearchParams()
 
-  const redraw = () => {
-    const next = Math.floor(Math.random() * states.length)
-    setIndex(next)
-  }
+  /** 只有显式给出 `?state=` 才进入隔离演示；默认走摹客已确认的结果表达 */
+  const requested = searchParams.get('state')
+  const isolated = requested != null && ['great', 'good', 'minor'].includes(requested)
+  const luck = isolated ? resolveLuck(requested) : null
 
-  const acceptLuck = () => {
-    setMessage('今日好运已收入')
-    window.setTimeout(() => setMessage(''), 1800)
-  }
+  const backToMembership = () => navigate('/membership')
 
   return (
-    <PageContainer>
-      <Header title="今日澡运" />
-      <div className="flex flex-1 flex-col items-center px-4 pt-6 text-center">
-        <div className="mb-6 flex h-[200px] w-[200px] items-center justify-center rounded-full bg-[var(--com-premium-100)] shadow-lg">
-          <div className={`flex h-[160px] w-[160px] items-center justify-center rounded-full bg-gradient-to-b ${current.gradient} text-3xl font-bold text-white shadow-inner`}>
-            {current.name}
-          </div>
-        </div>
-
-        <h1 className="text-xl font-bold">恭喜抽取成功</h1>
-        <p className="mt-2 text-sm text-[var(--color-text-secondary)]">好运已签收，愿今天顺利。</p>
-
-        <Button
-          size="large"
-          className="mt-8 h-12 w-full rounded-full bg-[var(--com-premium-500)] text-white"
-          onClick={redraw}
+    <PageContainer className="flex min-h-full flex-col pb-24">
+      <div className="flex justify-end pt-2">
+        <button
+          type="button"
+          aria-label="关闭"
+          onClick={backToMembership}
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-subtle text-text-secondary"
         >
-          再抽一次
-        </Button>
+          <X className="h-5 w-5" />
+        </button>
+      </div>
 
-        <Button
-          variant="outline"
-          size="large"
-          className="mt-3 h-12 w-full rounded-full border-[var(--com-premium-500)] text-sm"
-          onClick={acceptLuck}
+      <div className="flex flex-1 flex-col items-center justify-center px-2 pb-6 text-center">
+        <span
+          className="flex h-[168px] w-[168px] items-center justify-center rounded-full bg-luck-surface"
+          aria-hidden
         >
-          收下好运
-        </Button>
+          <span
+            className="flex h-[128px] w-[128px] flex-col items-center justify-center rounded-full text-luck-text-on"
+            style={{ background: isolated ? luck!.gradient : 'var(--gradient-bubble)' }}
+          >
+            {isolated ? (
+              <span className="text-2xl font-semibold">{luck!.name}</span>
+            ) : (
+              <span className="text-3xl font-semibold">🫧</span>
+            )}
+          </span>
+        </span>
 
-        {message && (
-          <div className="mt-4 rounded-full bg-[var(--com-success-500)] px-4 py-2 text-sm text-white">
-            {message}
+        {/* 摹客 §9 唯一确认的结果文案 */}
+        <h1 className="mt-7 text-xl font-semibold text-text-primary">
+          恭喜你获得 {LUCK_REWARD_BUBBLE}🫧
+        </h1>
+
+        {isolated && (
+          <div className="mt-4 w-full max-w-[300px] rounded-container bg-surface-subtle px-4 py-3 text-left">
+            <p className="text-xs font-medium text-text-secondary">隔离演示 · 未定稿（{LUCK_RULE_STATUS.blocker}）</p>
+            <p className="mt-1 text-xs leading-5 text-text-tertiary">{LUCK_RULE_STATUS.isolatedNote}</p>
           </div>
         )}
+
+        <button
+          type="button"
+          onClick={backToMembership}
+          className="mt-8 h-12 w-full max-w-[280px] rounded-full bg-primary text-base font-medium text-text-inverse active:bg-primary-pressed"
+        >
+          返回会员中心
+        </button>
       </div>
+
+      <DebugPanel route={route} />
     </PageContainer>
   )
 }

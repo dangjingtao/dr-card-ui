@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>扫码核销</title>
+    <style id="theme-vars">
+:root {
+  --com-neutral-0: #FFFFFF;
+  --com-neutral-50: #F7F8FC;
+  --com-neutral-100: #F0F2F8;
+  --com-neutral-200: #E2E6F0;
+  --com-neutral-300: #CDD3E1;
+  --com-neutral-400: #8590A3;
+  --com-neutral-500: #687288;
+  --com-neutral-600: #535D72;
+  --com-neutral-700: #394156;
+  --com-neutral-800: #252B3D;
+  --com-neutral-900: #171B2A;
+  --com-warm-50: #FCF8F1;
+  --com-warm-100: #F8F0E5;
+  --com-brand-50: #FFF3EC;
+  --com-brand-100: #FFE3D5;
+  --com-brand-200: #FFC4AA;
+  --com-brand-400: #FF7540;
+  --com-brand-500: #ED4D1B;
+  --com-brand-600: #D63D10;
+  --com-brand-700: #AD2E0A;
+  --com-accent-50: #E9FCFF;
+  --com-accent-100: #CAF7FB;
+  --com-accent-500: #16BFD3;
+  --com-accent-600: #0E9FB3;
+  --com-premium-50: #FFFBEB;
+  --com-premium-100: #FEF3C7;
+  --com-premium-200: #FDE68A;
+  --com-premium-300: #FCD34D;
+  --com-premium-400: #FBBF24;
+  --com-premium-500: #F59E0B;
+  --com-premium-600: #D97706;
+  --com-premium-700: #B45309;
+  --com-success-100: #DDF8EA;
+  --com-success-500: #21B66F;
+  --com-warning-500: #F3A21B;
+  --com-danger-500: #D63E50;
+  --com-text-primary: var(--com-neutral-800);
+  --com-text-secondary: var(--com-neutral-600);
+  --com-text-tertiary: var(--com-neutral-500);
+  --com-text-brand: var(--com-brand-600);
+  --com-surface-page: var(--com-warm-50);
+  --com-surface-default: var(--com-neutral-0);
+  --com-surface-subtle: var(--com-neutral-100);
+  --com-surface-pressed: var(--com-neutral-100);
+  --com-scrim: rgba(0,0,0,0.52);
+  --com-border-subtle: var(--com-neutral-200);
+  --com-border: var(--com-neutral-400);
+  --color-reward-strong: var(--com-premium-500);
+  --color-reward-subtle: var(--com-premium-50);
+  --color-reward-text: var(--com-premium-700);
+  --radius-overlay: 16px;
+  --radius-container: 12px;
+  --radius-control: 8px;
+  --radius-pill: 9999px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+  --font-family-base: system-ui, -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --type-caption: 400 12px/18px var(--font-family-base);
+  --type-label-small: 500 12px/16px var(--font-family-base);
+  --type-label: 500 14px/20px var(--font-family-base);
+  --type-body: 400 16px/24px var(--font-family-base);
+  --type-heading-small: 600 16px/22px var(--font-family-base);
+  --type-heading: 600 18px/24px var(--font-family-base);
+  --size-icon-sm: 16px;
+  --size-icon-md: 20px;
+  --size-icon-lg: 24px;
+  --shadow-1: 0 4px 12px 0 rgba(23,27,42,0.14);
+  --shadow-2: 0 8px 28px 0 rgba(23,27,42,0.18);
+  --motion-duration-fast: 120ms;
+  --motion-duration-standard: 220ms;
+  --motion-duration-slow: 320ms;
+  --motion-easing-standard: cubic-bezier(0.3, 0, 0, 1);
+  --motion-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
+}
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+    --radius-sm: var(--com-radius-sm);
+    --radius-md: var(--com-radius-md);
+    --radius-lg: var(--com-radius-lg);
+    --radius-xl: var(--com-radius-xl);
+  }
+  @layer base {
+    body { background: var(--color-background); color: var(--com-text-primary); }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--background); }
+      .text-background { color: var(--background); }
+      .bg-foreground { background-color: var(--foreground); }
+      .text-foreground { color: var(--foreground); }
+      .bg-card { background-color: var(--card); }
+      .text-card { color: var(--card); }
+      .bg-card-foreground { background-color: var(--card-foreground); }
+      .text-card-foreground { color: var(--card-foreground); }
+      .bg-popover { background-color: var(--popover); }
+      .text-popover { color: var(--popover); }
+      .bg-popover-foreground { background-color: var(--popover-foreground); }
+      .text-popover-foreground { color: var(--popover-foreground); }
+      .bg-primary { background-color: var(--primary); }
+      .text-primary { color: var(--primary); }
+      .bg-primary-foreground { background-color: var(--primary-foreground); }
+      .text-primary-foreground { color: var(--primary-foreground); }
+      .bg-secondary { background-color: var(--secondary); }
+      .text-secondary { color: var(--secondary); }
+      .bg-secondary-foreground { background-color: var(--secondary-foreground); }
+      .text-secondary-foreground { color: var(--secondary-foreground); }
+      .bg-muted { background-color: var(--muted); }
+      .text-muted { background-color: var(--muted); }
+      .text-muted-foreground { color: var(--muted-foreground); }
+      .bg-accent { background-color: var(--accent); }
+      .text-accent { color: var(--accent); }
+      .bg-accent-foreground { background-color: var(--accent-foreground); }
+      .text-accent-foreground { color: var(--accent-foreground); }
+      .bg-destructive { background-color: var(--destructive); }
+      .text-destructive { color: var(--destructive); }
+      .bg-destructive-foreground { background-color: var(--destructive-foreground); }
+      .text-destructive-foreground { color: var(--destructive-foreground); }
+      .bg-border { background-color: var(--border); }
+      .text-border { color: var(--border); }
+      .bg-input { background-color: var(--input); }
+      .text-input { color: var(--input); }
+      .bg-ring { background-color: var(--ring); }
+      .text-ring { color: var(--ring); }
+    </style>
+    <style>
+      body { background: var(--com-neutral-900); color: var(--com-text-primary); font-family: var(--font-family-base); }
+      [data-icon] { display:inline-flex; align-items:center; justify-content:center; background-color: currentColor; }
+
+      .scan-shell { max-width: 448px; margin: 0 auto; min-height: 100svh; display: flex; flex-direction: column; }
+      .scan-statusbar { height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; color: var(--com-neutral-0); font: 600 14px/20px var(--font-family-base); }
+      .scan-statusbar .right { display: inline-flex; align-items: center; gap: 6px; font-weight: 400; font-size: 12px; opacity: 0.8; }
+      .scan-statusbar .lucide { width: 14px; height: 14px; }
+
+      .scan-stage { flex: 1; position: relative; overflow: hidden; }
+      .scan-camera { position: absolute; inset: 0; background:
+        radial-gradient(120% 80% at 50% 30%, #1f2532 0%, #0b0e15 60%, #05070c 100%);
+      }
+      .scan-noise { position: absolute; inset: 0; opacity: 0.18; background:
+        repeating-linear-gradient( 0deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 3px),
+        repeating-linear-gradient( 90deg, rgba(255,255,255,0.03) 0 1px, transparent 1px 3px);
+        mix-blend-mode: screen;
+      }
+      .scan-corner { position: absolute; width: 32px; height: 32px; border: 3px solid var(--com-success-500, #21B66F); }
+      .scan-corner.tl { top: 0; left: 0; border-right: 0; border-bottom: 0; border-radius: 12px 0 0 0; }
+      .scan-corner.tr { top: 0; right: 0; border-left: 0; border-bottom: 0; border-radius: 0 12px 0 0; }
+      .scan-corner.bl { bottom: 0; left: 0; border-right: 0; border-top: 0; border-radius: 0 0 0 12px; }
+      .scan-corner.br { bottom: 0; right: 0; border-left: 0; border-top: 0; border-radius: 0 0 12px 0; }
+      .scan-line { position: absolute; left: 12px; right: 12px; height: 2px; background: linear-gradient(90deg, transparent, var(--com-success-500, #21B66F), transparent); box-shadow: 0 0 18px rgba(33,182,111,0.6); animation: scan-move 2.4s var(--motion-easing-standard) infinite; }
+      @keyframes scan-move { 0% { top: 12px; opacity: 0.0; } 10% { opacity: 1; } 50% { top: calc(100% - 14px); } 60% { opacity: 1; } 100% { top: 12px; opacity: 0; } }
+
+      .scan-frame-wrap { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 32px; }
+      .scan-frame { position: relative; width: min(78vw, 280px); aspect-ratio: 1 / 1; }
+      .scan-frame::before, .scan-frame::after { content: ''; position: absolute; inset: 0; border-radius: 20px; }
+      .scan-frame::before { background: rgba(0,0,0,0.55); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; padding: 1px; }
+
+      .scan-prompt { position: absolute; left: 0; right: 0; bottom: 24px; text-align: center; color: var(--com-neutral-0); }
+      .scan-prompt-title { font: 600 16px/24px var(--font-family-base); }
+      .scan-prompt-sub { font: 400 12px/18px var(--font-family-base); color: rgba(255,255,255,0.7); margin-top: 4px; }
+
+      .scan-tip { position: absolute; left: 16px; right: 16px; top: 16px; display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 12px; background: rgba(0,0,0,0.42); color: var(--com-neutral-0); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+      .scan-tip .lucide { width: 16px; height: 16px; color: var(--com-premium-400, #FBBF24); flex: 0 0 16px; }
+      .scan-tip-text { font: 400 12px/18px var(--font-family-base); }
+    </style>
+</head>
+<body>
+    <div class="scan-shell" data-dom-id="interaction-id-bdt5ams">
+        <!-- Status bar (mocked) -->
+        <div class="scan-statusbar" aria-hidden="true">
+            <span>9:41</span>
+            <span class="right">
+                <i data-lucide="signal"></i>
+                <i data-lucide="wifi"></i>
+                <i data-lucide="battery-full"></i>
+            </span>
+        </div>
+
+        <!-- Stage: scan camera + frame + prompt -->
+        <main class="scan-stage">
+            <div class="scan-camera" aria-hidden="true"></div>
+            <div class="scan-noise" aria-hidden="true"></div>
+
+            <div class="scan-tip" role="status">
+                <i data-lucide="scan-line"></i>
+                <span class="scan-tip-text">将二维码 / 条形码对准扫描框，自动识别</span>
+            </div>
+
+            <div class="scan-frame-wrap">
+                <div class="scan-frame" id="scan-frame">
+                    <span class="scan-corner tl"></span>
+                    <span class="scan-corner tr"></span>
+                    <span class="scan-corner bl"></span>
+                    <span class="scan-corner br"></span>
+                    <span class="scan-line"></span>
+                </div>
+            </div>
+
+            <div class="scan-prompt">
+                <div class="scan-prompt-title">请将二维码对准扫描框</div>
+                <div class="scan-prompt-sub">扫码后自动核销</div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script><div class="app-tabbar-spacer" aria-hidden="true"></div>
+    <script>lucide.createIcons();</script>
+
+
+
+
+
+
+
+<!-- 公共底部 TabBar · 内联版(5 项,扫码 FAB 凸起) -->
+<style>
+/* 公共底部 TabBar · 内联版(5 项,中间扫码凸起) */
+.app-tabbar-spacer { height: 84px; }
+.app-tabbar {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  z-index: 100; display: flex; align-items: stretch; justify-content: space-around;
+  background: #FFFFFF; border-top: 1px solid #E8D9B8;
+  padding: 6px 0 calc(6px + env(safe-area-inset-bottom));
+  box-shadow: 0 -2px 8px rgba(89, 55, 15, 0.04);
+}
+.app-tabbar-item {
+  flex: 1 1 0; display: inline-flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 2px;
+  padding: 4px 0; text-decoration: none; color: var(--color-text-tertiary, #8590A3);
+  font: 500 11px/14px var(--font-family-base, -apple-system, sans-serif);
+  cursor: pointer; border: 0; background: transparent;
+  transition: color 120ms ease, transform 120ms ease;
+}
+.app-tabbar-item:active { transform: scale(0.96); }
+.app-tabbar-item .lucide { width: 22px; height: 22px; color: inherit; }
+.app-tabbar-item.is-active { color: var(--color-reward-strong, #B5793B); }
+.app-tabbar-item.is-active .lucide { stroke-width: 2.4; }
+
+/* 中间扫码项 · 凸起 FAB 风格 */
+.app-tabbar-item.is-fab {
+  position: relative;
+  flex: 0 0 64px;
+  margin: 0 4px;
+}
+.app-tabbar-item.is-fab .fab-bubble {
+  position: absolute;
+  left: 50%;
+  top: -22px;
+  transform: translateX(-50%);
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #F4C77B 0%, #B5793B 100%);
+  display: flex; align-items: center; justify-content: center;
+  color: #FFFFFF;
+  box-shadow: 0 6px 14px rgba(181, 121, 59, 0.35), 0 0 0 4px #FFFFFF inset;
+  border: 2px solid #FFFFFF;
+}
+.app-tabbar-item.is-fab .fab-bubble .lucide { width: 26px; height: 26px; color: #FFFFFF; stroke-width: 2.2; }
+.app-tabbar-item.is-fab .app-tabbar-label { color: var(--color-reward-strong, #B5793B); font-weight: 600; }
+.app-tabbar-item.is-fab.is-active .fab-bubble {
+  background: linear-gradient(180deg, #F8D49A 0%, #C58B45 100%);
+}
+</style>
+
+
+<script>
+(function(){
+  function boot(){
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+  setTimeout(boot, 50);
+})();
+</script>
+
+</body>
+</html>

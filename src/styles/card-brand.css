@@ -1,8 +1,209 @@
+/* ==========================================================================
+ * 卡博士品牌语义层 + 组件层 Token
+ * --------------------------------------------------------------------------
+ * 分层约定（T002）：
+ *   Com Design 基础层(primitive/semantic)  →  src/styles/tokens.css
+ *   卡博士品牌语义层(brand semantic)       →  本文件（:root 前半）
+ *   卡博士品牌组件层(brand component)      →  本文件（:root 后半，几何/渐变/阴影）
+ *
+ * 取值来源优先级（AGENTS.md）：
+ *   用户确认 > 已确认摹客原型 > docs/prototype 原型语言 > Com Design Token >
+ *   已验收实现 > 不靠谱的设计历史 > 智能体推断
+ *
+ * 原型取样与冲突记录见 docs/design/token-sampling.md；
+ * 对比度/状态色/375 校验见 docs/design/token-validation.md。
+ * 未获得产品确认的取值一律加「⚠️ 待确认 T0x」标注，不得被当作定稿。
+ * ========================================================================== */
 :root {
-  /* Card Doctor brand semantic layer */
+  /* ------------------------------------------------------------------------
+   * 1) 品牌语义层：会员（membership）
+   *    - 会员卡暗面 + 暖金高亮来自 design-baseline 已确认方向（Gold=会员/权益）。
+   *    - 会员等级为原型「展示稿」（#26 会员等级，原型注明仅开会展示），
+   *      等级色阶暂用 premium 梯度占位，⚠️ 待 T006 确认后再定值。
+   * ---------------------------------------------------------------------- */
+  --color-member-surface: var(--ink-900);
+  --color-member-text: var(--premium-50);
+  --color-member-accent: var(--premium-300);
+  --color-member-muted: var(--premium-100);
+  --color-member-track: rgba(255, 240, 199, 0.25); /* 会员卡进度轨道 */
+  /* 等级色阶（占位）：l0 基础 / l1 / l2 / l3 高等级 */
+  --color-member-level-0: var(--premium-200);
+  --color-member-level-1: var(--premium-300);
+  --color-member-level-2: var(--premium-400);
+  --color-member-level-3: var(--premium-500);
+
+  /* ------------------------------------------------------------------------
+   * 2) 品牌语义层：泡泡值（bubble points）
+   *    - 原型取样：泡泡值数字与「立即兑换」CTA 在原型中为红（#FF0000 见
+   *      #18 洗护兑换专区、#39 商品兑换弹窗），与已确认 Gold/Orange 体系冲突，
+   *      ⚠️ 待确认 T002 冲突记录：按 design-baseline 暂定为 Gold 语义，
+   *      待产品确认是否恢复红色表达。
+   * ---------------------------------------------------------------------- */
+  --color-bubble-surface: var(--premium-50);
+  --color-bubble-accent: var(--premium-300);
+  --color-bubble-text: var(--premium-900);
+  --color-bubble-muted: var(--premium-600);
+  /* 金色面上文字：深棕保证对比度（premium-900 on premium-300 ≈ 8.5:1） */
+  --color-bubble-on-gold: var(--premium-900);
+  /* 次级文字：渐变浅端 5.55:1（#5F3D14 on premium-300）；渐变深端 3.30:1，
+    仅用于浅端标题/按钮，主数字用 --color-bubble-on-gold */
+  --color-bubble-on-gold-muted: #5F3D14;
+
+  /* ------------------------------------------------------------------------
+   * 3) 品牌语义层：卡券（coupon）
+   *    - 卡券主卡沿用金色/暖面（卡包 #54/#62-#64）。
+   *    - 原型取样：卡包券卡出现 #9F8189 豆沙色块，与 Gold 体系冲突，
+   *      ⚠️ 待确认 T002 冲突记录。
+   *    - 状态色：可用=success / 已使用=neutral / 已过期=danger（状态需可区分，见校验文档）。
+   *    - 失效态（已使用/已过期）的面色与文字走通用中性槽位 --color-*-inactive，
+   *      不再复用 warm/ink，依据摹客「已使用 中性为主 / 已过期 #fafafa、#e2e2e2」。
+   * ---------------------------------------------------------------------- */
+  --color-coupon-surface: var(--warm-50);
+  --color-coupon-accent: var(--premium-300);
+  --color-coupon-text: var(--ink-800);
+  --color-coupon-muted: var(--ink-500);
+  --color-coupon-available: var(--success-500);
+  --color-coupon-available-bg: var(--success-100);
+  --color-coupon-used: var(--color-text-inactive);
+  --color-coupon-used-bg: var(--color-surface-inactive);
+  --color-coupon-expired: var(--danger-500);
+  --color-coupon-expired-bg: var(--danger-100);
+  /* 失效券卡顶条（原型 .rd-card-disabled .rd-card-topbar = neutral-200） */
+  --color-coupon-inactive-bar: var(--color-surface-inactive-strong);
+
+  /* ------------------------------------------------------------------------
+   * 4) 品牌语义层：今日澡运（luck）
+   *    - 大吉/中吉/小吉三态来自「不靠谱的设计历史 T03」，摹客未完整确认，
+   *      ⚠️ 待 T006 决策；此处仅把既有实现映射到已确认 Token 语义命名，
+   *      不构成对状态规则的定稿。
+   * ---------------------------------------------------------------------- */
+  --color-luck-surface: var(--warm-50);
+  --color-luck-great: var(--premium-300);
+  --color-luck-good: var(--brand-400);
+  --color-luck-minor: var(--neutral-300);
+  --color-luck-text-on: #FFFFFF;
+  --color-luck-reward: var(--success-500);
+
+  /* ------------------------------------------------------------------------
+   * 5) 品牌语义层：洗头搭子（buddy）
+   *    - 搭子页 #27-#30/#32-#36 已由 T007 落地（D-057：历史 T06/T07 二次设计
+   *      不继承，配色只用已确认 Gold/Warm 体系），surface/accent/text/muted
+   *      四个槽位为搭子页实际在用 Token。
+   *    - --color-buddy-mutual 是 D-059 的例外：默契值 #31「先不做」归 T014，
+   *      本 Token 仅预留命名，禁止在搭子页引用（引用即等于提供默契值入口）。
+   * ---------------------------------------------------------------------- */
+  --color-buddy-surface: var(--warm-100);
+  --color-buddy-accent: var(--brand-500);
+  --color-buddy-text: var(--ink-800);
+  --color-buddy-muted: var(--ink-500);
+  --color-buddy-mutual: var(--premium-400); /* 默契值（仅预留命名，D-059 禁止页面引用） */
+
+  /* ------------------------------------------------------------------------
+   * 6) 品牌语义层：客服（support）
+   *    - 智能/人工客服 #58/#70/#71 ⚠️ 待 T013 确认；气泡配色先按已确认体系占位。
+   * ---------------------------------------------------------------------- */
+  --color-support-surface: var(--warm-100);
+  --color-support-agent-bubble: #FFFFFF;
+  --color-support-agent-text: var(--ink-800);
+  --color-support-user-bubble: var(--brand-600);
+  --color-support-user-text: #FFFFFF;
+  --color-support-queue: var(--warning-500);
+  --color-support-connected: var(--success-500);
+
+  /* ------------------------------------------------------------------------
+   * 7) 品牌语义层：领取 / 打卡 / 红包（claim / check-in / red packet）
+   *    - 本期活动领取、新人礼包（#15/#23/#25）为高价值福利，走 Gold 语义。
+   *    - 原型取样：兑换/领取 CTA 为红色，⚠️ 待 T002 冲突记录。
+   * ---------------------------------------------------------------------- */
+  --color-claim-surface: var(--premium-50);
+  --color-claim-accent: var(--premium-400);
+  --color-claim-text: var(--premium-700);
+  --color-checkin-success: var(--success-500);
+  --color-checkin-success-bg: var(--success-100);
+  --color-redpacket: var(--danger-500); /* 红包红（占位，原型取样见 token-sampling.md） */
+
+  /* ------------------------------------------------------------------------
+   * 8) 品牌语义层：洗护兑换专区（exchange）
+   *    - #18/#37-#40 ⚠️ 待 T008 确认；原型商品价「200🫧」为红，⚠️ 冲突记录。
+   * ---------------------------------------------------------------------- */
+  --color-exchange-surface: #FFFFFF;
+  --color-exchange-accent: var(--brand-500);
+  --color-exchange-price: var(--danger-500); /* 原型红价（⚠️ 冲突记录） */
+  --color-exchange-price-text: var(--premium-700);
+
+  /* ------------------------------------------------------------------------
+   * 9) 品牌语义层：IP / 素材 surface
+   *    - 白熊 IP 主要出现在历史稿 T02/T06（北极熊剪影），当前摹客未直接出现，
+   *      不据此新增主视觉；素材清单见 docs/design/assets-inventory.md。
+   * ---------------------------------------------------------------------- */
+  --color-card-ip-surface: var(--warm-100);
+
+  /* ------------------------------------------------------------------------
+   * 10) 品牌组件层：渐变（gradient）
+   * ---------------------------------------------------------------------- */
+  --gradient-member: linear-gradient(135deg, var(--ink-900) 0%, var(--ink-800) 60%, #3A3228 100%);
+  --gradient-bubble: linear-gradient(135deg, var(--premium-300) 0%, var(--premium-500) 100%);
+  --gradient-luck-great: linear-gradient(180deg, var(--premium-300) 0%, var(--premium-500) 100%);
+  --gradient-luck-good: linear-gradient(180deg, var(--brand-400) 0%, var(--brand-500) 100%);
+  --gradient-luck-minor: linear-gradient(180deg, var(--neutral-300) 0%, var(--neutral-500) 100%);
+  --gradient-claim: linear-gradient(135deg, var(--premium-100) 0%, var(--premium-300) 100%);
+  --gradient-checkin-hero: linear-gradient(135deg, var(--premium-100) 0%, var(--premium-300) 58%, var(--brand-200) 100%);
+  /* macOS 风格应用图标底板：品牌橙实色渐变（用户确认方向），白色图标压在其上。
+   * gloss 是叠加在底板上层的顶部高光，单独成 Token 便于其它金刚区复用。 */
+  --gradient-app-icon: linear-gradient(180deg, var(--brand-400) 0%, var(--brand-500) 52%, var(--brand-600) 100%);
+  --gradient-app-icon-gloss: linear-gradient(180deg, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0.1) 42%, rgba(255, 255, 255, 0) 62%);
+
+  /* ------------------------------------------------------------------------
+   * 11) 品牌组件层：阴影 / 圆角
+   * ---------------------------------------------------------------------- */
+  --shadow-bubble-card: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --shadow-coupon-card: 0 4px 16px rgba(41, 39, 34, 0.1);
+  --shadow-member-card: 0 12px 24px -8px rgba(237, 188, 108, 0.35);
+  --shadow-luck-card: 0 12px 24px -8px rgba(237, 188, 108, 0.35);
+  /* 应用图标：接触阴影 + 柔和落影 + 内高光/内描边，构成 macOS Dock 的立体质感 */
+  --shadow-app-icon:
+    0 1px 2px rgba(122, 33, 6, 0.24),
+    0 6px 14px -6px rgba(122, 33, 6, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.18),
+    inset 0 -6px 12px -6px rgba(122, 33, 6, 0.45);
+  --shadow-app-icon-pressed:
+    0 1px 1px rgba(122, 33, 6, 0.2),
+    0 2px 6px -4px rgba(122, 33, 6, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+  --radius-coupon: 12px;
+  --radius-luck: 9999px;
+  /* 品牌主视觉、会员资产、活动与精选卡的高价值内容容器。 */
+  --radius-feature-card: 20px;
+  /* 56px 底板下 ≈ 尺寸 32%，接近 macOS/iOS 应用图标的 squircle 观感 */
+  --radius-app-icon: 18px;
+
+  /* ------------------------------------------------------------------------
+   * 兼容别名（历史已用，保持语义指向不变）
+   * ---------------------------------------------------------------------- */
   --color-card-member-gold: var(--premium-300);
   --color-card-member-gold-strong: var(--premium-500);
+  /* 历史稿来源、当前未被页面消费：预留语义，⚠️ 待 T008/T013 确认 */
   --color-card-member-green: #24594A;
   --color-card-reward-red: #C84532;
-  --color-card-ip-surface: var(--warm-100);
+}
+
+/* 暗色下品牌语义需保持可读（覆盖仅针对会变化的部分）。
+ * 注意：泡泡值/澡运渐变在暗色下保持金色系，金面上文字必须仍是深棕，
+ *       因此 --color-bubble-on-gold(-muted) 不随暗色切换。 */
+.dark {
+  --gradient-member: linear-gradient(135deg, var(--ink-950) 0%, var(--ink-900) 60%, #3A3228 100%);
+  /* 暗底上落影改用中性黑，高光收敛，避免图标底板发灰 */
+  --shadow-app-icon:
+    0 1px 2px rgba(0, 0, 0, 0.5),
+    0 6px 14px -6px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.32),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.12),
+    inset 0 -6px 12px -6px rgba(0, 0, 0, 0.5);
+  --shadow-app-icon-pressed:
+    0 1px 1px rgba(0, 0, 0, 0.45),
+    0 2px 6px -4px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
 }

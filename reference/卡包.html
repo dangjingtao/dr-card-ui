@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>兑换码</title>
+    <style id="theme-vars">
+/* com-design Mobile Design System — Source: structured-spec */
+/* @group-priority: brand, accent, success, warning, danger */
+
+:root {
+  /* neutral */
+  --com-neutral-0: #FFFFFF;
+  --com-neutral-50: #F7F8FC;
+  --com-neutral-100: #F0F2F8;
+  --com-neutral-200: #E2E6F0;
+  --com-neutral-300: #CDD3E1;
+  --com-neutral-400: #8590A3;
+  --com-neutral-500: #687288;
+  --com-neutral-600: #535D72;
+  --com-neutral-700: #394156;
+  --com-neutral-800: #252B3D;
+  --com-neutral-900: #171B2A;
+
+  /* warm surface */
+  --com-warm-50: #FCF8F1;
+  --com-warm-100: #F8F0E5;
+
+  /* brand */
+  --com-brand-50: #FFF3EC;
+  --com-brand-100: #FFE3D5;
+  --com-brand-200: #FFC4AA;
+  --com-brand-400: #FF7540;
+  --com-brand-500: #ED4D1B; /* @primary */
+  --com-brand-600: #D63D10;
+  --com-brand-700: #AD2E0A;
+
+  /* accent */
+  --com-accent-50: #E9FCFF;
+  --com-accent-100: #CAF7FB;
+  --com-accent-500: #16BFD3;
+  --com-accent-600: #0E9FB3;
+  --com-accent-semantic-default: var(--com-accent-500);
+  --com-accent-semantic-strong: var(--com-accent-600);
+  --com-accent-semantic-subtle: var(--com-accent-50);
+
+  /* accent-consumer */
+  --color-accent: var(--com-accent-semantic-default);
+  --color-accent-strong: var(--com-accent-semantic-strong);
+  --color-accent-subtle: var(--com-accent-semantic-subtle);
+
+  /* premium / reward */
+  --com-premium-50: #FFFBEB;
+  --com-premium-100: #FEF3C7;
+  --com-premium-200: #FDE68A;
+  --com-premium-300: #FCD34D;
+  --com-premium-400: #FBBF24;
+  --com-premium-500: #F59E0B;
+  --com-premium-600: #D97706;
+  --com-premium-700: #B45309;
+  --com-premium-900: #78350F;
+
+  /* reward — gold identity & rewards; never reuse warning */
+  --com-reward-default: var(--com-premium-300);
+  --com-reward-strong: var(--com-premium-500);
+  --com-reward-subtle: var(--com-premium-50);
+  --com-reward-text: var(--com-premium-700);
+  --color-reward: var(--com-reward-default);
+  --color-reward-strong: var(--com-reward-strong);
+  --color-reward-subtle: var(--com-reward-subtle);
+  --color-reward-text: var(--com-reward-text);
+
+  /* success */
+  --com-success-100: #DDF8EA;
+  --com-success-500: #21B66F;
+  --com-success-700: #147A4C;
+
+  /* warning */
+  --com-warning-100: #FFF2D6;
+  --com-warning-500: #F3A21B;
+  --com-warning-700: #9A6110;
+
+  /* danger */
+  --com-danger-100: #FFE4E8;
+  --com-danger-500: #D63E50;
+  --com-danger-700: #A92939;
+
+  /* text */
+  --com-text-primary: var(--com-neutral-800);
+  --com-text-secondary: var(--com-neutral-600);
+  --com-text-tertiary: var(--com-neutral-500);
+  --com-text-placeholder: var(--com-neutral-600);
+  --com-text-disabled: var(--com-neutral-500);
+  --com-text-inverse: var(--com-neutral-0);
+  --com-text-brand: var(--com-brand-600);
+  --com-text-link: var(--com-brand-600);
+
+  /* text-consumer */
+  --color-text-primary: var(--com-text-primary);
+  --color-text-secondary: var(--com-text-secondary);
+  --color-text-tertiary: var(--com-text-tertiary);
+  --color-text-placeholder: var(--com-text-placeholder);
+  --color-text-disabled: var(--com-text-disabled);
+  --color-text-inverse: var(--com-text-inverse);
+  --color-text-brand: var(--com-text-brand);
+
+  /* surface */
+  --com-surface-page: var(--com-warm-50);
+  --com-surface-default: var(--com-neutral-0);
+  --com-surface-subtle: var(--com-neutral-100);
+  --com-surface-selected: var(--com-brand-50);
+  --com-surface-pressed: var(--com-neutral-100);
+  --com-surface-inverse: var(--com-neutral-800);
+
+  /* surface-consumer */
+  --color-background: var(--com-surface-page);
+  --color-foreground: var(--com-text-primary);
+  --color-surface: var(--com-surface-default);
+  --color-surface-subtle: var(--com-surface-subtle);
+  --color-surface-selected: var(--com-surface-selected);
+  --color-surface-pressed: var(--com-surface-pressed);
+  --color-surface-inverse: var(--com-surface-inverse);
+
+  /* ink / member — black-gold card surface */
+  --com-ink-800: #292722;
+  --com-ink-900: #1C1B18;
+  --com-member-surface: var(--com-ink-900);
+  --com-member-text: #FFF9EA;
+  --com-member-accent: var(--com-premium-300);
+
+  /* border */
+  --com-border-subtle: var(--com-neutral-200);
+  --com-border-default: var(--com-neutral-400);
+  --com-border-strong: var(--com-neutral-500);
+  --com-border-focused: var(--com-brand-500);
+  --com-border-error: var(--com-danger-500);
+
+  /* border-consumer */
+  --color-border-subtle: var(--com-border-subtle);
+  --color-border: var(--com-border-default);
+  --color-border-strong: var(--com-border-strong);
+  --color-border-focused: var(--com-border-focused);
+  --color-border-error: var(--com-border-error);
+
+  /* action */
+  --com-action-primary: var(--com-brand-500);
+  --com-action-primary-pressed: var(--com-brand-700);
+  --com-action-secondary: var(--com-brand-50);
+  --com-action-secondary-pressed: var(--com-brand-100);
+  --com-action-destructive: var(--com-danger-500);
+  --com-action-destructive-pressed: var(--com-danger-700);
+  --com-action-disabled: var(--com-neutral-200);
+
+  /* action-consumer */
+  --color-primary: var(--com-action-primary);
+  --color-primary-hover: var(--com-action-primary-pressed);
+  --color-on-primary: #FFFFFF;
+  --color-primary-container: var(--com-brand-50);
+  --color-on-primary-container: var(--com-brand-700);
+  --color-secondary: var(--com-action-secondary);
+  --color-secondary-hover: var(--com-action-secondary-pressed);
+  --color-destructive: var(--com-action-destructive);
+  --color-destructive-hover: var(--com-action-destructive-pressed);
+  --color-disabled: var(--com-action-disabled);
+
+  /* status */
+  --com-status-success: var(--com-success-500);
+  --com-status-success-bg: var(--com-success-100);
+  --com-status-success-text: var(--com-success-700);
+  --com-status-warning: var(--com-warning-500);
+  --com-status-warning-bg: var(--com-warning-100);
+  --com-status-warning-text: var(--com-warning-700);
+  --com-status-danger: var(--com-danger-500);
+  --com-status-danger-bg: var(--com-danger-100);
+  --com-status-danger-text: var(--com-danger-700);
+  --com-status-info: var(--com-brand-500);
+  --com-status-info-bg: var(--com-brand-50);
+  --com-status-info-text: var(--com-brand-700);
+
+  --com-scrim: rgba(0,0,0,0.52);
+
+  /* icon & indicator */
+  --com-icon-size-sm: 16px;
+  --com-icon-size-md: 20px;
+  --com-icon-size-lg: 24px;
+  --com-indicator-size-inline: 16px;
+  --com-indicator-size-regular: 24px;
+
+  /* typography primitives */
+  --com-font-size-12: 12px;
+  --com-font-size-14: 14px;
+  --com-font-size-16: 16px;
+  --com-font-size-18: 18px;
+  --com-font-size-20: 20px;
+  --com-font-size-24: 24px;
+  --com-font-size-28: 28px;
+
+  --com-font-weight-regular: 400;
+  --com-font-weight-medium: 500;
+  --com-font-weight-semibold: 600;
+  --com-font-weight-bold: 700;
+
+  --com-line-height-16: 16px;
+  --com-line-height-18: 18px;
+  --com-line-height-20: 20px;
+  --com-line-height-22: 22px;
+  --com-line-height-24: 24px;
+  --com-line-height-30: 30px;
+  --com-line-height-36: 36px;
+
+  /* status-consumer */
+  --color-success: var(--com-status-success);
+  --color-success-bg: var(--com-status-success-bg);
+  --color-success-text: var(--com-status-success-text);
+  --color-warning: var(--com-status-warning);
+  --color-warning-bg: var(--com-status-warning-bg);
+  --color-warning-text: var(--com-status-warning-text);
+  --color-danger: var(--com-status-danger);
+  --color-danger-bg: var(--com-status-danger-bg);
+  --color-danger-text: var(--com-status-danger-text);
+  --color-info: var(--com-status-info);
+  --color-info-bg: var(--com-status-info-bg);
+  --color-info-text: var(--com-status-info-text);
+  --color-scrim: var(--com-scrim);
+
+  /* spacing */
+  --com-space-0: 0;
+  --com-space-2: 2px;
+  --com-space-4: 4px;
+  --com-space-6: 6px;
+  --com-space-8: 8px;
+  --com-space-12: 12px;
+  --com-space-16: 16px;
+  --com-space-20: 20px;
+  --com-space-24: 24px;
+  --com-space-32: 32px;
+
+  /* radius */
+  --com-radius-0: 0;
+  --com-radius-4: 4px;
+  --com-radius-8: 8px;
+  --com-radius-12: 12px;
+  --com-radius-16: 16px;
+  --com-radius-pill: 9999px;
+  --com-radius-xs: var(--com-radius-4);
+  --com-radius-sm: var(--com-radius-8);
+  --com-radius-md: var(--com-radius-12);
+  --com-radius-lg: var(--com-radius-16);
+  --com-radius-xl: var(--com-radius-16);
+  --radius-none: var(--com-radius-0);
+  --radius-xs: var(--com-radius-4);
+  --radius-sm: var(--com-radius-8);
+  --radius-control: var(--com-radius-8);
+  --radius-md: var(--com-radius-12);
+  --radius-container: var(--com-radius-12);
+  --radius-lg: var(--com-radius-16);
+  --radius-overlay: var(--com-radius-16);
+  --radius-pill: var(--com-radius-pill);
+  --radius-full: var(--com-radius-pill);
+
+  /* size */
+  --com-size-32: 32px;
+  --com-size-40: 40px;
+  --com-size-44: 44px;
+  --com-size-48: 48px;
+  --com-size-56: 56px;
+
+  /* border */
+  --com-border-control: 1px;
+  --com-border-focus: 2px;
+
+  /* elevation */
+  --com-elevation-floating: 0 4px 12px 0 rgba(23,27,42,0.14);
+  --com-elevation-modal: 0 8px 28px 0 rgba(23,27,42,0.18);
+
+  /* density (compact default; override via .density-comfortable) */
+  --com-density-control-height: var(--com-size-40);
+  --com-density-control-height-large: var(--com-size-48);
+
+  /* portable density tokens — consumer-facing, switched by density class */
+  --density-control-height: 40px;
+  --density-control-height-lg: 48px;
+  --density-padding-h: 12px;
+  --density-padding-v: 8px;
+  --density-gap: 8px;
+  --density-content-inset: 16px;
+  --density-section-gap: 20px;
+  --density-field-label-gap: 6px;
+  --density-field-helper-gap: 6px;
+  --density-field-gap: 16px;
+
+  /* platform touch target (default iOS; override via .platform-android) */
+  --platform-touch-min: 44px;
+  --platform-name: "iOS";
+
+  /* portable typography */
+  --font-family-base: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  --type-caption: 400 12px/18px var(--font-family-base);
+  --type-label-small: 500 12px/16px var(--font-family-base);
+  --type-body-small: 400 14px/20px var(--font-family-base);
+  --type-label: 500 14px/20px var(--font-family-base);
+  --type-body: 400 16px/24px var(--font-family-base);
+  --type-heading-small: 600 16px/22px var(--font-family-base);
+  --type-heading: 600 18px/24px var(--font-family-base);
+  --type-title: 600 24px/30px var(--font-family-base);
+  --type-display: 600 28px/36px var(--font-family-base);
+
+  --font-size-caption: var(--com-font-size-12);
+  --font-size-label-small: var(--com-font-size-12);
+  --font-size-body-small: var(--com-font-size-14);
+  --font-size-label: var(--com-font-size-14);
+  --font-size-body: var(--com-font-size-16);
+  --font-size-heading-small: var(--com-font-size-16);
+  --font-size-heading: var(--com-font-size-18);
+  --font-size-title: var(--com-font-size-24);
+  --font-size-display: var(--com-font-size-28);
+
+  --font-weight-regular: var(--com-font-weight-regular);
+  --font-weight-medium: var(--com-font-weight-medium);
+  --font-weight-semibold: var(--com-font-weight-semibold);
+  --font-weight-bold: var(--com-font-weight-bold);
+
+  --line-height-caption: var(--com-line-height-18);
+  --line-height-label-small: var(--com-line-height-16);
+  --line-height-body-small: var(--com-line-height-20);
+  --line-height-label: var(--com-line-height-20);
+  --line-height-body: var(--com-line-height-24);
+  --line-height-heading-small: var(--com-line-height-22);
+  --line-height-heading: var(--com-line-height-24);
+  --line-height-title: var(--com-line-height-30);
+  --line-height-display: var(--com-line-height-36);
+
+  /* portable spacing */
+  --space-0: var(--com-space-0);
+  --space-2: var(--com-space-2);
+  --space-4: var(--com-space-4);
+  --space-6: var(--com-space-6);
+  --space-8: var(--com-space-8);
+  --space-12: var(--com-space-12);
+  --space-16: var(--com-space-16);
+  --space-20: var(--com-space-20);
+  --space-24: var(--com-space-24);
+  --space-32: var(--com-space-32);
+
+  /* portable size */
+  --size-icon-sm: var(--com-icon-size-sm);
+  --size-icon-md: var(--com-icon-size-md);
+  --size-icon-lg: var(--com-icon-size-lg);
+  --size-control-height: var(--density-control-height);
+  --size-touch-ios: var(--com-size-44);
+  --size-touch-android: var(--com-size-48);
+  --size-control-height-lg: var(--density-control-height-lg);
+  --size-touch-min: var(--platform-touch-min);
+
+  /* portable shadow */
+  --shadow-1: var(--com-elevation-floating); /* Floating */
+  --shadow-2: var(--com-elevation-modal); /* Modal */
+}
+
+.dark {
+  /* dark-only primitive extensions */
+  --com-neutral-950: #10131E;
+  --com-brand-800: #8A2A0C;
+  --com-brand-900: #5E1B07;
+  --com-premium-900: #78350F;
+  --com-accent-900: #123E44;
+  --com-success-900: #163629;
+  --com-warning-900: #403013;
+  --com-danger-900: #431C24;
+
+  /* text */
+  --com-text-primary: var(--com-neutral-50);
+  --com-text-secondary: var(--com-neutral-300);
+  --com-text-tertiary: var(--com-neutral-400);
+  --com-text-placeholder: var(--com-neutral-300);
+  --com-text-disabled: var(--com-neutral-400);
+  --com-text-inverse: var(--com-neutral-0);
+  --com-text-brand: var(--com-brand-200);
+  --com-text-link: var(--com-brand-200);
+
+  /* surface */
+  --com-surface-page: var(--com-ink-900);
+  --com-surface-default: var(--com-neutral-900);
+  --com-surface-subtle: var(--com-neutral-800);
+  --com-surface-selected: var(--com-brand-900);
+  --com-surface-pressed: var(--com-neutral-800);
+  --com-surface-inverse: var(--com-neutral-700);
+
+  /* border */
+  --com-border-subtle: var(--com-neutral-800);
+  --com-border-default: var(--com-neutral-500);
+  --com-border-strong: var(--com-neutral-400);
+  --com-border-focused: var(--com-brand-400);
+  --com-border-error: var(--com-danger-500);
+
+  /* action */
+  --com-action-primary: var(--com-brand-500);
+  --com-action-primary-pressed: var(--com-brand-600);
+  --com-action-secondary: var(--com-brand-900);
+  --com-action-secondary-pressed: var(--com-brand-800);
+  --com-action-destructive: var(--com-danger-500);
+  --com-action-destructive-pressed: var(--com-danger-700);
+  --com-action-disabled: var(--com-neutral-700);
+
+  /* accent */
+  --com-accent-semantic-default: var(--com-accent-500);
+  --com-accent-semantic-strong: var(--com-accent-500);
+  --com-accent-semantic-subtle: var(--com-accent-900);
+
+  /* status */
+  --com-status-success: var(--com-success-500);
+  --com-status-success-bg: var(--com-success-900);
+  --com-status-success-text: var(--com-success-100);
+  --com-status-warning: var(--com-warning-500);
+  --com-status-warning-bg: var(--com-warning-900);
+  --com-status-warning-text: var(--com-warning-100);
+  --com-status-danger: var(--com-danger-500);
+  --com-status-danger-bg: var(--com-danger-900);
+  --com-status-danger-text: var(--com-danger-100);
+  --com-status-info: var(--com-brand-400);
+  --com-status-info-bg: var(--com-brand-900);
+  --com-status-info-text: var(--com-brand-100);
+
+  --com-scrim: rgba(0,0,0,0.6);
+
+  /* elevation */
+  --com-elevation-floating: 0 4px 16px 0 rgba(0,0,0,0.40);
+  --com-elevation-modal: 0 10px 32px 0 rgba(0,0,0,0.50);
+
+  /* portable color overrides */
+  --color-primary-container: var(--com-brand-900);
+  --color-on-primary-container: var(--com-brand-100);
+}
+
+/* Typography utility classes */
+.com-display { font: var(--type-display); }
+.com-title { font: var(--type-title); }
+.com-heading { font: var(--type-heading); }
+.com-heading-small { font: var(--type-heading-small); }
+.com-body { font: var(--type-body); }
+.com-body-small { font: var(--type-body-small); }
+.com-label { font: var(--type-label); }
+.com-label-small { font: var(--type-label-small); }
+.com-caption { font: var(--type-caption); }
+
+/* ── Density: comfortable (apply on a scope, e.g. .density-comfortable) ── */
+.density-comfortable {
+  --density-control-height: 44px;
+  --density-control-height-lg: 56px;
+  --density-padding-h: 16px;
+  --density-padding-v: 12px;
+  --density-gap: 8px;
+  --density-content-inset: 16px;
+  --density-section-gap: 24px;
+  --density-field-label-gap: 8px;
+  --density-field-helper-gap: 8px;
+  --density-field-gap: 20px;
+}
+
+/* ── Platform: Android (default scope is iOS 44px touch target) ── */
+.platform-android {
+  --platform-touch-min: 48px;
+  --platform-name: "Android";
+}
+
+/* ── Motion: standard timing/easing tokens ── */
+:root {
+  --motion-duration-fast: 120ms;
+  --motion-duration-standard: 220ms;
+  --motion-duration-slow: 320ms;
+  --motion-easing-standard: cubic-bezier(0.3, 0, 0, 1);
+  --motion-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* Reduced motion: collapse transitions/animations */
+.motion-reduced,
+@media (prefers-reduced-motion: reduce) {
+  --motion-duration-fast: 0ms;
+  --motion-duration-standard: 0ms;
+  --motion-duration-slow: 0ms;
+}
+.motion-reduced *,
+@media (prefers-reduced-motion: reduce) {
+  animation-duration: 0ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Feedback motion keyframes (consumed by UI Kit / feedback components) */
+@keyframes com-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes com-scale-in { from { opacity: 0; transform: scale(0.96) translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes com-slide-up { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes com-sheet-handle { 0% { transform: translateY(0); } 50% { transform: translateY(-2px); } 100% { transform: translateY(0); } }
+@keyframes com-spin { to { transform: rotate(360deg); } }
+@keyframes com-shimmer { 100% { transform: translateX(100%); } }
+@keyframes com-toast-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+/* ── Tailwind / Canvas semantic bridge (project-local) ── */
+:root {
+  --background: var(--color-background);
+  --foreground: var(--color-foreground);
+  --card: var(--color-surface);
+  --card-foreground: var(--color-text-primary);
+  --popover: var(--color-surface);
+  --popover-foreground: var(--color-text-primary);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-on-primary);
+  --secondary: var(--color-secondary);
+  --secondary-foreground: var(--color-on-primary-container);
+  --muted: var(--color-surface-subtle);
+  --muted-foreground: var(--color-text-secondary);
+  --accent: var(--color-accent);
+  --accent-foreground: var(--color-text-inverse);
+  --destructive: var(--color-destructive);
+  --destructive-foreground: var(--color-text-inverse);
+  --border: var(--color-border);
+  --input: var(--color-border-subtle);
+  --ring: var(--color-border-focused);
+}
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+    --radius-sm: var(--com-radius-sm);
+    --radius-md: var(--com-radius-md);
+    --radius-lg: var(--com-radius-lg);
+    --radius-xl: var(--com-radius-xl);
+  }
+  @layer base {
+    body { background: var(--color-background); color: var(--com-text-primary); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--background); }
+      .text-background { color: var(--background); }
+      .border-background { border-color: var(--background); }
+      .ring-background { --tw-ring-color: var(--background); }
+      .bg-foreground { background-color: var(--foreground); }
+      .text-foreground { color: var(--foreground); }
+      .border-foreground { border-color: var(--foreground); }
+      .ring-foreground { --tw-ring-color: var(--foreground); }
+      .bg-card { background-color: var(--card); }
+      .text-card { color: var(--card); }
+      .border-card { border-color: var(--card); }
+      .ring-card { --tw-ring-color: var(--card); }
+      .bg-card-foreground { background-color: var(--card-foreground); }
+      .text-card-foreground { color: var(--card-foreground); }
+      .border-card-foreground { border-color: var(--card-foreground); }
+      .ring-card-foreground { --tw-ring-color: var(--card-foreground); }
+      .bg-popover { background-color: var(--popover); }
+      .text-popover { color: var(--popover); }
+      .border-popover { border-color: var(--popover); }
+      .ring-popover { --tw-ring-color: var(--popover); }
+      .bg-popover-foreground { background-color: var(--popover-foreground); }
+      .text-popover-foreground { color: var(--popover-foreground); }
+      .border-popover-foreground { border-color: var(--popover-foreground); }
+      .ring-popover-foreground { --tw-ring-color: var(--popover-foreground); }
+      .bg-primary { background-color: var(--primary); }
+      .text-primary { color: var(--primary); }
+      .border-primary { border-color: var(--primary); }
+      .ring-primary { --tw-ring-color: var(--primary); }
+      .bg-primary-foreground { background-color: var(--primary-foreground); }
+      .text-primary-foreground { color: var(--primary-foreground); }
+      .border-primary-foreground { border-color: var(--primary-foreground); }
+      .ring-primary-foreground { --tw-ring-color: var(--primary-foreground); }
+      .bg-secondary { background-color: var(--secondary); }
+      .text-secondary { color: var(--secondary); }
+      .border-secondary { border-color: var(--secondary); }
+      .ring-secondary { --tw-ring-color: var(--secondary); }
+      .bg-secondary-foreground { background-color: var(--secondary-foreground); }
+      .text-secondary-foreground { color: var(--secondary-foreground); }
+      .border-secondary-foreground { border-color: var(--secondary-foreground); }
+      .ring-secondary-foreground { --tw-ring-color: var(--secondary-foreground); }
+      .bg-muted { background-color: var(--muted); }
+      .text-muted { color: var(--muted); }
+      .border-muted { border-color: var(--muted); }
+      .ring-muted { --tw-ring-color: var(--muted); }
+      .bg-muted-foreground { background-color: var(--muted-foreground); }
+      .text-muted-foreground { color: var(--muted-foreground); }
+      .border-muted-foreground { border-color: var(--muted-foreground); }
+      .ring-muted-foreground { --tw-ring-color: var(--muted-foreground); }
+      .bg-accent { background-color: var(--accent); }
+      .text-accent { color: var(--accent); }
+      .border-accent { border-color: var(--accent); }
+      .ring-accent { --tw-ring-color: var(--accent); }
+      .bg-accent-foreground { background-color: var(--accent-foreground); }
+      .text-accent-foreground { color: var(--accent-foreground); }
+      .border-accent-foreground { border-color: var(--accent-foreground); }
+      .ring-accent-foreground { --tw-ring-color: var(--accent-foreground); }
+      .bg-destructive { background-color: var(--destructive); }
+      .text-destructive { color: var(--destructive); }
+      .border-destructive { border-color: var(--destructive); }
+      .ring-destructive { --tw-ring-color: var(--destructive); }
+      .bg-destructive-foreground { background-color: var(--destructive-foreground); }
+      .text-destructive-foreground { color: var(--destructive-foreground); }
+      .border-destructive-foreground { border-color: var(--destructive-foreground); }
+      .ring-destructive-foreground { --tw-ring-color: var(--destructive-foreground); }
+      .bg-border { background-color: var(--border); }
+      .text-border { color: var(--border); }
+      .border-border { border-color: var(--border); }
+      .ring-border { --tw-ring-color: var(--border); }
+      .bg-input { background-color: var(--input); }
+      .text-input { color: var(--input); }
+      .border-input { border-color: var(--input); }
+      .ring-input { --tw-ring-color: var(--input); }
+      .bg-ring { background-color: var(--ring); }
+      .text-ring { color: var(--ring); }
+      .border-ring { border-color: var(--ring); }
+      .ring-ring { --tw-ring-color: var(--ring); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+</head>
+<body class="min-h-screen font-sans antialiased">
+    <main class="max-w-md mx-auto px-4 pt-4 pb-24">
+        <style id="redeem-layout">
+            .app-container { max-width: 448px; margin: 0 auto; }
+
+            /* ── Segmented control · design library tokens ── */
+            .rd-segmented { background: var(--color-surface); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-md); padding: var(--space-4); display: flex; gap: var(--space-8); width: 100%; }
+            .rd-segment { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-4); height: var(--size-control-height); padding: 0 var(--space-12); border: 1px solid transparent; border-radius: var(--radius-sm); background: transparent; color: var(--color-text-secondary); font: var(--type-label); cursor: pointer; white-space: nowrap; transition: background .15s, color .15s, border-color .15s; }
+            .rd-segment:hover { background: var(--color-surface-subtle); }
+            .rd-segment.is-active { background: var(--color-surface); border-color: var(--color-primary); color: var(--color-text-brand); }
+            .rd-segment-count { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 var(--space-4); border-radius: var(--radius-full); font: var(--type-label-small); background: var(--color-surface-subtle); color: var(--color-text-tertiary); }
+            .rd-segment.is-active .rd-segment-count { background: var(--color-primary-container); color: var(--color-on-primary-container); }
+            .rd-panel { display: none; }
+            .rd-panel.is-active { display: block; animation: rd-fade 240ms var(--motion-easing-standard); }
+            @keyframes rd-fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+            /* ── Cards · code style (no image) ── */
+            .rd-card { background: var(--color-surface); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow-1); }
+            .rd-card-topbar { height: 5px; background: linear-gradient(90deg, var(--com-premium-300), var(--com-premium-500)); }
+            .rd-card-body { padding: 14px 16px 16px; }
+            .rd-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+            .rd-chip { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+            .rd-chip i { width: 13px; height: 13px; }
+            .rd-chip-ok { background: var(--color-reward-subtle); color: var(--color-reward-text); }
+            .rd-chip-off { background: var(--com-neutral-100); color: var(--com-text-tertiary); }
+            .rd-meta { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--com-text-tertiary); margin-top: 10px; }
+            .rd-meta i { width: 14px; height: 14px; color: var(--com-text-tertiary); }
+            .rd-actions { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
+            .rd-btn { height: 36px; padding: 0 22px; border-radius: 18px; font-size: 14px; font-weight: 600; border: 0; cursor: pointer; transition: transform 120ms var(--motion-easing-standard), box-shadow 120ms var(--motion-easing-standard); }
+            .rd-btn:active { transform: scale(0.97); }
+            .rd-btn-primary { background: var(--color-reward-strong); color: var(--color-text-inverse); box-shadow: 0 4px 12px rgba(245,158,11,0.28); }
+            .rd-btn-ghost { background: transparent; color: var(--color-reward-text); border: 1px solid var(--com-premium-200); }
+
+            /* Expired card */
+            .rd-card-disabled .rd-card-topbar { background: var(--com-neutral-200); }
+            .rd-card-disabled .rd-card-body { opacity: 0.85; }
+
+            /* Empty state */
+            .rd-empty { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 48px 24px; }
+            .rd-empty-icon { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--com-neutral-100); }
+            .rd-empty-icon i { width: 28px; height: 28px; color: var(--com-text-tertiary); }
+
+            /* Tips */
+            .rd-tip { display: flex; align-items: center; gap: 10px; }
+            .rd-tip-num { width: 20px; height: 20px; border-radius: 50%; background: var(--com-premium-100); color: var(--color-reward-text); font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+            .gold-text { color: var(--color-reward-text); }
+
+            /* ── Bottom Sheet · use experience-coupon (comdesign bottom-sheet) ── */
+            .use-sheet-mask { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: flex-end; justify-content: center; background: var(--color-scrim); }
+            .use-sheet-mask[hidden] { display: none; }
+            .use-sheet-mask:not([hidden]) { animation: com-fade-in var(--motion-duration-fast) var(--motion-easing-standard) forwards; }
+            .use-sheet { width: 100%; max-width: 448px; background: var(--color-surface); border-radius: var(--radius-overlay) var(--radius-overlay) 0 0; box-shadow: var(--shadow-2); padding-bottom: env(safe-area-inset-bottom); }
+            .use-sheet-mask:not([hidden]) .use-sheet { animation: com-slide-up var(--motion-duration-standard) var(--motion-easing-emphasized) forwards; }
+
+            .use-sheet-handle { width: 36px; height: 4px; margin: 8px auto 4px; border-radius: var(--radius-full); background: var(--color-border); animation: com-sheet-handle 3.6s var(--motion-easing-standard) infinite; }
+
+            .use-sheet-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-12); padding: 4px var(--space-16) var(--space-8); }
+            .use-sheet-title-block { display: flex; flex-direction: column; gap: var(--space-4); min-width: 0; }
+            .use-sheet-title { margin: 0; font: var(--type-heading); color: var(--color-text-primary); }
+            .use-sheet-sub { font: var(--type-body-small); color: var(--color-text-tertiary); }
+            .use-sheet-close { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: 0; border-radius: var(--radius-pill); background: var(--color-surface-subtle); color: var(--color-text-secondary); cursor: pointer; transition: background-color var(--motion-duration-fast) var(--motion-easing-standard); flex: 0 0 auto; }
+            .use-sheet-close:active { background: var(--color-surface-pressed); }
+            .use-sheet-close .lucide { width: 16px; height: 16px; }
+
+            .use-sheet-body { padding: 0 var(--space-16) var(--space-16); }
+            .use-summary { display: flex; align-items: center; gap: var(--space-12); padding: var(--space-12); border-radius: var(--radius-container); background: var(--color-reward-subtle); margin-bottom: var(--space-16); }
+            .use-summary-icon { width: 40px; height: 40px; border-radius: var(--radius-md); display: inline-flex; align-items: center; justify-content: center; background: var(--color-reward-strong); color: var(--color-text-inverse); flex: 0 0 40px; }
+            .use-summary-icon .lucide { width: 20px; height: 20px; }
+            .use-summary-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+            .use-summary-name { font: 600 14px/20px var(--font-family-base); color: var(--color-text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            .use-summary-meta { font: var(--type-caption); color: var(--color-text-tertiary); }
+
+            .use-section-title { margin: 0 0 var(--space-8); font: var(--type-label-small); color: var(--color-text-secondary); text-transform: none; letter-spacing: 0; }
+            .use-options { display: flex; flex-direction: column; gap: var(--space-12); }
+
+            /* comdesign radio · integrated in full-width list rows */
+            .use-option { display: flex; align-items: center; gap: var(--space-12); width: 100%; min-height: 48px; padding: var(--space-12); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-container); background: var(--color-surface); color: var(--color-text-primary); cursor: pointer; transition: border-color var(--motion-duration-fast) var(--motion-easing-standard), background-color var(--motion-duration-fast) var(--motion-easing-standard); text-align: left; }
+            .use-option:hover { border-color: var(--color-border); }
+            .use-option:active { background: var(--color-surface-pressed); }
+            .use-option.is-selected { border-color: var(--color-primary); background: var(--color-primary-container); }
+            .use-option-icon { width: 36px; height: 36px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: var(--color-reward-subtle); color: var(--color-reward-text); flex: 0 0 36px; }
+            .use-option.is-selected .use-option-icon { background: var(--color-reward-strong); color: var(--color-text-inverse); }
+            .use-option-icon .lucide { width: 18px; height: 18px; }
+            .use-option-text { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+            .use-option-name { font: var(--type-label); color: var(--color-text-primary); }
+            .use-option-desc { font: var(--type-caption); color: var(--color-text-tertiary); }
+            /* radio outer 20px / inner dot 8px / pill radius — per comdesign radio spec */
+            .use-option-radio { width: 20px; height: 20px; border-radius: var(--radius-pill); border: 1px solid var(--color-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 20px; background: var(--color-surface); transition: border-color var(--motion-duration-fast) var(--motion-easing-standard); }
+            .use-option.is-selected .use-option-radio { border: 1px solid var(--color-primary); }
+            .use-option-radio-dot { width: 8px; height: 8px; border-radius: var(--radius-pill); background: var(--color-primary); transform: scale(0); transition: transform var(--motion-duration-standard) var(--motion-easing-emphasized); }
+            .use-option.is-selected .use-option-radio-dot { transform: scale(1); }
+
+            .use-tip { display: flex; gap: var(--space-8); align-items: flex-start; margin-top: var(--space-12); padding: var(--space-12); border-radius: var(--radius-control); background: var(--color-surface-subtle); }
+            .use-tip .lucide { width: 16px; height: 16px; color: var(--color-text-tertiary); flex: 0 0 16px; margin-top: 2px; }
+            .use-tip-text { font: var(--type-caption); color: var(--color-text-tertiary); }
+
+            /* toast · comdesign toast */
+            .use-toast { position: fixed; left: 50%; bottom: 100px; transform: translateX(-50%) translateY(12px); z-index: 2000; display: flex; align-items: center; gap: var(--space-8); max-width: 320px; padding: var(--space-12) var(--space-16); border-radius: var(--radius-pill); background: var(--color-surface-inverse); color: var(--color-text-inverse); font: 500 14px/20px var(--font-family-base); box-shadow: var(--shadow-1); opacity: 0; pointer-events: none; transition: opacity var(--motion-duration-standard) var(--motion-easing-standard), transform var(--motion-duration-standard) var(--motion-easing-standard); }
+            .use-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+            .use-toast .lucide { width: 16px; height: 16px; color: var(--color-success); }
+            /* iOS status bar (added by visual pass) */
+            .status-bar { height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; color: var(--color-text-primary, #252B3D); font: 600 14px/20px var(--font-family-base, -apple-system, sans-serif); }
+            .status-bar .right { display: inline-flex; align-items: center; gap: 6px; font-weight: 400; font-size: 12px; opacity: 0.7; }
+            .status-bar svg { width: 14px; height: 14px; }
+
+            /* 顶栏 — 返回 + 居中标题 + 右侧动作(可选) */
+            .app-topbar {
+                position: relative;
+                display: grid;
+                grid-template-columns: 36px 1fr 36px;
+                align-items: center;
+                height: 44px;
+                padding: 0 12px;
+            }
+            .app-topbar__back {
+                display: inline-flex; align-items: center; justify-content: center;
+                width: 36px; height: 36px;
+                color: var(--com-text-primary, #252B3D);
+                text-decoration: none;
+                border-radius: 50%;
+                transition: background 120ms ease;
+            }
+            .app-topbar__back:active { background: rgba(89, 55, 15, 0.06); }
+            .app-topbar__back .lucide { width: 22px; height: 22px; stroke-width: 2.2; }
+            .app-topbar__title {
+                margin: 0; text-align: center;
+                font: 600 17px/22px var(--font-family-base, -apple-system, sans-serif);
+                color: var(--com-text-primary, #252B3D);
+                letter-spacing: 0.01em;
+            }
+        </style>
+        <div class="status-bar" aria-hidden="true" style="padding-right: 0px; padding-left: 0px;">
+            <span>9:41</span>
+            <span class="right">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h.01"></path><path d="M7 20v-4"></path><path d="M12 20v-8"></path><path d="M17 20V8"></path><path d="M22 4v16"></path></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="18" height="12" rx="2"></rect><line x1="22" y1="11" x2="22" y2="13"></line><rect x="4" y="8" width="14" height="8" rx="1" fill="currentColor"></rect></svg>
+            </span>
+        </div>
+        <!-- 顶栏:返回 + 标题 -->
+        <header class="app-topbar" style="padding-left: 0px; padding-right: 0px;">
+            <a href="javascript:history.back()" class="app-topbar__back" aria-label="返回" data-dom-id="interaction-id-qfq1rli">
+                <i data-lucide="chevron-left"></i>
+            </a>
+            <h1 class="app-topbar__title">卡包</h1>
+            <span class="app-topbar__back" aria-hidden="true"></span>
+        </header>
+        <div class="app-container space-y-4">
+
+            <!-- Tabs (segmented control) -->
+            <div class="rd-segmented" role="tablist">
+                <button type="button" class="rd-segment is-active" data-tab="available" role="tab" aria-selected="true">可用 <span class="rd-segment-count">2</span></button>
+                <button type="button" class="rd-segment" data-tab="used" role="tab" aria-selected="false">已使用 <span class="rd-segment-count">0</span></button>
+                <button type="button" class="rd-segment" data-tab="expired" role="tab" aria-selected="false">已过期 <span class="rd-segment-count">1</span></button>
+            </div>
+
+            <!-- Panel: Available -->
+            <div class="rd-panel is-active space-y-4" id="rd-panel-available" role="tabpanel">
+                <!-- Shampoo experience-coupon card -->
+                <div class="rd-card">
+                    <div class="rd-card-topbar"></div>
+                    <div class="rd-card-body">
+                        <div class="rd-card-head">
+                            <div>
+                                <h3 class="text-base font-semibold text-foreground">核心洗发水体验券</h3>
+                            </div>
+                            <span class="rd-chip rd-chip-ok"><i data-lucide="check"></i>可用</span>
+                        </div>
+                        <div class="rd-meta">
+                            <i data-lucide="calendar-days"></i>
+                            <span>2026-06-25 到期</span>
+                        </div>
+                        <div class="rd-actions">
+                            <button type="button" class="rd-btn rd-btn-primary" data-dom-id="redeem-use-samp" data-use-coupon="shampoo">使用</button>
+                            <button type="button" class="rd-btn rd-btn-ghost" data-dom-id="interaction-id-oxk35qq">转赠</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cash experience-coupon card -->
+                <div class="rd-card">
+                    <div class="rd-card-topbar"></div>
+                    <div class="rd-card-body">
+                        <div class="rd-card-head">
+                            <div>
+                                <div class="flex items-baseline gap-1.5">
+                                    <span class="gold-text text-2xl font-bold leading-none">¥20</span>
+                                    <span class="text-base font-semibold text-foreground">现金减免体验券</span>
+                                </div>
+                            </div>
+                            <span class="rd-chip rd-chip-ok"><i data-lucide="check"></i>可用</span>
+                        </div>
+                        <div class="rd-meta">
+                            <i data-lucide="calendar-days"></i>
+                            <span>2026-06-25 到期</span>
+                        </div>
+                        <div class="rd-actions">
+                            <button type="button" class="rd-btn rd-btn-primary" data-dom-id="redeem-use-cash">使用</button>
+                            <button type="button" class="rd-btn rd-btn-ghost">转赠</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel: Used (empty state) -->
+            <div class="rd-panel" id="rd-panel-used" role="tabpanel">
+                <div class="bg-card rounded-2xl shadow-sm rd-empty">
+                    <div class="rd-empty-icon"><i data-lucide="receipt-text"></i></div>
+                    <h3 class="mt-4 text-base font-semibold text-foreground">暂无已使用的体验券</h3>
+                    <p class="mt-1 text-sm text-muted-foreground">已核销或已完成使用的体验券，会显示在这里</p>
+                </div>
+            </div>
+
+            <!-- Panel: Expired -->
+            <div class="rd-panel" id="rd-panel-expired" role="tabpanel">
+                <div class="rd-card rd-card-disabled">
+                    <div class="rd-card-topbar"></div>
+                    <div class="rd-card-body">
+                        <div class="rd-card-head">
+                            <div>
+                                <div class="flex items-baseline gap-1.5">
+                                    <span class="text-2xl font-bold leading-none text-muted-foreground">¥20</span>
+                                    <span class="text-base font-semibold text-muted-foreground">现金减免体验券</span>
+                                </div>
+                            </div>
+                            <span class="rd-chip rd-chip-off"><i data-lucide="clock"></i>已过期</span>
+                        </div>
+                        <div class="rd-meta">
+                            <i data-lucide="calendar-days"></i>
+                            <span>2026-05-25 到期</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tips -->
+            <div class="bg-card rounded-2xl p-4 shadow-sm space-y-3">
+                <div class="rd-tip">
+                    <span class="rd-tip-num">1</span>
+                    <span class="text-sm text-muted-foreground">可用卡片可直接使用或转赠给好友</span>
+                </div>
+                <div class="rd-tip">
+                    <span class="rd-tip-num">2</span>
+                    <span class="text-sm text-muted-foreground">已使用的兑换码可以在这里查询</span>
+                </div>
+                <div class="rd-tip">
+                    <span class="rd-tip-num">3</span>
+                    <span class="text-sm text-muted-foreground">已过期的兑换码将无法使用</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Sheet: 体验券 使用 (扫码 / 消费密码) — comdesign bottom-sheet + radio + button -->
+    <div class="use-sheet-mask" id="use-sheet" data-dom-id="use-sheet" role="dialog" aria-modal="true" aria-labelledby="use-sheet-title" hidden>
+        <div class="use-sheet" role="document">
+            <div class="use-sheet-handle" aria-hidden="true"></div>
+            <div class="use-sheet-head">
+                <div class="use-sheet-title-block">
+                    <h2 class="use-sheet-title" id="use-sheet-title">使用体验券</h2>
+                    <span class="use-sheet-sub" id="use-sheet-sub">请选择核销方式</span>
+                </div>
+                <button type="button" class="use-sheet-close" id="use-sheet-close" aria-label="关闭"><i data-lucide="x"></i></button>
+            </div>
+            <div class="use-sheet-body">
+                <div class="use-summary" id="use-summary">
+                    <span class="use-summary-icon"><i data-lucide="ticket"></i></span>
+                    <div class="use-summary-text">
+                        <span class="use-summary-name" id="use-summary-name">核心洗发水体验券</span>
+                        <span class="use-summary-meta" id="use-summary-meta">2026-06-25 到期 · 限到店核销</span>
+                    </div>
+                </div>
+
+                <p class="use-section-title">选择核销方式</p>
+                <div class="use-options" role="radiogroup" aria-label="核销方式">
+                    <button type="button" class="use-option" id="use-option-scan" data-method="scan" role="radio" aria-checked="false">
+                        <span class="use-option-icon"><i data-lucide="qr-code"></i></span>
+                        <span class="use-option-text">
+                            <span class="use-option-name">扫码核销</span>
+                            <span class="use-option-desc">出示二维码，由门店扫码完成核销</span>
+                        </span>
+                        <span class="use-option-radio" aria-hidden="true"><span class="use-option-radio-dot"></span></span>
+                    </button>
+                    <button type="button" class="use-option" id="use-option-pwd" data-method="password" role="radio" aria-checked="false">
+                        <span class="use-option-icon"><i data-lucide="key-round"></i></span>
+                        <span class="use-option-text">
+                            <span class="use-option-name">消费密码核销</span>
+                            <span class="use-option-desc">输入 6 位消费密码，由店员确认核销</span>
+                        </span>
+                        <span class="use-option-radio" aria-hidden="true"><span class="use-option-radio-dot"></span></span>
+                    </button>
+                </div>
+
+                <div class="use-tip">
+                    <i data-lucide="info"></i>
+                    <span class="use-tip-text">同一张体验券仅可选择一种核销方式，确认后不可更改</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="use-toast" id="use-toast" role="status" aria-live="polite">
+        <i data-lucide="check-circle"></i>
+        <span class="use-toast-text"></span>
+    </div>
+
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <script>lucide.createIcons();</script>
+    <script>
+        (function () {
+            var tabs = document.querySelectorAll('.rd-segment');
+            var panels = document.querySelectorAll('.rd-panel');
+            tabs.forEach(function (tab) {
+                tab.addEventListener('click', function () {
+                    tabs.forEach(function (t) { t.classList.remove('is-active'); t.setAttribute('aria-selected', 'false'); });
+                    panels.forEach(function (p) { p.classList.remove('is-active'); });
+                    tab.classList.add('is-active');
+                    tab.setAttribute('aria-selected', 'true');
+                    var panel = document.getElementById('rd-panel-' + tab.getAttribute('data-tab'));
+                    if (panel) { panel.classList.add('is-active'); }
+                });
+            });
+
+            // ── Bottom Sheet · use experience-coupon ──
+            var sheet = document.getElementById('use-sheet');
+            var subEl = document.getElementById('use-sheet-sub');
+            var nameEl = document.getElementById('use-summary-name');
+            var metaEl = document.getElementById('use-summary-meta');
+            var closeBtn = document.getElementById('use-sheet-close');
+            var toast = document.getElementById('use-toast');
+            var options = document.querySelectorAll('.use-option');
+            var selectedMethod = null;
+            var currentCoupon = null;
+            var lastFocus = null;
+
+            var coupons = {
+                shampoo: { name: '核心洗发水体验券', meta: '2026-06-25 到期 · 限到店核销' },
+                cash:    { name: '现金减免体验券',   meta: '2026-06-25 到期 · 限到店核销' }
+            };
+
+            function showToast(msg) {
+                toast.querySelector('.use-toast-text').textContent = msg;
+                toast.classList.add('show');
+                clearTimeout(window.__useToastT);
+                window.__useToastT = setTimeout(function () { toast.classList.remove('show'); }, 2000);
+            }
+
+            function resetSelection() {
+                options.forEach(function (o) {
+                    o.classList.remove('is-selected');
+                    o.setAttribute('aria-checked', 'false');
+                });
+                selectedMethod = null;
+            }
+
+            function openSheet(key) {
+                currentCoupon = coupons[key] || coupons.shampoo;
+                nameEl.textContent = currentCoupon.name;
+                metaEl.textContent = currentCoupon.meta;
+                subEl.textContent = '请选择核销方式';
+                resetSelection();
+                lastFocus = document.activeElement;
+                sheet.hidden = false;
+                if (window.lucide) try { window.lucide.createIcons(); } catch (e) {}
+            }
+            function closeSheet() {
+                sheet.hidden = true;
+                if (lastFocus && typeof lastFocus.focus === 'function') { lastFocus.focus(); }
+            }
+
+            document.querySelectorAll('[data-use-coupon]').forEach(function (btn) {
+                btn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openSheet(btn.getAttribute('data-use-coupon'));
+                });
+            });
+            closeBtn.addEventListener('click', closeSheet);
+            sheet.addEventListener('click', function (e) { if (e.target === sheet) closeSheet(); });
+            document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !sheet.hidden) closeSheet(); });
+
+            // 单选 → 选中即触发下一步（不再依赖底部按钮）
+            options.forEach(function (opt) {
+                opt.addEventListener('click', function () {
+                    var method = opt.getAttribute('data-method');
+                    if (!method || !currentCoupon) return;
+
+                    options.forEach(function (o) {
+                        o.classList.remove('is-selected');
+                        o.setAttribute('aria-checked', 'false');
+                    });
+                    opt.classList.add('is-selected');
+                    opt.setAttribute('aria-checked', 'true');
+                    selectedMethod = method;
+
+                    var label = method === 'scan' ? '扫码核销' : '消费密码核销';
+                    showToast('已使用「' + currentCoupon.name + '」· ' + label);
+
+                    if (method === 'scan') {
+                        // 跳转到扫码页(同目录 pages/扫码.html)
+                        closeSheet();
+                        window.location.href = '扫码.html';
+                        return;
+                    }
+                    // 消费密码核销 → 关闭弹层
+                    closeSheet();
+                });
+                opt.addEventListener('keydown', function (e) {
+                    if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); opt.click(); }
+                });
+            });
+        })();
+    </script>
+
+
+
+
+
+
+
+<!-- 公共底部 TabBar · 内联版(5 项,扫码 FAB 凸起) -->
+<style>
+/* 公共底部 TabBar · 内联版(5 项,中间扫码凸起) */
+.app-tabbar-spacer { height: 84px; }
+.app-tabbar {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  z-index: 100; display: flex; align-items: stretch; justify-content: space-around;
+  background: #FFFFFF; border-top: 1px solid #E8D9B8;
+  padding: 6px 0 calc(6px + env(safe-area-inset-bottom));
+  box-shadow: 0 -2px 8px rgba(89, 55, 15, 0.04);
+}
+.app-tabbar-item {
+  flex: 1 1 0; display: inline-flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 2px;
+  padding: 4px 0; text-decoration: none; color: var(--color-text-tertiary, #8590A3);
+  font: 500 11px/14px var(--font-family-base, -apple-system, sans-serif);
+  cursor: pointer; border: 0; background: transparent;
+  transition: color 120ms ease, transform 120ms ease;
+}
+.app-tabbar-item:active { transform: scale(0.96); }
+.app-tabbar-item .lucide { width: 22px; height: 22px; color: inherit; }
+.app-tabbar-item.is-active { color: var(--color-reward-strong, #B5793B); }
+.app-tabbar-item.is-active .lucide { stroke-width: 2.4; }
+
+/* 中间扫码项 · 凸起 FAB 风格 */
+.app-tabbar-item.is-fab {
+  position: relative;
+  flex: 0 0 64px;
+  margin: 0 4px;
+}
+.app-tabbar-item.is-fab .fab-bubble {
+  position: absolute;
+  left: 50%;
+  top: -22px;
+  transform: translateX(-50%);
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #F4C77B 0%, #B5793B 100%);
+  display: flex; align-items: center; justify-content: center;
+  color: #FFFFFF;
+  box-shadow: 0 6px 14px rgba(181, 121, 59, 0.35), 0 0 0 4px #FFFFFF inset;
+  border: 2px solid #FFFFFF;
+}
+.app-tabbar-item.is-fab .fab-bubble .lucide { width: 26px; height: 26px; color: #FFFFFF; stroke-width: 2.2; }
+.app-tabbar-item.is-fab .app-tabbar-label { color: var(--color-reward-strong, #B5793B); font-weight: 600; }
+.app-tabbar-item.is-fab.is-active .fab-bubble {
+  background: linear-gradient(180deg, #F8D49A 0%, #C58B45 100%);
+}
+</style>
+<div class="app-tabbar-spacer" aria-hidden="true"></div>
+
+<script>
+(function(){
+  function boot(){
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+  setTimeout(boot, 50);
+})();
+</script>
+
+</body>
+</html>

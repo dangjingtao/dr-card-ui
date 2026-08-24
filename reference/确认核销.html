@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>确认核销</title>
+    <style id="theme-vars">
+:root {
+  --com-neutral-0: #FFFFFF;
+  --com-neutral-50: #F7F8FC;
+  --com-neutral-100: #F0F2F8;
+  --com-neutral-200: #E2E6F0;
+  --com-neutral-300: #CDD3E1;
+  --com-neutral-400: #8590A3;
+  --com-neutral-500: #687288;
+  --com-neutral-600: #535D72;
+  --com-neutral-700: #394156;
+  --com-neutral-800: #252B3D;
+  --com-neutral-900: #171B2A;
+  --com-warm-50: #FCF8F1;
+  --com-warm-100: #F8F0E5;
+  --com-brand-50: #FFF3EC;
+  --com-brand-100: #FFE3D5;
+  --com-brand-200: #FFC4AA;
+  --com-brand-400: #FF7540;
+  --com-brand-500: #ED4D1B;
+  --com-brand-600: #D63D10;
+  --com-brand-700: #AD2E0A;
+  --com-accent-50: #E9FCFF;
+  --com-accent-100: #CAF7FB;
+  --com-accent-500: #16BFD3;
+  --com-accent-600: #0E9FB3;
+  --com-premium-50: #FFFBEB;
+  --com-premium-100: #FEF3C7;
+  --com-premium-200: #FDE68A;
+  --com-premium-300: #FCD34D;
+  --com-premium-400: #FBBF24;
+  --com-premium-500: #F59E0B;
+  --com-premium-600: #D97706;
+  --com-premium-700: #B45309;
+  --com-success-100: #DDF8EA;
+  --com-success-500: #21B66F;
+  --com-warning-500: #F3A21B;
+  --com-danger-500: #D63E50;
+  --com-text-primary: var(--com-neutral-800);
+  --com-text-secondary: var(--com-neutral-600);
+  --com-text-tertiary: var(--com-neutral-500);
+  --com-text-brand: var(--com-brand-600);
+  --com-text-disabled: var(--com-neutral-400);
+  --com-surface-page: var(--com-warm-50);
+  --com-surface-default: var(--com-neutral-0);
+  --com-surface-subtle: var(--com-neutral-100);
+  --com-surface-pressed: var(--com-neutral-100);
+  --com-scrim: rgba(0,0,0,0.52);
+  --com-border-subtle: var(--com-neutral-200);
+  --com-border: var(--com-neutral-400);
+  --com-disabled: var(--com-neutral-100);
+  --com-on-primary: var(--com-neutral-0);
+  --com-primary-hover: var(--com-brand-700);
+  --color-reward-strong: var(--com-premium-500);
+  --color-reward-subtle: var(--com-premium-50);
+  --color-reward-text: var(--com-premium-700);
+  --radius-overlay: 16px;
+  --radius-container: 12px;
+  --radius-control: 8px;
+  --radius-pill: 9999px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+  --font-family-base: system-ui, -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --type-caption: 400 12px/18px var(--font-family-base);
+  --type-label-small: 500 12px/16px var(--font-family-base);
+  --type-label: 500 14px/20px var(--font-family-base);
+  --type-body-small: 400 13px/20px var(--font-family-base);
+  --type-body: 400 16px/24px var(--font-family-base);
+  --type-heading-small: 600 16px/22px var(--font-family-base);
+  --type-heading: 600 18px/24px var(--font-family-base);
+  --size-control-height: 40px;
+  --size-control-height-lg: 48px;
+  --size-icon-sm: 16px;
+  --size-icon-md: 20px;
+  --size-icon-lg: 24px;
+  --space-8: 8px;
+  --space-12: 12px;
+  --space-16: 16px;
+  --space-20: 20px;
+  --shadow-1: 0 4px 12px 0 rgba(23,27,42,0.14);
+  --shadow-2: 0 8px 28px 0 rgba(23,27,42,0.18);
+  --motion-duration-fast: 120ms;
+  --motion-duration-standard: 220ms;
+  --motion-duration-slow: 320ms;
+  --motion-easing-standard: cubic-bezier(0.3, 0, 0, 1);
+  --motion-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
+}
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+    --radius-sm: var(--com-radius-sm);
+    --radius-md: var(--com-radius-md);
+    --radius-lg: var(--com-radius-lg);
+    --radius-xl: var(--com-radius-xl);
+  }
+  @layer base {
+    body { background: var(--color-background); color: var(--com-text-primary); }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--background); }
+      .text-background { color: var(--background); }
+      .bg-foreground { background-color: var(--foreground); }
+      .text-foreground { color: var(--foreground); }
+      .bg-card { background-color: var(--card); }
+      .text-card { color: var(--card); }
+      .bg-card-foreground { background-color: var(--card-foreground); }
+      .text-card-foreground { color: var(--card-foreground); }
+      .bg-popover { background-color: var(--popover); }
+      .text-popover { color: var(--popover); }
+      .bg-popover-foreground { background-color: var(--popover-foreground); }
+      .text-popover-foreground { color: var(--popover-foreground); }
+      .bg-primary { background-color: var(--primary); }
+      .text-primary { color: var(--primary); }
+      .bg-primary-foreground { background-color: var(--primary-foreground); }
+      .text-primary-foreground { color: var(--primary-foreground); }
+      .bg-secondary { background-color: var(--secondary); }
+      .text-secondary { color: var(--secondary); }
+      .bg-secondary-foreground { background-color: var(--secondary-foreground); }
+      .text-secondary-foreground { color: var(--secondary-foreground); }
+      .bg-muted { background-color: var(--muted); }
+      .text-muted { background-color: var(--muted); }
+      .text-muted-foreground { color: var(--muted-foreground); }
+      .bg-accent { background-color: var(--accent); }
+      .text-accent { color: var(--accent); }
+      .bg-accent-foreground { background-color: var(--accent-foreground); }
+      .text-accent-foreground { color: var(--accent-foreground); }
+      .bg-destructive { background-color: var(--destructive); }
+      .text-destructive { color: var(--destructive); }
+      .bg-destructive-foreground { background-color: var(--destructive-foreground); }
+      .text-destructive-foreground { color: var(--destructive-foreground); }
+      .bg-border { background-color: var(--border); }
+      .text-border { color: var(--border); }
+      .bg-input { background-color: var(--input); }
+      .text-input { color: var(--input); }
+      .bg-ring { background-color: var(--ring); }
+      .text-ring { color: var(--ring); }
+    </style>
+    <style>
+      body { background: var(--com-surface-page); color: var(--com-text-primary); font-family: var(--font-family-base); }
+      [data-icon] { display:inline-flex; align-items:center; justify-content:center; background-color: currentColor; }
+
+      .redeem-shell { max-width: 448px; margin: 0 auto; min-height: 100svh; display: flex; flex-direction: column; background: var(--com-surface-page); }
+
+      /* comdesign top-app-bar: container / leading / title */
+      .app-bar { display: flex; align-items: center; gap: var(--space-12); min-height: var(--size-control-height-lg); padding: 0 var(--space-16); background: var(--com-surface-default); }
+      .app-bar-title { flex: 1 1 auto; min-width: 0; font: var(--type-heading); color: var(--com-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .app-bar-action { width: var(--size-control-height-lg); height: var(--size-control-height-lg); border: 0; background: transparent; color: var(--com-text-primary); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; border-radius: var(--radius-control); transition: background-color var(--motion-duration-fast) var(--motion-easing-standard); }
+      .app-bar-action:active { background: var(--com-surface-pressed); }
+      .app-bar-action .lucide { width: var(--size-icon-lg); height: var(--size-icon-lg); }
+
+      /* hero: success glyph + intent text (drawn from dialog anatomy: icon + title + body, not modally) */
+      .redeem-hero { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 24px var(--space-16) 8px; }
+      .redeem-glyph { width: 64px; height: 64px; border-radius: var(--radius-pill); background: var(--com-brand-50); color: var(--com-brand-600); display: inline-flex; align-items: center; justify-content: center; }
+      .redeem-glyph .lucide { width: 32px; height: 32px; }
+      .redeem-hero-title { font: var(--type-heading); color: var(--com-text-primary); text-align: center; }
+      .redeem-hero-sub { font: var(--type-body-small); color: var(--com-text-secondary); text-align: center; }
+
+      /* comdesign section: header(title) + content; section gap = space-20 */
+      .redeem-section { padding: 0 var(--space-16); margin-top: var(--space-20); }
+      .redeem-section + .redeem-section { margin-top: var(--space-20); }
+      .redeem-section-title { padding: 0 var(--space-12); font: var(--type-heading-small); color: var(--com-text-primary); margin-bottom: 8px; }
+
+      .redeem-card { background: var(--com-surface-default); border-radius: var(--radius-overlay); padding: 4px 0; }
+      .redeem-row { display: flex; align-items: center; gap: var(--space-12); padding: 14px var(--space-16); }
+      .redeem-row + .redeem-row { border-top: 1px solid var(--com-border-subtle); }
+      .redeem-row-label { font: var(--type-body-small); color: var(--com-text-secondary); flex: 0 0 auto; min-width: 72px; }
+      .redeem-row-value { flex: 1 1 auto; min-width: 0; font: var(--type-label); color: var(--com-text-primary); text-align: right; word-break: break-all; }
+      .redeem-row-value.muted { color: var(--com-text-tertiary); }
+
+      .redeem-amount { display: flex; align-items: baseline; gap: 8px; }
+      .redeem-amount-unit { font: 500 18px/24px var(--font-family-base); color: var(--com-brand-600); }
+      .redeem-amount-num { font: 600 28px/32px var(--font-family-base); color: var(--com-brand-600); }
+      .redeem-amount-note { font: var(--type-caption); color: var(--com-text-tertiary); margin-left: 4px; }
+
+      /* comdesign tag: small pill, used to mark coupon state */
+      .redeem-tag { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: var(--radius-pill); background: var(--com-brand-50); color: var(--com-brand-600); font: 500 11px/16px var(--font-family-base); }
+
+      /* comdesign divider: 1px hairline */
+      .redeem-divider { height: 1px; background: var(--com-border-subtle); margin: 0 var(--space-16); }
+
+      /* sticky bottom action area (dialog actions: cancel + primary) */
+      .redeem-actions { margin-top: auto; padding: var(--space-12) var(--space-16) calc(var(--space-16) + env(safe-area-inset-bottom)); background: var(--com-warm-50); border-top: 1px solid var(--com-border-subtle); display: flex; gap: var(--space-12); }
+      .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: var(--size-control-height-lg); padding: 0 var(--space-16); border: 0; border-radius: var(--radius-control); font: var(--type-label); cursor: pointer; transition: background-color var(--motion-duration-fast) var(--motion-easing-standard), color var(--motion-duration-fast) var(--motion-easing-standard); }
+      .btn-block { flex: 1 1 0; }
+      .btn-tertiary { background: transparent; color: var(--com-text-brand); }
+      .btn-tertiary:active { background: var(--com-surface-pressed); }
+      .btn-primary { background: var(--com-brand-500); color: var(--com-on-primary); }
+      .btn-primary:active { background: var(--com-primary-hover); }
+      .btn .lucide { width: var(--size-icon-md); height: var(--size-icon-md); }
+
+      /* dialog-style toast for post-confirm feedback */
+      .redeem-toast { position: fixed; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom)); transform: translate(-50%, 12px); display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: var(--radius-pill); background: rgba(23,27,42,0.92); color: var(--com-neutral-0); font: var(--type-label); opacity: 0; pointer-events: none; transition: opacity var(--motion-duration-standard) var(--motion-easing-standard), transform var(--motion-duration-standard) var(--motion-easing-standard); z-index: 50; }
+      .redeem-toast.show { opacity: 1; transform: translate(-50%, 0); }
+      .redeem-toast .lucide { width: 16px; height: 16px; color: var(--com-success-500); }
+      /* iOS status bar (added by visual pass) */
+      .status-bar { height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; color: var(--com-text-primary, #252B3D); font: 600 14px/20px var(--font-family-base, -apple-system, sans-serif); }
+      .status-bar .right { display: inline-flex; align-items: center; gap: 6px; font-weight: 400; font-size: 12px; opacity: 0.7; }
+      .status-bar svg { width: 14px; height: 14px; }
+    </style>
+</head>
+<body>
+    <div class="redeem-shell">
+        <div class="status-bar" aria-hidden="true">
+            <span>9:41</span>
+            <span class="right">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h.01"></path><path d="M7 20v-4"></path><path d="M12 20v-8"></path><path d="M17 20V8"></path><path d="M22 4v16"></path></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="18" height="12" rx="2"></rect><line x1="22" y1="11" x2="22" y2="13"></line><rect x="4" y="8" width="14" height="8" rx="1" fill="currentColor"></rect></svg>
+            </span>
+        </div>
+        <!-- comdesign top-app-bar: leading close + title (no trailing; no shadow) -->
+        <header class="app-bar" style="background-color: transparent;">
+
+            <h1 class="app-bar-title" style="text-align: center;">确认核销</h1>
+        </header>
+
+        <!-- Hero: success glyph + intent text -->
+        <section class="redeem-hero" aria-labelledby="redeem-hero-title">
+            <span class="redeem-glyph" aria-hidden="true"><i data-lucide="check"></i></span>
+            <h2 class="redeem-hero-title" id="redeem-hero-title">即将核销此券</h2>
+            <p class="redeem-hero-sub">请与门店店员核对，确认后权益将立即扣减</p>
+        </section>
+
+        <!-- Section 1: 核销店铺 -->
+        <section class="redeem-section" aria-labelledby="sec-store">
+            <h3 class="redeem-section-title" id="sec-store">核销设备</h3>
+            <div class="redeem-card">
+                <div class="redeem-row">
+                    <i data-lucide="store" class="lucide" style="width:20px;height:20px;color:var(--com-text-tertiary)"></i>
+                    <div style="flex:1 1 auto; min-width:0;">
+                        <div style="font: var(--type-label); color: var(--com-text-primary);">泡泡洗护 · 朝阳大悦城店</div>
+                        <div class="redeem-row-value muted" style="text-align:left; margin-top:2px;">北京市朝阳区青年路 5 号大悦城 B1-038</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: 体验券明细 -->
+        <section class="redeem-section" aria-labelledby="sec-coupon">
+            <h3 class="redeem-section-title" id="sec-coupon">体验券明细</h3>
+            <div class="redeem-card">
+                <div class="redeem-row">
+                    <div style="flex:1 1 auto; min-width:0;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="font: var(--type-label); color: var(--com-text-primary);">洗发水 / 护发素 / 沐浴露 体验装</span>
+                            <span class="redeem-tag">体验</span>
+                        </div>
+                        <div class="redeem-row-value muted" style="text-align:left; margin-top:2px;">有效期至 2026-09-30</div>
+                    </div>
+                    <div class="redeem-amount">
+                        <span class="redeem-amount-num">1</span>
+                        <span class="redeem-amount-unit">张</span>
+                    </div>
+                </div>
+
+
+
+            </div>
+        </section>
+
+        <!-- Section 3: 核销信息 -->
+        <section class="redeem-section" aria-labelledby="sec-meta">
+            <h3 class="redeem-section-title" id="sec-meta">核销信息</h3>
+            <div class="redeem-card">
+                <div class="redeem-row">
+                    <span class="redeem-row-label">核销时间</span>
+                    <span class="redeem-row-value" id="redeem-time">2026-08-13 09:41</span>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Sticky actions: cancel (tertiary) + confirm (primary) -->
+
+    <div class="redeem-actions" data-editor-id="editor-node-msrg2vcm-1" style>
+            <button type="button" class="btn btn-block btn-tertiary" id="redeem-cancel" data-dom-id="interaction-id-nnb6vpj">取消</button>
+            <button type="button" class="btn btn-block btn-primary" id="redeem-confirm">确认核销</button>
+        </div></div>
+
+    <div class="redeem-toast" id="redeem-toast" role="status" aria-live="polite">
+        <i data-lucide="check-circle-2"></i><span class="redeem-toast-text">核销成功</span>
+    </div>
+
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <script>lucide.createIcons();</script>
+    <script>
+        (function () {
+            try { if (window.lucide) window.lucide.createIcons(); } catch (e) {}
+
+            var closeBtn = document.getElementById('redeem-close');
+            var cancelBtn = document.getElementById('redeem-cancel');
+            var confirmBtn = document.getElementById('redeem-confirm');
+            var toast = document.getElementById('redeem-toast');
+            var serialEl = document.getElementById('redeem-serial');
+            var timeEl = document.getElementById('redeem-time');
+            var paid = false;
+
+            function pad(n) { return n < 10 ? '0' + n : '' + n; }
+            function nowParts(d) {
+                return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+            }
+            function makeSerial(d) {
+                var s = 'RR' + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds());
+                var tail = Math.floor(Math.random() * 9000 + 1000);
+                return s + tail;
+            }
+            function showToast(text) {
+                if (!toast) return;
+                var t = toast.querySelector('.redeem-toast-text');
+                if (t) t.textContent = text;
+                toast.classList.add('show');
+                clearTimeout(window.__redeemToastT);
+                window.__redeemToastT = setTimeout(function () { toast.classList.remove('show'); }, 1800);
+            }
+            function goBack() {
+                if (document.referrer) { history.back(); }
+                else { location.href = '卡包.html'; }
+            }
+
+            if (timeEl) timeEl.textContent = nowParts(new Date());
+            if (closeBtn) closeBtn.addEventListener('click', goBack);
+            if (cancelBtn) cancelBtn.addEventListener('click', goBack);
+            if (confirmBtn) {
+                confirmBtn.addEventListener('click', function () {
+                    if (paid) { goBack(); return; }
+                    paid = true;
+                    var d = new Date();
+                    if (serialEl) serialEl.textContent = makeSerial(d);
+                    if (timeEl) timeEl.textContent = nowParts(d);
+                    confirmBtn.textContent = '已核销 · 返回';
+                    showToast('核销成功');
+                });
+            }
+        })();
+    </script>
+
+
+
+
+
+
+
+<!-- 公共底部 TabBar · 内联版(5 项,扫码 FAB 凸起) -->
+<style>
+/* 公共底部 TabBar · 内联版(5 项,中间扫码凸起) */
+.app-tabbar-spacer { height: 84px; }
+.app-tabbar {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  z-index: 100; display: flex; align-items: stretch; justify-content: space-around;
+  background: #FFFFFF; border-top: 1px solid #E8D9B8;
+  padding: 6px 0 calc(6px + env(safe-area-inset-bottom));
+  box-shadow: 0 -2px 8px rgba(89, 55, 15, 0.04);
+}
+.app-tabbar-item {
+  flex: 1 1 0; display: inline-flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 2px;
+  padding: 4px 0; text-decoration: none; color: var(--color-text-tertiary, #8590A3);
+  font: 500 11px/14px var(--font-family-base, -apple-system, sans-serif);
+  cursor: pointer; border: 0; background: transparent;
+  transition: color 120ms ease, transform 120ms ease;
+}
+.app-tabbar-item:active { transform: scale(0.96); }
+.app-tabbar-item .lucide { width: 22px; height: 22px; color: inherit; }
+.app-tabbar-item.is-active { color: var(--color-reward-strong, #B5793B); }
+.app-tabbar-item.is-active .lucide { stroke-width: 2.4; }
+
+/* 中间扫码项 · 凸起 FAB 风格 */
+.app-tabbar-item.is-fab {
+  position: relative;
+  flex: 0 0 64px;
+  margin: 0 4px;
+}
+.app-tabbar-item.is-fab .fab-bubble {
+  position: absolute;
+  left: 50%;
+  top: -22px;
+  transform: translateX(-50%);
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #F4C77B 0%, #B5793B 100%);
+  display: flex; align-items: center; justify-content: center;
+  color: #FFFFFF;
+  box-shadow: 0 6px 14px rgba(181, 121, 59, 0.35), 0 0 0 4px #FFFFFF inset;
+  border: 2px solid #FFFFFF;
+}
+.app-tabbar-item.is-fab .fab-bubble .lucide { width: 26px; height: 26px; color: #FFFFFF; stroke-width: 2.2; }
+.app-tabbar-item.is-fab .app-tabbar-label { color: var(--color-reward-strong, #B5793B); font-weight: 600; }
+.app-tabbar-item.is-fab.is-active .fab-bubble {
+  background: linear-gradient(180deg, #F8D49A 0%, #C58B45 100%);
+}
+</style>
+<div class="app-tabbar-spacer" aria-hidden="true"></div>
+
+<script>
+(function(){
+  function boot(){
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+  setTimeout(boot, 50);
+})();
+</script>
+
+</body>
+</html>
