@@ -737,7 +737,7 @@ export interface CheckinPick {
 }
 
 export const CHECKIN_PICKS: CheckinPick[] = [
-  { id: 'p1', name: '洗护体验样包', desc: '洗发水 / 护发素 / 沐浴露 体验装', cost: 200 },
+  { id: 'p1', name: '洗护组合体验券', desc: '洗发 / 护发 / 沐浴体验，限到店核销', cost: 200 },
   { id: 'p2', name: '核心洗发水体验券', desc: '限到店核销' },
 ]
 
@@ -782,19 +782,29 @@ export const MEMBER_PROFILE = {
   bubbleUnit: 'Bubble Point',
 } as const
 
-/** #6 四个主要功能入口（原型 §1 文案与去向，逐字照抄，不改写为「今日幸运 / 每日任务」） */
+/**
+ * #6 四个主要功能入口（原型 §1 文案与去向，逐字照抄，不改写为「今日幸运 / 每日任务」）
+ * ⚠️ subtitle 为本次视觉参考图新增的入口说明，仅描述入口本身在做什么，不引入新的规则数值；
+ *    参考图写作「领漾运积分」，按用户确认的命名口径落为「领澡运积分」。
+ */
 export interface MemberEntry {
   id: string
   name: string
+  subtitle: string
   to: string
 }
 
 export const MEMBER_ENTRIES: MemberEntry[] = [
-  { id: 'luck', name: '今日澡运', to: '/luck' },
-  { id: 'task', name: '是日任务', to: '/checkin' },
-  { id: 'coupon', name: '优惠卡包', to: '/card' },
-  { id: 'buddy', name: '洗头搭子', to: '/buddy' },
+  { id: 'luck', name: '今日澡运', subtitle: '抽专属好礼', to: '/luck' },
+  { id: 'task', name: '是日任务', subtitle: '领澡运积分', to: '/checkin' },
+  { id: 'coupon', name: '优惠卡包', subtitle: '专享优惠', to: '/card' },
+  { id: 'buddy', name: '洗头搭子', subtitle: '好友同行礼', to: '/buddy' },
 ]
+
+/** #6 会员中心区块标题（参考图口径：入口区块标题为「尊享服务」） */
+export const MEMBER_SECTION_LABELS = {
+  entriesTitle: '尊享服务',
+} as const
 
 /**
  * #26 会员等级分级。
@@ -1100,22 +1110,22 @@ export const EXCHANGE_SORTS: Array<{ key: ExchangeSort; label: string }> = [
   { key: 'sort-points', label: '泡泡值' },
 ]
 
-/** 2026-08-24 用户参考图确认的前台商品分类 Tab。 */
+/** 2026-08-24 用户参考图确认的前台体验券分类 Tab。 */
 export type ExchangeCategory = 'all' | 'shampoo' | 'conditioner' | 'scalp-care'
 
 export const EXCHANGE_CATEGORIES: Array<{ key: ExchangeCategory; label: string }> = [
   { key: 'all', label: '全部' },
-  { key: 'shampoo', label: '洗发水' },
-  { key: 'conditioner', label: '护发素' },
+  { key: 'shampoo', label: '洗发体验' },
+  { key: 'conditioner', label: '护发体验' },
   { key: 'scalp-care', label: '头皮护理' },
 ]
 
-/** 商品库存态；原型只画了可兑换商品，售罄态由 T008 显式登记以便验收（B-025） */
+/** 体验券库存态；原型只画了可兑换体验券，兑完态由 T008 显式登记以便验收（B-025） */
 export type ExchangeStock = 'in-stock' | 'sold-out'
 
 /**
- * 洗护兑换专区商品夹具（T008；摹客 #18 / #37 / #38）
- * - `DearSeed 洗发水样包 / 200🫧 / 兑换量 2000+` 为原型 §1 唯一逐字给出的商品卡，照抄不改写
+ * 洗护兑换专区体验券夹具（T008；摹客 #18 / #37 / #38）
+ * - 原型 §1 的样包卡在当前业务口径下统一表述为体验券
  * - 其余商品名沿用项目内已存在的确定性文案（CHECKIN_PICKS / SHARE_PRODUCT_FIXTURE / CARD_COUPON_FIXTURES），
  *   不自造新 SKU 名称
  * - ⚠️ B-025：完整 SKU 清单、真实所需泡泡值、兑换量与库存原型均未给出，以下数值仅为确定性夹具，不定稿
@@ -1123,7 +1133,7 @@ export type ExchangeStock = 'in-stock' | 'sold-out'
 export interface ExchangeProductFixture {
   id: string
   name: string
-  /** 商品说明（原型 §3 弹窗内「商品说明」一行） */
+  /** 体验券说明（原型 §3 弹窗说明行） */
   desc: string
   /** 所需泡泡值 */
   cost: number
@@ -1132,7 +1142,7 @@ export interface ExchangeProductFixture {
   /** 兑换量展示文案；原型 §1 写作「2000+」，故与数值分开存放 */
   redeemedLabel: string
   stock: ExchangeStock
-  /** 用于用户确认的四分类前台 Tab；未归类商品只在「全部」中展示。 */
+  /** 用于用户确认的四分类前台 Tab；未归类体验券只在「全部」中展示。 */
   category?: Exclude<ExchangeCategory, 'all'>
   /** 缩略图素材键；仅 src/assets/brand 内已有素材可用，其余走 Token 占位（不新增二进制素材） */
   thumb?: 'dearseed-kit' | 'honey' | 'seasalt' | 'berry' | 'herbal'
@@ -1141,8 +1151,8 @@ export interface ExchangeProductFixture {
 export const EXCHANGE_PRODUCT_FIXTURES: ExchangeProductFixture[] = [
   {
     id: 'e1',
-    name: 'DearSeed 洗发水样包',
-    desc: '洗护关爱机内 SKU，单次用量装',
+    name: 'DearSeed 洗发水体验券',
+    desc: '单次洗发体验，限到店核销',
     cost: 200,
     redeemed: 2000,
     redeemedLabel: '2000+',
@@ -1152,8 +1162,8 @@ export const EXCHANGE_PRODUCT_FIXTURES: ExchangeProductFixture[] = [
   },
   {
     id: 'e2',
-    name: '洗护体验样包',
-    desc: '洗发水 / 护发素 / 沐浴露 体验装',
+    name: '洗护组合体验券',
+    desc: '洗发 / 护发组合体验，限到店核销',
     cost: 200,
     redeemed: 1860,
     redeemedLabel: '1860',
@@ -1174,8 +1184,8 @@ export const EXCHANGE_PRODUCT_FIXTURES: ExchangeProductFixture[] = [
   },
   {
     id: 'e4',
-    name: '洗发试用装',
-    desc: '单次使用',
+    name: '洗发体验券',
+    desc: '单次洗发体验，限到店核销',
     cost: 320,
     redeemed: 720,
     redeemedLabel: '720',
@@ -1214,7 +1224,7 @@ export function exchangeProductsByCategory(list: ExchangeProductFixture[], categ
   return category === 'all' ? list : list.filter((item) => item.category === category)
 }
 
-/** 搜索：对商品名与商品说明做大小写无关的包含匹配；空串等价于不过滤 */
+/** 搜索：对体验券名称与说明做大小写无关的包含匹配；空串等价于不过滤 */
 export function exchangeSearch(list: ExchangeProductFixture[], keyword: string): ExchangeProductFixture[] {
   const q = keyword.trim().toLowerCase()
   if (!q) return list
@@ -1231,7 +1241,7 @@ export function resolveExchangeProduct(id: string | null): ExchangeProductFixtur
   return found ?? EXCHANGE_PRODUCT_FIXTURES[0]
 }
 
-/** 商品可兑换性判定（纯函数；余额来自 BUBBLE_BALANCE，不做持久化扣减，见 B-026） */
+/** 体验券可兑换性判定（纯函数；余额来自 BUBBLE_BALANCE，不做持久化扣减，见 B-026） */
 export type ExchangeAvailability = 'redeemable' | 'insufficient' | 'sold-out'
 
 export function exchangeAvailability(
@@ -1245,17 +1255,17 @@ export function exchangeAvailability(
 
 /** 兑换专区文案（原型 §1 / §3 / §4 逐字照抄，不改写） */
 export const EXCHANGE_COPY = {
-  searchPlaceholder: '搜索洗护商品',
+  searchPlaceholder: '搜索体验券',
   balanceLabel: '泡泡值余额',
   costUnit: '泡泡值',
   redeemedPrefix: '兑换量',
   quantity: 'x1',
   action: '立即兑换',
-  soldOut: '已售罄',
+  soldOut: '已兑完',
   insufficient: '泡泡值不足',
   submitting: '兑换中',
-  emptyTitle: '没有找到相关商品',
-  emptyDesc: '换个关键词试试，或返回综合排序浏览全部洗护商品。',
+  emptyTitle: '没有找到相关体验券',
+  emptyDesc: '换个关键词试试，或浏览全部洗护体验券。',
   emptyAction: '清空搜索',
   /** #40 存入卡包（原型 §4） */
   successTitle: '兑换成功，卡券已经存入你的卡包啦～',
@@ -1272,13 +1282,13 @@ export const EXCHANGE_RULE_STATUS = {
   pointsSortDirection: {
     confirmed: false,
     blocker: 'B-024',
-    note: '原型 §1/§2 只写「泡泡值」这一维度，未标注升序或降序；此处取「由低到高」以便低门槛商品优先曝光，待产品确认。',
+    note: '原型 §1/§2 只写「泡泡值」这一维度，未标注升序或降序；此处取「由低到高」以便低门槛体验券优先曝光，待产品确认。',
   },
   /** SKU 清单、兑换量与库存 */
   catalog: {
     confirmed: false,
     blocker: 'B-025',
-    note: '原型 §1 仅逐字给出一张商品卡，完整 SKU 清单、所需泡泡值、兑换量与售罄判定未确认；此处只用项目内已有文案凑成确定性夹具。',
+    note: '原型 §1 仅逐字给出一张兑换卡，完整体验券清单、所需泡泡值、兑换量与兑完判定未确认；此处只用项目内已有文案构成确定性夹具。',
   },
   /** 兑换扣减与卡包写入 */
   settlement: {

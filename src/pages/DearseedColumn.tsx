@@ -57,7 +57,7 @@ export default function DearseedColumn() {
   }
 
   return (
-    <PageContainer inset={false} className="overflow-hidden bg-background pb-[calc(2rem+env(safe-area-inset-bottom))]">
+    <PageContainer inset={false} className="overflow-hidden pb-[calc(2rem+env(safe-area-inset-bottom))]">
       <button
         type="button"
         aria-label="诗得丽产品与活动推荐"

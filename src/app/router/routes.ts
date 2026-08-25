@@ -108,7 +108,7 @@ export const ROUTES: RouteMeta[] = [
   },
   {
     path: '/exchange',
-    title: '洗护兑换专区',
+    title: '洗护体验券专区',
     nodes: [18, 37, 38],
     task: 'T008',
     entry: '底部 Tab「兑换」；首页-兑换商城',
@@ -117,8 +117,8 @@ export const ROUTES: RouteMeta[] = [
       { key: 'sort-exchange', node: 37, label: '兑换量排行' },
       { key: 'sort-points', node: 38, label: '泡泡值排行' },
     ],
-    overlays: [{ key: 'redeem', node: 39, label: '商品兑换弹窗', type: 'sheet' }],
-    owner: '洗护兑换专区（T008 施工；语义已从「兑换码页」纠正）',
+    overlays: [{ key: 'redeem', node: 39, label: '体验券兑换弹窗', type: 'sheet' }],
+    owner: '洗护体验券专区（T008 施工；语义已从「兑换码页」纠正）',
   },
   {
     path: '/profile',
@@ -417,8 +417,8 @@ export const ROUTES: RouteMeta[] = [
     title: '存入卡包',
     nodes: [40],
     task: 'T008',
-    entry: '洗护兑换专区-商品兑换确认',
-    returnTo: '洗护兑换专区',
+    entry: '洗护体验券专区-体验券兑换确认',
+    returnTo: '洗护体验券专区',
     owner: '兑换成功入包反馈（T008 施工）',
   },
 

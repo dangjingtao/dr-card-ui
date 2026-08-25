@@ -40,7 +40,7 @@ export default function MembershipLevels() {
   const route = findRouteByPathname('/membership/levels')
 
   return (
-    <PageContainer inset={false} className="bg-[#F7F8FC] pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
+    <PageContainer inset={false} className="pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
       <section className="relative mx-2 mt-3 aspect-[2/1] overflow-hidden rounded-[20px]" aria-labelledby="membership-hero-title">
         <img src={membershipHero} alt="" className="absolute inset-0 h-full w-full object-cover" aria-hidden />
         <div className="absolute inset-0 bg-gradient-to-r from-white/35 via-white/10 to-transparent" aria-hidden />

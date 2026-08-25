@@ -29,7 +29,7 @@ export default function TitleBar({
 
   if (!back && !action) {
     return (
-      <header className={`w-full bg-background ${className}`} data-title-bar="plain">
+      <header className={`w-full bg-transparent ${className}`} data-title-bar="plain">
         <div className="mx-auto w-full max-w-[480px] text-center">
           <h1 className="m-0 text-[18px] font-semibold leading-6 text-text-primary">{title}</h1>
         </div>
@@ -39,7 +39,7 @@ export default function TitleBar({
 
   return (
     <header
-      className={`w-full bg-background ${className}`}
+      className={`w-full bg-transparent ${className}`}
       data-title-bar={back ? 'back' : 'action'}
     >
       <div className="mx-auto grid h-11 w-full max-w-[480px] grid-cols-[36px_minmax(0,1fr)_36px] items-center px-3">

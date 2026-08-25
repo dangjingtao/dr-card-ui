@@ -3,7 +3,7 @@ import { ArrowUpRight, CalendarDays, Check, CheckCircle2, ChevronRight, Gift, Li
 import DebugPanel from '../components/mobile/DebugPanel'
 import PageContainer from '../components/mobile/PageContainer'
 import PromptOverlay from '../components/mobile/PromptOverlay'
-import { Button } from '../components/ui'
+import { Button, ProgressIndicator } from '../components/ui'
 import { useFixtureState, useOverlay } from '../app/fixtures/useFixture'
 import { findRouteByPathname } from '../app/router/routes'
 import {
@@ -28,6 +28,35 @@ import pickShampooB from '../assets/brand/exchange/exchange-pick-shampoo-b.webp'
 const pickAssets = [pickShampooA, pickShampooB] as const
 
 /**
+ * 奖励轨道填充比例：按「已达成的最后一个节点 + 相邻节点之间的天数插值」派生。
+ * 只用 CHECKIN_STREAK 与 CHECKIN_REWARDS 的既有天数，不引入任何未确认规则或奖励数值。
+ */
+function getRewardRailPercent() {
+  const total = CHECKIN_REWARDS.length
+  if (total < 2) return CHECKIN_STREAK >= (CHECKIN_REWARDS[0]?.days ?? 0) ? 100 : 0
+
+  let reached = -1
+  CHECKIN_REWARDS.forEach((reward, index) => {
+    if (CHECKIN_STREAK >= reward.days) reached = index
+  })
+  if (reached === total - 1) return 100
+
+  const from = reached >= 0 ? CHECKIN_REWARDS[reached].days : 0
+  const to = CHECKIN_REWARDS[reached + 1].days
+  const span = to - from
+  const inner = span > 0 ? (CHECKIN_STREAK - from) / span : 0
+  const ratio = (reached + Math.min(1, Math.max(0, inner))) / (total - 1)
+  return Math.min(100, Math.max(0, ratio * 100))
+}
+
+/** 是日任务进度条比例：解析夹具里既有的「1 / 1」文案，不额外引入进度字段。 */
+const CHECKIN_DAILY_TASK_PERCENT = (() => {
+  const [done, total] = CHECKIN_DAILY_TASK.progress.split('/').map((part) => Number(part.trim()))
+  if (!Number.isFinite(done) || !Number.isFinite(total) || total <= 0) return 0
+  return Math.min(100, Math.max(0, (done / total) * 100))
+})()
+
+/**
  * 打卡日历（#21）/ 打卡成功（#8）/ 打卡提示弹窗（#4）/ 补打卡成功弹窗（#22）
  * -------------------------------------------------------------
  * 事实源：docs/prototype/02-membership-and-checkin.md §4 §5 §6 §7
@@ -50,6 +79,7 @@ export default function Checkin() {
   const isSuccess = state?.key === 'success'
   const debug = searchParams.get('debug') === '1'
   const completedDays = CHECKIN_CALENDAR.filter((item) => item.state === 'done' || item.state === 'today').length
+  const rewardRailPercent = getRewardRailPercent()
 
   return (
     <PageContainer className="pb-24" inset={false}>
@@ -109,68 +139,106 @@ export default function Checkin() {
           ))}
         </div>
 
-        <div className="mt-5 border-t border-border-subtle pt-4">
-          <div className="mb-3 flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <Gift className="h-4 w-4 text-reward-strong" aria-hidden />
+        <div className="relative mt-5 overflow-hidden rounded-feature bg-reward-subtle p-3.5">
+          <span aria-hidden className="absolute -bottom-9 -right-7 h-24 w-24 rounded-full bg-reward/15 blur-xl" />
+          <div className="relative mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-reward text-text-inverse" aria-hidden>
+                <Gift className="h-3.5 w-3.5" />
+              </span>
               <h3 className="text-sm font-semibold text-text-primary">连续签到奖励</h3>
             </div>
-            <span className="text-[11px] text-text-tertiary">下一节点 10 天</span>
+            <span className="rounded-pill bg-surface/85 px-2 py-0.5 text-[10px] font-semibold text-reward-text">下一节点 10 天</span>
           </div>
-          <ul className="grid grid-cols-2 gap-2">
-            {CHECKIN_REWARDS.map((reward) => {
-              const achieved = CHECKIN_STREAK >= reward.days
 
-              return (
-                <li
-                  key={reward.days}
-                  className={`relative overflow-hidden rounded-container border px-3 py-3 ${achieved ? 'border-reward/40 bg-reward-subtle' : 'border-border-subtle bg-surface-subtle'}`}
-                >
-                  <span
-                    className={`absolute right-2.5 top-2.5 flex h-6 w-6 items-center justify-center rounded-full ${achieved ? 'bg-reward text-text-inverse' : 'bg-surface text-text-tertiary'}`}
-                    aria-hidden
-                  >
-                    {achieved ? <Check className="h-3.5 w-3.5" strokeWidth={3} /> : <Gift className="h-3.5 w-3.5" />}
-                  </span>
-                  <span className="block text-[11px] leading-4 text-text-tertiary">连续签到</span>
-                  <span className="mt-0.5 block text-lg font-bold leading-6 text-text-primary">{reward.days} 天</span>
-                  {reward.bubble != null ? (
-                    <span className="mt-1 block text-sm font-semibold leading-5 text-bubble-text">+{reward.bubble}🫧</span>
-                  ) : (
-                    /* 原型只写「连续 10 天等」，未给数值，不自行补值 */
-                    <span className="mt-1 block text-xs leading-5 text-text-tertiary">奖励待定</span>
-                  )}
-                </li>
-              )
-            })}
-          </ul>
+          <div className="relative">
+            <ProgressIndicator
+              value={rewardRailPercent}
+              label="连续签到奖励进度"
+              className="absolute left-[18px] right-[18px] top-[18px] -translate-y-1/2 [&>div]:h-1.5 [&>div]:bg-surface [&>div>div]:bg-reward"
+            />
+            <ul className="relative grid grid-cols-2 gap-8">
+              {CHECKIN_REWARDS.map((reward, index) => {
+                const achieved = CHECKIN_STREAK >= reward.days
+                const isLast = index === CHECKIN_REWARDS.length - 1
+
+                return (
+                  <li key={reward.days} className={`relative ${isLast ? 'text-right' : 'text-left'}`}>
+                    <span
+                      className={`flex h-9 w-9 items-center justify-center rounded-full ${isLast ? 'ml-auto' : ''} ${
+                        achieved
+                          ? 'bg-reward text-text-inverse shadow-[0_4px_10px_rgba(191,142,58,0.35)]'
+                          : 'border-[3px] border-surface bg-reward-subtle text-reward-strong'
+                      }`}
+                      aria-hidden
+                    >
+                      {achieved ? <Check className="h-4 w-4" strokeWidth={3} /> : <Gift className="h-3.5 w-3.5" />}
+                    </span>
+                    <span className="mt-2 block text-[11px] leading-4 text-text-tertiary">连续签到</span>
+                    <span className="block text-lg font-bold leading-6 text-text-primary">{reward.days} 天</span>
+                    {reward.bubble != null ? (
+                      <span
+                        className={`mt-1 inline-flex items-center rounded-pill px-2 py-0.5 text-xs font-bold leading-4 ${
+                          achieved ? 'bg-reward text-text-inverse' : 'bg-surface text-bubble-text'
+                        }`}
+                      >
+                        +{reward.bubble}🫧
+                      </span>
+                    ) : (
+                      /* 原型只写「连续 10 天等」，未给数值，不自行补值 */
+                      <span className="mt-1 inline-flex items-center rounded-pill bg-surface/85 px-2 py-0.5 text-xs leading-4 text-text-tertiary">
+                        奖励待定
+                      </span>
+                    )}
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
         </div>
       </section>
 
-      <section className="mx-4 mt-4 rounded-feature bg-surface p-4 shadow-bubble" aria-label="是日任务">
+      <section className="mx-4 mt-7" aria-label="是日任务">
         <header className="flex items-end justify-between">
           <div>
             <p className="text-[10px] font-semibold tracking-[0.16em] text-reward-strong">DAILY MISSION</p>
             <h2 className="mt-1 text-lg font-bold leading-6 text-text-primary">是日任务</h2>
           </div>
-          <span className="text-xs text-text-tertiary">今日进度 {CHECKIN_DAILY_TASK.progress}</span>
+          <span className="inline-flex items-center gap-1 rounded-pill bg-checkin-success-bg px-2.5 py-1 text-[11px] font-semibold text-checkin-success">
+            <Check className="h-3 w-3" strokeWidth={3} aria-hidden />
+            今日进度 {CHECKIN_DAILY_TASK.progress}
+          </span>
         </header>
 
-        <article className="mt-3 flex min-h-[76px] items-center gap-3 rounded-container border border-reward/35 bg-reward-subtle px-3 py-2.5" aria-label={`${CHECKIN_DAILY_TASK.title} 已完成`}>
-          <span className="flex h-11 w-11 flex-none items-center justify-center rounded-app-icon bg-surface text-reward-strong shadow-sm" aria-hidden>
-            <ListTodo className="h-5 w-5" strokeWidth={2.2} />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm font-semibold leading-5 text-text-primary">{CHECKIN_DAILY_TASK.title}</span>
-            <span className="mt-0.5 block text-xs leading-[18px] text-text-secondary">{CHECKIN_DAILY_TASK.description}</span>
-          </span>
-          <span className="flex flex-none flex-col items-end gap-1">
-            <span className="text-sm font-bold leading-5 text-bubble-text">+{CHECKIN_DAILY_TASK.rewardBubble}🫧</span>
-            <span className="inline-flex items-center gap-1 rounded-pill bg-checkin-success-bg px-2 py-1 text-[11px] font-semibold text-checkin-success">
-              <Check className="h-3 w-3" strokeWidth={3} aria-hidden />
-              已完成
+        <article
+          className="relative mt-3 overflow-hidden rounded-feature bg-surface p-4 shadow-bubble"
+          aria-label={`${CHECKIN_DAILY_TASK.title} 已完成`}
+        >
+          <span aria-hidden className="absolute -right-6 -top-8 h-24 w-24 rounded-full bg-checkin-success-bg/60" />
+          <div className="relative flex items-center gap-3">
+            <span className="flex h-11 w-11 flex-none items-center justify-center rounded-app-icon bg-secondary text-text-brand" aria-hidden>
+              <ListTodo className="h-5 w-5" strokeWidth={2.2} />
             </span>
-          </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold leading-5 text-text-primary">{CHECKIN_DAILY_TASK.title}</p>
+              <p className="mt-0.5 text-xs leading-[18px] text-text-secondary">{CHECKIN_DAILY_TASK.description}</p>
+            </div>
+            <span className="flex flex-none flex-col items-end gap-1">
+              <span className="inline-flex items-center rounded-pill bg-reward px-2 py-0.5 text-xs font-bold leading-4 text-text-inverse">
+                +{CHECKIN_DAILY_TASK.rewardBubble}🫧
+              </span>
+              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-checkin-success">
+                <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
+                已完成
+              </span>
+            </span>
+          </div>
+
+          <ProgressIndicator
+            value={CHECKIN_DAILY_TASK_PERCENT}
+            label={`${CHECKIN_DAILY_TASK.title}进度`}
+            className="relative mt-3.5 [&>div]:h-1.5 [&>div]:bg-surface-subtle [&>div>div]:bg-checkin-success"
+          />
         </article>
       </section>
 
@@ -181,39 +249,59 @@ export default function Checkin() {
           </Button>
         </div>
       ) : (
-        <section className="mx-4 mt-4 rounded-feature bg-surface p-4 shadow-bubble" aria-label="为你精选">
-          <div className="mb-3 flex items-end justify-between">
+        <section className="mx-4 mt-7" aria-label="为你精选">
+          <div className="flex items-end justify-between">
             <div>
-              <p className="text-[11px] font-medium tracking-[0.16em] text-reward-strong">CHECK-IN REWARDS</p>
+              <p className="text-[11px] font-medium tracking-[0.16em] text-reward-strong">CURATED EXPERIENCES</p>
               <h2 className="mt-1 text-xl font-bold leading-7 text-text-primary">为你精选</h2>
             </div>
-            {/* B-018 未决：该模块无对应视觉稿，仅按原型文字实现列表与跳转 */}
             <button type="button" onClick={() => navigate('/exchange')} className="flex min-h-11 items-center gap-0.5 text-sm text-text-secondary">
-              洗护兑换
+              体验券兑换
               <ChevronRight className="h-3.5 w-3.5" aria-hidden />
             </button>
           </div>
-          <div className="grid grid-cols-2 gap-2.5">
+          {/* B-018 未决：该模块无对应视觉稿，卡片样式对齐 /dearseed 已验收的「为你精选」双列卡片 */}
+          <div className="mt-3 grid grid-cols-2 gap-3">
             {CHECKIN_PICKS.map((pick, index) => (
-              <button
+              <article
                 key={pick.id}
-                type="button"
-                onClick={() => navigate('/exchange')}
-                className="relative min-h-[218px] overflow-hidden rounded-container border border-border-subtle bg-surface-subtle p-2.5 text-left active:bg-surface-pressed"
+                className={`relative flex min-h-[248px] flex-col overflow-hidden rounded-feature border border-border-subtle p-3 shadow-bubble ${
+                  index % 2 === 0 ? 'bg-reward-subtle' : 'bg-surface'
+                }`}
               >
-                <span className="relative flex h-24 items-center justify-center overflow-hidden rounded-container bg-reward-subtle">
-                  <span aria-hidden className="absolute h-16 w-16 rounded-full bg-surface/70 blur-lg" />
-                  <img src={pickAssets[index]} alt="" aria-hidden className="h-[88px] w-14 object-contain drop-shadow-[0_9px_12px_rgba(51,37,20,0.16)]" />
-                </span>
-                <span className="mt-2.5 block min-w-0 pb-12">
-                  <span className="block text-sm font-semibold leading-5 text-text-primary">{pick.name}</span>
-                  <span className="mt-1 line-clamp-2 block text-xs leading-[18px] text-text-tertiary">{pick.desc}</span>
-                </span>
-                <span className="absolute inset-x-2.5 bottom-3 flex items-center justify-between">
-                  <span className="text-base font-bold leading-5 text-bubble-text">{pick.cost != null ? `${pick.cost}🫧` : '到店核销'}</span>
-                  <ArrowUpRight className="h-[18px] w-[18px] text-text-brand" aria-hidden />
-                </span>
-              </button>
+                <div className="relative flex h-[104px] items-center justify-center overflow-hidden rounded-[14px] bg-surface/75">
+                  <span aria-hidden className="absolute h-20 w-20 rounded-full bg-reward/20 blur-xl" />
+                  <img
+                    src={pickAssets[index]}
+                    alt=""
+                    aria-hidden
+                    className="relative h-24 w-16 object-contain drop-shadow-[0_10px_12px_rgba(51,37,20,0.18)]"
+                  />
+                </div>
+
+                <h3 className="mt-3 text-[12px] font-bold leading-[17px] text-text-primary">{pick.name}</h3>
+                <p className="mt-1 line-clamp-2 text-[10px] leading-[15px] text-text-tertiary">{pick.desc}</p>
+
+                <div className="mt-auto flex items-end justify-between pt-3">
+                  {pick.cost != null ? (
+                    <span className="text-base font-bold leading-5 text-exchange-price">
+                      {pick.cost}
+                      <span className="ml-0.5 text-[10px] font-medium">🫧</span>
+                    </span>
+                  ) : (
+                    <span className="text-[11px] font-semibold leading-5 text-text-secondary">到店核销</span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => navigate('/exchange')}
+                    aria-label={`${pick.name} 去兑换`}
+                    className="flex min-h-10 items-center gap-0.5 rounded-pill bg-primary px-3 text-[10px] font-semibold text-text-inverse shadow-primary-button active:bg-primary-pressed"
+                  >
+                    去兑换
+                    <ArrowUpRight className="h-3 w-3" aria-hidden />
+                  </button>
+                </div>
+              </article>
             ))}
           </div>
         </section>

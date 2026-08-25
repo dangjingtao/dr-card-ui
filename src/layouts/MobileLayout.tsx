@@ -35,7 +35,7 @@ export default function MobileLayout() {
       : undefined
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-background pt-[env(safe-area-inset-top)] text-text-primary">
+    <div className="app-background flex h-dvh flex-col overflow-hidden pt-[env(safe-area-inset-top)] text-text-primary">
       <div className="shrink-0">
         <StatusBar />
         {titleBarMode !== 'hidden' && <TitleBar title={title} back={titleBarMode === 'back'} action={titleAction} />}

@@ -35,13 +35,13 @@ const PRODUCT_IMAGES: Partial<Record<NonNullable<ExchangeProductFixture['thumb']
 }
 
 /**
- * 洗护兑换专区（#18 / #37 / #38 / #39）
+ * 洗护体验券兑换专区（#18 / #37 / #38 / #39）
  * -------------------------------------------------------------
  * 事实源：docs/prototype/04-mall-card-order.md §1–§3
  * 已确认：搜索框、用户参考图确认的四分类 Tab、展示洗护关爱机 SKU、
- *        商品卡含商品名 + 所需泡泡值 + 兑换量、点击商品打开兑换弹窗（商品图名 / x1 / 说明 / 泡泡值 / 立即兑换）。
+ *        体验券卡含名称 + 所需泡泡值 + 兑换量、点击卡片打开兑换弹窗（券图名 / x1 / 说明 / 泡泡值 / 立即兑换）。
  * B-008 视觉方向已于 2026-08-24 由用户提供界面参考：采用暖白底、轻量余额、胶囊分段、
- *    三列紧凑商品卡与深色兑换按钮；仍只使用 Com Design exchange-* / bubble-* / coupon-* 语义 Token。
+ *    两列体验券卡与深色兑换按钮；仍只使用 Com Design exchange-* / bubble-* / coupon-* 语义 Token。
  * ⚠️ B-024 / B-025 / B-026：排序方向、SKU 清单与泡泡值扣减规则见 EXCHANGE_RULE_STATUS，
  *    页面只读夹具，不自行补写业务判定；兑换不做持久化扣减。
  * 可复现状态：?category=shampoo / conditioner / scalp-care，?overlay=redeem&product=e1..e5；
@@ -54,7 +54,7 @@ export default function Exchange() {
   const { overlay, close } = useOverlay()
   const [searchParams, setSearchParams] = useSearchParams()
 
-  /** 排序状态继续兼容原型直达 URL；前台主 Tab 按用户参考图切换商品分类。 */
+  /** 排序状态继续兼容原型直达 URL；前台主 Tab 按用户参考图切换体验券分类。 */
   const sort = resolveExchangeSort(state?.key ?? null)
   const category = resolveExchangeCategory(searchParams.get('category'))
   const [keyword, setKeyword] = useState('')
@@ -64,7 +64,7 @@ export default function Exchange() {
     [category, sort, keyword],
   )
 
-  /** 弹层内展示的商品由 `?product=` 决定，保证兑换弹窗可复现 */
+  /** 弹层内展示的体验券由 `?product=` 决定，保证兑换弹窗可复现 */
   const activeProduct = resolveExchangeProduct(searchParams.get('product'))
   const availability = exchangeAvailability(activeProduct)
 
@@ -113,7 +113,7 @@ export default function Exchange() {
   }
 
   return (
-    <PageContainer className="flex flex-col bg-[linear-gradient(180deg,var(--color-reward-subtle)_0%,var(--color-background)_24%)] pb-8" inset={false}>
+    <PageContainer className="flex flex-col pb-8" inset={false}>
       <div className="mx-4 mt-1 flex items-center justify-between gap-3">
         <label className="flex min-h-9 flex-1 items-center gap-2 rounded-pill border border-border-subtle bg-surface/90 px-3 text-text-tertiary shadow-sm focus-within:border-border-focused">
           <Search className="h-4 w-4 shrink-0" aria-hidden />
@@ -149,12 +149,12 @@ export default function Exchange() {
           <Gift className="h-4 w-4" aria-hidden />
         </span>
         <div>
-          <p className="text-sm font-semibold text-text-primary">小样兑换专区</p>
-          <p className="text-[10px] text-text-tertiary">更多小样好礼，超值兑换</p>
+          <p className="text-sm font-semibold text-text-primary">体验券兑换专区</p>
+          <p className="text-[10px] text-text-tertiary">更多洗护体验券，泡泡值兑换</p>
         </div>
       </div>
 
-      <section className="mx-4 mt-2.5 flex-1" aria-label="洗护兑换商品列表">
+      <section className="mx-4 mt-2.5 flex-1" aria-label="洗护体验券列表">
         {list.length === 0 ? (
           <div className="rounded-container bg-surface py-2 shadow-sm">
             <EmptyState
@@ -169,7 +169,7 @@ export default function Exchange() {
             />
           </div>
         ) : (
-          <ul className="grid grid-cols-3 gap-2" aria-live="polite">
+          <ul className="grid grid-cols-2 gap-3" aria-live="polite">
             {list.map((product) => {
               const productState = exchangeAvailability(product)
               const image = product.thumb ? PRODUCT_IMAGES[product.thumb] : undefined
@@ -179,9 +179,9 @@ export default function Exchange() {
                     type="button"
                     onClick={() => openRedeem(product)}
                     aria-label={`${product.name}，${product.cost} ${EXCHANGE_COPY.costUnit}`}
-                    className="flex h-full w-full flex-col rounded-[10px] border border-border-subtle bg-surface p-1.5 text-left shadow-sm transition active:scale-[.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focused"
+                    className="flex h-full w-full flex-col rounded-[12px] border border-border-subtle bg-surface p-2 text-left shadow-sm transition active:scale-[.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focused"
                   >
-                    <span className="relative block aspect-[1/1.06] w-full overflow-hidden rounded-[8px] bg-surface-subtle">
+                    <span className="relative block aspect-[4/3] w-full overflow-hidden rounded-[9px] bg-surface-subtle">
                       {image ? (
                         <img src={image} alt="" className="h-full w-full object-cover" />
                       ) : (
@@ -195,16 +195,16 @@ export default function Exchange() {
                         </span>
                       )}
                     </span>
-                    <p className="mt-1.5 line-clamp-2 min-h-8 text-[11px] font-medium leading-4 text-text-primary">{product.name}</p>
+                    <p className="mt-2 line-clamp-2 min-h-10 text-[13px] font-medium leading-5 text-text-primary">{product.name}</p>
                     <div className="mt-1 flex items-baseline gap-1 whitespace-nowrap">
-                      <span className="text-sm font-semibold text-exchange-price-text">
+                      <span className="text-[15px] font-semibold text-exchange-price-text">
                         {product.cost}
-                        <span className="ml-0.5 text-[9px] font-normal">泡泡值</span>
+                        <span className="ml-0.5 text-[10px] font-normal">泡泡值</span>
                       </span>
                     </div>
-                    <span className="mt-0.5 text-[9px] text-text-tertiary">{EXCHANGE_COPY.redeemedPrefix} {product.redeemedLabel}</span>
+                    <span className="mt-0.5 text-[10px] text-text-tertiary">{EXCHANGE_COPY.redeemedPrefix} {product.redeemedLabel}</span>
                     <span
-                      className={`mt-1.5 flex min-h-7 w-full items-center justify-center rounded-pill text-[10px] font-medium text-text-inverse ${productState === 'redeemable' ? 'bg-surface-inverse' : 'bg-surface-inactive-strong'}`}
+                      className={`mt-2 flex min-h-8 w-full items-center justify-center rounded-pill text-xs font-medium text-text-inverse ${productState === 'redeemable' ? 'bg-surface-inverse' : 'bg-surface-inactive-strong'}`}
                     >
                       {productState === 'sold-out'
                         ? EXCHANGE_COPY.soldOut
@@ -229,13 +229,13 @@ export default function Exchange() {
           <Ticket className="h-4 w-4" aria-hidden />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block text-xs font-medium text-text-primary">小样好礼，先兑后洗</span>
-          <span className="block truncate text-[10px] text-text-tertiary">泡泡值可兑换洗护关爱机内精选商品</span>
+          <span className="block text-xs font-medium text-text-primary">洗护体验券，先兑后体验</span>
+          <span className="block truncate text-[10px] text-text-tertiary">泡泡值可兑换洗护关爱机体验券</span>
         </span>
         <ChevronRight className="h-4 w-4 shrink-0 text-text-tertiary" aria-hidden />
       </button>
 
-      {/* #39 商品兑换弹窗（原型 §3） */}
+      {/* #39 体验券兑换弹窗（原型 §3） */}
       <BottomSheet open={overlay === 'redeem'} title="确认兑换" onClose={close}>
         <div className="flex gap-3">
           <span className="relative block h-20 w-20 shrink-0 overflow-hidden rounded-coupon bg-surface-subtle">

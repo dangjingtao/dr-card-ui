@@ -26,7 +26,7 @@
   --premium-900: #332514;
 
   /* Primitive: warm surface + ink */
-  --warm-50: #FCF8F1;
+  --warm-50: #FFF9F0;
   --warm-100: #F8F0E5;
   --warm-200: #EEE2D2;
   --warm-300: #DDCDBA;
@@ -89,6 +89,12 @@
 
   /* Semantic: surface */
   --color-background: var(--warm-50);
+  /* 全局画布：参考稿的奶油白基底 + 顶部淡金柔光。
+   * 渐变只用于应用壳层，卡片继续使用纯白 surface，保证信息层级。 */
+  --gradient-app-background:
+    radial-gradient(ellipse 90% 34% at 68% 0%, rgba(248, 203, 111, .24) 0%, rgba(255, 230, 180, .12) 42%, transparent 72%),
+    radial-gradient(ellipse 72% 30% at 4% 44%, rgba(255, 237, 207, .32) 0%, transparent 74%),
+    linear-gradient(180deg, #FFF9EE 0%, #FFFCF7 42%, #FFF8EF 100%);
   --color-surface: #FFFFFF;
   --color-surface-subtle: var(--warm-100);
   --color-surface-selected: var(--brand-50);
@@ -171,6 +177,9 @@
   --color-text-disabled: #8D857B;
   --color-text-brand: var(--brand-200);
   --color-background: var(--ink-950);
+  --gradient-app-background:
+    radial-gradient(ellipse 90% 34% at 68% 0%, rgba(201, 138, 39, .14) 0%, transparent 72%),
+    linear-gradient(180deg, #17140F 0%, var(--ink-950) 46%, #15120E 100%);
   --color-surface: var(--ink-900);
   --color-surface-subtle: var(--ink-800);
   --color-surface-selected: #461103;

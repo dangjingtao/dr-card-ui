@@ -8,10 +8,8 @@ import {
   Headphones,
   MapPin,
   Pencil,
-  Sparkles,
   Ticket,
   UserRoundPlus,
-  Wallet,
 } from 'lucide-react'
 import avatar from '../assets/brand/home/home-avatar.webp'
 import hotBerry from '../assets/brand/exchange/profile-hot-berry.webp'
@@ -29,31 +27,30 @@ type Tile = {
   from: string
   deep: string
   color: string
-  shadow: string
   to?: string
   appOnly?: boolean
 }
 
 const tiles: Tile[] = [
-  { icon: Ticket, name: '卡券兑换', from: '#FFF7E0', deep: '#F0D997', color: '#B5793B', shadow: 'rgba(181,121,59,0.32)', to: '/redeem' },
-  { icon: ClipboardList, name: '订单管理', from: '#FFF0E7', deep: '#FFC8B0', color: '#D63D10', shadow: 'rgba(214,61,16,0.28)', to: '/orders' },
-  { icon: MapPin, name: '地址管理', from: '#FFF7E0', deep: '#F1D997', color: '#9A6110', shadow: 'rgba(154,97,16,0.28)', to: '/address' },
-  { icon: UserRoundPlus, name: '绑定搭子', from: '#EBFCFF', deep: '#C3EEF6', color: '#0E9FB3', shadow: 'rgba(14,159,179,0.28)', to: '/buddy' },
-  { icon: Gift, name: '品牌福利官', from: '#E9FAF0', deep: '#C2EBD4', color: '#147A4C', shadow: 'rgba(20,122,76,0.28)', to: '/service/welfare-officer' },
-  { icon: Headphones, name: '客服中心', from: '#F4F6FA', deep: '#DCE2EB', color: '#535D72', shadow: 'rgba(83,93,114,0.26)', to: '/service/chat' },
+  { icon: Ticket, name: '卡券兑换', from: '#FFF8E6', deep: '#F4DFA9', color: '#B5793B', to: '/redeem' },
+  { icon: ClipboardList, name: '订单管理', from: '#FFF3EB', deep: '#FFD3C0', color: '#D63D10', to: '/orders' },
+  { icon: MapPin, name: '地址管理', from: '#FFF8E6', deep: '#F3DFA9', color: '#9A6110', to: '/address' },
+  { icon: UserRoundPlus, name: '绑定搭子', from: '#EFFCFE', deep: '#CDEFF5', color: '#0E9FB3', to: '/buddy' },
+  { icon: Gift, name: '品牌福利官', from: '#EEFAF3', deep: '#CDEAD9', color: '#147A4C', to: '/service/welfare-officer' },
+  { icon: Headphones, name: '客服中心', from: '#F6F8FB', deep: '#E1E6ED', color: '#535D72', to: '/service/chat' },
 ]
 
 const stats = [
-  { icon: Wallet, name: '卡包', value: '1', to: '/card', hint: '查看卡包' },
-  { icon: Sparkles, name: '泡泡值', value: '1,280', to: '/points', hint: '查看泡泡值明细' },
-  { icon: Crown, name: '专属权益', value: '9', to: '/membership', hint: '查看会员中心' },
+  { name: '卡包', value: '1', to: '/card', hint: '查看卡包' },
+  { name: '泡泡值', value: '1,280', to: '/points', hint: '查看泡泡值明细' },
+  { name: '专属权益', value: '9', to: '/membership', hint: '查看会员中心' },
 ]
 
 const hotGoods = [
-  { image: hotBerry, name: '莓果净澈', meta: '洗衣液 · 500ml' },
-  { image: hotHoney, name: '蜂蜜修护', meta: '洗衣液 · 500ml' },
-  { image: hotSeasalt, name: '海盐控油', meta: '洗衣液 · 500ml' },
-  { image: hotHerbal, name: '草本柔顺', meta: '洗衣液 · 500ml' },
+  { image: hotBerry, name: '莓果净澈体验券', meta: '单次体验 · 到店核销' },
+  { image: hotHoney, name: '蜂蜜修护体验券', meta: '单次体验 · 到店核销' },
+  { image: hotSeasalt, name: '海盐控油体验券', meta: '单次体验 · 到店核销' },
+  { image: hotHerbal, name: '草本柔顺体验券', meta: '单次体验 · 到店核销' },
 ]
 
 export default function Profile() {
@@ -133,13 +130,10 @@ export default function Profile() {
                 aria-label={`${stat.name} ${stat.value}，${stat.hint}`}
                 className="flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-xl py-1 transition-transform duration-150 active:scale-[0.97]"
               >
-                <span className="flex items-center gap-1 text-xl font-bold leading-none tracking-tight text-[#4A3206]">
-                  <stat.icon className="h-4 w-4 text-[#6B4A12]/70" strokeWidth={2.2} aria-hidden />
-                  {stat.value}
-                </span>
-                <span className="flex items-center gap-0.5 whitespace-nowrap text-xs text-[#6B4A12]/75">
+                <span className="text-xl font-bold leading-none tracking-tight text-[#4A3206]">{stat.value}</span>
+                <span className="relative whitespace-nowrap text-xs text-[#6B4A12]/75">
                   {stat.name}
-                  <ChevronRight className="h-3 w-3" aria-hidden />
+                  <ChevronRight className="absolute left-full top-1/2 ml-0.5 h-3 w-3 -translate-y-1/2" aria-hidden />
                 </span>
               </button>
             </Fragment>
@@ -147,33 +141,65 @@ export default function Profile() {
         </div>
       </section>
 
-      <section className="relative z-10 mx-4 mt-3 grid grid-cols-3 gap-y-3 rounded-[16px] bg-surface px-2 py-5 shadow-[0_1px_2px_rgba(23,27,42,0.04)]">
-        {tiles.map((tile) => (
-          <button
-            key={tile.name}
-            type="button"
-            onClick={() => (tile.appOnly ? openAppPrompt() : navigate(tile.to as string))}
-            aria-haspopup={tile.appOnly ? 'dialog' : undefined}
-            className="flex flex-col items-center gap-2.5 rounded-2xl px-1 pb-2 pt-3"
-          >
-            <span
-              className="flex h-[56px] w-[56px] items-center justify-center rounded-[18px]"
+      <section className="relative z-10 mx-4 mt-3" aria-labelledby="profile-services-title">
+        <header className="mb-1.5 flex items-center justify-between px-1">
+          <h3 id="profile-services-title" className="flex items-center gap-2 text-[13px] font-semibold text-text-primary">
+            <span className="h-3.5 w-1 rounded-full bg-[#D6A43A]" aria-hidden />
+            快捷服务
+          </h3>
+          <span className="text-[10px] tracking-[0.12em] text-[#9A8060]">常用功能</span>
+        </header>
+        <div className="grid grid-cols-6 grid-rows-[52px_52px_58px] gap-2">
+          {tiles.map((tile, index) => (
+            <button
+              key={tile.name}
+              type="button"
+              onClick={() => (tile.appOnly ? openAppPrompt() : navigate(tile.to as string))}
+              aria-haspopup={tile.appOnly ? 'dialog' : undefined}
+              className={`group relative overflow-hidden border border-white/75 text-left shadow-[0_3px_10px_rgba(130,86,28,0.07)] transition active:scale-[0.98] ${
+                index === 0
+                  ? 'col-span-3 row-span-2 flex flex-col items-start justify-end rounded-[18px] px-3.5 py-3'
+                  : index < 3
+                    ? 'col-span-3 flex items-center gap-2.5 rounded-[15px] px-3'
+                    : 'col-span-2 flex flex-col items-center justify-center gap-1 rounded-[15px] px-1'
+              }`}
               style={{
-                background: `linear-gradient(145deg, ${tile.from} 0%, ${tile.deep} 100%)`,
+                background:
+                  index === 0
+                    ? 'linear-gradient(145deg, #FFF5D6 0%, #F4D57E 100%)'
+                    : `linear-gradient(145deg, ${tile.from} 0%, ${tile.deep} 100%)`,
                 color: tile.color,
-                boxShadow: `0 4px 8px -2px ${tile.shadow}`,
               }}
             >
-              <tile.icon className="h-7 w-7" strokeWidth={2.2} />
-            </span>
-            <span className="whitespace-nowrap text-xs font-medium text-text-primary">{tile.name}</span>
-          </button>
-        ))}
+              {index === 0 ? (
+                <>
+                  <span className="absolute -right-3 -top-4 h-16 w-16 rounded-full border border-white/50 bg-white/20" aria-hidden />
+                  <span className="absolute right-7 top-3 h-2.5 w-2.5 rounded-full border border-[#B5793B]/20 bg-white/45" aria-hidden />
+                  <tile.icon className="absolute left-3.5 top-3.5 h-7 w-7" strokeWidth={1.9} />
+                  <span className="text-[13px] font-semibold text-[#5B3E15]">{tile.name}</span>
+                  <span className="mt-0.5 text-[10px] text-[#76572E]">输入兑换码兑券</span>
+                  <ChevronRight className="absolute bottom-3 right-3 h-4 w-4 text-[#9C6C25] transition-transform group-active:translate-x-0.5" aria-hidden />
+                </>
+              ) : index < 3 ? (
+                <>
+                  <tile.icon className="h-5 w-5 flex-none" strokeWidth={2} />
+                  <span className="min-w-0 flex-1 whitespace-nowrap text-[12px] font-medium text-text-primary">{tile.name}</span>
+                  <ChevronRight className="h-3.5 w-3.5 flex-none opacity-55 transition-transform group-active:translate-x-0.5" aria-hidden />
+                </>
+              ) : (
+                <>
+                  <tile.icon className="h-[19px] w-[19px]" strokeWidth={2} />
+                  <span className="whitespace-nowrap text-[11px] font-medium text-text-primary">{tile.name}</span>
+                </>
+              )}
+            </button>
+          ))}
+        </div>
       </section>
 
       <section className="relative z-10 mx-4 mt-4">
         <header className="flex items-center justify-between px-1 pb-2.5">
-          <h3 className="text-base font-semibold text-text-primary">热门兑换</h3>
+          <h3 className="text-base font-semibold text-text-primary">热门体验券</h3>
           <button type="button" className="inline-flex items-center gap-0.5 text-xs text-text-tertiary" onClick={() => navigate('/exchange')}>
             查看更多
             <ChevronRight className="h-3.5 w-3.5" />

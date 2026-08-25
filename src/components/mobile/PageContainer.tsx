@@ -11,7 +11,7 @@ export interface PageContainerProps {
 export default function PageContainer({ children, className = '', inset = true }: PageContainerProps) {
   return (
     <main
-      className={`mx-auto min-h-full w-full max-w-[480px] bg-background ${inset ? 'px-4' : ''} ${className}`}
+      className={`mx-auto min-h-full w-full max-w-[480px] bg-transparent ${inset ? 'px-4' : ''} ${className}`}
       data-page-container
     >
       {children}
