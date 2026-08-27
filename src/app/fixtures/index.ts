@@ -557,7 +557,11 @@ export const LUCK_RULE_STATUS = {
   isolatedNote: '签运档位、重抽与结果持久化规则未确认，此处仅为隔离演示，不作定稿。',
 } as const
 
-/** #7 抽签页文案（摹客已确认部分） */
+/**
+ * #7 抽签页文案（摹客已确认部分）
+ * ⚠️ T022 整改后 /luck 为不可操作占位页，本组文案暂不上屏，
+ *    仅作为「玩法定稿后要还原的摹客原文」留档，定稿前不要据此渲染可点击 CTA。
+ */
 export const LUCK_DRAW = {
   action: '抽取今日澡运',
   hint: '点击即可抽取今日澡运',
@@ -565,6 +569,21 @@ export const LUCK_DRAW = {
 
 /** #41 抽取成功中摹客已确认的奖励表达 */
 export const LUCK_REWARD_BUBBLE = 50
+
+/**
+ * T022 §4.3：澡运入口与目标页本阶段均为占位。
+ * 这里只承载「占位」这件事本身的文案，不补任何未确认的抽签规则。
+ * 泡泡值福利入口与 /luck 页共用同一份文案，保证两处口径一致。
+ * T022 整改：/luck 不再提供任何可操作的抽取入口，占位态需自带「敬请期待」表达。
+ */
+export const LUCK_PLACEHOLDER = {
+  tag: '玩法待定',
+  entrySubtitle: '玩法待定',
+  note: '澡运玩法与签运档位仍在确认中，当前入口与结果页为占位演示。',
+  /** 目标页占位主状态文案，替代原「抽取今日澡运」主按钮 */
+  headline: '敬请期待',
+  subline: '澡运玩法筹备中，抽签规则确认后再开放。',
+} as const
 
 /* -------------------------------------------------------------
  * #5 泡泡值明细
@@ -634,6 +653,78 @@ export function sumBubbleRecords(kind: BubbleFlowKind): number {
 
 /** 原型 §3：无更多数据时的兜底文案 */
 export const BUBBLE_LIST_END = '暂时没有更多记录啦'
+
+/* -------------------------------------------------------------
+ * #5 泡泡任务占位（T022 §4.2）
+ * 需求原文：任务内容先使用视觉完整、符合现有金橙体系的任务占位卡片；
+ *          可参考现有任务语义展示每日打卡、连续签到、观看视频、邀请好友等占位内容，
+ *          但不新增真实任务业务逻辑。
+ * 因此下列条目的标题与泡泡值口径全部对齐 BUBBLE_RECORDS 中已验收的同名流水，
+ * 不发明新的任务名、奖励数值或完成规则；进度只为呈现卡片状态层级。
+ * ------------------------------------------------------------- */
+export const POINTS_TASK_PLACEHOLDER_NOTE = '任务体系未定稿，以下为占位任务卡，进度与奖励不参与真实结算。'
+
+export type PointsTaskPlaceholderState = 'done' | 'active' | 'todo'
+
+export interface PointsTaskPlaceholder {
+  id: string
+  title: string
+  description: string
+  /** 沿用流水夹具中同名条目的泡泡值口径 */
+  rewardBubble: number
+  current: number
+  target: number
+  state: PointsTaskPlaceholderState
+  stateLabel: string
+}
+
+export const POINTS_TASK_PLACEHOLDERS: PointsTaskPlaceholder[] = [
+  {
+    id: 'daily-checkin',
+    title: '每日打卡',
+    description: '每天签到一次即可领取泡泡值',
+    rewardBubble: 100,
+    current: 1,
+    target: 1,
+    state: 'done',
+    stateLabel: '已完成',
+  },
+  {
+    id: 'streak-checkin',
+    title: '连续签到',
+    description: '连续签到 7 天再领一次额外奖励',
+    rewardBubble: 50,
+    current: 5,
+    target: 7,
+    state: 'active',
+    stateLabel: '进行中',
+  },
+  {
+    id: 'watch-video',
+    title: '观看视频',
+    description: '看完品牌短视频获取泡泡值',
+    rewardBubble: 5,
+    current: 0,
+    target: 1,
+    state: 'todo',
+    stateLabel: '未开始',
+  },
+  {
+    id: 'invite-buddy',
+    title: '邀请好友',
+    description: '邀请好友成为洗头搭子',
+    rewardBubble: 50,
+    current: 0,
+    target: 1,
+    state: 'todo',
+    stateLabel: '未开始',
+  },
+]
+
+export function pointsTaskPercent(task: PointsTaskPlaceholder): number {
+  if (task.target <= 0) return 0
+  return Math.min(100, Math.round((task.current / task.target) * 100))
+}
 
 /* -------------------------------------------------------------
  * #21 打卡日历 / #8 打卡成功 / #4 打卡提示 / #22 补打卡成功
@@ -1797,3 +1888,97 @@ export const BUDDY_RULE_STATUS = {
     note: '#30 只有一行「应用商店H5」占位，备注说明未安装走应用商店 H5、已安装弹窗跳转 APP；此处按 WebView 边界页 + 唤起弹窗两态承载，不伪造应用商店视觉。',
   },
 } as const
+
+/* ------------------------------------------------------------------ *
+ * T021 诗得丽品牌专栏首页：新人体验券
+ * ------------------------------------------------------------------ */
+
+export interface NewcomerCoupon {
+  id: string
+  /** 券名：沿用 EXCHANGE_PRODUCT_FIXTURES 的既有券名口径，不新造券种 */
+  name: string
+  desc: string
+  /** 本次赠送数量：需求 §3.1 要求弹窗直接展示商品内容与数量 */
+  quantity: number
+  /** 缩略图：仅可取 src/assets/brand 内已有素材，不新增二进制素材 */
+  thumb: 'dearseed-kit' | 'shampoo-a' | 'shampoo-b'
+}
+
+/**
+ * 新人体验券的两种确定性组合。
+ * 需求 §3.1 要求「随机呈现 1 张或 2 张」，用户 2026-08-27 定案两者概率 1:1；
+ * 但本仓库禁止把随机数作为验收状态来源，因此这里只沉淀两个静态组合，
+ * 随机只发生在页面层，且始终可被 `?state=` 覆盖复现。
+ */
+export const NEWCOMER_COUPON_VARIANTS: Record<'coupon-1' | 'coupon-2', NewcomerCoupon[]> = {
+  'coupon-1': [{ id: 'nc1', name: 'DearSeed 洗发水体验券', desc: '限到店核销', quantity: 1, thumb: 'dearseed-kit' }],
+  'coupon-2': [
+    { id: 'nc1', name: 'DearSeed 洗发水体验券', desc: '限到店核销', quantity: 1, thumb: 'dearseed-kit' },
+    { id: 'nc2', name: '洗护组合体验券', desc: '洗发 / 护发 / 沐浴体验，限到店核销', quantity: 1, thumb: 'shampoo-a' },
+  ],
+}
+
+/** 新人体验券弹窗文案：视觉与交互形式参照已验收的 /dearseed?overlay=reminder */
+export const NEWCOMER_COUPON_DIALOG = {
+  eyebrow: 'DEAR SEED',
+  title: '新人见面礼',
+  desc: '欢迎来到诗得丽品牌专栏，以下体验券已为你准备好，确认后即可在洗护体验券专区查看。',
+  action: '确定',
+} as const
+
+/** 领取成功反馈：确定 → 先出成功态，再进入体验券页面（用户已确认跳转 /exchange） */
+export const NEWCOMER_COUPON_SUCCESS = {
+  title: '领取成功',
+  desc: '体验券已放入你的账户，正在前往洗护体验券专区。',
+  action: '查看体验券',
+  actionTo: '/exchange',
+} as const
+
+/**
+ * 新人体验券链路中「原型未给出规则」的部分，统一在此登记并隔离。
+ * 页面只读这里的说明，不自行补写判定逻辑。
+ */
+export const NEWCOMER_COUPON_RULE_STATUS = {
+  /** 新用户识别 */
+  newUserDetection: {
+    confirmed: true,
+    blocker: 'B-031',
+    note: '用户 2026-08-27 定案「默认全是新用户」：本阶段不做真实识别与持久化，进入 `/` 即弹出新人体验券；关闭后同一次会话内不再复现，取证脚本用 `?newcomer=off` 抑制、用 `?overlay=newcomer-coupon` 重新唤起。跨会话频次与「已领取后再次进入」的服务端口径仍待接口阶段确认。',
+  },
+  /** 随机发券口径 */
+  couponRandomness: {
+    confirmed: false,
+    blocker: 'B-032',
+    note: '用户 2026-08-27 定案 1 张 / 2 张概率 1:1，页面层按 50/50 抽取；券种池、库存与单人发放上限仍未给出，故此处只沉淀两个确定性组合，验收一律用 `?state=` 复现，不做服务端发券。',
+  },
+  /** 公益板块内容 */
+  causeSection: {
+    confirmed: false,
+    blocker: 'B-033',
+    note: '需求 §2.2 只给出「公益板块」的名称与排列顺序，摹客原型无对应 artboard（docs/prototype 全库无「公益」命中）。用户 2026-08-27 定案「暂不实现跳转」，故本板块只做标题 + 一句说明的静态承载，不带入口文案与跳转，不自造公益数据、项目列表与捐赠进度。',
+  },
+} as const
+
+/**
+ * 专栏首页打卡内容之后的两个板块（需求 §2.2 第 6 条、§2.3）。
+ * 顺序固定为「公益板块 → 卡博士品牌故事」，随页面正常滚动，不吸底不悬浮。
+ * ⚠️ 公益板块无原型视觉（B-033）：用户 2026-08-27 定案暂不实现跳转，
+ *    故 `to` 与 `action` 均为 null，页面渲染为不可点击的静态板块；
+ *    品牌故事已有目标页 /brand-culture，保留跳转。
+ */
+export const COLUMN_HOME_SECTIONS = [
+  {
+    key: 'cause',
+    title: '公益板块',
+    desc: '每次打卡助力公益，传递温暖',
+    action: null,
+    to: null,
+  },
+  {
+    key: 'brand-story',
+    title: '卡博士品牌故事',
+    desc: '了解品牌起源与匠心洗护',
+    action: '查看品牌故事',
+    to: '/brand-culture',
+  },
+] as const

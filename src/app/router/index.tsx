@@ -3,7 +3,6 @@ import MobileLayout from '../../layouts/MobileLayout'
 import Home from '../../pages/Home'
 import DearseedColumn from '../../pages/DearseedColumn'
 import Checkin from '../../pages/Checkin'
-import Membership from '../../pages/Membership'
 import Profile from '../../pages/Profile'
 import Luck from '../../pages/Luck'
 import DrawSuccess from '../../pages/DrawSuccess'
@@ -17,6 +16,7 @@ import Redeem from '../../pages/Redeem'
 import Exchange from '../../pages/Exchange'
 import ExchangeResult from '../../pages/ExchangeResult'
 import Points from '../../pages/Points'
+import PointsDetail from '../../pages/PointsDetail'
 import Settings from '../../pages/Settings'
 import Onboarding from '../../pages/Onboarding'
 import ClaimSuccess from '../../pages/ClaimSuccess'
@@ -48,7 +48,7 @@ const customPages: Record<string, ReactElement> = {
   '/': <Home />,
   '/dearseed': <DearseedColumn />,
   '/checkin': <Checkin />,
-  '/membership': <Membership />,
+  /* T023：`/membership` 改为重定向到 /mall，旧会员中心实现保留在 src/pages/Membership.tsx 作为变更前证据，不再挂载 */
   '/profile': <Profile />,
   '/luck': <Luck />,
   '/luck/result': <DrawSuccess />,
@@ -64,6 +64,8 @@ const customPages: Record<string, ReactElement> = {
   '/exchange': <Exchange />,
   '/exchange/result': <ExchangeResult />,
   '/points': <Points />,
+  /* T022：泡泡值页面承载资产/福利/任务占位，纯流水明细拆到 /points/detail */
+  '/points/detail': <PointsDetail />,
   '/settings': <Settings />,
   '/onboarding': <Onboarding />,
   /* T005：#25 与 #15 在摹客中是同构弹窗，仅文案不同，共用 ClaimSuccess */
@@ -97,7 +99,9 @@ export const router = createBrowserRouter([
     children: [
       ...ROUTES.map((route) => {
         let element: ReactElement = <NodeStub />
-        if (customPages[route.path]) element = customPages[route.path]
+        /* T023：`redirectTo` 的路径不再承载自身页面（/membership → /mall），优先级高于定制页 */
+        if (route.redirectTo) element = <Navigate to={route.redirectTo} replace />
+        else if (customPages[route.path]) element = customPages[route.path]
         else if (route.boundary === 'webview') element = <WebViewBoundary />
         return { path: route.path, element }
       }),

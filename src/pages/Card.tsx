@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { CalendarDays, Check, Clock, Info, KeyRound, QrCode, ReceiptText, Ticket, X } from 'lucide-react'
+import { CalendarDays, Check, ChevronRight, Clock, Info, KeyRound, QrCode, ReceiptText, Ticket, X } from 'lucide-react'
 import DebugPanel from '../components/mobile/DebugPanel'
 import PageContainer from '../components/mobile/PageContainer'
 import { useFixtureState, useOverlay } from '../app/fixtures/useFixture'
@@ -240,53 +240,58 @@ export default function Card() {
             </div>
 
             <div className="px-4 py-3">
-              <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => navigate('/mall')}
+                aria-label="查看商城体验券商品"
+                className="-m-2.5 flex w-full items-center gap-3 rounded-xl p-2.5 text-left active:bg-surface-subtle"
+              >
                 <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-reward-subtle text-reward-text">
                   <Ticket className="h-5 w-5" />
                 </span>
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-text-primary">
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-medium text-text-primary">
                     {activeCoupon.amountLabel ? `${activeCoupon.amountLabel} ${activeCoupon.name}` : activeCoupon.name}
-                  </p>
-                  <p className="text-xs text-text-tertiary">
+                  </span>
+                  <span className="block text-xs text-text-tertiary">
                     {activeCoupon.expireAt} 到期 · {activeCoupon.limitNote}
-                  </p>
-                </div>
-              </div>
+                  </span>
+                </span>
+                <ChevronRight className="h-4 w-4 flex-none text-text-tertiary" aria-hidden />
+              </button>
 
               <p className="mb-2 mt-5 text-sm font-medium text-text-primary">选择核销方式</p>
-              <button
-                type="button"
-                onClick={() => navigate('/card/verify')}
-                className="flex w-full items-center gap-3 rounded-xl p-2.5 text-left active:bg-surface-subtle"
-              >
-                <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-surface-subtle text-text-secondary">
-                  <QrCode className="h-5 w-5" />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-medium text-text-primary">扫码核销</span>
-                  <span className="block text-xs text-text-tertiary">出示二维码，由门店扫码完成核销</span>
-                </span>
-                <span className="flex h-5 w-5 flex-none items-center justify-center rounded-full border border-border">
-                  <span className="h-2.5 w-2.5 rounded-full bg-transparent" />
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate('/card/verify/password')}
-                className="flex w-full items-center gap-3 rounded-xl p-2.5 text-left active:bg-surface-subtle"
-              >
-                <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-surface-subtle text-text-secondary">
-                  <KeyRound className="h-5 w-5" />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-medium text-text-primary">消费密码核销</span>
-                  <span className="block text-xs text-text-tertiary">输入 6 位消费密码，由店员确认核销</span>
-                </span>
-                <span className="flex h-5 w-5 flex-none items-center justify-center rounded-full border border-border">
-                  <span className="h-2.5 w-2.5 rounded-full bg-transparent" />
-                </span>
-              </button>
+              <div className="space-y-1">
+                <button
+                  type="button"
+                  onClick={() => navigate('/card/verify')}
+                  className="flex w-full items-center gap-3 rounded-xl p-2.5 text-left active:bg-surface-subtle"
+                >
+                  <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-surface-subtle text-text-secondary">
+                    <QrCode className="h-5 w-5" />
+                  </span>
+                  <span className="min-w-0 flex-1 text-sm font-medium text-text-primary">扫码核销</span>
+                  <span className="flex h-5 w-5 flex-none items-center justify-center rounded-full border border-border">
+                    <span className="h-2.5 w-2.5 rounded-full bg-transparent" />
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate('/card/verify/password')}
+                  className="flex w-full items-center gap-3 rounded-xl p-2.5 text-left active:bg-surface-subtle"
+                >
+                  <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-surface-subtle text-text-secondary">
+                    <KeyRound className="h-5 w-5" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-medium text-text-primary">消费密码核销</span>
+                    <span className="block text-xs text-text-tertiary">输入 6 位消费密码，由店员确认核销</span>
+                  </span>
+                  <span className="flex h-5 w-5 flex-none items-center justify-center rounded-full border border-border">
+                    <span className="h-2.5 w-2.5 rounded-full bg-transparent" />
+                  </span>
+                </button>
+              </div>
 
               <div className="mt-3 flex items-start gap-2 rounded-lg bg-surface-subtle p-3">
                 <Info className="mt-0.5 h-4 w-4 flex-none text-text-tertiary" />

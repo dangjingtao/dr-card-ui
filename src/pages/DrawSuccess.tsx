@@ -9,7 +9,7 @@ import { LUCK_REWARD_BUBBLE, LUCK_RULE_STATUS, resolveLuck } from '../app/fixtur
  * 抽取成功（#41）
  * -------------------------------------------------------------
  * 事实源：docs/prototype/02-membership-and-checkin.md §9
- * 已确认：结果为「恭喜你获得 50🫧」；关闭后回到会员中心。
+ * 已确认：结果为「恭喜你获得 50🫧」；关闭后回到首页（T023 用户确认，原为会员中心）。
  * ⚠️ B-003 未决（隔离处理）：
  *    - 大吉/中吉/小吉三档、「再抽一次」重抽、结果当天持久化，全部来自历史稿倾向，未确认；
  *    - 默认视图只呈现摹客确认的泡泡值奖励，不出现档位名称，也不提供重抽按钮；
@@ -26,7 +26,7 @@ export default function DrawSuccess() {
   const isolated = requested != null && ['great', 'good', 'minor'].includes(requested)
   const luck = isolated ? resolveLuck(requested) : null
 
-  const backToMembership = () => navigate('/membership')
+  const backToHome = () => navigate('/')
 
   return (
     <PageContainer className="flex min-h-full flex-col pb-24">
@@ -34,7 +34,7 @@ export default function DrawSuccess() {
         <button
           type="button"
           aria-label="关闭"
-          onClick={backToMembership}
+          onClick={backToHome}
           className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-subtle text-text-secondary"
         >
           <X className="h-5 w-5" />
@@ -72,10 +72,10 @@ export default function DrawSuccess() {
 
         <button
           type="button"
-          onClick={backToMembership}
+          onClick={backToHome}
           className="mt-8 h-12 w-full max-w-[280px] rounded-full bg-primary text-base font-medium text-text-inverse active:bg-primary-pressed"
         >
-          返回会员中心
+          返回首页
         </button>
       </div>
 

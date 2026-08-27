@@ -16,7 +16,15 @@ import lv4Hero from '../assets/brand/member/member-lv4-hero.webp'
 import campaignThumb from '../assets/brand/member/checkin-dearseed-kit.webp'
 
 /**
- * 会员中心（#6）
+ * 会员中心（#6）——【T023 起不再挂载为公开路由，仅保留为变更前证据】
+ *
+ * 依据 docs/requirements/2026-08-27-ui-change-requirements.md §6「原会员中心不再展示现有会员中心
+ * 内容，改为直接进入 H5 商城」，`/membership` 已在 src/app/router/routes.ts 中标记 `redirectTo: '/mall'`，
+ * 本组件不再被 src/app/router/index.tsx 挂载。文件与既有截图（docs/workbench/evidence/screenshots/
+ * ref-membership.png、std-membership.png、t006-06-membership.png 等）一并保留为变更前证据，
+ * 不要据此认为该页面仍可访问；如需恢复，须先有新的产品确认。
+ *
+ * 以下为变更前的实现说明，原样保留：
  * 事实源：docs/prototype/02-membership-and-checkin.md §1
  * - 页面内容：会员等级与状态、泡泡值余额、四入口（今日澡运 / 是日任务 / 优惠卡包 / 洗头搭子）、底部「本期活动」。
  * ⚠️ 与 reference/D-007 的差异：历史稿把四入口写成「今日幸运 / 每日任务」，与原型文案不一致，

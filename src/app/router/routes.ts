@@ -13,6 +13,13 @@ import { CircleDot, Headset, Home, QrCode, UserRound } from 'lucide-react'
  *   Tab 结构为可靠参考，主入口为 APP 首页）。
  * - 根路由 `/` = APP 首页；`/dearseed` = 独立的诗得丽专栏。
  * - H5 商城（#17/#48/#49）承载为 WebView 边界页。
+ * - T023（2026-08-27 用户确认）：底部 Tab「服务」与原会员中心各入口统一改指 `/mall`
+ *   商城占位页；`/membership` 本身不再展示会员中心内容，直达重定向到 `/mall`，旧实现
+ *   保留在 `src/pages/Membership.tsx` 与既有截图中作为变更前证据，不再作为公开路由页面。
+ * - T021（2026-08-27 需求变更 §2）：根路由 `/` 由「卡博士 APP 首页」改为「诗得丽品牌专栏」
+ *   首页，删除金刚区并迁入 `/checkin` 打卡内容；`/dearseed` 仍保留为已验收的独立专栏页，
+ *   不修改 T005 历史结论。`/` 新增的新人体验券状态与弹层是需求新增内容，摹客原型无对应
+ *   artboard，故 node 占位 0（未决口径见 fixtures 的 NEWCOMER_COUPON_RULE_STATUS）。
  */
 
 export type OverlayType = 'dialog' | 'sheet'
@@ -68,6 +75,8 @@ export interface RouteMeta {
   overlays?: RouteOverlay[]
   /** 边界类型：H5 WebView 边界页 */
   boundary?: 'webview'
+  /** 该路径不再承载自身页面，直接重定向到目标路径（`replace`） */
+  redirectTo?: string
   /** 页面归属说明 */
   owner?: string
 }
@@ -80,14 +89,31 @@ export const ROUTES: RouteMeta[] = [
     tabOrder: 1,
     label: '首页',
     icon: Home,
-    title: '卡博士',
+    /* T021：需求 §2.1–§2.2 要求根首页改为「诗得丽品牌专栏」并删除金刚区 */
+    title: '诗得丽品牌专栏',
     titleBar: 'plain',
-    titleBarTitle: '首页',
+    titleBarTitle: '诗得丽品牌专栏',
+    /* T021 为需求变更新增内容，摹客原型无对应 artboard，故节点留空、下列状态/弹层 node 占位 0 */
     nodes: [],
-    task: 'T005',
+    task: 'T021',
     entry: 'APP 主入口',
     returnTo: '—（根首页）',
-    owner: '卡博士 APP 首页（与诗得丽专栏分离）',
+    /*
+     * 用户 2026-08-27 定案「默认全是新用户」：无参数进入 `/` 即自动弹出新人体验券。
+     * `?newcomer=off` 是取证/回归专用的抑制参数，只让脚本确定性地拿到首页无遮挡形态，
+     * 不属于 fixture 状态也不属于弹层，故不进 states/overlays；产品访问不带此参数。
+     */
+    states: [
+      { key: 'coupon-1', node: 0, label: '新人券-1 张' },
+      { key: 'coupon-2', node: 0, label: '新人券-2 张' },
+    ],
+    overlays: [
+      { key: 'newcomer-coupon', node: 0, label: '新人体验券弹窗', type: 'dialog' },
+      { key: 'coupon-success', node: 0, label: '体验券领取成功', type: 'dialog' },
+      /* 打卡内容随 CheckinBoard 迁入后，补签这个主要操作也在首页自持反馈（需求 §2.3），节点沿用 /checkin 的 #22 */
+      { key: 'make-up-success', node: 22, label: '补打卡成功弹窗', type: 'dialog' },
+    ],
+    owner: '诗得丽品牌专栏首页（T021 改造；打卡内容与 /checkin 共用 CheckinBoard；默认弹出新人体验券，`?newcomer=off` 抑制）',
   },
   {
     path: '/card',
@@ -205,39 +231,45 @@ export const ROUTES: RouteMeta[] = [
     tabOrder: 2,
     label: '泡泡',
     icon: CircleDot,
-    title: '泡泡值明细',
+    /* T022：本页改为「资产 + 泡泡福利 + 任务占位」，纯流水明细拆到 /points/detail */
+    title: '泡泡值',
     nodes: [5],
     task: 'T006',
     entry: '诗得丽专栏/我的-泡泡值余额；会员中心',
     returnTo: '诗得丽专栏首页 / 我的',
+    owner: '泡泡值资产与任务占位（T006 施工；T022 改造）',
+  },
+  {
+    path: '/points/detail',
+    title: '泡泡值明细',
+    nodes: [5],
+    task: 'T022',
+    entry: '泡泡值-资产卡「看明细」',
+    returnTo: '泡泡值',
     states: [
       { key: 'income', node: 5, label: '泡泡值明细-仅收入' },
       { key: 'expense', node: 5, label: '泡泡值明细-仅消耗' },
       { key: 'empty', node: 5, label: '泡泡值明细-无记录' },
     ],
-    owner: '泡泡值资产流水（T006 施工）',
+    owner: '泡泡值纯流水明细（T022 施工；仅 Tab + 列表 + 空态）',
   },
   {
     path: '/membership',
-    tab: true,
-    tabOrder: 4,
-    label: '服务',
-    icon: Headset,
-    title: '会员中心',
-    titleBarAction: 'settings',
+    title: '卡博士商城',
     nodes: [6],
     task: 'T006',
-    entry: '诗得丽专栏-「会员空间」',
+    redirectTo: '/mall',
+    entry: '（T023 起不再作为会员中心页面，直达一律重定向到 /mall 商城占位页）',
     returnTo: '诗得丽专栏首页',
-    owner: '会员玩法分发（T006 施工）',
+    owner: '原会员中心路径（T023 起重定向到 /mall；旧实现保留在 src/pages/Membership.tsx 作为变更前证据，不再挂载）',
   },
   {
     path: '/membership/levels',
     title: '会员等级',
     nodes: [26],
     task: 'T006',
-    entry: '会员中心-等级入口',
-    returnTo: '会员中心',
+    entry: '诗得丽专栏-会员卡「查看等级」（T023 起原会员中心不再可达，此为唯一在线入口）',
+    returnTo: '诗得丽专栏首页',
     owner: '会员等级展示稿（T006 施工）',
   },
   {
@@ -379,11 +411,15 @@ export const ROUTES: RouteMeta[] = [
   /* ────────────────────────── T008 洗护兑换与商城链路 ────────────────────────── */
   {
     path: '/mall',
+    tab: true,
+    tabOrder: 4,
+    label: '服务',
+    icon: Headset,
     title: '卡博士商城',
     nodes: [17],
     task: 'T008',
     boundary: 'webview',
-    entry: '诗得丽专栏-服务区「核心商城」',
+    entry: '底部 Tab「服务」；首页头像；诗得丽专栏-「会员空间」/ 会员卡片；我的-「专属权益」；体验券使用弹窗-商品信息',
     returnTo: '诗得丽专栏首页',
     states: [
       { key: 'loading', node: 17, label: 'H5 加载中' },
@@ -630,7 +666,7 @@ export const TAB_ROUTES = ROUTES.filter((route) => route.tab).sort(
 
 /**
  * 判断路径是否命中一级 Tab（仅一级 Tab 自身显示底部导航）
- * 这里必须精确匹配：Tab 路由的子路径（如 /membership/levels、/card/verify/password、
+ * 这里必须精确匹配：Tab 路由的子路径（如 /mall/goods/:id、/mall/cart、/card/verify/password、
  * /card/verify/confirm）都是二级页，按壳层约定不显示底部导航。
  * 注意 BottomNav 内部的高亮判定仍用前缀匹配，两者职责不同，不要合并。
  */

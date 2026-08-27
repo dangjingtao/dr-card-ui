@@ -43,7 +43,7 @@ const tiles: Tile[] = [
 const stats = [
   { name: '卡包', value: '1', to: '/card', hint: '查看卡包' },
   { name: '泡泡值', value: '1,280', to: '/points', hint: '查看泡泡值明细' },
-  { name: '专属权益', value: '9', to: '/membership', hint: '查看会员中心' },
+  { name: '专属权益', value: '9', to: '/mall', hint: '查看卡博士商城' },
 ]
 
 const hotGoods = [

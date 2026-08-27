@@ -32,7 +32,7 @@ const pickAssets = {
 
 const columnEntries = [
   { label: '品牌文化', icon: Sparkles, to: '/brand-culture' },
-  { label: '会员空间', icon: Crown, to: '/membership' },
+  { label: '会员空间', icon: Crown, to: '/mall' },
   { label: '洗护兑换', icon: ShoppingBag, to: '/exchange' },
 ]
 
@@ -82,7 +82,7 @@ export default function DearseedColumn() {
           >
             <img src={avatar} alt="用户头像" className="h-full w-full object-cover" />
           </button>
-          <button type="button" onClick={() => navigate('/membership')} className="min-w-0 flex-1 text-left">
+          <button type="button" onClick={() => navigate('/mall')} className="min-w-0 flex-1 text-left">
             <span className="block text-[10px] tracking-[0.18em] text-member-accent">DEARSEED MEMBER</span>
             <span className="mt-1 block truncate text-[17px] font-semibold text-member-text">{MEMBER_PROFILE.nickname}</span>
             <span className="mt-1 block text-[11px] text-member-muted">{MEMBER_PROFILE.levelLabel} · {MEMBER_PROFILE.levelName}</span>
