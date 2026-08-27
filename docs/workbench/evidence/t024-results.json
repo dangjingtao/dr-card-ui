@@ -1,0 +1,255 @@
+{
+  "task": "T024",
+  "generatedAt": "2026-08-27T10:54:29.392Z",
+  "base": "http://127.0.0.1:4399",
+  "viewport": "375x812",
+  "narrowViewport": "320x480",
+  "total": 37,
+  "passed": 37,
+  "failed": 0,
+  "checks": [
+    {
+      "id": "R7-01",
+      "requirement": "以 375 × 812 为主要移动端验收尺寸",
+      "result": "PASS",
+      "detail": "viewport=375x812"
+    },
+    {
+      "id": "R7-02a",
+      "requirement": "首页保留搜索栏、头像与 Banner",
+      "result": "PASS",
+      "detail": "{\"search\":1,\"searchInput\":1,\"avatar\":1,\"banner\":1}"
+    },
+    {
+      "id": "R7-02b",
+      "requirement": "首页金刚区已完整移除",
+      "result": "PASS",
+      "detail": "残留词=无"
+    },
+    {
+      "id": "R7-03a",
+      "requirement": "/checkin 内容完整嵌入首页",
+      "result": "PASS",
+      "detail": "{\"今日签到状态\":1,\"当月签到日历\":1,\"是日任务\":1,\"为你精选\":1}"
+    },
+    {
+      "id": "R7-03b",
+      "requirement": "首页不出现重复标题栏或重复底部导航",
+      "result": "PASS",
+      "detail": "{\"statusBars\":1,\"titleBars\":1,\"backBars\":0,\"navs\":1,\"scrolls\":1}"
+    },
+    {
+      "id": "R7-04",
+      "requirement": "公益板块与品牌故事正确排列在打卡内容下方",
+      "result": "PASS",
+      "detail": "{\"boardTop\":270.328125,\"causeTop\":1541.828125,\"hasCause\":true,\"hasStory\":true}"
+    },
+    {
+      "id": "R2-01",
+      "requirement": "长页滚动后底部导航保持固定可见",
+      "result": "PASS",
+      "detail": "{\"navVisible\":true,\"innerHeight\":812,\"navTop\":751}"
+    },
+    {
+      "id": "R2-02",
+      "requirement": "首页无横向溢出",
+      "result": "PASS",
+      "detail": "overflow=0"
+    },
+    {
+      "id": "R7-05a-coupon-1",
+      "requirement": "新用户弹窗可演示 1 张体验券状态",
+      "result": "PASS",
+      "detail": "li=1 名称匹配=true 汇总匹配=true"
+    },
+    {
+      "id": "R7-05a-coupon-2",
+      "requirement": "新用户弹窗可演示 2 张体验券状态",
+      "result": "PASS",
+      "detail": "li=2 名称匹配=true 汇总匹配=true"
+    },
+    {
+      "id": "R7-05b",
+      "requirement": "新人弹窗确定路径进入领取成功态",
+      "result": "PASS",
+      "detail": "弹窗文本首行=体验券领取成功"
+    },
+    {
+      "id": "L1-01",
+      "requirement": "跨卡链路：首页领券 → 体验券",
+      "result": "PASS",
+      "detail": "落地=/exchange"
+    },
+    {
+      "id": "R7-05c",
+      "requirement": "新人弹窗关闭路径可关闭且停留首页",
+      "result": "PASS",
+      "detail": "弹窗数=0 路径=/"
+    },
+    {
+      "id": "R3-01",
+      "requirement": "弹窗遮罩铺满视口且对话框语义正确",
+      "result": "PASS",
+      "detail": "{\"coversViewport\":true,\"background\":\"rgba(0, 0, 0, 0.52)\",\"ariaModal\":\"true\",\"dialogWidth\":327}"
+    },
+    {
+      "id": "R7-06a",
+      "requirement": "泡泡值明细页三个 Tab 可用",
+      "result": "PASS",
+      "detail": "tabs=全部/收入/消耗"
+    },
+    {
+      "id": "R7-06b",
+      "requirement": "泡泡值明细列表筛选生效",
+      "result": "PASS",
+      "detail": "全部=15 收入=13 消耗=2"
+    },
+    {
+      "id": "R7-06c",
+      "requirement": "泡泡值明细空态可用",
+      "result": "PASS",
+      "detail": "行数=0 文案命中=true"
+    },
+    {
+      "id": "R2-03",
+      "requirement": "泡泡值明细为二级页：有返回栏、无底部导航",
+      "result": "PASS",
+      "detail": "{\"navs\":0,\"backBars\":1}"
+    },
+    {
+      "id": "R7-07a",
+      "requirement": "原泡泡值页面展示任务占位卡片",
+      "result": "PASS",
+      "detail": "命中=4/4 占位标记=true 交互控件=0"
+    },
+    {
+      "id": "R7-07b",
+      "requirement": "「看明细」可进入新明细页",
+      "result": "PASS",
+      "detail": "落地=/points/detail"
+    },
+    {
+      "id": "L2-01",
+      "requirement": "跨卡链路：泡泡值 → 明细",
+      "result": "PASS",
+      "detail": "落地=/points/detail"
+    },
+    {
+      "id": "R7-08a",
+      "requirement": "泡泡福利入口按「每日签到 / 澡运 / 体验券兑换」排列",
+      "result": "PASS",
+      "detail": "顺序=每日签到/澡运/体验券兑换"
+    },
+    {
+      "id": "R7-08b",
+      "requirement": "澡运占位可达",
+      "result": "PASS",
+      "detail": "落地=/luck 占位文案=true"
+    },
+    {
+      "id": "R7-09",
+      "requirement": "主按钮显示「泡泡值兑换」并吸底可见",
+      "result": "PASS",
+      "detail": "按钮数=1 吸底={\"visible\":true,\"position\":\"sticky\"}"
+    },
+    {
+      "id": "R7-09b",
+      "requirement": "「泡泡值兑换」进入体验券兑换页",
+      "result": "PASS",
+      "detail": "落地=/exchange"
+    },
+    {
+      "id": "R7-10a",
+      "requirement": "扫码核销指定辅助文案已删除",
+      "result": "PASS",
+      "detail": "残留=false"
+    },
+    {
+      "id": "R7-10b",
+      "requirement": "删除文案后核销两项垂直间距紧凑无空洞",
+      "result": "PASS",
+      "detail": "{\"rows\":2,\"gap\":4,\"scanHeight\":60,\"passwordHeight\":60,\"scanLines\":1}"
+    },
+    {
+      "id": "R3-02",
+      "requirement": "使用体验券面板贴合底部并保留安全区内边距",
+      "result": "PASS",
+      "detail": "{\"bottom\":812,\"innerHeight\":812,\"paddingBottom\":\"0px\"}"
+    },
+    {
+      "id": "R7-11a",
+      "requirement": "体验券商品信息进入 H5 商城占位页",
+      "result": "PASS",
+      "detail": "落地=/mall 边界标记=true"
+    },
+    {
+      "id": "L3-01",
+      "requirement": "跨卡链路：商品信息 → 商城后可返回弹窗",
+      "result": "PASS",
+      "detail": "返回落地=/card"
+    },
+    {
+      "id": "R7-11b",
+      "requirement": "会员中心直接进入同一 H5 商城占位页",
+      "result": "PASS",
+      "detail": "落地=/mall 边界标记=true"
+    },
+    {
+      "id": "R6-loading",
+      "requirement": "商城边界 loading 态可用",
+      "result": "PASS",
+      "detail": "标记「H5 加载中」命中=true"
+    },
+    {
+      "id": "R6-loaded",
+      "requirement": "商城边界 loaded 态可用",
+      "result": "PASS",
+      "detail": "标记「WebView 边界页」命中=true"
+    },
+    {
+      "id": "R6-error",
+      "requirement": "商城边界 error 态可用",
+      "result": "PASS",
+      "detail": "标记「H5 加载失败」命中=true"
+    },
+    {
+      "id": "R6-retry",
+      "requirement": "商城失败态重试回到已加载态",
+      "result": "PASS",
+      "detail": "重试后命中=true"
+    },
+    {
+      "id": "R4-01",
+      "requirement": "关键路径直达刷新不白屏不 404",
+      "result": "PASS",
+      "detail": "[{\"link\":\"/\",\"path\":\"/\",\"ok\":true},{\"link\":\"/points\",\"path\":\"/points\",\"ok\":true},{\"link\":\"/points/detail\",\"path\":\"/points/detail\",\"ok\":true},{\"link\":\"/card?state=available&overlay=use&coupon=c1\",\"path\":\"/card\",\"ok\":true},{\"link\":\"/mall?state=error\",\"path\":\"/mall\",\"ok\":true},{\"link\":\"/luck\",\"path\":\"/luck\",\"ok\":true}]"
+    },
+    {
+      "id": "R5-01",
+      "requirement": "窄屏 320 × 480 无横向溢出",
+      "result": "PASS",
+      "detail": "[{\"link\":\"/?newcomer=off\",\"overflow\":0,\"navs\":1},{\"link\":\"/points\",\"overflow\":0,\"navs\":1},{\"link\":\"/points/detail\",\"overflow\":0,\"navs\":0},{\"link\":\"/mall?state=loaded\",\"overflow\":0,\"navs\":1}]"
+    }
+  ],
+  "screenshots": [
+    "t024-01-home-baseline.png",
+    "t024-02-home-bottom-cause-story.png",
+    "t024-03-newcomer-coupon-1.png",
+    "t024-03-newcomer-coupon-2.png",
+    "t024-04-newcomer-success.png",
+    "t024-05-link-home-to-exchange.png",
+    "t024-06-points-detail-expense.png",
+    "t024-07-points-detail-empty.png",
+    "t024-08-points-benefits-tasks.png",
+    "t024-09-use-sheet-verify-rows.png",
+    "t024-10-mall-from-coupon-goods.png",
+    "t024-11-mall-from-membership.png",
+    "t024-12-mall-error-retry.png",
+    "t024-13-home-narrow-320.png"
+  ],
+  "knownConsoleNoise": [
+    "⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.",
+    "⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath."
+  ],
+  "problems": []
+}

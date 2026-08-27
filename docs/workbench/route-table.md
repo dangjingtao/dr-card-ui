@@ -9,17 +9,17 @@
 | # | 决策点 | 结论 |
 | --- | --- | --- |
 | D1 | 主 Tab 数量与主导航形态 | 当前实现以注册表为准：保留五项底部 Tab：首页 / 泡泡 / 扫码 / 服务 / 我的。旧的“首页 / 卡包 / 兑换 / 我的”四项快照已被替代；`/card` 与 `/exchange` 保留为二级可达路径。 |
-| D2 | 诗得丽专栏入口形态 | **已被 D-054 覆盖**：根路由 `/` 仅承载卡博士 APP 首页；独立路由 `/dearseed` 承载诗得丽专栏，首页卡片进入、专栏左上返回首页。 |
+| D2 | 诗得丽专栏入口形态 | **已被 D-072 覆盖**：根路由 `/` 已按需求 §2.1 改为「诗得丽品牌专栏」首页（金刚区删除、打卡内容迁入）；独立路由 `/dearseed` 及其弹层、领取态保留不动。此前 D-054 的「`/` 仅承载卡博士 APP 首页、首页卡片进入 `/dearseed`」为旧口径。 |
 | D3 | H5/APP 边界 | H5 商城（#17/#48/#49）承载为 **WebView 边界页**（`src/pages/WebViewBoundary.tsx`），提供加载/已加载/失败三态 fixture。 |
 
 ## 2. 一级 Tab（5 项）
 
 | 路径 | 标签 | 图标 | 承载节点 | 任务卡 | 说明 |
 | --- | --- | --- | --- | --- | --- |
-| `/` | 首页 | Home | — | T005 | 卡博士 APP 首页；「诗得丽品牌专栏」卡片进入 `/dearseed?overlay=reminder` |
-| `/points` | 泡泡 | CircleDot | #5 | T006 | 泡泡值余额、收入/消耗筛选与流水明细；用户于 2026-08-24 明确纠正原 `/checkin` 映射 |
+| `/` | 首页 | Home | — | T005、T021 | 诗得丽品牌专栏首页（T021 按需求 §2.1 改造）：搜索栏 + 头像 + Banner + 迁入的打卡内容 + 公益板块 + 卡博士品牌故事；金刚区已删除。新人体验券弹层与领取成功态在此承载；`/dearseed?overlay=reminder` 等专栏原路由保留不动 |
+| `/points` | 泡泡 | CircleDot | #5 | T006、T022 | 泡泡值资产卡 + 泡泡福利入口 + 泡泡任务占位卡；流水明细已按 T022 迁至 `/points/detail`；用户于 2026-08-24 明确纠正原 `/checkin` 映射 |
 | `/card/verify` | 扫码 | QrCode（中间凸起） | #67 | T009 | 扫码核销，点击扫描框进入确认核销 |
-| `/membership` | 服务 | Headset | #6 | T006 | 会员中心 |
+| `/mall` | 服务 | Headset | #17 | T008、T023 | 卡博士 H5 商城（WebView 边界页，三态 fixture）。T023 按需求 §6 接管一级 Tab「服务」：原 `/membership` 会员中心不再展示，改为直接进入本页 |
 | `/profile` | 我的 | UserRound | #19、#20 | T011 | `?overlay=app-prompt` |
 
 ## 3. 二级页路由
@@ -38,11 +38,11 @@
 
 | 路径 | 节点 | 入口 | 返回目标 | 状态参数 |
 | --- | --- | --- | --- | --- |
-| `/membership` | #6 | 首页-「会员空间」 | 首页 | — |
-| `/membership/levels` | #26 | 会员中心-等级 | 会员中心 | — |
-| `/checkin` | #4、#8、#21、#22 | 首页-今日签到 | 首页 / 会员中心 | `?state=success`；`?overlay=reminder/make-up-success` |
-| `/luck` | #7 | 首页-今日澡运 | 首页 / 会员中心 | — |
-| `/luck/result` | #41 | 今日澡运-抽取 | 今日澡运 / 首页 | `?result=great/good/minor`（确定性 fixture，去随机化） |
+| `/membership` | #6 | 已下线为独立页面：T023 按需求 §6 重定向到 `/mall` | — | 无。`redirectTo: '/mall'`；旧实现保留在 `src/pages/Membership.tsx` 作为变更前证据，不再挂载 |
+| `/membership/levels` | #26 | 诗得丽专栏-会员卡「查看等级」（T023 后唯一在线入口） | 诗得丽专栏首页 | — |
+| `/checkin` | #4、#8、#21、#22 | 首页-今日签到 | 首页 | `?state=success`；`?overlay=reminder/make-up-success` |
+| `/luck` | #7 | 首页-今日澡运 | 首页 | T022 整改：不可操作占位页，不提供抽取 CTA 与结果页入口；`?state=drawn` 仅复现 B-003 隔离标注 |
+| `/luck/result` | #41 | 直达 URL（T022 整改后不再由 `/luck` 进入） | 今日澡运 / 首页 | `?result=great/good/minor`（确定性 fixture，去随机化）；节点保留以守 60 节点核算 |
 
 ### T007 搭子与邀请闭环
 
@@ -60,7 +60,7 @@
 | --- | --- | --- | --- | --- |
 | `/exchange` | #18、#37、#38、#39 | 底部 Tab「兑换」 | 底部 Tab | `?state=sort-exchange/sort-points`（默认＝综合）；`?overlay=redeem&product=` |
 | `/exchange/result` | #40 | 兑换确认成功 | 洗护兑换专区 | `?product=` |
-| `/mall` | #17 | 首页-核心商城 | 首页 | WebView：`?state=loading/loaded/error` |
+| `/mall` | #17 | 一级 Tab「服务」；首页头像；诗得丽专栏-「会员空间」/ 会员卡片；我的-「专属权益」；体验券使用弹窗-商品信息区；`/membership` 重定向落点（T023 需求 §6） | 诗得丽专栏首页 | WebView：`?state=loading/loaded/error` |
 | `/mall/goods/:id` | #48 | H5 商城-商品 | H5 商城 | WebView 边界页 |
 | `/mall/cart` | #49 | H5 商城-购物车 | H5 商城 | WebView 边界页 |
 
@@ -105,6 +105,24 @@
 | `/service/chat` | #58、#71 | 我的-客服中心 | 我的 | `?state=conversation`、`?state=failed`；`?overlay=request-human` |
 | `/service/chat/human` | #70 | 暂无业务入口（原型未给 #71 → #70 的前进动作，未确认故不实现）；本轮由直达路由与 `?debug=1` 验收 | 智能客服 | `?state=queuing`、`?state=connected` |
 
+### T022 泡泡值任务页与独立明细
+
+| 路径 | 节点 | 入口 | 返回目标 | 状态参数 |
+| --- | --- | --- | --- | --- |
+| `/points/detail` | #5 | 泡泡值-资产卡「看明细」 | 泡泡值 | `?state=income/expense/empty` |
+
+> `/points/detail` 与 `/points` 共享节点 #5，不新增节点，因此第 4 节的 60 节点核算口径不变。
+
+### T021 品牌专栏首页与新人体验券
+
+| 路径 | 节点 | 入口 | 返回目标 | 状态参数 |
+| --- | --- | --- | --- | --- |
+| `/` | — | APP 主入口 | —（根首页） | `?state=coupon-1/coupon-2`；`?overlay=newcomer-coupon/coupon-success/make-up-success` |
+
+> T021 是需求变更新增内容，摹客原型无对应 artboard，故 `nodes: []`、两态与两个新人券弹层的 `node` 记 0 占位；补打卡成功弹层沿用 `/checkin` 的 #22。本卡不新增节点，因此第 4 节的 60 节点核算口径不变。
+> `?state=coupon-1` / `?state=coupon-2` 用于确定性复现 1 张 / 2 张体验券（D-074）；`?overlay=coupon-success` 的「查看体验券」跳 `/exchange`（D-075）。
+> 用户 2026-08-27 定案「默认全是新用户」：不带参数进入 `/` 即自动弹出新人体验券（D-077）。另有取证专用参数 **`?newcomer=off`**，仅用于让脚本确定性地拿到首页无遮挡形态，不是 fixture 状态也不是弹层，故不登记在上表「状态参数」列；产品访问不带此参数。所有会点击首页元素的取证/回归脚本一律使用 `/?newcomer=off`。
+
 ### 系统路由
 
 | 路径 | 说明 |
@@ -148,7 +166,7 @@ T013: 57,58,71,70                                = 4
 
 ## 7. 自检证据
 
-- T001 当前五项 Tab 的 375 × 812 种籽页截图命名：`docs/workbench/evidence/screenshots/t001-seed-{home,points,scan,membership,profile}.png`。`t001-seed-checkin.png` 与 `t004-*.png` 保留为历史证据。
-- 运行断言：`BASE_URL=http://127.0.0.1:<port> node scripts/verify-t004.mjs`（12 项全部 PASS）。
+- T001 当前五项 Tab 的 375 × 812 种籽页截图命名：`docs/workbench/evidence/screenshots/t001-seed-{home,points,scan,mall,profile}.png`（T023 起「服务」Tab 为 `/mall`）。`t001-seed-checkin.png`、`t001-seed-membership.png` 与 `t004-*.png` 保留为历史证据。
+- 运行断言：`BASE_URL=http://127.0.0.1:<port> node scripts/verify-t004.mjs`（11 项路由用例 + Tab 高亮 + `/draw-success`、`/membership` 两项重定向，全部 PASS）。
 - 工程检查：`npm run typecheck`、`npm run build` 通过。
 - 已知差异与未决：`/draw-success` 旧路由移除；三档签运规则仍待 T006；兑换码位数仍待 T009。
