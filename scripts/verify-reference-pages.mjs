@@ -10,7 +10,8 @@ const cases = [
   ['ref-password', '/card/verify/password', ['请输入消费密码', '确认核销']],
   ['ref-levels', '/membership/levels', ['会员等级参考', 'LV.4', '会员卡面']],
   ['ref-redeem', '/redeem', ['兑换卡券', '12 位字母与数字组合', '确认兑换']],
-  ['ref-points', '/points', ['泡泡值明细', '1,280', '立即兑换']],
+  ['ref-points', '/points', ['泡泡值余额', '1,280', '泡泡任务', '泡泡值兑换']],
+  ['ref-points-detail', '/points/detail', ['泡泡值明细', '全部', '收入', '消耗']],
   ['ref-settings', '/settings', ['资料设置', '消费密码', '确认修改']],
   ['ref-onboarding', '/onboarding', ['完善信息', '消费密码', '确认信息']],
   ['ref-officer', '/service/welfare-officer', ['品牌福利官', '吴哥', '人工客服', '活动咨询', '福利抽奖']],
@@ -22,9 +23,10 @@ const cases = [
   ['ref-human-connected', '/service/chat/human?state=connected', ['诗得丽-吴哥 为您服务', '我是人工客服吴哥', '我的洗发水体验券怎么用？']],
   ['ref-notice', '/notifications', ['通知', '一键已读', '订单核销成功']],
   ['ref-notice-detail', '/notifications/n1', ['订单核销成功', '本条为系统通知', '280 泡泡值']],
-  ['ref-home', '/', ['首页', '诗得丽品牌专栏', '公益板块']],
+  // 首页带 ?newcomer=off 抑制 T021 的默认新人体验券弹窗，保证参考截图取到无遮挡形态
+  ['ref-home', '/?newcomer=off', ['首页', '诗得丽品牌专栏', '公益板块']],
   ['ref-checkin', '/checkin', ['今日已签到', '本周期签到日历', '连续签到奖励']],
-  ['ref-membership', '/membership', ['会员中心', '小鹿同学', '优惠卡包']],
+  /* T023 起 `/membership` 重定向到 /mall（需求 §6），原会员中心用例下线，证据见 ref-membership.png */
   ['ref-profile', '/profile', ['我的', 'VIP 泡泡新生', '热门兑换']],
 ]
 

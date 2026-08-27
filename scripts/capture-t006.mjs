@@ -43,33 +43,27 @@ const expect = (ok, message) => {
 }
 
 if (!checkinOnly) {
-// —— 节点 #6 会员中心：等级 + 泡泡值余额 + 四入口（原型 §1 文案）——
+/**
+ * 节点 #6 会员中心：T023 起 `/membership` 重定向到 /mall 商城占位页（需求 §6），
+ * 原会员中心的等级 / 泡泡值余额 / 四入口 / 本期活动断言随之下线，
+ * 变更前证据保留在 docs/workbench/evidence/screenshots/t006-06-membership.png。
+ * 此处只保留「原路径确实不再展示会员中心」这一条可持续断言。
+ */
 await go('/membership')
-const entryNames = await page
-  .locator('section[aria-label="会员玩法入口"] button')
-  .evaluateAll((nodes) => nodes.map((node) => node.textContent.trim()))
-console.log(`  #6 四入口: ${entryNames.join(' / ')}`)
-expect(
-  JSON.stringify(entryNames) === JSON.stringify(['今日澡运', '是日任务', '优惠卡包', '洗头搭子']),
-  `#6 入口应为原型口径「今日澡运/是日任务/优惠卡包/洗头搭子」，实际 ${entryNames.join('/')}`,
-)
-const bubbleEntry = await page.getByRole('button', { name: /泡泡值余额 \d+/ }).isVisible()
-const campaignVisible = await page.getByRole('heading', { name: '本期活动' }).isVisible()
-console.log(`  #6 泡泡值余额入口=${bubbleEntry} 本期活动区块=${campaignVisible}`)
-expect(bubbleEntry, '#6 缺少原型 §1 要求的泡泡值余额入口')
-expect(campaignVisible, '#6 底部未展示「本期活动」')
-await shot('06-membership')
+await page.waitForTimeout(400)
+const legacyPath = new URL(page.url()).pathname
+const legacyText = await page.evaluate(() => document.body.innerText)
+console.log(`  #6 /membership 落点=${legacyPath}（T023 起重定向到 /mall）`)
+expect(legacyPath === '/mall', `#6 /membership 应重定向到 /mall，实际 ${legacyPath}`)
+expect(!legacyText.includes('会员中心'), '#6 /membership 仍展示原会员中心内容')
 
-// —— #6 交互：泡泡值余额 → 泡泡值明细 ——
-await page.getByRole('button', { name: /泡泡值余额 \d+/ }).click()
-await page.waitForURL(/\/points$/)
-console.log(`  #6 → 泡泡值明细: ${new URL(page.url()).pathname}`)
+// —— #6 原「泡泡值余额 → 泡泡值明细」入口随会员中心下线，泡泡值明细断言见下方 #5 ——
 
-// —— #6 交互：会员等级 → 等级展示页 ——
-await go('/membership')
-await page.getByRole('button', { name: '查看等级' }).click()
+// —— 节点 #26 会员等级：T023 后唯一在线入口是诗得丽专栏会员卡「查看等级」——
+await go('/dearseed')
+await page.getByRole('button', { name: /查看等级/ }).click()
 await page.waitForURL(/\/membership\/levels$/)
-console.log(`  #6 → 会员等级: ${new URL(page.url()).pathname}`)
+console.log(`  #26 专栏「查看等级」 → ${new URL(page.url()).pathname}`)
 
 // —— 节点 #26 会员等级：明示原型「仅开会时作展示」，当前等级可定位 ——
 const remarkVisible = await page.getByText('本页为会员等级分级，仅开会时作展示。').isVisible()
@@ -85,20 +79,59 @@ expect(
 )
 await shot('26-membership-levels')
 
-// —— 节点 #5 泡泡值明细：全部 / 收入 / 消耗 / 空态 ——
+/**
+ * 节点 #5 泡泡值。T022 后一分为二：
+ * `/points` 保留资产卡 + 泡泡福利 + 任务占位卡，`/points/detail` 才是纯流水明细。
+ * 因此余额断言留在 `/points`，全部/收入/消耗/空态断言迁到 `/points/detail`。
+ */
 await go('/points')
 const balance = (await page.getByText('1,280', { exact: true }).first().innerText()).trim()
-const allRows = await page.locator('section[aria-label="泡泡值变动记录"] > div > div').count()
-console.log(`  #5 余额=${balance} 全部记录=${allRows} 条`)
+const taskCards = await page.locator('section[aria-labelledby="points-tasks-title"] > div > div').count()
+console.log(`  #5 余额=${balance} 任务占位卡=${taskCards} 张`)
 expect(balance === '1,280', `#5 余额应读夹具 1,280，实际 ${balance}`)
-expect(allRows > 0, '#5 全部态无记录')
-await shot('05-points-all')
+expect(taskCards === 4, `#5 任务占位卡应为 4 张，实际 ${taskCards}`)
+expect(
+  await page.getByRole('button', { name: '泡泡值兑换' }).isVisible(),
+  '#5 底部主按钮文案应为「泡泡值兑换」',
+)
+await shot('05-points-tasks')
+
+// —— #5 交互：三个泡泡福利入口顺序与可达性 ——
+const benefitTitles = await page
+  .locator('section[aria-labelledby="points-benefits-title"] .grid > button')
+  .evaluateAll((nodes) => nodes.map((node) => node.querySelector('span:nth-of-type(2)').textContent.trim()))
+console.log(`  #5 泡泡福利入口=${benefitTitles.join(' / ')}`)
+expect(
+  benefitTitles.join('/') === '每日签到/澡运/体验券兑换',
+  `#5 泡泡福利入口顺序应为「每日签到 / 澡运 / 体验券兑换」，实际 ${benefitTitles.join(' / ')}`,
+)
+for (const [index, [title, pathname]] of [
+  ['每日签到', '/checkin'],
+  ['澡运', '/luck'],
+  ['体验券兑换', '/exchange'],
+].entries()) {
+  await go('/points')
+  await page.locator('section[aria-labelledby="points-benefits-title"] .grid > button').nth(index).click()
+  await page.waitForURL(new RegExp(`${pathname}$`))
+  console.log(`  #5 →「${title}」: ${new URL(page.url()).pathname}`)
+}
+
+// —— #5 交互：资产卡「看明细」→ 纯明细页 ——
+await go('/points')
+await page.getByRole('button', { name: '看明细' }).click()
+await page.waitForURL(/\/points\/detail$/)
+console.log(`  #5 →「看明细」: ${new URL(page.url()).pathname}`)
+
+const allRows = await page.locator('section[aria-label="泡泡值变动记录"] > div > div').count()
+console.log(`  #5 明细页全部记录=${allRows} 条`)
+expect(allRows > 0, '#5 明细页全部态无记录')
+await shot('05-points-detail-all')
 
 for (const [key, kind] of [
   ['income', '+'],
   ['expense', '-'],
 ]) {
-  await go(`/points?state=${key}`)
+  await go(`/points/detail?state=${key}`)
   const signs = await page
     .locator('section[aria-label="泡泡值变动记录"] > div > div span.font-semibold')
     .evaluateAll((nodes) => [...new Set(nodes.map((node) => node.textContent.trim().charAt(0)))])
@@ -107,14 +140,14 @@ for (const [key, kind] of [
     signs.length === 1 && signs[0] === kind,
     `#5 ?state=${key} 应只出现「${kind}」记录，实际 ${signs.join(',')}`,
   )
-  await shot(`05-points-${key}`)
+  await shot(`05-points-detail-${key}`)
 }
 
-await go('/points?state=empty')
+await go('/points/detail?state=empty')
 const emptyText = await page.getByText('暂时没有更多记录啦').isVisible()
 console.log(`  #5 ?state=empty 空态文案=${emptyText}`)
 expect(emptyText, '#5 空态未展示「暂时没有更多记录啦」')
-await shot('05-points-empty')
+await shot('05-points-detail-empty')
 }
 
 // —— 节点 #21 打卡日历：月历 + 已签到/今天/可补签/未到 ——
@@ -167,18 +200,22 @@ expect(page.url().includes('overlay=make-up-success'), '#22 补签弹窗未写�
 await shot('22-checkin-makeup-success')
 
 if (!checkinOnly) {
-// —— 节点 #7 今日澡运：默认未抽 + 夹具「当天已抽过」——
+// —— 节点 #7 今日澡运：T022 整改后为不可操作占位页（无抽取 CTA、不进 /luck/result）——
 await go('/luck')
-const drawAction = await page.getByRole('button', { name: '抽取今日澡运' }).isVisible()
-console.log(`  #7 默认态抽取按钮=${drawAction}`)
-expect(drawAction, '#7 默认态缺少「抽取今日澡运」')
+const drawAction = await page.getByRole('button', { name: '抽取今日澡运' }).count()
+const luckLinks = await page.locator('a[href*="/luck/result"]').count()
+const placeholderBlock = await page.locator('[data-luck-placeholder]').isVisible()
+console.log(`  #7 占位态：抽取按钮=${drawAction} 结果页链接=${luckLinks} 占位块=${placeholderBlock}`)
+expect(drawAction === 0, '#7 占位期不应保留「抽取今日澡运」按钮')
+expect(luckLinks === 0, '#7 占位期不应存在指向 /luck/result 的链接')
+expect(placeholderBlock, '#7 缺少「敬请期待」占位状态块')
 await shot('07-luck-default')
 
 await go('/luck?state=drawn')
-const drawnCta = await page.getByRole('button', { name: '查看今日澡运结果' }).isVisible()
+const drawnCta = await page.getByRole('button', { name: '查看今日澡运结果' }).count()
 const drawnNote = await page.getByText(/^夹具态：/).isVisible()
 console.log(`  #7 ?state=drawn 结果入口=${drawnCta} 未定稿标注=${drawnNote}`)
-expect(drawnCta, '#7 ?state=drawn 未给出结果入口')
+expect(drawnCta === 0, '#7 ?state=drawn 占位期不应提供结果入口')
 expect(drawnNote, '#7 「当天已抽过」缺少未定稿标注（B-003 隔离）')
 await shot('07-luck-drawn')
 
@@ -210,11 +247,11 @@ for (const [key, name] of [
   await shot(`41-draw-${key}`)
 }
 
-// —— #41 交互：关闭 / 主按钮回会员中心 ——
+// —— #41 交互：关闭 / 主按钮回首页（T023 起由「返回会员中心」改为「返回首页」）——
 await go('/luck/result')
-await page.getByRole('button', { name: '返回会员中心' }).click()
-await page.waitForURL(/\/membership$/)
-console.log(`  #41 → 返回会员中心: ${new URL(page.url()).pathname}`)
+await page.getByRole('button', { name: '返回首页' }).click()
+await page.waitForURL(/\/$/)
+console.log(`  #41 → 返回首页: ${new URL(page.url()).pathname}`)
 }
 
 // —— DebugPanel 可定位性（D-020）：面板只在 ?debug=1 时渲染，正常页面不留调试痕迹 ——

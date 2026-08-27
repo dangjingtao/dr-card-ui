@@ -7,11 +7,12 @@ const browser = await chromium.launch()
 const page = await browser.newPage({ viewport: { width: 375, height: 812 } })
 
 const cases = [
-  ['/', '卡博士', '根首页'],
+  // 首页带 ?newcomer=off 抑制 T021 的默认新人体验券弹窗，保证断言的是首页正文而非弹层
+  ['/?newcomer=off', '卡博士', '根首页'],
   ['/card', '核心洗发水体验券', '卡包当前实现'],
   ['/exchange', '洗护兑换专区', '兑换语义纠正（非兑换码页）'],
   ['/profile', '热门兑换', '我的当前实现'],
-  ['/membership', '会员中心', '会员中心当前实现'],
+  ['/membership', 'WebView 边界', '原会员中心已重定向到 /mall 商城占位页（T023）'],
   ['/mall?state=error', 'H5 加载失败', 'WebView 边界-错误态'],
   ['/exchange?overlay=redeem', '确认兑换', 'bottom-sheet 弹层可复现'],
   ['/dearseed?overlay=newcomer', '新人弹窗', '专栏 dialog 可复现'],
@@ -41,6 +42,12 @@ await page.goto(base + '/draw-success', { waitUntil: 'networkidle' })
 const redirected = page.url().includes('/luck/result')
 if (!redirected) failed++
 console.log(`${redirected ? 'PASS' : 'FAIL'} /draw-success 重定向至 /luck/result`)
+
+// 原会员中心 /membership → /mall 重定向（T023，需求 §6：原会员中心改为直接进入 H5 商城）
+await page.goto(base + '/membership', { waitUntil: 'networkidle' })
+const mallRedirected = new URL(page.url()).pathname === '/mall'
+if (!mallRedirected) failed++
+console.log(`${mallRedirected ? 'PASS' : 'FAIL'} /membership 重定向至 /mall（落点 ${new URL(page.url()).pathname}）`)
 
 await browser.close()
 process.exit(failed === 0 ? 0 : 1)

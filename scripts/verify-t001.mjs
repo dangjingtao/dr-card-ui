@@ -4,10 +4,11 @@ import { chromium } from '@playwright/test'
 
 const base = process.env.BASE_URL ?? 'http://127.0.0.1:5173'
 const seeds = [
-  ['首页', '/', '卡博士'],
-  ['泡泡', '/points', '泡泡值明细'],
+  // 首页带 ?newcomer=off 抑制 T021 的默认新人体验券弹窗，保证 Tab 断言不受模态干扰
+  ['首页', '/?newcomer=off', '卡博士'],
+  ['泡泡', '/points', '泡泡值余额'],
   ['扫码', '/card/verify', '请将二维码对准扫描框'],
-  ['服务', '/membership', '会员中心'],
+  ['服务', '/mall', '卡博士商城'],
   ['我的', '/profile', '我的'],
 ]
 
@@ -15,7 +16,7 @@ const browser = await chromium.launch()
 const page = await browser.newPage({ viewport: { width: 375, height: 812 } })
 let failed = 0
 
-await page.goto(base, { waitUntil: 'networkidle' })
+await page.goto(`${base}/?newcomer=off`, { waitUntil: 'networkidle' })
 const labels = await page.locator('nav[aria-label="主导航"] button').evaluateAll((items) =>
   items.map((item) => item.getAttribute('aria-label')),
 )

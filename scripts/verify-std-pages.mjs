@@ -3,9 +3,12 @@ import { chromium } from '@playwright/test'
 const base = process.env.BASE_URL ?? 'http://localhost:5199'
 const outDir = 'docs/workbench/evidence/screenshots'
 
+/**
+ * T023 起 `/membership` 重定向到 /mall 商城占位页（需求 §6），原会员中心用例下线，
+ * 变更前证据保留在 docs/workbench/evidence/screenshots/std-membership.png。
+ */
 const cases = [
   ['std-checkin', '/checkin', ['今日已签到', '本周期签到日历', '连续签到奖励', '为你精选']],
-  ['std-membership', '/membership', ['会员中心', '小鹿同学', 'Bubble Point', '优惠卡包', '洗头搭子', '本期活动']],
   ['std-profile', '/profile', ['我的', 'VIP 泡泡新生', '卡券兑换', '客服中心', '热门兑换']],
 ]
 

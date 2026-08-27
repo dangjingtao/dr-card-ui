@@ -35,12 +35,13 @@ const go = async (path) => {
 const campaignCta = () =>
   page.locator('section', { has: page.getByRole('heading', { name: '本期活动' }) }).getByRole('button').last().innerText()
 
-// —— APP 首页与节点 #2 专栏的真实入口关系 ——
-await go('/')
-await page.getByText('诗得丽品牌专栏', { exact: true }).click()
-await page.waitForURL(/\/dearseed\?overlay=reminder/)
+// —— 节点 #2 专栏的打卡提示入口 ——
+// T021 起需求 §2.2 删除了首页金刚区，原「首页卡片 → /dearseed?overlay=reminder」的点击入口
+// 随金刚区一并移除；此处改为直连该 overlay，仅验证专栏侧的提示层与关闭出口仍成立。
+// 首页与专栏的新入口关系由 T021 取证（capture-t021.mjs）覆盖，本卡不回改 T005 验收结论。
+await go('/dearseed?overlay=reminder')
 const reminderVisible = await page.getByRole('dialog').isVisible()
-if (!reminderVisible) problems.push('[assert] 首页进入诗得丽专栏后未呈现打卡提示')
+if (!reminderVisible) problems.push('[assert] 诗得丽专栏 overlay=reminder 未呈现打卡提示')
 await page.getByRole('button', { name: '关闭打卡提示' }).click()
 await page.waitForURL(/\/dearseed$/)
 await shot('02-dearseed-entry')

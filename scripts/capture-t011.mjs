@@ -53,7 +53,7 @@ const profileJumps = [
   ['编辑资料', '/settings'],
   [/卡包/, '/card'],
   [/泡泡值/, '/points'],
-  [/专属权益/, '/membership'],
+  [/专属权益/, '/mall'],
   ['卡券兑换', '/redeem'],
   ['订单管理', '/orders'],
   ['地址管理', '/address'],

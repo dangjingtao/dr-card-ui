@@ -11,12 +11,16 @@ mkdirSync(outDir, { recursive: true })
 
 const base = process.env.BASE_URL ?? 'http://127.0.0.1:5173'
 const routes = [
-  ['home', '/'],
+  // 首页带 ?newcomer=off 抑制 T021 的默认新人体验券弹窗，保证截图取到无遮挡形态
+  ['home', '/?newcomer=off'],
   ['dearseed-overlay-newcomer', '/dearseed?overlay=newcomer'],
   ['card', '/card'],
   ['exchange', '/exchange'],
   ['profile', '/profile'],
-  ['membership-stub', '/membership'],
+  /*
+   * T023 起 /membership 重定向到 /mall（需求 §6），原「membership-stub」截图与 mall-webview 完全重复，
+   * 故从本脚本下线；变更前证据保留在 t004-membership-stub.png，重定向落点证据见 t023-17-mall-from-membership.png。
+   */
   ['mall-webview', '/mall'],
   ['mall-webview-error', '/mall?state=error'],
   ['exchange-sheet-redeem', '/exchange?overlay=redeem'],
