@@ -28,7 +28,7 @@ export default function Notifications() {
   const navigate = useNavigate()
   const route = findRouteByPathname('/notifications')
   const { state } = useFixtureState(route)
-  const { overlay, open, close } = useOverlay()
+  const { overlay, close } = useOverlay()
   const { items, unreadCount } = useNotifications()
 
   /** 节点 #42「通知副本（未读数量）」：夹具直接落在未读 Tab */
@@ -61,8 +61,6 @@ export default function Notifications() {
     { value: 'activity', label: <TabLabel text="活动" active={tab === 'activity'} /> },
   ]
 
-  const allRead = unreadCount === 0
-
   /** 结果反馈：Toast 为纯展示组件，这里负责 1.6s 后收起 */
   useEffect(() => {
     if (!toast) return
@@ -82,19 +80,8 @@ export default function Notifications() {
 
   return (
     <PageContainer inset={false} className="pb-6">
-      <div className="flex items-center justify-end px-4 pt-2">
-        <button
-          type="button"
-          onClick={() => open('clear')}
-          aria-disabled={allRead}
-          disabled={allRead}
-          className="min-h-8 rounded-control px-1 text-sm font-medium text-reward-strong disabled:pointer-events-none disabled:text-text-disabled"
-        >
-          {allRead ? '全部已读' : '一键已读'}
-        </button>
-      </div>
-
-      <div className="px-4 pb-3 pt-1">
+      {/* 2026-08-28：一键已读已移入壳层 TitleBar 右侧，页面正文从分类 Tab 直接开始。 */}
+      <div className="px-4 pb-3 pt-3">
         <SegmentedControl items={tabs} value={tab} onChange={(value) => setTab(value as TabKey)} />
       </div>
 
@@ -164,7 +151,7 @@ export default function Notifications() {
         </div>
       )}
 
-      {/* 节点 #43 清除消息确认弹窗 */}
+      {/* 节点 #43 清除消息确认弹窗；入口由 TitleBar 的「一键已读」触发 `?overlay=clear`。 */}
       <Dialog
         open={overlay === 'clear'}
         title="确认全部标为已读？"
