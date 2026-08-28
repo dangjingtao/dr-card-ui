@@ -8,7 +8,7 @@ import { Button, EmptyState } from '../components/ui'
 import { findRouteByPathname } from '../app/router/routes'
 import { useFixtureState } from '../app/fixtures/useFixture'
 import { BUDDY_EMPTY_COPY, BUDDY_FEATURE_INTRO, BUDDY_INVITE_ENTRIES } from '../app/fixtures'
-import { applyBuddyPreset, useBuddies, type BuddyListPreset } from '../app/state/buddies'
+import { applyBuddyPreset, ensureBuddyDefaultPreset, useBuddies, type BuddyListPreset } from '../app/state/buddies'
 import buddyEmptyHero from '../assets/brand/buddy/buddy-empty-hero-v2.webp'
 import buddyAvatarXiaomei from '../assets/brand/buddy/buddy-avatar-xiaomei.webp'
 
@@ -16,12 +16,14 @@ import buddyAvatarXiaomei from '../assets/brand/buddy/buddy-avatar-xiaomei.webp'
  * 洗头搭子（摹客 #27 空态 / #28 有态）
  * -------------------------------------------------------------
  * - 空态与有态共用同一业务模型（搭子集合 + 说明卡 + 两个邀请入口），只在列表区切换视觉；
+ * - 2026-08-28 用户确认：无 `?state=` 的默认访问约 50% 空态 / 50% 单搭子态；
+ *   明确 `?state=empty|list|multi` 仍是确定性验收入口，不受随机默认态影响；
  * - ⚠️ 说明卡第三行「默契升级」是 #27/#28 的原型文案，此处只渲染文字，
  *   不提供任何默契值入口、数值或进度视觉（#31 先不做，B-006 / T014）；
  * - ⚠️ 不引入历史 T07 稿的 4 人 mock 与 98/86/72/55 默契值。
  */
 
-/** `?state=` → 共享状态档位；URL 有 state 时以 URL 为准，否则沿用共享状态（供 #36 接受邀请后回看） */
+/** `?state=` → 共享状态档位；URL 有 state 时以 URL 为准，否则初始化一次 50/50 默认态 */
 const STATE_PRESETS: Record<string, BuddyListPreset> = {
   empty: 'empty',
   list: 'single',
@@ -46,11 +48,14 @@ export default function Buddy() {
   const [searchParams] = useSearchParams()
   const { items, count } = useBuddies()
 
-  /** 夹具档位只在 URL 声明时生效，保证 `?state=` 可直达可复现 */
+  /** 显式 fixture 优先；无 fixture 时仅在本次会话第一次进入时抽一次 50/50 默认态。 */
   useEffect(() => {
     const preset = raw == null ? undefined : STATE_PRESETS[raw]
-    if (!preset) return
-    applyBuddyPreset(preset)
+    if (preset) {
+      applyBuddyPreset(preset)
+      return
+    }
+    ensureBuddyDefaultPreset()
   }, [raw])
 
   const keepDebug = searchParams.get('debug') === '1' ? '?debug=1' : ''
