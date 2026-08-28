@@ -33,6 +33,7 @@ type Tile = {
 
 const tiles: Tile[] = [
   { icon: Ticket, name: '卡券兑换', from: '#FFF8E6', deep: '#F4DFA9', color: '#B5793B', to: '/redeem' },
+  { icon: Crown, name: '会员中心', from: '#FFF4CF', deep: '#E8C361', color: '#8A5A10', to: '/membership' },
   { icon: ClipboardList, name: '订单管理', from: '#FFF3EB', deep: '#FFD3C0', color: '#D63D10', to: '/orders' },
   { icon: MapPin, name: '地址管理', from: '#FFF8E6', deep: '#F3DFA9', color: '#9A6110', to: '/address' },
   { icon: UserRoundPlus, name: '绑定搭子', from: '#EFFCFE', deep: '#CDEFF5', color: '#0E9FB3', to: '/buddy' },
@@ -150,50 +151,50 @@ export default function Profile() {
           <span className="text-[10px] tracking-[0.12em] text-[#9A8060]">常用功能</span>
         </header>
         <div className="grid grid-cols-6 grid-rows-[52px_52px_58px] gap-2">
-          {tiles.map((tile, index) => (
-            <button
-              key={tile.name}
-              type="button"
-              onClick={() => (tile.appOnly ? openAppPrompt() : navigate(tile.to as string))}
-              aria-haspopup={tile.appOnly ? 'dialog' : undefined}
-              className={`group relative overflow-hidden border border-white/75 text-left shadow-[0_3px_10px_rgba(130,86,28,0.07)] transition active:scale-[0.98] ${
-                index === 0
-                  ? 'col-span-3 row-span-2 flex flex-col items-start justify-end rounded-[18px] px-3.5 py-3'
-                  : index < 3
-                    ? 'col-span-3 flex items-center gap-2.5 rounded-[15px] px-3'
-                    : 'col-span-2 flex flex-col items-center justify-center gap-1 rounded-[15px] px-1'
-              }`}
-              style={{
-                background:
-                  index === 0
-                    ? 'linear-gradient(145deg, #FFF5D6 0%, #F4D57E 100%)'
-                    : `linear-gradient(145deg, ${tile.from} 0%, ${tile.deep} 100%)`,
-                color: tile.color,
-              }}
-            >
-              {index === 0 ? (
-                <>
-                  <span className="absolute -right-3 -top-4 h-16 w-16 rounded-full border border-white/50 bg-white/20" aria-hidden />
-                  <span className="absolute right-7 top-3 h-2.5 w-2.5 rounded-full border border-[#B5793B]/20 bg-white/45" aria-hidden />
-                  <tile.icon className="absolute left-3.5 top-3.5 h-7 w-7" strokeWidth={1.9} />
-                  <span className="text-[13px] font-semibold text-[#5B3E15]">{tile.name}</span>
-                  <span className="mt-0.5 text-[10px] text-[#76572E]">输入兑换码兑券</span>
-                  <ChevronRight className="absolute bottom-3 right-3 h-4 w-4 text-[#9C6C25] transition-transform group-active:translate-x-0.5" aria-hidden />
-                </>
-              ) : index < 3 ? (
-                <>
-                  <tile.icon className="h-5 w-5 flex-none" strokeWidth={2} />
-                  <span className="min-w-0 flex-1 whitespace-nowrap text-[12px] font-medium text-text-primary">{tile.name}</span>
-                  <ChevronRight className="h-3.5 w-3.5 flex-none opacity-55 transition-transform group-active:translate-x-0.5" aria-hidden />
-                </>
-              ) : (
-                <>
-                  <tile.icon className="h-[19px] w-[19px]" strokeWidth={2} />
-                  <span className="whitespace-nowrap text-[11px] font-medium text-text-primary">{tile.name}</span>
-                </>
-              )}
-            </button>
-          ))}
+          {tiles.map((tile, index) => {
+            const isPrimaryRow = index < 4
+            const placement =
+              index === 0
+                ? 'col-span-3 col-start-1 row-start-1'
+                : index === 1
+                  ? 'col-span-3 col-start-1 row-start-2'
+                  : index === 2
+                    ? 'col-span-3 col-start-4 row-start-1'
+                    : index === 3
+                      ? 'col-span-3 col-start-4 row-start-2'
+                      : 'col-span-2 row-start-3'
+
+            return (
+              <button
+                key={tile.name}
+                type="button"
+                onClick={() => (tile.appOnly ? openAppPrompt() : navigate(tile.to as string))}
+                aria-haspopup={tile.appOnly ? 'dialog' : undefined}
+                className={`group relative overflow-hidden border border-white/75 text-left shadow-[0_3px_10px_rgba(130,86,28,0.07)] transition active:scale-[0.98] ${placement} ${
+                  isPrimaryRow
+                    ? 'flex items-center gap-2.5 rounded-[15px] px-3'
+                    : 'flex flex-col items-center justify-center gap-1 rounded-[15px] px-1'
+                }`}
+                style={{
+                  background: `linear-gradient(145deg, ${tile.from} 0%, ${tile.deep} 100%)`,
+                  color: tile.color,
+                }}
+              >
+                {isPrimaryRow ? (
+                  <>
+                    <tile.icon className="h-5 w-5 flex-none" strokeWidth={2} />
+                    <span className="min-w-0 flex-1 whitespace-nowrap text-[12px] font-medium text-text-primary">{tile.name}</span>
+                    <ChevronRight className="h-3.5 w-3.5 flex-none opacity-55 transition-transform group-active:translate-x-0.5" aria-hidden />
+                  </>
+                ) : (
+                  <>
+                    <tile.icon className="h-[19px] w-[19px]" strokeWidth={2} />
+                    <span className="whitespace-nowrap text-[11px] font-medium text-text-primary">{tile.name}</span>
+                  </>
+                )}
+              </button>
+            )
+          })}
         </div>
       </section>
 
