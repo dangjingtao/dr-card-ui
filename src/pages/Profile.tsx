@@ -44,7 +44,6 @@ const tiles: Tile[] = [
 const stats = [
   { name: '卡包', value: '1', to: '/card', hint: '查看卡包' },
   { name: '泡泡值', value: '1,280', to: '/points', hint: '查看泡泡值明细' },
-  { name: '专属权益', value: '9', to: '/mall', hint: '查看卡博士商城' },
 ]
 
 const hotGoods = [
@@ -150,7 +149,6 @@ export default function Profile() {
           </h3>
           <span className="text-[10px] tracking-[0.12em] text-[#9A8060]">常用功能</span>
         </header>
-        {/* 2026-08-28：保留 2+2+3 信息结构，仅增加约 15% 纵向空间，避免入口被压成列表条。 */}
         <div className="grid grid-cols-6 grid-rows-[60px_60px_66px] gap-2.5">
           {tiles.map((tile, index) => {
             const isPrimaryRow = index < 4
