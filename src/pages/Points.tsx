@@ -10,7 +10,6 @@ import {
   Sparkles,
   UserPlus,
   Video,
-  Waves,
   type LucideIcon,
 } from 'lucide-react'
 import DebugPanel from '../components/mobile/DebugPanel'
@@ -28,6 +27,7 @@ import {
 } from '../app/fixtures'
 import pointsBenefitCheckin from '../assets/brand/bubble/points-benefit-checkin.webp'
 import pointsBenefitHero from '../assets/brand/bubble/points-benefit-hero-v2.webp'
+import pointsBenefitLuck from '../assets/brand/bubble/points-benefit-luck.svg'
 import pointsBenefitVoucher from '../assets/brand/bubble/points-benefit-voucher.webp'
 
 /**
@@ -43,6 +43,7 @@ import pointsBenefitVoucher from '../assets/brand/bubble/points-benefit-voucher.
  *              资产卡「看明细」跳转独立明细页 /points/detail；
  *    §4.3 澡运入口保持金色卡片风格，且入口与目标页均为占位（LUCK_PLACEHOLDER）；
  *    §4.4 底部主按钮文案改为「泡泡值兑换」，样式、位置与跳转逻辑保持不变。
+ * 2026-08-28：澡运入口补独立金色图标物料，不再使用通用 Waves 线框图标。
  */
 
 /** 占位任务与图标的对应关系；任务语义沿用流水夹具中的同名条目 */
@@ -214,14 +215,10 @@ export default function Points() {
             <span className="mt-0.5 block whitespace-nowrap text-[11px] text-bubble-muted">打卡赚泡泡</span>
           </button>
 
-          {/* 需求 §4.3：澡运沿用金色插画风格，但入口副标题直接标注占位，不暗示玩法已定稿。
-              品牌素材里澡运只有整页蓝色 Hero，不适合当 56px 图标，因此用金色圆底 + Waves 图标。 */}
+          {/* 2026-08-28：澡运补独立金色图标物料，保持与两侧福利插画同级，不再用通用线框 icon。 */}
           <button type="button" onClick={() => navigate('/luck')} className={BENEFIT_CARD_CLASS}>
-            <span
-              className="flex h-14 w-14 items-center justify-center rounded-full border border-[#eec77e] bg-[linear-gradient(140deg,#fff4dc,#f3d59b)] text-[#a96f16] shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]"
-              aria-hidden
-            >
-              <Waves className="h-7 w-7" strokeWidth={1.8} />
+            <span className="flex h-14 w-14 items-center justify-center" aria-hidden>
+              <img src={pointsBenefitLuck} alt="" className="h-[64px] w-[64px] max-w-none object-contain" />
             </span>
             <span className="mt-1 block whitespace-nowrap text-[13px] font-semibold text-bubble-text">澡运</span>
             <span className="mt-0.5 block whitespace-nowrap text-[11px] text-bubble-muted">
