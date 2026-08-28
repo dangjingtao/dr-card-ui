@@ -13,9 +13,8 @@ import { CircleDot, Headset, Home, QrCode, UserRound } from 'lucide-react'
  *   Tab 结构为可靠参考，主入口为 APP 首页）。
  * - 根路由 `/` = APP 首页；`/dearseed` = 独立的诗得丽专栏。
  * - H5 商城（#17/#48/#49）承载为 WebView 边界页。
- * - T023（2026-08-27 用户确认）：底部 Tab「服务」与原会员中心各入口统一改指 `/mall`
- *   商城占位页；`/membership` 本身不再展示会员中心内容，直达重定向到 `/mall`，旧实现
- *   保留在 `src/pages/Membership.tsx` 与既有截图中作为变更前证据，不再作为公开路由页面。
+ * - 2026-08-28 用户确认：底部 Tab `/mall` 文案由「服务」改为「商城」；会员中心重新作为
+ *   「我的 → 快捷服务」入口开放，`/membership` 恢复挂载既有会员中心页面，不新建页面。
  * - T021（2026-08-27 需求变更 §2）：根路由 `/` 由「卡博士 APP 首页」改为「诗得丽品牌专栏」
  *   首页，删除金刚区并迁入 `/checkin` 打卡内容；`/dearseed` 仍保留为已验收的独立专栏页，
  *   不修改 T005 历史结论。`/` 新增的新人体验券状态与弹层是需求新增内容，摹客原型无对应
@@ -221,7 +220,7 @@ export const ROUTES: RouteMeta[] = [
     task: 'T005',
     entry: '诗得丽专栏-「品牌文化」',
     returnTo: '诗得丽专栏首页',
-    owner: '品牌文化长页（T005 施工；用户定案只铺原型长图、无浮动 CTA，B-001 已关闭）',
+    owner: '品牌文化长页（T005 施工；用户定案只铺原型长图、无浮动 CTA，B-001 关闭）',
   },
 
   /* ────────────────────────── T006 会员、泡泡值、打卡与澡运 ────────────────────────── */
@@ -255,21 +254,21 @@ export const ROUTES: RouteMeta[] = [
   },
   {
     path: '/membership',
-    title: '卡博士商城',
+    title: '会员中心',
+    titleBarTitle: '会员中心',
     nodes: [6],
     task: 'T006',
-    redirectTo: '/mall',
-    entry: '（T023 起不再作为会员中心页面，直达一律重定向到 /mall 商城占位页）',
-    returnTo: '诗得丽专栏首页',
-    owner: '原会员中心路径（T023 起重定向到 /mall；旧实现保留在 src/pages/Membership.tsx 作为变更前证据，不再挂载）',
+    entry: '我的-快捷服务「会员中心」',
+    returnTo: '我的',
+    owner: '会员中心（既有 T006 页面；2026-08-28 恢复入口，不新增页面）',
   },
   {
     path: '/membership/levels',
     title: '会员等级',
     nodes: [26],
     task: 'T006',
-    entry: '诗得丽专栏-会员卡「查看等级」（T023 起原会员中心不再可达，此为唯一在线入口）',
-    returnTo: '诗得丽专栏首页',
+    entry: '会员中心-「查看等级」',
+    returnTo: '会员中心',
     owner: '会员等级展示稿（T006 施工）',
   },
   {
@@ -413,13 +412,13 @@ export const ROUTES: RouteMeta[] = [
     path: '/mall',
     tab: true,
     tabOrder: 4,
-    label: '服务',
+    label: '商城',
     icon: Headset,
     title: '卡博士商城',
     nodes: [17],
     task: 'T008',
     boundary: 'webview',
-    entry: '底部 Tab「服务」；首页头像；诗得丽专栏-「会员空间」/ 会员卡片；我的-「专属权益」；体验券使用弹窗-商品信息',
+    entry: '底部 Tab「商城」；首页头像；诗得丽专栏-「会员空间」/ 会员卡片；我的-「专属权益」；体验券使用弹窗-商品信息',
     returnTo: '诗得丽专栏首页',
     states: [
       { key: 'loading', node: 17, label: 'H5 加载中' },
