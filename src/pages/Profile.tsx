@@ -143,14 +143,15 @@ export default function Profile() {
       </section>
 
       <section className="relative z-10 mx-4 mt-3" aria-labelledby="profile-services-title">
-        <header className="mb-1.5 flex items-center justify-between px-1">
+        <header className="mb-2 flex items-center justify-between px-1">
           <h3 id="profile-services-title" className="flex items-center gap-2 text-[13px] font-semibold text-text-primary">
             <span className="h-3.5 w-1 rounded-full bg-[#D6A43A]" aria-hidden />
             快捷服务
           </h3>
           <span className="text-[10px] tracking-[0.12em] text-[#9A8060]">常用功能</span>
         </header>
-        <div className="grid grid-cols-6 grid-rows-[52px_52px_58px] gap-2">
+        {/* 2026-08-28：保留 2+2+3 信息结构，仅增加约 15% 纵向空间，避免入口被压成列表条。 */}
+        <div className="grid grid-cols-6 grid-rows-[60px_60px_66px] gap-2.5">
           {tiles.map((tile, index) => {
             const isPrimaryRow = index < 4
             const placement =
@@ -172,8 +173,8 @@ export default function Profile() {
                 aria-haspopup={tile.appOnly ? 'dialog' : undefined}
                 className={`group relative overflow-hidden border border-white/75 text-left shadow-[0_3px_10px_rgba(130,86,28,0.07)] transition active:scale-[0.98] ${placement} ${
                   isPrimaryRow
-                    ? 'flex items-center gap-2.5 rounded-[15px] px-3'
-                    : 'flex flex-col items-center justify-center gap-1 rounded-[15px] px-1'
+                    ? 'flex items-center gap-3 rounded-[16px] px-3.5'
+                    : 'flex flex-col items-center justify-center gap-1.5 rounded-[16px] px-1'
                 }`}
                 style={{
                   background: `linear-gradient(145deg, ${tile.from} 0%, ${tile.deep} 100%)`,
@@ -182,13 +183,13 @@ export default function Profile() {
               >
                 {isPrimaryRow ? (
                   <>
-                    <tile.icon className="h-5 w-5 flex-none" strokeWidth={2} />
-                    <span className="min-w-0 flex-1 whitespace-nowrap text-[12px] font-medium text-text-primary">{tile.name}</span>
-                    <ChevronRight className="h-3.5 w-3.5 flex-none opacity-55 transition-transform group-active:translate-x-0.5" aria-hidden />
+                    <tile.icon className="h-[22px] w-[22px] flex-none" strokeWidth={1.95} />
+                    <span className="min-w-0 flex-1 whitespace-nowrap text-[13px] font-medium text-text-primary">{tile.name}</span>
+                    <ChevronRight className="h-4 w-4 flex-none opacity-55 transition-transform group-active:translate-x-0.5" aria-hidden />
                   </>
                 ) : (
                   <>
-                    <tile.icon className="h-[19px] w-[19px]" strokeWidth={2} />
+                    <tile.icon className="h-5 w-5" strokeWidth={1.95} />
                     <span className="whitespace-nowrap text-[11px] font-medium text-text-primary">{tile.name}</span>
                   </>
                 )}
