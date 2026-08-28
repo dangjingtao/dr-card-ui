@@ -3,15 +3,11 @@ import { ArrowUpRight, CalendarDays, Check, CheckCircle2, ChevronRight, Gift, Li
 import { Button, ProgressIndicator } from '../ui'
 import {
   CHECKIN_CALENDAR,
-  CHECKIN_CYCLE_LABEL,
   CHECKIN_DAILY_TASK,
-  CHECKIN_FIRST_WEEKDAY,
   CHECKIN_PICKS,
-  CHECKIN_REWARDS,
   CHECKIN_RULE_STATUS,
   CHECKIN_STATUS_TEXT,
   CHECKIN_STREAK,
-  CHECKIN_WEEK_LABELS,
   type CheckinDay,
 } from '../../app/fixtures'
 import checkinRitualHero from '../../assets/brand/bubble/checkin-ritual-hero-v2.webp'
@@ -19,27 +15,21 @@ import pickShampooA from '../../assets/brand/exchange/exchange-pick-shampoo-a.we
 import pickShampooB from '../../assets/brand/exchange/exchange-pick-shampoo-b.webp'
 
 const pickAssets = [pickShampooA, pickShampooB] as const
+const CHECKIN_CYCLE_TARGET = 7
+const CHECKIN_CYCLE_WEEK_LABELS = ['一', '二', '三', '四', '五', '六', '日'] as const
 
 /**
- * 奖励轨道填充比例：按「已达成的最后一个节点 + 相邻节点之间的天数插值」派生。
- * 只用 CHECKIN_STREAK 与 CHECKIN_REWARDS 的既有天数，不引入任何未确认规则或奖励数值。
+ * 7 天签到只重组既有确定性日历夹具，不另造签到事实。
+ * 当前 fixture 的「今天」始终被放在本轮 7 天内；连续天数超过 7 天时只展示最近 7 天。
  */
-function getRewardRailPercent() {
-  const total = CHECKIN_REWARDS.length
-  if (total < 2) return CHECKIN_STREAK >= (CHECKIN_REWARDS[0]?.days ?? 0) ? 100 : 0
+function getCheckinCycleDays(): CheckinDay[] {
+  const todayIndex = CHECKIN_CALENDAR.findIndex((item) => item.state === 'today')
+  if (todayIndex < 0) return CHECKIN_CALENDAR.slice(0, CHECKIN_CYCLE_TARGET)
 
-  let reached = -1
-  CHECKIN_REWARDS.forEach((reward, index) => {
-    if (CHECKIN_STREAK >= reward.days) reached = index
-  })
-  if (reached === total - 1) return 100
-
-  const from = reached >= 0 ? CHECKIN_REWARDS[reached].days : 0
-  const to = CHECKIN_REWARDS[reached + 1].days
-  const span = to - from
-  const inner = span > 0 ? (CHECKIN_STREAK - from) / span : 0
-  const ratio = (reached + Math.min(1, Math.max(0, inner))) / (total - 1)
-  return Math.min(100, Math.max(0, ratio * 100))
+  const maxStart = Math.max(0, CHECKIN_CALENDAR.length - CHECKIN_CYCLE_TARGET)
+  const todayOffset = Math.min(Math.max(CHECKIN_STREAK - 1, 0), CHECKIN_CYCLE_TARGET - 1)
+  const startIndex = Math.min(Math.max(todayIndex - todayOffset, 0), maxStart)
+  return CHECKIN_CALENDAR.slice(startIndex, startIndex + CHECKIN_CYCLE_TARGET)
 }
 
 /** 是日任务进度条比例：解析夹具里既有的「1 / 1」文案，不额外引入进度字段。 */
@@ -52,25 +42,28 @@ const CHECKIN_DAILY_TASK_PERCENT = (() => {
 export interface CheckinBoardProps {
   /** 打卡成功态（#8）：精选模块换成「查看完整签到状态」 */
   isSuccess?: boolean
-  /** 点击月历「补签」：由宿主页面决定打开哪个补打卡成功弹窗 */
+  /** 点击 7 天进度中的「补签」：由宿主页面决定打开哪个补打卡成功弹窗 */
   onMakeup: () => void
   /** `?debug=1` 时追加未决规则说明 */
   debug?: boolean
 }
 
 /**
- * 打卡业务内容（今日签到状态 / 当月签到日历 / 是日任务 / 为你精选）
+ * 打卡业务内容（今日签到状态 / 7 天签到挑战 / 是日任务 / 为你精选）
  * -------------------------------------------------------------
- * 事实源与视觉口径完全沿用 T006 已验收的 /checkin，本组件只做「内容抽取」：
+ * 2026-08-28 用户确认：签到周期改为 7 天；签到进度去掉「卡片套卡片」，强化连续完成感。
+ * 本组件继续只负责业务内容：
  * - 不含页面标题栏、返回栏、底部导航与 PageContainer，宿主页面自备唯一外壳；
  * - 不含 reminder / make-up-success 弹窗，弹窗仍由宿主页面按自己的 `?overlay=` 登记持有；
+ * - 7 天周期由既有 CHECKIN_CALENDAR + CHECKIN_STREAK 派生，不新增奖励数值与结算规则；
  * - section 自管 `mx-4`，宿主需用 `inset={false}` 的 PageContainer 承载。
- * T021 起被 /checkin 与诗得丽品牌专栏首页 `/` 共同复用，避免出现两套打卡实现。
  */
 export default function CheckinBoard({ isSuccess = false, onMakeup, debug = false }: CheckinBoardProps) {
   const navigate = useNavigate()
-  const completedDays = CHECKIN_CALENDAR.filter((item) => item.state === 'done' || item.state === 'today').length
-  const rewardRailPercent = getRewardRailPercent()
+  const cycleDays = getCheckinCycleDays()
+  const completedDays = cycleDays.filter((item) => item.state === 'done' || item.state === 'today').length
+  const remainingDays = Math.max(0, CHECKIN_CYCLE_TARGET - completedDays)
+  const challengeComplete = remainingDays === 0
 
   return (
     <>
@@ -93,99 +86,72 @@ export default function CheckinBoard({ isSuccess = false, onMakeup, debug = fals
             <CheckCircle2 className="h-6 w-6" strokeWidth={2.4} aria-hidden />
             {CHECKIN_STATUS_TEXT}
           </p>
-          <p className="mt-1 text-[11px] text-bubble-on-gold-muted">{CHECKIN_CYCLE_LABEL}</p>
+          <p className="mt-1 text-[11px] font-medium text-bubble-on-gold-muted">7 天签到挑战</p>
           <div className="mt-3.5 flex items-end gap-2.5">
-            <span className="text-[40px] font-semibold leading-none tracking-tight text-bubble-on-gold">{String(CHECKIN_STREAK).padStart(2, '0')}</span>
-            <span className="mb-0.5 border-l border-bubble-on-gold-muted/25 pl-2.5 text-xs leading-[18px] text-bubble-on-gold-muted">当前周期<br />连续签到天数</span>
+            <span className="text-[40px] font-semibold leading-none tracking-tight text-bubble-on-gold">{String(completedDays).padStart(2, '0')}</span>
+            <span className="mb-0.5 border-l border-bubble-on-gold-muted/25 pl-2.5 text-xs leading-[18px] text-bubble-on-gold-muted">本轮已点亮<br />目标 07 天</span>
           </div>
         </div>
       </section>
 
-      <section className="relative mx-4 mt-4 overflow-hidden rounded-feature bg-surface p-4 shadow-bubble" aria-label="当月签到日历">
+      <section className="relative mx-4 mt-4 overflow-hidden rounded-feature bg-surface px-4 pb-4 pt-4 shadow-bubble" aria-label="7 天签到挑战">
         <span aria-hidden className="absolute -right-5 -top-7 h-24 w-24 rounded-full bg-reward-subtle/70" />
-        <header className="mb-4 flex items-center justify-between">
-          <div className="relative flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-app-icon bg-secondary text-text-brand">
+        <header className="relative flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="flex h-9 w-9 flex-none items-center justify-center rounded-app-icon bg-secondary text-text-brand">
               <CalendarDays className="h-5 w-5" aria-hidden />
             </span>
-            <div>
-              <h2 className="text-base font-bold text-text-primary">2026 年 6 月</h2>
-              <p className="mt-0.5 text-[11px] text-text-tertiary">本周期签到日历</p>
+            <div className="min-w-0">
+              <h2 className="text-base font-bold text-text-primary">7 天签到挑战</h2>
+              <p className="mt-0.5 text-[11px] text-text-tertiary">连续点亮，完成本轮</p>
             </div>
           </div>
-          <span className="relative rounded-pill bg-reward-subtle px-2.5 py-1 text-[10px] font-semibold text-reward-text">已点亮 {completedDays} 天</span>
+          <span className="flex-none rounded-pill bg-reward-subtle px-2.5 py-1 text-[11px] font-bold text-reward-text">
+            {completedDays} / {CHECKIN_CYCLE_TARGET}
+          </span>
         </header>
 
-        <div className="grid grid-cols-7 gap-1">
-          {CHECKIN_WEEK_LABELS.map((label) => (
-            <span key={label} className="pb-1 text-center text-[11px] font-medium text-text-tertiary">
-              {label}
+        <div className="relative mt-4">
+          <ProgressIndicator
+            value={completedDays}
+            max={CHECKIN_CYCLE_TARGET}
+            label={`7 天签到挑战进度 ${completedDays} / ${CHECKIN_CYCLE_TARGET}`}
+            className="[&>div]:h-2 [&>div]:bg-surface-subtle [&>div>div]:bg-[image:var(--gradient-bubble)]"
+          />
+          <div className="mt-2 flex items-center justify-between text-[11px]">
+            <span className="font-medium text-text-secondary">本轮进度</span>
+            <span className="font-semibold text-reward-text">
+              {challengeComplete ? '本轮已完成' : `再签到 ${remainingDays} 天`}
             </span>
-          ))}
-          {Array.from({ length: CHECKIN_FIRST_WEEKDAY }, (_, index) => (
-            <span key={`blank-${index}`} aria-hidden />
-          ))}
-          {CHECKIN_CALENDAR.map((item) => (
-            <CalendarCell key={item.day} item={item} onMakeup={onMakeup} />
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-7 gap-1">
+          {cycleDays.map((item, index) => (
+            <div key={item.day} className="min-w-0">
+              <span className="mb-1 block text-center text-[10px] font-medium text-text-tertiary">
+                {CHECKIN_CYCLE_WEEK_LABELS[index]}
+              </span>
+              <CalendarCell item={item} onMakeup={onMakeup} />
+            </div>
           ))}
         </div>
 
-        <div className="relative mt-5 overflow-hidden rounded-feature bg-reward-subtle p-3.5">
-          <span aria-hidden className="absolute -bottom-9 -right-7 h-24 w-24 rounded-full bg-reward/15 blur-xl" />
-          <div className="relative mb-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-reward text-text-inverse" aria-hidden>
-                <Gift className="h-3.5 w-3.5" />
-              </span>
-              <h3 className="text-sm font-semibold text-text-primary">连续签到奖励</h3>
-            </div>
-            <span className="rounded-pill bg-surface/85 px-2 py-0.5 text-[10px] font-semibold text-reward-text">下一节点 10 天</span>
+        <div className="relative mt-4 flex items-center gap-3 border-t border-border-subtle pt-4">
+          <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-reward-subtle text-reward-strong" aria-hidden>
+            {challengeComplete ? <Check className="h-4 w-4" strokeWidth={3} /> : <Gift className="h-4 w-4" />}
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-text-primary">
+              {challengeComplete ? '7 天挑战完成' : `还差 ${remainingDays} 天，继续点亮`}
+            </p>
+            <p className="mt-0.5 text-[11px] leading-4 text-text-tertiary">
+              {challengeComplete ? '本轮连续签到已达成' : '完成 7 日挑战即可解锁连续签到奖励'}
+            </p>
           </div>
-
-          <div className="relative">
-            <ProgressIndicator
-              value={rewardRailPercent}
-              label="连续签到奖励进度"
-              className="absolute left-[18px] right-[18px] top-[18px] -translate-y-1/2 [&>div]:h-1.5 [&>div]:bg-surface [&>div>div]:bg-reward"
-            />
-            <ul className="relative grid grid-cols-2 gap-8">
-              {CHECKIN_REWARDS.map((reward, index) => {
-                const achieved = CHECKIN_STREAK >= reward.days
-                const isLast = index === CHECKIN_REWARDS.length - 1
-
-                return (
-                  <li key={reward.days} className={`relative ${isLast ? 'text-right' : 'text-left'}`}>
-                    <span
-                      className={`flex h-9 w-9 items-center justify-center rounded-full ${isLast ? 'ml-auto' : ''} ${
-                        achieved
-                          ? 'bg-reward text-text-inverse shadow-[0_4px_10px_rgba(191,142,58,0.35)]'
-                          : 'border-[3px] border-surface bg-reward-subtle text-reward-strong'
-                      }`}
-                      aria-hidden
-                    >
-                      {achieved ? <Check className="h-4 w-4" strokeWidth={3} /> : <Gift className="h-3.5 w-3.5" />}
-                    </span>
-                    <span className="mt-2 block text-[11px] leading-4 text-text-tertiary">连续签到</span>
-                    <span className="block text-lg font-bold leading-6 text-text-primary">{reward.days} 天</span>
-                    {reward.bubble != null ? (
-                      <span
-                        className={`mt-1 inline-flex items-center rounded-pill px-2 py-0.5 text-xs font-bold leading-4 ${
-                          achieved ? 'bg-reward text-text-inverse' : 'bg-surface text-bubble-text'
-                        }`}
-                      >
-                        +{reward.bubble}🫧
-                      </span>
-                    ) : (
-                      /* 原型只写「连续 10 天等」，未给数值，不自行补值 */
-                      <span className="mt-1 inline-flex items-center rounded-pill bg-surface/85 px-2 py-0.5 text-xs leading-4 text-text-tertiary">
-                        奖励待定
-                      </span>
-                    )}
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
+          <span className="flex-none text-[10px] font-semibold text-reward-text">
+            {challengeComplete ? '已达成' : '冲刺中'}
+          </span>
         </div>
       </section>
 
@@ -300,8 +266,7 @@ export default function CheckinBoard({ isSuccess = false, onMakeup, debug = fals
 
       {debug && (
         <p className="mx-4 mt-4 text-xs leading-5 text-text-tertiary">
-          夹具态：{CHECKIN_RULE_STATUS.monthSwitch.note}
-          {CHECKIN_RULE_STATUS.makeup.note}
+          夹具态：{CHECKIN_RULE_STATUS.makeup.note}
         </p>
       )}
     </>
