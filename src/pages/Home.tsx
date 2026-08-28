@@ -13,7 +13,6 @@ import {
   COLUMN_HOME_SECTIONS,
   HOME_BANNER_CAROUSEL,
   NEWCOMER_COUPON_RULE_STATUS,
-  NEWCOMER_COUPON_SUCCESS,
   NEWCOMER_COUPON_VARIANTS,
 } from '../app/fixtures'
 import avatar from '../assets/brand/home/home-avatar.webp'
@@ -41,8 +40,8 @@ type CouponVariantKey = keyof typeof NEWCOMER_COUPON_VARIANTS
  *        公益板块 → 卡博士品牌故事 → 底部导航保持固定。
  * §2.3：打卡内容以共享组件 `CheckinBoard` 迁入，**不**重复迁入 /checkin 的标题栏、返回按钮与
  *        底部导航，避免首页出现两套页面外壳；公益板块与品牌故事随页面正常滚动，不吸底不悬浮。
- * §3：新用户弹窗随机展示 1 张或 2 张体验券及对应商品内容；确定 → 先出领取成功 → 进入体验券
- *        页面（用户定案 `/exchange`）；关闭 → 不领取，停留 `/`。
+ * §3：新用户弹窗随机展示 1 张或 2 张体验券及对应商品内容；2026-08-28 用户确认，无论 1 张
+ *        还是 2 张，点击「确定」后统一进入「我的卡包」(`/card`)；关闭 → 不领取，停留 `/`。
  *
  * 实现约束：
  * - 页面标题由 MobileLayout 依 routes.ts 统一提供，本页不自造标题栏（§2.3）。
@@ -195,13 +194,14 @@ export default function Home() {
         coupons={NEWCOMER_COUPON_VARIANTS[variantKey]}
         onConfirm={() => {
           setAutoNewcomer(false)
-          open('coupon-success')
+          close()
+          navigate('/card')
         }}
         onDismiss={() => {
           setAutoNewcomer(false)
           close()
         }}
-        onSuccessAction={() => navigate(NEWCOMER_COUPON_SUCCESS.actionTo)}
+        onSuccessAction={() => navigate('/card')}
       />
 
       <CheckinMakeupSuccessOverlay open={overlay === 'make-up-success'} onDismiss={close} debug={debug} />
