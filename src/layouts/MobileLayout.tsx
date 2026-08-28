@@ -4,6 +4,7 @@ import BottomNav from '../components/mobile/BottomNav'
 import StatusBar from '../components/mobile/StatusBar'
 import TitleBar from '../components/mobile/TitleBar'
 import { findRouteByPathname, isTabPath } from '../app/router/routes'
+import { useNotifications } from '../app/state/notifications'
 
 /**
  * 移动应用壳层（T004）
@@ -15,30 +16,58 @@ import { findRouteByPathname, isTabPath } from '../app/router/routes'
 export default function MobileLayout() {
   const location = useLocation()
   const navigate = useNavigate()
+  const { unreadCount } = useNotifications()
   const showNav = isTabPath(location.pathname)
   const route = findRouteByPathname(location.pathname)
   const titleBarMode = route?.titleBar ?? 'back'
   const fallbackTitle = location.pathname === '/tokens' ? '品牌 Token 展示' : '页面不存在'
   const title = route?.titleBarTitle ?? route?.title ?? fallbackTitle
-  const titleAction = route?.titleBarAction === 'settings'
+  const isNotificationsPage = location.pathname === '/notifications'
+  const allNotificationsRead = unreadCount === 0
+
+  const openMarkAllRead = () => {
+    const params = new URLSearchParams(location.search)
+    params.set('overlay', 'clear')
+    navigate({ pathname: location.pathname, search: params.toString() })
+  }
+
+  const titleAction = isNotificationsPage
     ? (
-      <button type="button" aria-label="设置" onClick={() => navigate('/settings')} className="flex h-9 w-9 items-center justify-center rounded-full text-text-primary active:bg-[rgba(89,55,15,0.06)]">
-        <Settings className="h-[22px] w-[22px]" />
+      <button
+        type="button"
+        onClick={openMarkAllRead}
+        disabled={allNotificationsRead}
+        className="min-h-9 whitespace-nowrap rounded-control px-1.5 text-[13px] font-medium text-reward-strong transition active:bg-[rgba(89,55,15,0.06)] disabled:pointer-events-none disabled:text-text-disabled"
+      >
+        {allNotificationsRead ? '全部已读' : '一键已读'}
       </button>
     )
-    : route?.titleBarAction === 'notifications'
+    : route?.titleBarAction === 'settings'
       ? (
-        <button type="button" aria-label="通知" onClick={() => navigate('/notifications')} className="flex h-9 w-9 items-center justify-center rounded-full text-text-primary active:bg-[rgba(89,55,15,0.06)]">
-          <Bell className="h-[22px] w-[22px]" />
+        <button type="button" aria-label="设置" onClick={() => navigate('/settings')} className="flex h-9 w-9 items-center justify-center rounded-full text-text-primary active:bg-[rgba(89,55,15,0.06)]">
+          <Settings className="h-[22px] w-[22px]" />
         </button>
       )
-      : undefined
+      : route?.titleBarAction === 'notifications'
+        ? (
+          <button type="button" aria-label="通知" onClick={() => navigate('/notifications')} className="flex h-9 w-9 items-center justify-center rounded-full text-text-primary active:bg-[rgba(89,55,15,0.06)]">
+            <Bell className="h-[22px] w-[22px]" />
+          </button>
+        )
+        : undefined
 
   return (
     <div className="app-background flex h-dvh flex-col overflow-hidden pt-[env(safe-area-inset-top)] text-text-primary">
       <div className="shrink-0">
         <StatusBar />
-        {titleBarMode !== 'hidden' && <TitleBar title={title} back={titleBarMode === 'back'} action={titleAction} />}
+        {titleBarMode !== 'hidden' && (
+          <TitleBar
+            title={title}
+            back={titleBarMode === 'back'}
+            action={titleAction}
+            actionWide={isNotificationsPage}
+          />
+        )}
       </div>
       <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain" data-page-scroll>
         <Outlet />
