@@ -34,32 +34,8 @@ type CouponVariantKey = keyof typeof NEWCOMER_COUPON_VARIANTS
 /**
  * 诗得丽品牌专栏首页（原 APP 首页，T021 改造）
  * -------------------------------------------------------------
- * 事实源：docs/requirements/2026-08-27-ui-change-requirements.md §2 §3
- * 已确认（§2.2 自上而下）：页面标题「诗得丽品牌专栏」→ 顶部搜索栏与头像（保持原位原样）→
- *        现有 Banner → **删除金刚区**（不保留淋浴/洗烘/饮水/吹风）→ 完整承载打卡业务内容 →
- *        公益板块 → 卡博士品牌故事 → 底部导航保持固定。
- * §2.3：打卡内容以共享组件 `CheckinBoard` 迁入，**不**重复迁入 /checkin 的标题栏、返回按钮与
- *        底部导航，避免首页出现两套页面外壳；公益板块与品牌故事随页面正常滚动，不吸底不悬浮。
- * §3：新用户弹窗随机展示 1 张或 2 张体验券及对应商品内容；2026-08-28 用户确认，无论 1 张
- *        还是 2 张，点击「确定」后统一进入「我的卡包」(`/card`)；关闭 → 不领取，停留 `/`。
- *
- * 实现约束：
- * - 页面标题由 MobileLayout 依 routes.ts 统一提供，本页不自造标题栏（§2.3）。
- * - `CheckinBoard` 的 section 自管 `mx-4`，故 PageContainer 用 `inset={false}`，
- *   首屏各 section 自行补 `mx-4`，保证与打卡内容左右对齐。
- * - 用户定案「默认全是新用户」：挂载时若 URL 没有任何 `?overlay=`，即自动弹出新人体验券。
- *   该判断只在挂载时惰性求值一次，关闭后置为 false，避免与纯 URL 驱动的 `useOverlay()`
- *   相互覆盖（否则 `close()` 删参后会立刻再次弹出，形成死循环）。
- * - 随机券组合只在无 `?state=` 时发生（1 张 / 2 张概率 1:1，用户定案），且惰性求值一次，
- *   避免同一次访问内反复抖动；验收一律用 `?state=coupon-1` / `?state=coupon-2` 复现（夹具铁律）。
- * - `?newcomer=off` 抑制自动弹窗：仅供取证/回归脚本确定性地拿到首页无遮挡形态，
- *   不改变产品行为，真实访问不带此参数。
- *
- * ⚠️ 未决规则隔离在 fixtures 的 NEWCOMER_COUPON_RULE_STATUS：
- *    B-032 券池/库存/单人上限 / B-033 公益板块无原型视觉（已定案暂不跳转）。
- *    B-031 新用户口径已由用户定案「默认全是新用户」，仅跨会话频次待接口阶段确认。
- * 可复现状态：?state=coupon-1|coupon-2；?overlay=newcomer-coupon|coupon-success|make-up-success；
- *            ?newcomer=off 抑制自动弹窗
+ * 2026-08-28 追加确认：签到业务在首页仅保留紧凑 7 日入口，不再展示金色签到 Hero；
+ * 完整金色签到卡、30 天日历与补签入口统一收回 `/checkin` 内页。
  */
 export default function Home() {
   const navigate = useNavigate()
@@ -70,12 +46,10 @@ export default function Home() {
 
   const debug = searchParams.get('debug') === '1'
 
-  // 「默认全是新用户」：挂载时无任何 overlay 且未被 ?newcomer=off 抑制，则自动弹出。
   const [autoNewcomer, setAutoNewcomer] = useState(
     () => searchParams.get('newcomer') !== 'off' && !searchParams.get('overlay'),
   )
 
-  // 无 ?state= 时才在页面层随机选一个组合（1:1，B-032），惰性求值一次以保证同次访问稳定。
   const [randomVariant] = useState<CouponVariantKey>(() =>
     Math.random() < 0.5 ? 'coupon-1' : 'coupon-2',
   )
@@ -128,7 +102,7 @@ export default function Home() {
       </div>
 
       <div className="mt-4">
-        <CheckinBoard onMakeup={() => open('make-up-success')} debug={debug} />
+        <CheckinBoard mode="home" onMakeup={() => open('make-up-success')} debug={debug} />
       </div>
 
       <section className="mx-4 mt-7 space-y-3" aria-label="公益板块与品牌故事">
@@ -153,7 +127,6 @@ export default function Home() {
           )
           const shell = 'flex w-full items-center gap-3 rounded-feature bg-surface p-4 text-left shadow-bubble'
 
-          // 公益板块暂不实现跳转（B-033 已定案）：渲染为静态板块，不给可点击语义。
           if (!item.to) {
             return (
               <div key={item.key} className={shell}>
