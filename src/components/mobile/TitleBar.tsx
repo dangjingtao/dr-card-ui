@@ -8,13 +8,15 @@ export interface TitleBarProps {
   backLabel?: string
   onBack?: () => void
   action?: ReactNode
+  /** 文本型右侧动作需要更宽的对称槽位，保证标题仍然严格居中。 */
+  actionWide?: boolean
   className?: string
 }
 
 /**
  * 业务标题栏，样式以 reference 内已确认页面为准。
  * - 无返回：首页式居中标题，18/24。
- * - 有返回：44px 三列标题栏，左右 36px，17/22 居中标题。
+ * - 有返回：44px 三列标题栏；图标动作左右 36px，文本动作左右 72px，标题始终居中。
  * - 沉浸式页面（如扫码）由页面不渲染本组件。
  */
 export default function TitleBar({
@@ -23,9 +25,13 @@ export default function TitleBar({
   backLabel = '返回',
   onBack,
   action,
+  actionWide = false,
   className = '',
 }: TitleBarProps) {
   const navigate = useNavigate()
+  const gridColumns = actionWide
+    ? 'grid-cols-[72px_minmax(0,1fr)_72px]'
+    : 'grid-cols-[36px_minmax(0,1fr)_36px]'
 
   if (!back && !action) {
     return (
@@ -42,7 +48,7 @@ export default function TitleBar({
       className={`w-full bg-transparent ${className}`}
       data-title-bar={back ? 'back' : 'action'}
     >
-      <div className="mx-auto grid h-11 w-full max-w-[480px] grid-cols-[36px_minmax(0,1fr)_36px] items-center px-3">
+      <div className={`mx-auto grid h-11 w-full max-w-[480px] items-center px-3 ${gridColumns}`}>
         {back ? (
           <button
             type="button"
@@ -60,7 +66,9 @@ export default function TitleBar({
           {title}
         </h1>
 
-        <div className="flex h-9 w-9 items-center justify-center">{action}</div>
+        <div className={actionWide ? 'flex h-9 w-full items-center justify-end' : 'flex h-9 w-9 items-center justify-center'}>
+          {action}
+        </div>
       </div>
     </header>
   )
