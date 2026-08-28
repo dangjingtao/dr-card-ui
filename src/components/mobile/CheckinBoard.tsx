@@ -1,6 +1,7 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowUpRight, CalendarDays, Check, CheckCircle2, ChevronRight, Gift, ListTodo, Sparkles } from 'lucide-react'
-import { Button, ProgressIndicator } from '../ui'
+import { BottomSheet, Button, ProgressIndicator } from '../ui'
 import {
   CHECKIN_CALENDAR,
   CHECKIN_DAILY_TASK,
@@ -42,28 +43,38 @@ const CHECKIN_DAILY_TASK_PERCENT = (() => {
 export interface CheckinBoardProps {
   /** 打卡成功态（#8）：精选模块换成「查看完整签到状态」 */
   isSuccess?: boolean
-  /** 点击 7 天进度中的「补签」：由宿主页面决定打开哪个补打卡成功弹窗 */
+  /** 点击 7 天日历中的「补签」：由宿主页面决定打开哪个补打卡成功弹窗 */
   onMakeup: () => void
   /** `?debug=1` 时追加未决规则说明 */
   debug?: boolean
 }
 
 /**
- * 打卡业务内容（今日签到状态 / 7 天签到挑战 / 是日任务 / 为你精选）
+ * 打卡业务内容（今日签到状态 / 紧凑 7 日轨道 / Bottom Sheet 日历 / 是日任务 / 为你精选）
  * -------------------------------------------------------------
- * 2026-08-28 用户确认：签到周期改为 7 天；签到进度去掉「卡片套卡片」，强化连续完成感。
+ * 2026-08-28 用户确认：
+ * - 签到周期改为 7 天；
+ * - 首页不再让签到日历独占大块纵向空间；Hero 下仅保留紧凑 7 日轨道；
+ * - 点击轨道后用 Bottom Sheet 展开完整 7 天签到日历与补签入口，避免原地展开推挤后续内容。
+ *
  * 本组件继续只负责业务内容：
  * - 不含页面标题栏、返回栏、底部导航与 PageContainer，宿主页面自备唯一外壳；
- * - 不含 reminder / make-up-success 弹窗，弹窗仍由宿主页面按自己的 `?overlay=` 登记持有；
+ * - 不含 reminder / make-up-success 弹窗，补签反馈仍由宿主页面按自己的 `?overlay=` 登记持有；
  * - 7 天周期由既有 CHECKIN_CALENDAR + CHECKIN_STREAK 派生，不新增奖励数值与结算规则；
  * - section 自管 `mx-4`，宿主需用 `inset={false}` 的 PageContainer 承载。
  */
 export default function CheckinBoard({ isSuccess = false, onMakeup, debug = false }: CheckinBoardProps) {
   const navigate = useNavigate()
+  const [calendarOpen, setCalendarOpen] = useState(false)
   const cycleDays = getCheckinCycleDays()
   const completedDays = cycleDays.filter((item) => item.state === 'done' || item.state === 'today').length
   const remainingDays = Math.max(0, CHECKIN_CYCLE_TARGET - completedDays)
   const challengeComplete = remainingDays === 0
+
+  const handleMakeup = () => {
+    setCalendarOpen(false)
+    onMakeup()
+  }
 
   return (
     <>
@@ -94,66 +105,106 @@ export default function CheckinBoard({ isSuccess = false, onMakeup, debug = fals
         </div>
       </section>
 
-      <section className="relative mx-4 mt-4 overflow-hidden rounded-feature bg-surface px-4 pb-4 pt-4 shadow-bubble" aria-label="7 天签到挑战">
-        <span aria-hidden className="absolute -right-5 -top-7 h-24 w-24 rounded-full bg-reward-subtle/70" />
-        <header className="relative flex items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-2.5">
-            <span className="flex h-9 w-9 flex-none items-center justify-center rounded-app-icon bg-secondary text-text-brand">
-              <CalendarDays className="h-5 w-5" aria-hidden />
-            </span>
-            <div className="min-w-0">
-              <h2 className="text-base font-bold text-text-primary">7 天签到挑战</h2>
-              <p className="mt-0.5 text-[11px] text-text-tertiary">连续点亮，完成本轮</p>
-            </div>
-          </div>
-          <span className="flex-none rounded-pill bg-reward-subtle px-2.5 py-1 text-[11px] font-bold text-reward-text">
-            {completedDays} / {CHECKIN_CYCLE_TARGET}
+      {/* 首页只保留一条紧凑 7 日轨道；完整日历进入 Bottom Sheet，避免继续吞掉首屏。 */}
+      <button
+        type="button"
+        onClick={() => setCalendarOpen(true)}
+        aria-label={`查看 7 天签到日历，当前 ${completedDays} / ${CHECKIN_CYCLE_TARGET}`}
+        className="mx-4 mt-3 block w-[calc(100%-2rem)] rounded-[18px] bg-surface px-4 pb-3.5 pt-3 text-left shadow-bubble transition active:scale-[0.995] active:bg-surface-pressed"
+      >
+        <div className="flex items-center justify-between gap-3">
+          <span className="flex min-w-0 items-center gap-2 text-[13px] font-semibold text-text-primary">
+            <CalendarDays className="h-4 w-4 flex-none text-reward-strong" aria-hidden />
+            7 天签到
+            <span className="text-[11px] font-medium text-reward-text">{completedDays}/{CHECKIN_CYCLE_TARGET}</span>
           </span>
-        </header>
+          <span className="flex flex-none items-center gap-0.5 text-[11px] font-medium text-text-tertiary">
+            {challengeComplete ? '已完成' : `还差 ${remainingDays} 天`}
+            <ChevronRight className="h-3.5 w-3.5" aria-hidden />
+          </span>
+        </div>
 
-        <div className="relative mt-4">
+        <div className="mt-2.5 grid grid-cols-7 gap-2" aria-hidden>
+          {cycleDays.map((item, index) => {
+            const completed = item.state === 'done' || item.state === 'today'
+            return (
+              <span key={item.day} className="flex min-w-0 flex-col items-center gap-1">
+                <span className="text-[9px] leading-none text-text-tertiary">{CHECKIN_CYCLE_WEEK_LABELS[index]}</span>
+                <span
+                  className={`flex h-6 w-6 items-center justify-center rounded-full text-[9px] font-semibold ${
+                    item.state === 'today'
+                      ? 'bg-primary text-text-inverse shadow-primary-button'
+                      : completed
+                        ? 'bg-reward-subtle text-reward-strong'
+                        : item.state === 'makeup'
+                          ? 'border border-primary/55 bg-surface text-text-brand'
+                          : 'bg-surface-subtle text-text-tertiary'
+                  }`}
+                >
+                  {completed ? <Check className="h-3 w-3" strokeWidth={3} /> : item.day}
+                </span>
+              </span>
+            )
+          })}
+        </div>
+      </button>
+
+      <BottomSheet
+        open={calendarOpen}
+        title="7 天签到日历"
+        onClose={() => setCalendarOpen(false)}
+        actions={
+          <Button variant="ghost" onClick={() => setCalendarOpen(false)}>
+            收起
+          </Button>
+        }
+      >
+        <div className="pb-1" data-checkin-calendar-sheet>
+          <div className="flex items-end justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-medium tracking-[0.12em] text-reward-strong">WEEKLY CHECK-IN</p>
+              <p className="mt-1 text-lg font-bold text-text-primary">
+                {challengeComplete ? '本轮 7 天挑战已完成' : `再签到 ${remainingDays} 天完成本轮`}
+              </p>
+            </div>
+            <span className="rounded-pill bg-reward-subtle px-2.5 py-1 text-xs font-bold text-reward-text">
+              {completedDays} / {CHECKIN_CYCLE_TARGET}
+            </span>
+          </div>
+
           <ProgressIndicator
             value={completedDays}
             max={CHECKIN_CYCLE_TARGET}
             label={`7 天签到挑战进度 ${completedDays} / ${CHECKIN_CYCLE_TARGET}`}
-            className="[&>div]:h-2 [&>div]:bg-surface-subtle [&>div>div]:bg-[image:var(--gradient-bubble)]"
+            className="mt-3 [&>div]:h-2 [&>div]:bg-surface-subtle [&>div>div]:bg-[image:var(--gradient-bubble)]"
           />
-          <div className="mt-2 flex items-center justify-between text-[11px]">
-            <span className="font-medium text-text-secondary">本轮进度</span>
-            <span className="font-semibold text-reward-text">
-              {challengeComplete ? '本轮已完成' : `再签到 ${remainingDays} 天`}
+
+          <div className="mt-5 grid grid-cols-7 gap-1.5">
+            {cycleDays.map((item, index) => (
+              <div key={item.day} className="min-w-0">
+                <span className="mb-1.5 block text-center text-[10px] font-medium text-text-tertiary">
+                  周{CHECKIN_CYCLE_WEEK_LABELS[index]}
+                </span>
+                <CalendarCell item={item} onMakeup={handleMakeup} />
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-5 flex items-center gap-3 border-t border-border-subtle pt-4">
+            <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-reward-subtle text-reward-strong" aria-hidden>
+              {challengeComplete ? <Check className="h-4 w-4" strokeWidth={3} /> : <Gift className="h-4 w-4" />}
             </span>
-          </div>
-        </div>
-
-        <div className="mt-4 grid grid-cols-7 gap-1">
-          {cycleDays.map((item, index) => (
-            <div key={item.day} className="min-w-0">
-              <span className="mb-1 block text-center text-[10px] font-medium text-text-tertiary">
-                {CHECKIN_CYCLE_WEEK_LABELS[index]}
-              </span>
-              <CalendarCell item={item} onMakeup={onMakeup} />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-text-primary">
+                {challengeComplete ? '连续签到目标已达成' : '继续点亮，完成 7 日挑战'}
+              </p>
+              <p className="mt-0.5 text-[11px] leading-4 text-text-tertiary">
+                {challengeComplete ? '本轮签到已完成，可以继续保持节奏。' : '连续签到奖励沿用既有规则，未确认奖励数值不在这里补写。'}
+              </p>
             </div>
-          ))}
-        </div>
-
-        <div className="relative mt-4 flex items-center gap-3 border-t border-border-subtle pt-4">
-          <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-reward-subtle text-reward-strong" aria-hidden>
-            {challengeComplete ? <Check className="h-4 w-4" strokeWidth={3} /> : <Gift className="h-4 w-4" />}
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-text-primary">
-              {challengeComplete ? '7 天挑战完成' : `还差 ${remainingDays} 天，继续点亮`}
-            </p>
-            <p className="mt-0.5 text-[11px] leading-4 text-text-tertiary">
-              {challengeComplete ? '本轮连续签到已达成' : '完成 7 日挑战即可解锁连续签到奖励'}
-            </p>
           </div>
-          <span className="flex-none text-[10px] font-semibold text-reward-text">
-            {challengeComplete ? '已达成' : '冲刺中'}
-          </span>
         </div>
-      </section>
+      </BottomSheet>
 
       <section className="mx-4 mt-7" aria-label="是日任务">
         <header className="flex items-end justify-between">
