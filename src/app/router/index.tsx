@@ -11,6 +11,7 @@ import CardShare from '../../pages/CardShare'
 import ScanVerify from '../../pages/ScanVerify'
 import ConfirmVerify from '../../pages/ConfirmVerify'
 import PasswordVerify from '../../pages/PasswordVerify'
+import Membership from '../../pages/Membership'
 import MembershipLevels from '../../pages/MembershipLevels'
 import Redeem from '../../pages/Redeem'
 import Exchange from '../../pages/Exchange'
@@ -48,7 +49,8 @@ const customPages: Record<string, ReactElement> = {
   '/': <Home />,
   '/dearseed': <DearseedColumn />,
   '/checkin': <Checkin />,
-  /* T023：`/membership` 改为重定向到 /mall，旧会员中心实现保留在 src/pages/Membership.tsx 作为变更前证据，不再挂载 */
+  /* 2026-08-28：恢复既有会员中心，由「我的 → 快捷服务」进入，不新建页面。 */
+  '/membership': <Membership />,
   '/profile': <Profile />,
   '/luck': <Luck />,
   '/luck/result': <DrawSuccess />,
@@ -99,7 +101,7 @@ export const router = createBrowserRouter([
     children: [
       ...ROUTES.map((route) => {
         let element: ReactElement = <NodeStub />
-        /* T023：`redirectTo` 的路径不再承载自身页面（/membership → /mall），优先级高于定制页 */
+        /* redirectTo 仍用于明确退役并重定向的历史路径，优先级高于定制页。 */
         if (route.redirectTo) element = <Navigate to={route.redirectTo} replace />
         else if (customPages[route.path]) element = customPages[route.path]
         else if (route.boundary === 'webview') element = <WebViewBoundary />
