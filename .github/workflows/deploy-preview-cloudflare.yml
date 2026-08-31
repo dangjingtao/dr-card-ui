@@ -1,0 +1,60 @@
+name: Deploy Preview to Cloudflare Pages
+
+on:
+  push:
+    branches: [preview]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  deployments: write
+
+concurrency:
+  group: cloudflare-preview
+  cancel-in-progress: true
+
+env:
+  CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: preview
+      url: https://preview-dr-card-ui.pages.dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check Cloudflare credentials
+        shell: bash
+        run: |
+          if [ -z "$CF_API_TOKEN" ] || [ -z "$CF_ACCOUNT_ID" ]; then
+            echo "Missing CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID repository secrets."
+            exit 1
+          fi
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Build preview bundle
+        run: npm run build:prod
+
+      - name: Verify Cloudflare SPA fallback asset
+        run: test -f dist/_redirects && grep -F '/* /index.html 200' dist/_redirects
+
+      - name: Deploy preview
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: "4"
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          command: pages deploy dist --project-name=preview-dr-card-ui --branch=preview --commit-hash=${{ github.sha }}
