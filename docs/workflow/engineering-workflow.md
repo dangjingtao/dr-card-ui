@@ -69,7 +69,11 @@ Primitive
 
 `docs/workflow/engineering-workflow.md`
 
-两者共同约束项目。
+Penpot 迁移、AI 派卡、长图/状态画板组织与验收方法：
+
+[`docs/workflow/penpot-migration-workflow.md`](./penpot-migration-workflow.md)
+
+三者共同约束项目。
 
 ## 开发流程
 

@@ -1,0 +1,151 @@
+{
+  "schema_version": 1,
+  "task_id": "batch-membership-points-default",
+  "route": "/points",
+  "classification": "direct",
+  "target": {
+    "file_name": "dr-card-v2",
+    "page_name": "20 / Membership",
+    "board_prefix": "20 / Membership / Points",
+    "width": 375,
+    "layout": "long-form"
+  },
+  "sources": [
+    { "path": "src/pages/Points.tsx", "role": "accepted implementation (T022 Accepted, working tree)" },
+    { "path": "src/app/fixtures/index.ts", "role": "BUBBLE_BALANCE / POINTS_TASK_PLACEHOLDERS / POINTS_TASK_PLACEHOLDER_NOTE / LUCK_PLACEHOLDER / sumBubbleRecords" },
+    { "path": "src/app/router/routes.ts", "role": "route meta, tab config, tab icons" },
+    { "path": "src/layouts/MobileLayout.tsx", "role": "app shell layout" },
+    { "path": "src/components/mobile/StatusBar.tsx", "role": "status bar" },
+    { "path": "src/components/mobile/TitleBar.tsx", "role": "title bar" },
+    { "path": "src/components/mobile/BottomNav.tsx", "role": "tab bar wiring" },
+    { "path": "docs/workbench/tasks/T022-points-tasks-luck-entry.md", "role": "accepted task record incl. measurements" }
+  ],
+  "boards": [
+    {
+      "state": "default",
+      "name": "20 / Membership / Points / Default / 375xLong",
+      "source_evidence": "src/pages/Points.tsx default render (T022 Accepted)",
+      "height_source": "88px page shell + 913px measured scroll content + 61px TabBar = 1062px (Playwright, 2026-08-29)",
+      "region_ids": ["shell", "hero", "benefits", "tasks", "sticky-cta", "tabbar"]
+    }
+  ],
+  "regions": [
+    {
+      "id": "shell",
+      "order": 1,
+      "name": "App shell (status + title bar)",
+      "source_evidence": "MobileLayout / StatusBar / TitleBar; /points tab page renders back-style title bar '泡泡值'",
+      "copy": ["9:41", "泡泡值"],
+      "asset_ids": [],
+      "component_ids": [],
+      "token_ids": ["font.bodySmall", "font.weight.semibold", "color.text.primary", "font.title"]
+    },
+    {
+      "id": "hero",
+      "order": 2,
+      "name": "泡泡值余额资产卡",
+      "source_evidence": "src/pages/Points.tsx hero section",
+      "copy": ["泡泡值余额", "1,280", "泡泡值", "攒泡泡 · 兑体验券", "累计收入", "+850", "累计消耗", "-280", "看明细"],
+      "asset_ids": ["points-hero"],
+      "component_ids": [],
+      "token_ids": ["color.bg", "color.border.gold", "color.text.primary", "color.status.success", "color.status.danger", "font.balance", "font.weight.bold", "font.bodySmall", "font.weight.medium", "radius.hero"]
+    },
+    {
+      "id": "benefits",
+      "order": 3,
+      "name": "泡泡福利三入口",
+      "source_evidence": "src/pages/Points.tsx benefits section (T022 §4.3 order: 每日签到 / 澡运 / 体验券兑换)",
+      "copy": ["泡泡福利", "赚泡泡 · 兑体验券", "每日签到", "打卡赚泡泡", "澡运", "玩法待定", "体验券兑换", "泡泡值兑券"],
+      "asset_ids": ["points-checkin", "points-voucher"],
+      "component_ids": [],
+      "token_ids": ["color.brand.premiumStrong", "color.brand.premium", "font.body", "font.weight.semibold", "font.caption", "radius.card"]
+    },
+    {
+      "id": "tasks",
+      "order": 4,
+      "name": "泡泡任务占位区",
+      "source_evidence": "src/pages/Points.tsx tasks section + POINTS_TASK_PLACEHOLDERS (4 cards)",
+      "copy": ["泡泡任务", "占位", "任务体系未定稿，以下为占位任务卡，进度与奖励不参与真实结算。", "每日打卡", "已完成", "每天签到一次即可领取泡泡值", "1/1", "+100🫧", "连续签到", "进行中", "连续签到 7 天再领一次额外奖励", "5/7", "+50🫧", "观看视频", "未开始", "看完品牌短视频获取泡泡值", "0/1", "+5🫧", "邀请好友", "邀请好友成为洗头搭子", "+50🫧"],
+      "asset_ids": [],
+      "component_ids": [],
+      "token_ids": ["color.text.primary", "color.text.tertiary", "color.status.successBg", "color.status.success", "color.brand.premium", "color.surface.subtle", "font.body", "font.weight.medium", "font.caption", "font.bodySmall", "font.weight.semibold", "radius.card"]
+    },
+    {
+      "id": "sticky-cta",
+      "order": 5,
+      "name": "吸底主操作（泡泡值兑换）",
+      "source_evidence": "src/pages/Points.tsx sticky bottom-0 Button (T022 §4.4 文案)",
+      "copy": ["泡泡值兑换"],
+      "asset_ids": [],
+      "component_ids": ["pill-cta"],
+      "token_ids": ["color.bg"]
+    },
+    {
+      "id": "tabbar",
+      "order": 6,
+      "name": "底部一级导航 TabBar",
+      "source_evidence": "BottomNav + TAB_ROUTES (首页/泡泡/扫码/服务/我的; 泡泡 active; 扫码 FAB)",
+      "copy": ["首页", "泡泡", "扫码", "服务", "我的"],
+      "asset_ids": [],
+      "component_ids": [],
+      "token_ids": ["color.nav.inactive", "color.text.primary"]
+    }
+  ],
+  "assets": [
+    { "id": "points-hero", "path": "src/assets/brand/bubble/points-benefit-hero-v2.webp", "required": true },
+    { "id": "points-checkin", "path": "src/assets/brand/bubble/points-benefit-checkin.webp", "required": true },
+    { "id": "points-voucher", "path": "src/assets/brand/bubble/points-benefit-voucher.webp", "required": true }
+  ],
+  "components": [
+    { "id": "pill-cta", "source": "Button size=large rounded-pill trailing ChevronRight (Points.tsx)", "penpot": "Pill" }
+  ],
+  "tokens": [
+    { "id": "color-bg", "source": "--color-background #FFF9F0", "penpot": "color.bg" },
+    { "id": "color-surface-subtle", "source": "--color-surface-subtle #F8F0E5", "penpot": "color.surface.subtle" },
+    { "id": "color-text-primary", "source": "--color-text-primary #292722", "penpot": "color.text.primary" },
+    { "id": "color-text-tertiary", "source": "--color-text-tertiary #7B7468", "penpot": "color.text.tertiary" },
+    { "id": "color-brand-primary", "source": "Button bg --brand-600 #D63D10", "penpot": "color.brand.primary" },
+    { "id": "color-brand-premium", "source": "--premium-500 #C98A27 (reward)", "penpot": "color.brand.premium" },
+    { "id": "color-brand-premiumStrong", "source": "--premium-600 #A96C19 (benefit sub text)", "penpot": "color.brand.premiumStrong" },
+    { "id": "color-border-gold", "source": "hero border #EEC77E", "penpot": "color.border.gold" },
+    { "id": "color-status-success", "source": "--color-success-text #147A4C", "penpot": "color.status.success" },
+    { "id": "color-status-successBg", "source": "--color-success-bg #DDF8EA", "penpot": "color.status.successBg" },
+    { "id": "color-status-danger", "source": "--color-danger-text #A92939", "penpot": "color.status.danger" },
+    { "id": "color-nav-inactive", "source": "tabbar inactive #687288", "penpot": "color.nav.inactive" },
+    { "id": "font-caption", "source": "11px", "penpot": "font.caption" },
+    { "id": "font-bodySmall", "source": "12px", "penpot": "font.bodySmall" },
+    { "id": "font-body", "source": "14px", "penpot": "font.body" },
+    { "id": "font-section", "source": "16px", "penpot": "font.section" },
+    { "id": "font-title", "source": "18px", "penpot": "font.title" },
+    { "id": "font-balance", "source": "42px", "penpot": "font.balance" },
+    { "id": "font-weight-regular", "source": "400", "penpot": "font.weight.regular" },
+    { "id": "font-weight-medium", "source": "500", "penpot": "font.weight.medium" },
+    { "id": "font-weight-semibold", "source": "600", "penpot": "font.weight.semibold" },
+    { "id": "font-weight-bold", "source": "700", "penpot": "font.weight.bold" },
+    { "id": "radius-hero", "source": "20px", "penpot": "radius.hero" },
+    { "id": "radius-card", "source": "16px", "penpot": "radius.card" },
+    { "id": "radius-pill", "source": "999px", "penpot": "radius.pill" }
+  ],
+  "states": [
+    { "id": "default", "evidence": "src/pages/Points.tsx default render (T022 Accepted)" }
+  ],
+  "interactions": [
+    { "source": "hero-detail-btn", "action": "navigate", "destination": "/points/detail" },
+    { "source": "benefit-card-checkin", "action": "navigate", "destination": "/checkin" },
+    { "source": "benefit-card-luck", "action": "navigate", "destination": "/luck" },
+    { "source": "benefit-card-voucher", "action": "navigate", "destination": "/exchange" },
+    { "source": "benefits-more-link", "action": "navigate", "destination": "/exchange" },
+    { "source": "sticky-cta", "action": "navigate", "destination": "/exchange" }
+  ],
+  "stop_conditions": [
+    "B-002 未决：流水细节/金色改造是否沿用 → 本页只按 T022 Accepted 默认态还原，不新增流水列表",
+    "font.family.sans token 绑定基础设施缺口 → 页面文本直接使用 Noto Sans SC 字体，不绑定 font.family.sans"
+  ],
+  "acceptance": {
+    "allow_placeholders": false,
+    "allow_overflow": [],
+    "required_component_roots": ["Pill"],
+    "required_token_bindings": ["color.bg", "color.text.primary", "color.brand.primary", "color.border.gold", "font.balance", "font.body", "font.weight.semibold"],
+    "required_visual_export": true
+  }
+}
