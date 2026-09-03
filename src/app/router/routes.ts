@@ -115,6 +115,27 @@ export const ROUTES: RouteMeta[] = [
     owner: '诗得丽品牌专栏首页（T021 改造；打卡内容与 /checkin 共用 CheckinBoard；默认弹出新人体验券，`?newcomer=off` 抑制）',
   },
   {
+    path: '/legacy-home',
+    title: '首页',
+    titleBar: 'plain',
+    titleBarTitle: '首页',
+    nodes: [],
+    task: 'LEGACY-HOME',
+    entry: '历史 APP 首页独立入口',
+    returnTo: '—（独立入口）',
+    owner: '7b0e6ed 历史首页恢复，供后续改造成另一条入口',
+  },
+  {
+    path: '/legacy-home/scan',
+    title: '扫一扫',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'LEGACY-HOME',
+    entry: '历史首页-扫一扫',
+    returnTo: '历史首页',
+    owner: '历史首页独立扫码页，与 /card/verify 券码核销链路不共用',
+  },
+  {
     path: '/card',
     title: '卡包',
     titleBarTitle: '卡包',
@@ -662,6 +683,21 @@ export const ROUTES: RouteMeta[] = [
 export const TAB_ROUTES = ROUTES.filter((route) => route.tab).sort(
   (a, b) => (a.tabOrder ?? Number.MAX_SAFE_INTEGER) - (b.tabOrder ?? Number.MAX_SAFE_INTEGER),
 )
+
+/**
+ * 历史首页入口专用的三项底部导航：首页 / 服务 / 我的（仅首页可跳转，其余为视觉展示）。
+ * 与主入口的五项 TabBar 并存，互不影响。
+ */
+export const LEGACY_TAB_ITEMS: { key: string; label: string; icon: LucideIcon; to?: string }[] = [
+  { key: 'home', label: '首页', icon: Home, to: '/legacy-home' },
+  { key: 'service', label: '服务', icon: Headset },
+  { key: 'profile', label: '我的', icon: UserRound },
+]
+
+/** 判断路径是否使用历史入口的三项底部导航（仅历史首页自身） */
+export function isLegacyTabPath(pathname: string): boolean {
+  return pathname === '/legacy-home'
+}
 
 /**
  * 判断路径是否命中一级 Tab（仅一级 Tab 自身显示底部导航）

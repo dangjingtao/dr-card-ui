@@ -1,6 +1,8 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import MobileLayout from '../../layouts/MobileLayout'
 import Home from '../../pages/Home'
+import LegacyHome from '../../pages/LegacyHome'
+import LegacyScan from '../../pages/LegacyScan'
 import DearseedColumn from '../../pages/DearseedColumn'
 import Checkin from '../../pages/Checkin'
 import Profile from '../../pages/Profile'
@@ -47,6 +49,8 @@ import type { ReactElement } from 'react'
 /** 已完成/进行中的定制页面（其余节点走确定性 NodeStub 或 WebView 边界页） */
 const customPages: Record<string, ReactElement> = {
   '/': <Home />,
+  '/legacy-home': <LegacyHome />,
+  '/legacy-home/scan': <LegacyScan />,
   '/dearseed': <DearseedColumn />,
   '/checkin': <Checkin />,
   /* 2026-08-28：恢复既有会员中心，由「我的 → 快捷服务」进入，不新建页面。 */

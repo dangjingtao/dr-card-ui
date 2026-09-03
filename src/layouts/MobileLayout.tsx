@@ -3,7 +3,7 @@ import { Bell, Settings } from 'lucide-react'
 import BottomNav from '../components/mobile/BottomNav'
 import StatusBar from '../components/mobile/StatusBar'
 import TitleBar from '../components/mobile/TitleBar'
-import { findRouteByPathname, isTabPath } from '../app/router/routes'
+import { findRouteByPathname, isLegacyTabPath, isTabPath } from '../app/router/routes'
 import { useNotifications } from '../app/state/notifications'
 
 /**
@@ -12,12 +12,14 @@ import { useNotifications } from '../app/state/notifications'
  * - 页面只有一个纵向滚动区；状态栏、标题栏、TabBar 不参与页面滚动
  * - TabBar 位于壳层底部，自身负责底部安全区，页面不再重复预留
  * - 二级页不显示底部导航，避免遮挡输入区/弹层
+ * - /legacy-home 为独立入口，使用「首页 / 服务 / 我的」三项导航，与主入口五项 TabBar 并存
  */
 export default function MobileLayout() {
   const location = useLocation()
   const navigate = useNavigate()
   const { unreadCount } = useNotifications()
-  const showNav = isTabPath(location.pathname)
+  const showLegacyNav = isLegacyTabPath(location.pathname)
+  const showNav = showLegacyNav || isTabPath(location.pathname)
   const route = findRouteByPathname(location.pathname)
   const titleBarMode = route?.titleBar ?? 'back'
   const fallbackTitle = location.pathname === '/tokens' ? '品牌 Token 展示' : '页面不存在'
@@ -72,7 +74,7 @@ export default function MobileLayout() {
       <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain" data-page-scroll>
         <Outlet />
       </div>
-      {showNav && <BottomNav />}
+      {showNav && <BottomNav variant={showLegacyNav ? 'legacy' : 'main'} />}
     </div>
   )
 }
