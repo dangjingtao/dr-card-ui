@@ -42,6 +42,8 @@ import BuddyAccept from '../../pages/BuddyAccept'
 import Tokens from '../../pages/Tokens'
 import NodeStub from '../../pages/NodeStub'
 import WebViewBoundary from '../../pages/WebViewBoundary'
+import DeviceListPage from '../../pages/DeviceListPage'
+import DeviceDetailPage from '../../pages/DeviceDetailPage'
 import NotFound from '../../pages/NotFound'
 import { ROUTES } from './routes'
 import type { ReactElement } from 'react'
@@ -97,6 +99,11 @@ const customPages: Record<string, ReactElement> = {
   '/buddy/invite/phone': <BuddyPhoneInvite />,
   '/buddy/invite/scan': <BuddyScanLanding />,
   '/buddy/accept': <BuddyAccept />,
+
+  /* T033/T034：卡博士设备服务 */
+  '/device/:type': <DeviceListPage />,
+  '/device/connecting': <DeviceDetailPage />,
+  '/device/success': <DeviceDetailPage />,
 }
 
 export const router = createBrowserRouter([

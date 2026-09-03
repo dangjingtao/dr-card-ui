@@ -1,0 +1,104 @@
+/* 卡博士APP 主题（设备服务系列）
+ * 以紫色为基底，四套设备主题色通过 data-theme 切换
+ * 使用方式：在页面根元素上加 data-theme="shower" | "laundry" | "water" | "hairdryer"
+ */
+:root {
+  /* 卡博士基底：紫色系 */
+  --cd-purple-50: #F3F0FF;
+  --cd-purple-100: #E5DFFF;
+  --cd-purple-200: #C9BDFF;
+  --cd-purple-300: #A694FF;
+  --cd-purple-400: #8671F5;
+  --cd-purple-500: #6D55E8;
+  --cd-purple-600: #5A42D1;
+  --cd-purple-700: #4831B0;
+  --cd-purple-800: #362386;
+  --cd-purple-900: #24165C;
+
+  /* 洗烘：青绿色 */
+  --cd-teal-50: #E6FBF5;
+  --cd-teal-100: #C4F5E8;
+  --cd-teal-200: #8CEBD3;
+  --cd-teal-300: #52D9BA;
+  --cd-teal-400: #2EC4A2;
+  --cd-teal-500: #18A888;
+  --cd-teal-600: #0E8A6E;
+  --cd-teal-700: #0A6B55;
+
+  /* 饮水：蓝色 */
+  --cd-blue-50: #E8F2FF;
+  --cd-blue-100: #CFE2FF;
+  --cd-blue-200: #9FC5FF;
+  --cd-blue-300: #6BA3FF;
+  --cd-blue-400: #4585F5;
+  --cd-blue-500: #2D6BE0;
+  --cd-blue-600: #1F55BD;
+  --cd-blue-700: #174092;
+
+  /* 吹风：暖黄色 */
+  --cd-amber-50: #FFF7E0;
+  --cd-amber-100: #FFEDB8;
+  --cd-amber-200: #FFDC7A;
+  --cd-amber-300: #FFC942;
+  --cd-amber-400: #F5B020;
+  --cd-amber-500: #E0960D;
+  --cd-amber-600: #BB7708;
+  --cd-amber-700: #8E5807;
+}
+
+/* 设备主题变量：通过 [data-device-theme] 切换 */
+:root,
+[data-device-theme="shower"] {
+  --device-50: var(--cd-purple-50);
+  --device-100: var(--cd-purple-100);
+  --device-200: var(--cd-purple-200);
+  --device-300: var(--cd-purple-300);
+  --device-400: var(--cd-purple-400);
+  --device-500: var(--cd-purple-500);
+  --device-600: var(--cd-purple-600);
+  --device-700: var(--cd-purple-700);
+  --device-text-on-primary: #FFFFFF;
+}
+
+[data-device-theme="laundry"] {
+  --device-50: var(--cd-teal-50);
+  --device-100: var(--cd-teal-100);
+  --device-200: var(--cd-teal-200);
+  --device-300: var(--cd-teal-300);
+  --device-400: var(--cd-teal-400);
+  --device-500: var(--cd-teal-500);
+  --device-600: var(--cd-teal-600);
+  --device-700: var(--cd-teal-700);
+  --device-text-on-primary: #FFFFFF;
+}
+
+[data-device-theme="water"] {
+  --device-50: var(--cd-blue-50);
+  --device-100: var(--cd-blue-100);
+  --device-200: var(--cd-blue-200);
+  --device-300: var(--cd-blue-300);
+  --device-400: var(--cd-blue-400);
+  --device-500: var(--cd-blue-500);
+  --device-600: var(--cd-blue-600);
+  --device-700: var(--cd-blue-700);
+  --device-text-on-primary: #FFFFFF;
+}
+
+[data-device-theme="hairdryer"] {
+  --device-50: var(--cd-amber-50);
+  --device-100: var(--cd-amber-100);
+  --device-200: var(--cd-amber-200);
+  --device-300: var(--cd-amber-300);
+  --device-400: var(--cd-amber-400);
+  --device-500: var(--cd-amber-500);
+  --device-600: var(--cd-amber-600);
+  --device-700: var(--cd-amber-700);
+  --device-text-on-primary: #FFFFFF;
+}
+
+/* 卡博士APP壳层样式（legacy-home 及其子页面使用） */
+.cd-app {
+  --cd-topbar-gradient: linear-gradient(180deg, var(--device-400) 0%, var(--device-500) 100%);
+  --cd-button-gradient: linear-gradient(135deg, var(--device-400) 0%, var(--device-600) 100%);
+  --cd-button-pressed: var(--device-700);
+}
