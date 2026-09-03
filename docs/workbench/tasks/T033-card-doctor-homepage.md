@@ -2,7 +2,7 @@
 
 ## 状态与类型
 
-- 状态：`Draft`
+- 状态：`Done`
 
 - 类型：UI / Shell / Homepage
 
