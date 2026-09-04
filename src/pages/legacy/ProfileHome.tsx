@@ -47,9 +47,9 @@ const QUICK_ENTRIES: Array<{
   to?: string
   badge?: string
 }> = [
-  { key: 'my-card', label: '我的卡', icon: Wallet, bg: 'from-[#FFB347] to-[#FFCC66]' },
+  { key: 'my-card', label: '我的卡', icon: Wallet, bg: 'from-[#FFB347] to-[#FFCC66]', to: '/legacy-profile/my-cards' },
   { key: 'scratch', label: '刮刮充值卡', icon: CreditCard, bg: 'from-[#F472B6] to-[#F9A8D4]' },
-  { key: 'coupon', label: '优惠卡', icon: Tag, bg: 'from-[#F87171] to-[#FCA5A5]' },
+  { key: 'coupon', label: '优惠卡', icon: Tag, bg: 'from-[#F87171] to-[#FCA5A5]', to: '/legacy-profile/coupons' },
   { key: 'receipt', label: '我的小票', icon: Receipt, bg: 'from-[#F472B6] to-[#F9A8D4]', to: '/legacy-profile/receipts' },
   { key: 'frequent', label: '常用设备', icon: Phone, bg: 'from-[#5EEAD4] to-[#99F6E4]', to: '/legacy-profile/devices/frequent' },
   { key: 'favorite', label: '收藏设备', icon: Heart, bg: 'from-[#FB7185] to-[#FDA4AF]', to: '/legacy-profile/devices/favorite' },

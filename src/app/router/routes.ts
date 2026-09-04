@@ -322,6 +322,28 @@ export const ROUTES: RouteMeta[] = [
     owner: '编辑资料页（T026；合一编辑 头像 / 昵称 / 真实姓名，含 9 宫格头像选择 + 字长度校验 + 加载态 + 保存回写 store）',
   },
 
+  /* ────────────────────────── T031 卡券与优惠卡 ────────────────────────── */
+  {
+    path: '/legacy-profile/my-cards',
+    title: '我的卡',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T031',
+    entry: '「我的」-我的卡',
+    returnTo: '我的',
+    owner: '我的卡页（T031；「+ 绑定卡」按钮 + 列表空态，对齐原小程序）',
+  },
+  {
+    path: '/legacy-profile/coupons',
+    title: '优惠卡列表',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T031',
+    entry: '「我的」-优惠卡',
+    returnTo: '我的',
+    owner: '优惠卡列表页（T031；三 Tab：未使用 / 已使用 / 已过期，对齐原小程序）',
+  },
+
   /* ────────────────────────── T033/T034 卡博士设备服务 ────────────────────────── */
   {
     path: '/device/:type',

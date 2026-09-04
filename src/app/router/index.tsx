@@ -62,6 +62,8 @@ import AvatarEditPage from '../../pages/legacy/AvatarEditPage'
 import PhoneChangePage from '../../pages/legacy/PhoneChangePage'
 import LoginPage from '../../pages/legacy/LoginPage'
 import EditProfile from '../../pages/legacy/EditProfile'
+import MyCardsPage from '../../pages/legacy/MyCardsPage'
+import CouponsPage from '../../pages/legacy/CouponsPage'
 import NotFound from '../../pages/NotFound'
 import { ROUTES } from './routes'
 import type { ReactElement } from 'react'
@@ -146,6 +148,10 @@ const customPages: Record<string, ReactElement> = {
   '/legacy-profile/phone-change': <PhoneChangePage />,
   '/legacy-profile/login': <LoginPage />,
   '/legacy-profile/edit': <EditProfile />,
+
+  /* T031：卡券与优惠卡 */
+  '/legacy-profile/my-cards': <MyCardsPage />,
+  '/legacy-profile/coupons': <CouponsPage />,
 }
 
 export const router = createBrowserRouter([
