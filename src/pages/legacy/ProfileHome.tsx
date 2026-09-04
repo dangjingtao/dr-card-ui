@@ -10,6 +10,8 @@ import {
   Phone,
   Heart,
   Wrench,
+  Wallet,
+  Tag,
 } from 'lucide-react'
 
 /* ---- Fixture ---- */
@@ -26,15 +28,45 @@ const ORDER_ENTRIES = [
   { key: 'cancelled', label: '已取消', icon: Ban, bg: 'from-[#F87171] to-[#FCA5A5]' },
 ]
 
-const QUICK_ENTRIES = [
-  { key: 'receipt', label: '我的小票', icon: Receipt, bg: 'from-[#F472B6] to-[#F9A8D4]' },
-  { key: 'frequent', label: '常用设备', icon: Phone, bg: 'from-[#5EEAD4] to-[#99F6E4]' },
-  { key: 'favorite', label: '收藏设备', icon: Heart, bg: 'from-[#FB7185] to-[#FDA4AF]' },
-  { key: 'repair', label: '报修', icon: Wrench, bg: 'from-[#FB923C] to-[#FDBA74]' },
+/**
+ * T031：功能宫格（8 项），对齐原小程序「我的」页面布局
+ * -------------------------------------------------------------
+ * 第一行（4 项）：我的卡 / 呱呱充值卡 / 优惠卡 / 我的小票
+ * 第二行（4 项）：常用设备 / 收藏设备 / 报修 / 帮助与反馈
+ *
+ * 当前状态：
+ * - 我的卡 / 优惠卡：T031 范围，本轮先以 alert「施工中」占位，下一轮接业务页
+ * - 呱呱充值卡：按用户口径暂时不做，留位占坑
+ */
+const QUICK_ENTRIES: Array<{
+  key: string
+  label: string
+  icon: typeof Wallet
+  bg: string
+  /** 为 null 表示施工中占位，点击弹 alert；否则跳转路径 */
+  to?: string
+  badge?: string
+}> = [
+  { key: 'my-card', label: '我的卡', icon: Wallet, bg: 'from-[#FFB347] to-[#FFCC66]' },
+  { key: 'recharge', label: '呱呱充值卡', icon: CreditCard, bg: 'from-[#F472B6] to-[#F9A8D4]' },
+  { key: 'coupon', label: '优惠卡', icon: Tag, bg: 'from-[#F87171] to-[#FCA5A5]' },
+  { key: 'receipt', label: '我的小票', icon: Receipt, bg: 'from-[#F472B6] to-[#F9A8D4]', to: '/legacy-profile/receipts' },
+  { key: 'frequent', label: '常用设备', icon: Phone, bg: 'from-[#5EEAD4] to-[#99F6E4]', to: '/legacy-profile/devices/frequent' },
+  { key: 'favorite', label: '收藏设备', icon: Heart, bg: 'from-[#FB7185] to-[#FDA4AF]', to: '/legacy-profile/devices/favorite' },
+  { key: 'repair', label: '报修', icon: Wrench, bg: 'from-[#FB923C] to-[#FDBA74]', to: '/legacy-service/repair/projects' },
 ]
 
 export default function ProfileHome() {
   const navigate = useNavigate()
+
+  const handleQuick = (entry: (typeof QUICK_ENTRIES)[number]) => {
+    if (entry.to) {
+      navigate(entry.to)
+    } else {
+      /* T031：占位入口，原型对位但本轮不实现业务页 */
+      alert(`${entry.label} 施工中`)
+    }
+  }
 
   return (
     <div className="mx-auto flex min-h-full max-w-[480px] flex-col bg-[#F8F8FA]">
@@ -112,28 +144,17 @@ export default function ProfileHome() {
           </div>
         </div>
 
-        {/* 快捷功能 */}
-        <div className="rounded-2xl bg-white p-4 shadow-sm">
+        {/* T031：功能宫格（8 项），对齐原小程序「我的」页面 */}
+        <div className="rounded-2xl bg-white px-4 pt-4 pb-2 shadow-sm">
           <div className="grid grid-cols-4 gap-2">
             {QUICK_ENTRIES.map((entry) => {
               const Icon = entry.icon
-              const handleClick = () => {
-                if (entry.key === 'repair') {
-                  navigate('/legacy-service/repair/projects')
-                } else if (entry.key === 'receipt') {
-                  navigate('/legacy-profile/receipts')
-                } else if (entry.key === 'frequent') {
-                  navigate('/legacy-profile/devices/frequent')
-                } else if (entry.key === 'favorite') {
-                  navigate('/legacy-profile/devices/favorite')
-                }
-              }
               return (
                 <button
                   key={entry.key}
                   type="button"
-                  onClick={handleClick}
-                  className="flex flex-col items-center gap-1.5 py-2"
+                  onClick={() => handleQuick(entry)}
+                  className="relative flex flex-col items-center gap-1.5 py-2"
                 >
                   <div
                     className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${entry.bg} text-white shadow-sm`}
