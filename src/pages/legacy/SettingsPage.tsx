@@ -24,9 +24,9 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="flex min-h-full flex-col bg-[#F8F8FA]">
+    <div className="mx-auto flex min-h-full max-w-[480px] flex-col bg-[#F8F8FA]">
       {/* 顶部栏 */}
-      <div className="relative shrink-0 px-4 pt-12 pb-4">
+      <div className="relative shrink-0 px-4 pt-3 pb-3">
         <div className="relative flex items-center">
           <button
             type="button"

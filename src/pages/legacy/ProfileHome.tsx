@@ -2,7 +2,6 @@ import { useNavigate } from 'react-router-dom'
 import {
   Settings,
   Pencil,
-  ClipboardList,
   CreditCard,
   Smartphone,
   CalendarCheck,
@@ -21,7 +20,6 @@ const USER_INFO = {
 }
 
 const ORDER_ENTRIES = [
-  { key: 'all', label: '全部', icon: ClipboardList, bg: 'from-[#FF9A6B] to-[#FFB37B]' },
   { key: 'pending', label: '待支付', icon: CreditCard, bg: 'from-[#FFB347] to-[#FFCC66]' },
   { key: 'paid', label: '已支付', icon: Smartphone, bg: 'from-[#A78BFA] to-[#C4B5FD]' },
   { key: 'completed', label: '已完成', icon: CalendarCheck, bg: 'from-[#818CF8] to-[#A5B4FC]' },
@@ -39,10 +37,10 @@ export default function ProfileHome() {
   const navigate = useNavigate()
 
   return (
-    <div className="flex min-h-full flex-col bg-[#F8F8FA]">
+    <div className="mx-auto flex min-h-full max-w-[480px] flex-col bg-[#F8F8FA]">
       {/* 顶部区 */}
       <div
-        className="relative shrink-0 px-5 pt-12 pb-24"
+        className="relative shrink-0 px-5 pt-12 pb-10"
         style={{ background: 'linear-gradient(135deg, #D4A853 0%, #E8C97A 50%, #F0D68E 100%)' }}
       >
         {/* 设置按钮 */}
@@ -78,8 +76,8 @@ export default function ProfileHome() {
         </div>
       </div>
 
-      {/* 内容区（上浮叠在顶部渐变上） */}
-      <div className="-mt-16 flex-1 space-y-4 px-4 pb-6">
+      {/* 内容区 */}
+      <div className="flex-1 space-y-3 px-4 py-4 pb-6">
         {/* 我的订单 */}
         <div className="rounded-2xl bg-white p-4 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
@@ -92,7 +90,7 @@ export default function ProfileHome() {
               全部订单
             </button>
           </div>
-          <div className="grid grid-cols-5 gap-2">
+          <div className="grid grid-cols-4 gap-2">
             {ORDER_ENTRIES.map((entry) => {
               const Icon = entry.icon
               return (
@@ -122,6 +120,12 @@ export default function ProfileHome() {
               const handleClick = () => {
                 if (entry.key === 'repair') {
                   navigate('/legacy-service/repair/projects')
+                } else if (entry.key === 'receipt') {
+                  navigate('/legacy-profile/receipts')
+                } else if (entry.key === 'frequent') {
+                  navigate('/legacy-profile/devices/frequent')
+                } else if (entry.key === 'favorite') {
+                  navigate('/legacy-profile/devices/favorite')
                 }
               }
               return (

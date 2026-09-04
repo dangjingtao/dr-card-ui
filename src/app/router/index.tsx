@@ -55,6 +55,9 @@ import BindEmail from '../../pages/legacy/BindEmail'
 import BindPhone from '../../pages/legacy/BindPhone'
 import SettingsPage from '../../pages/legacy/SettingsPage'
 import OrdersPage from '../../pages/legacy/OrdersPage'
+import ReceiptsPage from '../../pages/legacy/ReceiptsPage'
+import ReceiptDetailPage from '../../pages/legacy/ReceiptDetailPage'
+import DeviceListSimplePage from '../../pages/legacy/DeviceListSimplePage'
 import NotFound from '../../pages/NotFound'
 import { ROUTES } from './routes'
 import type { ReactElement } from 'react'
@@ -130,6 +133,9 @@ const customPages: Record<string, ReactElement> = {
   '/legacy-profile/phone': <BindPhone />,
   '/legacy-profile/settings': <SettingsPage />,
   '/legacy-profile/orders': <OrdersPage />,
+  '/legacy-profile/receipts': <ReceiptsPage />,
+  '/legacy-profile/receipts/:id': <ReceiptDetailPage />,
+  '/legacy-profile/devices/:type': <DeviceListSimplePage />,
 }
 
 export const router = createBrowserRouter([

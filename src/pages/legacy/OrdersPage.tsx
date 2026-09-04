@@ -103,26 +103,29 @@ export default function OrdersPage() {
       : MOCK_ORDERS.filter((o) => o.status === activeTab)
 
   return (
-    <div className="flex min-h-full flex-col bg-[#F8F8FA]">
+    <div className="mx-auto flex min-h-full max-w-[480px] flex-col bg-[#F8F8FA]">
       {/* 顶部栏 */}
-      <div className="relative shrink-0 px-4 pt-12 pb-4">
+      <div
+        className="relative shrink-0 px-4 pt-3 pb-3"
+        style={{ background: 'linear-gradient(135deg, #D4A853 0%, #E8C97A 50%, #F0D68E 100%)' }}
+      >
         <div className="relative flex items-center">
           <button
             type="button"
             aria-label="返回"
             onClick={() => navigate(-1)}
-            className="flex h-10 w-10 items-center justify-center text-text-primary"
+            className="flex h-10 w-10 items-center justify-center text-white"
           >
             <ChevronLeft className="h-6 w-6" />
           </button>
-          <div className="absolute left-1/2 -translate-x-1/2 text-lg font-semibold text-text-primary">
+          <div className="absolute left-1/2 -translate-x-1/2 text-lg font-semibold text-white">
             订单
           </div>
         </div>
       </div>
 
       {/* Tab 切换 */}
-      <div className="shrink-0 overflow-x-auto bg-white">
+      <div className="shrink-0 overflow-x-auto bg-white border-b border-divider">
         <div className="flex min-w-full">
           {ORDER_TABS.map((tab) => {
             const isActive = activeTab === tab.key

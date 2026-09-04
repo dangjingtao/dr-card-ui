@@ -249,6 +249,36 @@ export const ROUTES: RouteMeta[] = [
     returnTo: '个人中心',
     owner: '订单列表页（T035；六 Tab 切换 + 订单卡片 + 空状态）',
   },
+  {
+    path: '/legacy-profile/receipts',
+    title: '我的小票',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T035',
+    entry: '个人中心-我的小票',
+    returnTo: '个人中心',
+    owner: '我的小票列表（T035；年月筛选 + 小票卡片列表）',
+  },
+  {
+    path: '/legacy-profile/receipts/:id',
+    title: '小票详情',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T035',
+    entry: '我的小票-详情',
+    returnTo: '我的小票',
+    owner: '小票详情页（T035；小票头部 + 消费明细 + 支付详情）',
+  },
+  {
+    path: '/legacy-profile/devices/:type',
+    title: '设备列表',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T035',
+    entry: '个人中心-常用设备/收藏设备',
+    returnTo: '个人中心',
+    owner: '常用设备/收藏设备列表（T035；设备卡片 + 状态标签 + 收藏星标）',
+  },
 
   /* ────────────────────────── T033/T034 卡博士设备服务 ────────────────────────── */
   {
