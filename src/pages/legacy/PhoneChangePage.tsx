@@ -169,59 +169,59 @@ export default function PhoneChangePage() {
 
   return (
     <div className="mx-auto flex min-h-full max-w-[480px] flex-col bg-[#F8F8FA]">
-      {/* 顶部栏 */}
-      <div className="relative shrink-0 px-4 pt-3 pb-3">
+      {/* 顶部栏：淡金渐变背景，与状态栏同色 */}
+      <div className="relative shrink-0 bg-gradient-to-br from-[#D4A853] to-[#E8C97A] px-4 pt-3 pb-3">
         <div className="relative flex items-center">
           <button
             type="button"
             aria-label="返回"
             onClick={() => navigate(-1)}
-            className="flex h-10 w-10 items-center justify-center text-text-primary"
+            className="flex h-10 w-10 items-center justify-center text-white active:opacity-80"
           >
             <ChevronLeft className="h-6 w-6" />
           </button>
-          <div className="absolute left-1/2 -translate-x-1/2 text-lg font-semibold text-text-primary">
+          <div className="absolute left-1/2 -translate-x-1/2 text-lg font-semibold text-white">
             换绑手机号
           </div>
         </div>
       </div>
 
-      {/* 步骤条 */}
-      <div className="px-4 pt-2">
-        <div className="rounded-2xl bg-white p-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            {STEPS.map((s, i) => (
-              <div key={s.idx} className="flex flex-1 items-center">
-                <div className="flex flex-col items-center">
-                  <div
-                    className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold transition ${
-                      step >= s.idx
-                        ? 'bg-gradient-to-br from-[#D4A853] to-[#E8C97A] text-white'
-                        : 'bg-bg-secondary text-text-tertiary'
-                    }`}
-                  >
-                    {step > s.idx ? '✓' : s.idx}
-                  </div>
-                  <div
-                    className={`mt-1.5 text-xs ${
-                      step >= s.idx ? 'font-medium text-[#B8893D]' : 'text-text-tertiary'
-                    }`}
-                  >
-                    {s.label}
-                  </div>
+      {/* 步骤条：水平居中显示 */}
+      <div className="flex justify-center px-4 pt-4">
+        <div className="flex items-start">
+          {STEPS.map((s, i) => (
+            <div key={s.idx} className="flex items-start">
+              <div className="flex w-16 flex-col items-center">
+                <div
+                  className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold transition ${
+                    step >= s.idx
+                      ? 'bg-gradient-to-br from-[#D4A853] to-[#E8C97A] text-white shadow-md'
+                      : 'bg-bg-secondary text-text-tertiary'
+                  }`}
+                >
+                  {step > s.idx ? '✓' : s.idx}
                 </div>
-                {i < STEPS.length - 1 && (
-                  <div className="mx-1 mb-5 h-px flex-1 bg-bg-secondary">
+                <div
+                  className={`mt-2 text-xs ${
+                    step >= s.idx ? 'font-medium text-[#B8893D]' : 'text-text-tertiary'
+                  }`}
+                >
+                  {s.label}
+                </div>
+              </div>
+              {i < STEPS.length - 1 && (
+                <div className="mt-4 flex items-center px-1">
+                  <div className="h-px w-10 bg-bg-secondary">
                     <div
                       className={`h-full ${
                         step > s.idx ? 'bg-gradient-to-r from-[#D4A853] to-[#E8C97A]' : ''
                       }`}
                     />
                   </div>
-                )}
-              </div>
-            ))}
-          </div>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       </div>
 
