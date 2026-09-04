@@ -178,6 +178,78 @@ export const ROUTES: RouteMeta[] = [
     owner: '意见反馈页（T034；文本框+提交）',
   },
 
+  /* ────────────────────────── T035 卡博士个人中心 ────────────────────────── */
+  {
+    path: '/legacy-profile',
+    title: '我的',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T035',
+    entry: '底部 Tab「我的」',
+    returnTo: '—（一级 Tab）',
+    owner: '卡博士个人中心首页（T035；头像+订单五宫格+快捷功能四宫格）',
+  },
+  {
+    path: '/legacy-profile/info',
+    title: '个人信息',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T035',
+    entry: '个人中心-头像/昵称',
+    returnTo: '个人中心',
+    owner: '个人信息页（T035；二维码+账号+头像/用户名/昵称/姓名/手机/邮箱）',
+  },
+  {
+    path: '/legacy-profile/nickname',
+    title: '修改昵称',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T035',
+    entry: '个人信息-昵称',
+    returnTo: '个人信息',
+    owner: '修改昵称页（T035）',
+  },
+  {
+    path: '/legacy-profile/email',
+    title: '绑定邮箱',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T035',
+    entry: '个人信息-邮箱',
+    returnTo: '个人信息',
+    owner: '绑定邮箱页（T035；邮箱+验证码+获取验证码+绑定）',
+  },
+  {
+    path: '/legacy-profile/phone',
+    title: '绑定手机',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T035',
+    entry: '个人信息-手机',
+    returnTo: '个人信息',
+    owner: '绑定手机页（T035；手机号+验证码+密码+绑定）',
+  },
+  {
+    path: '/legacy-profile/settings',
+    title: '设置',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T035',
+    entry: '个人中心-设置齿轮',
+    returnTo: '个人中心',
+    owner: '设置页（T035；退款/退款记录/支付配置/修改密码/在线设备/协议/隐私/注销+退出登录）',
+  },
+  {
+    path: '/legacy-profile/orders',
+    title: '订单',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T035',
+    entry: '个人中心-我的订单',
+    returnTo: '个人中心',
+    owner: '订单列表页（T035；六 Tab 切换 + 订单卡片 + 空状态）',
+  },
+
   /* ────────────────────────── T033/T034 卡博士设备服务 ────────────────────────── */
   {
     path: '/device/:type',
@@ -765,12 +837,16 @@ export const TAB_ROUTES = ROUTES.filter((route) => route.tab).sort(
 export const LEGACY_TAB_ITEMS: { key: string; label: string; icon: LucideIcon; to?: string }[] = [
   { key: 'home', label: '首页', icon: Home, to: '/legacy-home' },
   { key: 'service', label: '服务', icon: Headset, to: '/legacy-service' },
-  { key: 'profile', label: '我的', icon: UserRound },
+  { key: 'profile', label: '我的', icon: UserRound, to: '/legacy-profile' },
 ]
 
 /** 判断路径是否使用历史入口的三项底部导航（一级 Tab 自身） */
 export function isLegacyTabPath(pathname: string): boolean {
-  return pathname === '/legacy-home' || pathname === '/legacy-service'
+  return (
+    pathname === '/legacy-home' ||
+    pathname === '/legacy-service' ||
+    pathname === '/legacy-profile'
+  )
 }
 
 /**

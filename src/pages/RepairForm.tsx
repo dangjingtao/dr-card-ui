@@ -36,21 +36,18 @@ export default function RepairForm() {
 
   return (
     <PageContainer className="pb-0" inset={false}>
-      {/* 紫色顶部栏 */}
-      <div
-        className="relative shrink-0 px-4 pt-12 pb-4 text-white"
-        style={{ background: 'linear-gradient(180deg, #6366F1 0%, #818CF8 100%)' }}
-      >
+      {/* 顶部栏 */}
+      <div className="relative shrink-0 px-4 pt-12 pb-4">
         <div className="relative flex items-center">
           <button
             type="button"
             aria-label="返回"
             onClick={() => navigate(-1)}
-            className="flex h-10 w-10 items-center justify-center text-white"
+            className="flex h-10 w-10 items-center justify-center text-text-primary"
           >
             <ChevronLeft className="h-6 w-6" />
           </button>
-          <div className="absolute left-1/2 -translate-x-1/2 text-lg font-medium">
+          <div className="absolute left-1/2 -translate-x-1/2 text-lg font-semibold text-text-primary">
             报修
           </div>
         </div>
@@ -60,7 +57,7 @@ export default function RepairForm() {
       <div className="space-y-5 px-4 py-5">
         {/* 设备编号 */}
         <div>
-          <label className="mb-2 block text-sm font-medium text-[#6366F1]">
+          <label className="mb-2 block text-sm font-medium text-[#B8893D]">
             <span className="text-red-500">*</span> 设备编号：
           </label>
           <div className="flex items-center gap-3">
@@ -70,24 +67,24 @@ export default function RepairForm() {
               onChange={(e) => setDeviceId(e.target.value)}
               placeholder="请输入10位数设备编号"
               maxLength={10}
-              className="h-11 flex-1 rounded-xl border border-gray-300 bg-white px-4 text-sm text-text-primary outline-none placeholder:text-text-tertiary focus:border-[#6366F1]"
+              className="h-11 flex-1 rounded-xl border border-gray-300 bg-white px-4 text-sm text-text-primary outline-none placeholder:text-text-tertiary focus:border-[#D4A853]"
             />
             <button
               type="button"
               aria-label="扫码获取设备编号"
-              className="flex h-11 w-11 items-center justify-center rounded-xl text-[#6366F1] active:bg-surface-secondary"
+              className="flex h-11 w-11 items-center justify-center rounded-xl text-[#B8893D] active:bg-surface-secondary"
             >
               <QrCode className="h-7 w-7" />
             </button>
           </div>
-          <p className="mt-1.5 text-xs text-[#6366F1]">
+          <p className="mt-1.5 text-xs text-[#B8893D]">
             手机扫描设备二维码，页面显示的10位符号即设备编号
           </p>
         </div>
 
         {/* 设备所在位置 */}
         <div>
-          <label className="mb-2 block text-sm font-medium text-[#6366F1]">
+          <label className="mb-2 block text-sm font-medium text-[#B8893D]">
             设备所在位置：
           </label>
           <input
@@ -95,13 +92,13 @@ export default function RepairForm() {
             value={location}
             onChange={(e) => setLocation(e.target.value)}
             placeholder="请输入设备所在位置"
-            className="h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-text-primary outline-none placeholder:text-text-tertiary focus:border-[#6366F1]"
+            className="h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-text-primary outline-none placeholder:text-text-tertiary focus:border-[#D4A853]"
           />
         </div>
 
         {/* 故障现象 */}
         <div>
-          <label className="mb-3 block text-sm font-medium text-[#6366F1]">
+          <label className="mb-3 block text-sm font-medium text-[#B8893D]">
             <span className="text-red-500">*</span> 选择设备故障现象：
           </label>
           <div className="space-y-3">
@@ -117,7 +114,7 @@ export default function RepairForm() {
                   <span
                     className={`flex h-5 w-5 flex-none items-center justify-center rounded border transition-colors ${
                       checked
-                        ? 'border-[#6366F1] bg-[#6366F1] text-white'
+                        ? 'border-[#D4A853] bg-[#D4A853] text-white'
                         : 'border-gray-300 bg-white'
                     }`}
                   >
@@ -132,7 +129,7 @@ export default function RepairForm() {
 
         {/* 详情说明 */}
         <div>
-          <label className="mb-2 block text-sm font-medium text-[#6366F1]">
+          <label className="mb-2 block text-sm font-medium text-[#B8893D]">
             详情说明：
           </label>
           <textarea
@@ -140,13 +137,13 @@ export default function RepairForm() {
             onChange={(e) => setDetail(e.target.value)}
             placeholder="请详细描述设备故障现象"
             rows={4}
-            className="w-full resize-none rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-text-primary outline-none placeholder:text-text-tertiary focus:border-[#6366F1]"
+            className="w-full resize-none rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-text-primary outline-none placeholder:text-text-tertiary focus:border-[#D4A853]"
           />
         </div>
 
         {/* 报修人电话 */}
         <div>
-          <label className="mb-2 block text-sm font-medium text-[#6366F1]">
+          <label className="mb-2 block text-sm font-medium text-[#B8893D]">
             <span className="text-red-500">*</span> 报修人电话：
           </label>
           <input
@@ -155,7 +152,7 @@ export default function RepairForm() {
             onChange={(e) => setPhone(e.target.value)}
             placeholder="请输入您的电话号码"
             maxLength={11}
-            className="h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-text-primary outline-none placeholder:text-text-tertiary focus:border-[#6366F1]"
+            className="h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-text-primary outline-none placeholder:text-text-tertiary focus:border-[#D4A853]"
           />
         </div>
 
@@ -165,7 +162,7 @@ export default function RepairForm() {
           onClick={handleSubmit}
           disabled={!deviceId || selectedFaults.length === 0 || !phone}
           className="mt-2 h-12 w-full rounded-full text-base font-medium text-white shadow-md disabled:opacity-50"
-          style={{ background: 'linear-gradient(135deg, #6366F1 0%, #A5B4FC 100%)' }}
+          style={{ background: 'linear-gradient(135deg, #D4A853 0%, #E8C97A 100%)' }}
         >
           提交
         </button>

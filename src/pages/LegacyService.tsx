@@ -12,7 +12,7 @@ import { HOT_QUESTION_BATCHES, type HotQuestion } from '../app/fixtures/service'
 
 /**
  * 卡博士服务中心（T034）
- * 客服欢迎 + 设备报修/意见反馈入口 + 热门问题 + 换一换
+ * 风格与卡博士首页一致：浅色背景 + 白色卡片 + 淡金色点缀
  */
 export default function LegacyService() {
   const navigate = useNavigate()
@@ -29,86 +29,80 @@ export default function LegacyService() {
   }
 
   return (
-    <PageContainer className="space-y-4 pb-6" inset={false}>
-      {/* 顶部渐变区 */}
-      <div
-        className="relative px-4 pt-12 pb-20"
-        style={{ background: 'linear-gradient(180deg, #D4E8F5 0%, #E8F4FB 100%)' }}
-      >
-        <div className="text-center text-lg font-medium text-[#2C3E50]">服务中心</div>
+    <PageContainer className="space-y-4 pb-6 pt-4">
+      {/* 标题 */}
+      <div className="text-center">
+        <h1 className="text-lg font-semibold text-text-primary">服务中心</h1>
       </div>
 
-      {/* 内容区（向上负margin覆盖渐变） */}
-      <div className="-mt-16 space-y-4 px-4">
-        {/* 客服欢迎语 */}
-        <div className="flex items-start gap-2">
+      {/* 客服欢迎语 */}
+      <div className="flex items-start gap-2">
+        <div
+          className="flex h-12 w-12 flex-none items-center justify-center rounded-full text-white shadow-sm"
+          style={{ background: 'linear-gradient(135deg, #D4A853 0%, #B8893D 100%)' }}
+        >
+          <HeadphonesIcon className="h-6 w-6" />
+        </div>
+        <div className="max-w-[70%] rounded-2xl rounded-tl-sm bg-white px-4 py-3 text-sm text-text-primary shadow-sm border border-border-subtle">
+          Hi~欢迎来到卡博士
+        </div>
+      </div>
+
+      {/* 两大入口 */}
+      <div className="grid grid-cols-2 gap-4">
+        <button
+          type="button"
+          onClick={() => navigate('/legacy-service/repair/projects')}
+          className="flex flex-col items-center gap-2 rounded-2xl bg-white py-6 shadow-sm border border-border-subtle active:bg-surface-secondary"
+        >
           <div
-            className="flex h-12 w-12 flex-none items-center justify-center rounded-full text-white shadow-md"
-            style={{ background: 'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)' }}
+            className="flex h-14 w-14 items-center justify-center rounded-2xl text-white"
+            style={{ background: 'linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%)' }}
           >
-            <HeadphonesIcon className="h-6 w-6" />
+            <WrenchIcon className="h-7 w-7" />
           </div>
-          <div className="max-w-[70%] rounded-2xl rounded-tl-sm bg-white px-4 py-3 text-sm text-text-primary shadow-sm">
-            Hi~欢迎来到卡博士
+          <span className="text-sm font-medium text-text-primary">设备报修</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => navigate('/legacy-service/feedback')}
+          className="flex flex-col items-center gap-2 rounded-2xl bg-white py-6 shadow-sm border border-border-subtle active:bg-surface-secondary"
+        >
+          <div
+            className="flex h-14 w-14 items-center justify-center rounded-2xl text-white"
+            style={{ background: 'linear-gradient(135deg, #FB923C 0%, #F97316 100%)' }}
+          >
+            <MessageSquarePlus className="h-7 w-7" />
           </div>
-        </div>
+          <span className="text-sm font-medium text-text-primary">意见反馈</span>
+        </button>
+      </div>
 
-        {/* 两大入口 */}
-        <div className="grid grid-cols-2 gap-4">
+      {/* 热门问题 */}
+      <div className="rounded-2xl bg-white p-4 shadow-sm border border-border-subtle">
+        <div className="mb-3 flex items-center justify-between">
+          <span className="text-base font-semibold text-text-primary">热门问题</span>
           <button
             type="button"
-            onClick={() => navigate('/legacy-service/repair/projects')}
-            className="flex flex-col items-center gap-2 rounded-2xl bg-white py-6 shadow-sm active:bg-surface-secondary"
+            onClick={handleRefresh}
+            className="flex items-center gap-1 rounded-full bg-[#FDF6E8] px-3 py-1 text-xs text-[#B8893D] active:bg-[#F7ECD0]"
           >
-            <div
-              className="flex h-14 w-14 items-center justify-center rounded-2xl text-white"
-              style={{ background: 'linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%)' }}
-            >
-              <WrenchIcon className="h-7 w-7" />
-            </div>
-            <span className="text-sm font-medium text-text-primary">设备报修</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/legacy-service/feedback')}
-            className="flex flex-col items-center gap-2 rounded-2xl bg-white py-6 shadow-sm active:bg-surface-secondary"
-          >
-            <div
-              className="flex h-14 w-14 items-center justify-center rounded-2xl text-white"
-              style={{ background: 'linear-gradient(135deg, #FB923C 0%, #F97316 100%)' }}
-            >
-              <MessageSquarePlus className="h-7 w-7" />
-            </div>
-            <span className="text-sm font-medium text-text-primary">意见反馈</span>
+            <RefreshCw className="h-3.5 w-3.5" />
+            换一换
           </button>
         </div>
-
-        {/* 热门问题 */}
-        <div className="rounded-2xl bg-white p-4 shadow-sm">
-          <div className="mb-3 flex items-center justify-between">
-            <span className="text-base font-semibold text-[#6366F1]">热门问题</span>
+        <div className="divide-y divide-border-subtle">
+          {questions.map((q) => (
             <button
+              key={q.id}
               type="button"
-              onClick={handleRefresh}
-              className="flex items-center gap-1 rounded-full bg-[#F0F4FF] px-3 py-1 text-xs text-[#6366F1] active:bg-[#E0E7FF]"
+              onClick={() => setActiveQuestion(q)}
+              className="flex w-full items-center justify-between py-3.5 text-left active:bg-surface-secondary"
             >
-              <RefreshCw className="h-3.5 w-3.5" />
-              换一换
+              <span className="text-sm text-text-primary">{q.title}</span>
+              <ChevronRight className="h-4 w-4 text-text-tertiary" />
             </button>
-          </div>
-          <div className="divide-y divide-border-subtle">
-            {questions.map((q) => (
-              <button
-                key={q.id}
-                type="button"
-                onClick={() => setActiveQuestion(q)}
-                className="flex w-full items-center justify-between py-3.5 text-left active:bg-surface-secondary"
-              >
-                <span className="text-sm text-text-primary">{q.title}</span>
-                <ChevronRight className="h-4 w-4 text-text-tertiary" />
-              </button>
-            ))}
-          </div>
+          ))}
         </div>
       </div>
 

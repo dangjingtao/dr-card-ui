@@ -48,6 +48,13 @@ import LegacyService from '../../pages/LegacyService'
 import RepairProjects from '../../pages/RepairProjects'
 import RepairForm from '../../pages/RepairForm'
 import FeedbackPage from '../../pages/FeedbackPage'
+import ProfileHome from '../../pages/legacy/ProfileHome'
+import PersonalInfo from '../../pages/legacy/PersonalInfo'
+import EditNickname from '../../pages/legacy/EditNickname'
+import BindEmail from '../../pages/legacy/BindEmail'
+import BindPhone from '../../pages/legacy/BindPhone'
+import SettingsPage from '../../pages/legacy/SettingsPage'
+import OrdersPage from '../../pages/legacy/OrdersPage'
 import NotFound from '../../pages/NotFound'
 import { ROUTES } from './routes'
 import type { ReactElement } from 'react'
@@ -114,6 +121,15 @@ const customPages: Record<string, ReactElement> = {
   '/legacy-service/repair/projects': <RepairProjects />,
   '/legacy-service/repair/form': <RepairForm />,
   '/legacy-service/feedback': <FeedbackPage />,
+
+  /* T035：卡博士个人中心 */
+  '/legacy-profile': <ProfileHome />,
+  '/legacy-profile/info': <PersonalInfo />,
+  '/legacy-profile/nickname': <EditNickname />,
+  '/legacy-profile/email': <BindEmail />,
+  '/legacy-profile/phone': <BindPhone />,
+  '/legacy-profile/settings': <SettingsPage />,
+  '/legacy-profile/orders': <OrdersPage />,
 }
 
 export const router = createBrowserRouter([

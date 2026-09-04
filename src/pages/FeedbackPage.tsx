@@ -22,21 +22,18 @@ export default function FeedbackPage() {
 
   return (
     <PageContainer className="pb-6" inset={false}>
-      {/* 紫色顶部栏 */}
-      <div
-        className="relative shrink-0 px-4 pt-12 pb-4 text-white"
-        style={{ background: 'linear-gradient(180deg, #6366F1 0%, #818CF8 100%)' }}
-      >
+      {/* 顶部栏 */}
+      <div className="relative shrink-0 px-4 pt-12 pb-4">
         <div className="relative flex items-center">
           <button
             type="button"
             aria-label="返回"
             onClick={() => navigate(-1)}
-            className="flex h-10 w-10 items-center justify-center text-white"
+            className="flex h-10 w-10 items-center justify-center text-text-primary"
           >
             <ChevronLeft className="h-6 w-6" />
           </button>
-          <div className="absolute left-1/2 -translate-x-1/2 text-lg font-medium">
+          <div className="absolute left-1/2 -translate-x-1/2 text-lg font-semibold text-text-primary">
             意见反馈
           </div>
         </div>
@@ -57,7 +54,7 @@ export default function FeedbackPage() {
           onClick={handleSubmit}
           disabled={!content.trim()}
           className="mt-6 h-12 w-full rounded-full text-base font-medium text-white shadow-md disabled:opacity-50"
-          style={{ background: 'linear-gradient(135deg, #6366F1 0%, #A5B4FC 100%)' }}
+          style={{ background: 'linear-gradient(135deg, #D4A853 0%, #E8C97A 100%)' }}
         >
           提交
         </button>
