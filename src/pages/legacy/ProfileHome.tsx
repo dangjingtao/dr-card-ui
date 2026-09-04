@@ -36,7 +36,7 @@ const ORDER_ENTRIES = [
  *
  * 当前状态：
  * - 我的卡 / 优惠卡：T031 范围，本轮先以 alert「施工中」占位，下一轮接业务页
- * - 呱呱充值卡：按用户口径暂时不做，留位占坑
+ * - 刮刮充值卡：按用户口径暂时不做，留位占坑
  */
 const QUICK_ENTRIES: Array<{
   key: string
