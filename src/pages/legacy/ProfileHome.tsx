@@ -31,7 +31,7 @@ const ORDER_ENTRIES = [
 /**
  * T031：功能宫格（8 项），对齐原小程序「我的」页面布局
  * -------------------------------------------------------------
- * 第一行（4 项）：我的卡 / 呱呱充值卡 / 优惠卡 / 我的小票
+ * 第一行（4 项）：我的卡 / 刮刮充值卡 / 优惠卡 / 我的小票
  * 第二行（4 项）：常用设备 / 收藏设备 / 报修 / 帮助与反馈
  *
  * 当前状态：
@@ -48,7 +48,7 @@ const QUICK_ENTRIES: Array<{
   badge?: string
 }> = [
   { key: 'my-card', label: '我的卡', icon: Wallet, bg: 'from-[#FFB347] to-[#FFCC66]' },
-  { key: 'recharge', label: '呱呱充值卡', icon: CreditCard, bg: 'from-[#F472B6] to-[#F9A8D4]' },
+  { key: 'scratch', label: '刮刮充值卡', icon: CreditCard, bg: 'from-[#F472B6] to-[#F9A8D4]' },
   { key: 'coupon', label: '优惠卡', icon: Tag, bg: 'from-[#F87171] to-[#FCA5A5]' },
   { key: 'receipt', label: '我的小票', icon: Receipt, bg: 'from-[#F472B6] to-[#F9A8D4]', to: '/legacy-profile/receipts' },
   { key: 'frequent', label: '常用设备', icon: Phone, bg: 'from-[#5EEAD4] to-[#99F6E4]', to: '/legacy-profile/devices/frequent' },
