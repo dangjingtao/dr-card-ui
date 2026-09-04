@@ -44,6 +44,10 @@ import NodeStub from '../../pages/NodeStub'
 import WebViewBoundary from '../../pages/WebViewBoundary'
 import DeviceListPage from '../../pages/DeviceListPage'
 import DeviceDetailPage from '../../pages/DeviceDetailPage'
+import LegacyService from '../../pages/LegacyService'
+import RepairProjects from '../../pages/RepairProjects'
+import RepairForm from '../../pages/RepairForm'
+import FeedbackPage from '../../pages/FeedbackPage'
 import NotFound from '../../pages/NotFound'
 import { ROUTES } from './routes'
 import type { ReactElement } from 'react'
@@ -104,6 +108,12 @@ const customPages: Record<string, ReactElement> = {
   '/device/:type': <DeviceListPage />,
   '/device/connecting': <DeviceDetailPage />,
   '/device/success': <DeviceDetailPage />,
+
+  /* T034：卡博士服务中心 */
+  '/legacy-service': <LegacyService />,
+  '/legacy-service/repair/projects': <RepairProjects />,
+  '/legacy-service/repair/form': <RepairForm />,
+  '/legacy-service/feedback': <FeedbackPage />,
 }
 
 export const router = createBrowserRouter([

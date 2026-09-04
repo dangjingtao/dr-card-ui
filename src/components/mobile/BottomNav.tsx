@@ -21,15 +21,21 @@ const legacyTargets = new Map(
   LEGACY_TAB_ITEMS.flatMap((item) => (item.to ? [[item.key, item.to] as const] : [])),
 )
 
+// 反向映射：路径 → Tab key
+const pathToLegacyKey = new Map(
+  LEGACY_TAB_ITEMS.flatMap((item) => (item.to ? [[item.to, item.key] as const] : [])),
+)
+
 export default function BottomNav({ variant = 'main' }: { variant?: 'main' | 'legacy' }) {
   const location = useLocation()
   const navigate = useNavigate()
   const isLegacy = variant === 'legacy'
   const items = isLegacy ? legacyItems : mainItems
 
-  // 子路径（如 /card/verify）仍高亮所属一级 Tab；历史入口只有首页一个可达页，固定高亮首页。
+  // 主入口：子路径仍高亮所属一级 Tab
+  // 历史入口：根据当前路径匹配对应 Tab key
   const active = isLegacy
-    ? 'home'
+    ? pathToLegacyKey.get(location.pathname) ?? 'home'
     : (items.find((item) =>
         item.value === '/' ? location.pathname === '/' : location.pathname.startsWith(item.value),
       )?.value ?? '/')

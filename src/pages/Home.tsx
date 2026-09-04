@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { BookOpen, ChevronRight, Gift, Heart, Search } from 'lucide-react'
+import { BookOpen, ChevronLeft, ChevronRight, Gift, Heart, Search } from 'lucide-react'
 import BannerCarousel from '../components/mobile/BannerCarousel'
 import CheckinBoard from '../components/mobile/CheckinBoard'
 import CheckinMakeupSuccessOverlay from '../components/mobile/CheckinMakeupSuccessOverlay'
@@ -58,7 +58,15 @@ export default function Home() {
 
   return (
     <PageContainer className="pb-24 pt-4" inset={false}>
-      <section className="mx-4 flex items-center gap-3" aria-label="搜索与用户入口">
+      <section className="mx-4 flex items-center gap-2" aria-label="搜索与用户入口">
+        <button
+          type="button"
+          aria-label="返回卡博士首页"
+          onClick={() => navigate('/legacy-home')}
+          className="flex h-10 w-10 flex-none items-center justify-center rounded-full border border-border-subtle bg-surface text-text-primary active:bg-surface-secondary"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </button>
         <label className="flex h-10 flex-1 items-center gap-2 rounded-full border border-border-subtle bg-surface px-3 text-text-tertiary">
           <Search className="h-4 w-4" />
           <input

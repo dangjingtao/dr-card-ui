@@ -136,6 +136,48 @@ export const ROUTES: RouteMeta[] = [
     owner: '历史首页独立扫码页，与 /card/verify 券码核销链路不共用；T033 设备服务扫码复用此页',
   },
 
+  /* ────────────────────────── T034 卡博士服务中心 ────────────────────────── */
+  {
+    path: '/legacy-service',
+    title: '服务中心',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T034',
+    entry: '底部 Tab「服务」',
+    returnTo: '—（一级 Tab）',
+    owner: '卡博士服务中心首页（T034；设备报修/意见反馈/热门问题）',
+  },
+  {
+    path: '/legacy-service/repair/projects',
+    title: '设备报修项目',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T034',
+    entry: '服务中心-设备报修',
+    returnTo: '服务中心',
+    owner: '设备报修项目列表（T034）',
+  },
+  {
+    path: '/legacy-service/repair/form',
+    title: '报修',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T034',
+    entry: '报修项目-报修按钮',
+    returnTo: '报修项目列表',
+    owner: '报修表单页（T034；设备编号/位置/故障现象/详情/电话/提交）',
+  },
+  {
+    path: '/legacy-service/feedback',
+    title: '意见反馈',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T034',
+    entry: '服务中心-意见反馈',
+    returnTo: '服务中心',
+    owner: '意见反馈页（T034；文本框+提交）',
+  },
+
   /* ────────────────────────── T033/T034 卡博士设备服务 ────────────────────────── */
   {
     path: '/device/:type',
@@ -722,13 +764,13 @@ export const TAB_ROUTES = ROUTES.filter((route) => route.tab).sort(
  */
 export const LEGACY_TAB_ITEMS: { key: string; label: string; icon: LucideIcon; to?: string }[] = [
   { key: 'home', label: '首页', icon: Home, to: '/legacy-home' },
-  { key: 'service', label: '服务', icon: Headset },
+  { key: 'service', label: '服务', icon: Headset, to: '/legacy-service' },
   { key: 'profile', label: '我的', icon: UserRound },
 ]
 
-/** 判断路径是否使用历史入口的三项底部导航（仅历史首页自身） */
+/** 判断路径是否使用历史入口的三项底部导航（一级 Tab 自身） */
 export function isLegacyTabPath(pathname: string): boolean {
-  return pathname === '/legacy-home'
+  return pathname === '/legacy-home' || pathname === '/legacy-service'
 }
 
 /**
