@@ -1,13 +1,26 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft } from 'lucide-react'
+import { useUserInfo, userInfoActions } from './userInfoStore'
 
 export default function EditNickname() {
   const navigate = useNavigate()
-  const [nickname, setNickname] = useState('微信用户')
+  const initialNickname = useUserInfo().nickname
+  const [nickname, setNickname] = useState(initialNickname)
+  const [error, setError] = useState('')
 
   const handleSave = () => {
-    // 保存逻辑（原型只做视觉）
+    const trimmed = nickname.trim()
+    if (!trimmed) {
+      setError('请填写昵称')
+      return
+    }
+    if (trimmed.length > 16) {
+      setError('昵称长度不能超过 16 个字')
+      return
+    }
+    setError('')
+    userInfoActions.update({ nickname: trimmed })
     navigate(-1)
   }
 
@@ -35,10 +48,15 @@ export default function EditNickname() {
         <input
           type="text"
           value={nickname}
-          onChange={(e) => setNickname(e.target.value)}
+          onChange={(e) => {
+            setNickname(e.target.value)
+            setError('')
+          }}
+          maxLength={20}
           className="w-full rounded-xl bg-bg-secondary px-4 py-3.5 text-base text-text-primary outline-none focus:ring-2 focus:ring-[#D4A853]/30"
           placeholder="请输入昵称"
         />
+        {error && <div className="mt-2 px-1 text-xs text-red-500">{error}</div>}
       </div>
 
       {/* 保存按钮 */}

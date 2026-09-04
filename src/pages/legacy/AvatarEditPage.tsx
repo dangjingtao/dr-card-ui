@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, Camera, Image as ImageIcon } from 'lucide-react'
+import { userInfoActions } from './userInfoStore'
 
-/* ---- Fixture ---- */
+/* ---- Fixture：9 个预置头像（dicebear avataaars） ---- */
 const AVATAR_OPTIONS = [
   'https://api.dicebear.com/7.x/avataaars/svg?seed=weixin',
   'https://api.dicebear.com/7.x/avataaars/svg?seed=avatar1',
@@ -18,11 +19,18 @@ const AVATAR_OPTIONS = [
 export default function AvatarEditPage() {
   const navigate = useNavigate()
   const [selected, setSelected] = useState(0)
+  const [saving, setSaving] = useState(false)
 
   const handleSave = () => {
-    // 模拟保存：toast + 返回
-    alert('头像保存成功')
-    navigate(-1)
+    if (saving) return
+    setSaving(true)
+    /* 模拟异步保存；成功后回写 store */
+    setTimeout(() => {
+      userInfoActions.update({ avatar: AVATAR_OPTIONS[selected] })
+      setSaving(false)
+      alert('头像保存成功')
+      navigate(-1)
+    }, 400)
   }
 
   return (
@@ -81,9 +89,7 @@ export default function AvatarEditPage() {
               }`}
             >
               <img src={src} alt={`头像${idx + 1}`} className="h-full w-full object-cover" />
-              {selected === idx && (
-                <div className="absolute inset-0 bg-[#D4A853]/20" />
-              )}
+              {selected === idx && <div className="absolute inset-0 bg-[#D4A853]/20" />}
             </button>
           ))}
         </div>
@@ -115,9 +121,10 @@ export default function AvatarEditPage() {
         <button
           type="button"
           onClick={handleSave}
-          className="w-full rounded-full bg-gradient-to-r from-[#D4A853] to-[#E8C97A] py-3.5 text-base font-semibold text-white shadow-md active:opacity-90"
+          disabled={saving}
+          className="w-full rounded-full bg-gradient-to-r from-[#D4A853] to-[#E8C97A] py-3.5 text-base font-semibold text-white shadow-md active:opacity-90 disabled:opacity-60"
         >
-          保存头像
+          {saving ? '保存中…' : '保存头像'}
         </button>
       </div>
     </div>

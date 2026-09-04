@@ -36,16 +36,14 @@
 
 ## 落地
 
-- `PersonalInfo.tsx`：USER\_INFO 新增 `realName/studentId/school/academy`（mock：广州大学 / 计算机科学与网络工程学院 / 20221145141215），INFO\_ITEMS 顺序：头像/用户名/昵称/真实姓名/学号/学校/学院/手机/邮箱，手机项跳 `/legacy-profile/phone-change`，头像项跳 `/legacy-profile/avatar-edit`。
-
-- `AvatarEditPage.tsx`（新建）：28×28 头像预览 + 相机浮标 + 4×3 共 9 个预置头像网格 + 相册/拍照 + 淡金保存。
-
-- `PhoneChangePage.tsx`（新建）：三步式（原号验证 → 新号验证 → 成功），独立 60s 倒计时，进度条随 step 推进。
-
-- `LoginPage.tsx`（新建）：微信授权登录主按钮 + 协议勾选 + 模拟授权成功回调。
-
-- 路由注册：`src/app/router/index.tsx`（imports + `customPages`）与 `src/app/router/routes.ts`（ROUTES 数组）同步添加 `avatar-edit / phone-change / login` 三条新路径（避免 `*` NotFound 兜底）。
-
+- `PersonalInfo.tsx`：USER_INFO 新增 `realName/studentId/school/academy`（mock：广州大学 / 计算机科学与网络工程学院 / 20221145141215），INFO_ITEMS 顺序：头像/用户名/昵称/真实姓名/学号/学校/学院/手机/邮箱，手机项跳 `/legacy-profile/phone-change`，头像项 + 真实姓名项合并指向 `/legacy-profile/edit`（合一编辑）。手机号字段改为从 `userInfoStore` 读取，换绑成功后自动同步刷新。
+- `EditProfile.tsx`（新建，T026 实施要求第 4 条）：合一编辑 头像/昵称/真实姓名，含 9 宫格头像选择、字长度校验、loading、保存回写 store 后跳回 `/legacy-profile/info`。
+- `AvatarEditPage.tsx`（独立改头像入口）：28×28 头像预览 + 相机浮标 + 4×3 共 9 个预置头像网格 + 相册/拍照 + 淡金保存。保存时调用 `userInfoActions.update({ avatar })` 回写 store，PersonalInfo 头像列实时刷新。
+- `PhoneChangePage.tsx`：三步式「原号验证 → 新号验证 → 换绑成功」，步骤 1 自动带入当前手机号（只读）+ 验证码，步骤 2 输入新号 + 验证码；11 位中国大陆手机号格式校验；独立 60s 倒计时；异步请求模拟（步骤 2 15% 概率失败以演示错误态）；步骤 3 显示新/旧手机号对比 + 「返回个人中心」按钮。成功后调用 `userInfoActions.update({ phone })` 回写个人信息。
+- `LoginPage.tsx`：微信授权登录主按钮 + 协议勾选 + 模拟授权成功回调 + 「换绑手机号」二级入口（参照小程序交互：登录页提供换绑链接，方便换设备后切回原账号）。
+- `EditNickname.tsx`：保存时回写 `userInfoActions.update({ nickname })`，PersonalInfo 昵称列实时刷新。
+- `userInfoStore.ts` + `createSimpleStore.ts`（新建）：极简跨页面共享 store（useXxx hook + actions），PersonalInfo / PhoneChangePage / AvatarEditPage / EditProfile / EditNickname / LoginPage 共享同一份用户信息。
+- 路由注册：`src/app/router/index.tsx`（imports + `customPages`）与 `src/app/router/routes.ts`（ROUTES 数组）同步添加 `avatar-edit / phone-change / login / edit` 四条新路径（避免 `*` NotFound 兜底）。
 - `npm run typecheck` 通过。
 
 ## 依赖与阻塞决策

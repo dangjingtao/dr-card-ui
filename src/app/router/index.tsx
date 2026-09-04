@@ -61,6 +61,7 @@ import DeviceListSimplePage from '../../pages/legacy/DeviceListSimplePage'
 import AvatarEditPage from '../../pages/legacy/AvatarEditPage'
 import PhoneChangePage from '../../pages/legacy/PhoneChangePage'
 import LoginPage from '../../pages/legacy/LoginPage'
+import EditProfile from '../../pages/legacy/EditProfile'
 import NotFound from '../../pages/NotFound'
 import { ROUTES } from './routes'
 import type { ReactElement } from 'react'
@@ -139,6 +140,12 @@ const customPages: Record<string, ReactElement> = {
   '/legacy-profile/receipts': <ReceiptsPage />,
   '/legacy-profile/receipts/:id': <ReceiptDetailPage />,
   '/legacy-profile/devices/:type': <DeviceListSimplePage />,
+
+  /* T026：卡博士注册登录与个人信息 */
+  '/legacy-profile/avatar-edit': <AvatarEditPage />,
+  '/legacy-profile/phone-change': <PhoneChangePage />,
+  '/legacy-profile/login': <LoginPage />,
+  '/legacy-profile/edit': <EditProfile />,
 }
 
 export const router = createBrowserRouter([

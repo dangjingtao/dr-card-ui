@@ -102,7 +102,7 @@ export default function PersonalInfo() {
               <button
                 key={item.key}
                 type="button"
-                onClick={() => navigate('/legacy-profile/avatar-edit')}
+                onClick={() => navigate('/legacy-profile/edit')}
                 className={`flex w-full items-center justify-between px-5 py-3.5 active:bg-[#F8F8FA] ${
                   isLast ? '' : 'border-b border-border-light'
                 }`}

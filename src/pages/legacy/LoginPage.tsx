@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, Smartphone } from 'lucide-react'
 
-/* ---- 微信授权登录页 ---- */
+/* ---- 微信授权登录页（T026：含「换绑手机号」入口，参照小程序交互） ---- */
 export default function LoginPage() {
   const navigate = useNavigate()
   const [agreed, setAgreed] = useState(false)
@@ -64,6 +64,16 @@ export default function LoginPage() {
             <path d="M9.5 4C5.36 4 2 6.69 2 10c0 1.81 1 3.44 2.59 4.53L4 17l2.71-1.41c.88.21 1.81.34 2.79.36-.07-.34-.1-.7-.1-1.06 0-3.31 3.13-6 7-6 .36 0 .72.02 1.06.07C16.95 6.06 13.55 4 9.5 4zm-2.4 4.5a.9.9 0 110 1.8.9.9 0 010-1.8zm4.8 0a.9.9 0 110 1.8.9.9 0 010-1.8zM16.4 10c-3.31 0-6 2.13-6 4.75 0 1.5.85 2.85 2.18 3.74L12 20l1.99-1.04c.71.16 1.46.27 2.24.29.21 0 .42-.01.62-.02L19 20l-.43-1.85C20.32 17.18 22 15.45 22 13.5c0-2.62-2.69-4.75-6-4.75zm-2 3.2a.7.7 0 110 1.4.7.7 0 010-1.4zm4 0a.7.7 0 110 1.4.7.7 0 010-1.4z" />
           </svg>
           {loading ? '授权中…' : '微信授权登录'}
+        </button>
+
+        {/* T026：换绑手机号入口（参照小程序：登录页提供换绑链接，方便换设备后切回原账号） */}
+        <button
+          type="button"
+          onClick={() => navigate('/legacy-profile/phone-change')}
+          className="flex w-full items-center justify-center gap-1.5 py-2 text-sm text-[#B8893D] active:opacity-70"
+        >
+          <Smartphone className="h-4 w-4" />
+          换绑手机号
         </button>
 
         {/* 其他登录方式（占位） */}
