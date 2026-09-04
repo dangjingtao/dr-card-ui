@@ -2,7 +2,7 @@
 
 ## 状态与类型
 
-- 状态：`Needs Decision`
+- 状态：`Done`
 - 类型：Feature / Notification
 - 优先级：P0（通知余额不足）
 

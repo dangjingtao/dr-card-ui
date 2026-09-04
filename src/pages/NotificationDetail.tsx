@@ -7,10 +7,13 @@ import { notificationCategoryLabel } from '../app/fixtures'
 import { markNotificationRead, useNotification } from '../app/state/notifications'
 
 /** 分类小标签（与列表页 .nt-tag 同规格，保证前后一致） */
-const TAG_CLASS = {
-  system: 'bg-reward-subtle text-reward-text',
-  activity: 'bg-info-bg text-info-text',
-} as const
+const TAG_CLASS: Record<string, string> = {
+  system: 'bg-amber-50 text-amber-700',
+  activity: 'bg-indigo-50 text-indigo-700',
+  balance: 'bg-red-50 text-red-700',
+  event: 'bg-violet-50 text-violet-700',
+  service: 'bg-orange-50 text-orange-700',
+}
 
 export default function NotificationDetail() {
   const navigate = useNavigate()

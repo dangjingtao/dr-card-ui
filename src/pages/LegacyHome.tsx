@@ -79,6 +79,7 @@ export default function LegacyHome() {
           <button
             type="button"
             aria-label="通知"
+            onClick={() => navigate('/notifications')}
             className="flex h-8 w-8 items-center justify-center rounded-full text-text-secondary active:bg-[#F0F2F8]"
           >
             <Bell className="h-5 w-5" />

@@ -414,7 +414,7 @@ export function resolveRedeemOutcome(input: string): RedeemOutcome {
 }
 
 /** 消息分类（T012；reference/通知2.html 的 cat 字段） */
-export type NotificationCategory = 'system' | 'activity'
+export type NotificationCategory = 'system' | 'activity' | 'balance' | 'event' | 'service'
 
 /**
  * 通知消息夹具（T012）
@@ -502,12 +502,64 @@ export const NOTIFICATION_FIXTURES: NotificationFixture[] = [
     paragraphs: ['本月新增 6 款专属兑换好物,含「丝享柔顺洗发水 500ml」与「暖橙随身杯」,先到先兑。'],
     cta: ACTIVITY_CTA,
   },
+  /* T027：余额不足通知（P0） */
+  {
+    id: 'n7',
+    cat: 'balance',
+    title: '余额不足提醒',
+    summary: '您的账户余额已低于 5.00 元,为避免影响设备扫码使用,请及时充值。',
+    time: '今天 16:42',
+    unread: true,
+    paragraphs: [
+      '您的账户余额已低于 5.00 元,为避免影响设备扫码使用,请及时充值。',
+      '点击下方按钮即可跳转充值页面,最低 1 元即可使用。',
+    ],
+    note: '本条由系统自动推送,每次低于阈值只推送一次。',
+  },
+  /* T027：校内活动通知（活动通知占位态） */
+  {
+    id: 'n8',
+    cat: 'event',
+    title: '校内活动报名提醒',
+    summary: '「校园·诗得丽洗护节」本周六 14:00 开幕,前 100 名报名可领取体验装。',
+    time: '今天 11:20',
+    unread: true,
+    paragraphs: ['「校园·诗得丽洗护节」本周六 14:00 开幕,前 100 名报名可领取体验装。'],
+    note: '本通知为校内外活动通知占位,待后台活动模块就绪后启用。',
+    cta: { label: '查看活动', to: '/dearseed' },
+  },
+  /* T027：校外活动通知 */
+  {
+    id: 'n9',
+    cat: 'event',
+    title: '校外体验门店上新',
+    summary: '「诗得丽·上海·徐汇店」已上线设备扫码 8 折优惠活动,本周内有效。',
+    time: '昨天 20:15',
+    unread: false,
+    paragraphs: ['「诗得丽·上海·徐汇店」已上线设备扫码 8 折优惠活动,本周内有效。'],
+    note: '本通知为校内外活动通知占位,待后台活动模块就绪后启用。',
+    cta: { label: '查看门店', to: '/dearseed' },
+  },
+  /* T027：服务通知（设备报修进度等） */
+  {
+    id: 'n10',
+    cat: 'service',
+    title: '报修进度更新',
+    summary: '您的报修单「淋浴设备-A栋1楼」已派单给维修员,预计 30 分钟内上门。',
+    time: '昨天 15:30',
+    unread: false,
+    paragraphs: ['您的报修单「淋浴设备-A栋1楼」已派单给维修员,预计 30 分钟内上门。'],
+    note: '本通知为服务进度通知,可在「我的 · 客服中心」查看详情。',
+  },
 ]
 
 /** 分类中文标签（reference catLabel） */
 export function notificationCategoryLabel(cat: NotificationCategory | string): string {
   if (cat === 'system') return '系统'
   if (cat === 'activity') return '活动'
+  if (cat === 'balance') return '余额'
+  if (cat === 'event') return '活动'
+  if (cat === 'service') return '服务'
   return '通用'
 }
 
