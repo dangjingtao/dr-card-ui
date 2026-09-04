@@ -280,6 +280,38 @@ export const ROUTES: RouteMeta[] = [
     owner: '常用设备/收藏设备列表（T035；设备卡片 + 状态标签 + 收藏星标）',
   },
 
+  /* ────────────────────────── T026 注册登录与个人信息 ────────────────────────── */
+  {
+    path: '/legacy-profile/avatar-edit',
+    title: '修改头像',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T026',
+    entry: '个人信息-头像',
+    returnTo: '个人信息',
+    owner: '修改头像页（T026；9 宫格预置头像 + 相册/拍照 + 28×28 预览 + 淡金保存）',
+  },
+  {
+    path: '/legacy-profile/phone-change',
+    title: '换绑手机号',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T026',
+    entry: '个人信息-手机',
+    returnTo: '个人信息',
+    owner: '换绑手机号流程页（T026；三步式：原号验证 → 新号验证 → 换绑成功）',
+  },
+  {
+    path: '/legacy-profile/login',
+    title: '登录',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T026',
+    entry: '个人中心-设置-退出登录 / 未登录状态',
+    returnTo: '个人中心',
+    owner: '微信授权登录页（T026；微信主按钮 + 协议勾选 + 淡金渐变品牌色）',
+  },
+
   /* ────────────────────────── T033/T034 卡博士设备服务 ────────────────────────── */
   {
     path: '/device/:type',

@@ -6,10 +6,14 @@ const USER_INFO = {
   avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=weixin',
   username: 'weixin_o1jPT0rReq40wuWbvu48ejq5p184',
   nickname: '微信用户',
-  realName: '',
+  realName: '张三',
   phone: '15047757139',
   email: '',
   account: 'K011079469',
+  /* T026：学号学院字段（mock） */
+  studentId: '20221145141215',
+  school: '广州大学',
+  academy: '计算机科学与网络工程学院',
 }
 
 const INFO_ITEMS = [
@@ -17,7 +21,10 @@ const INFO_ITEMS = [
   { key: 'username', label: '用户名', type: 'text' },
   { key: 'nickname', label: '昵称', type: 'link', to: '/legacy-profile/nickname' },
   { key: 'realName', label: '真实姓名', type: 'link', to: '' },
-  { key: 'phone', label: '手机', type: 'link', to: '/legacy-profile/phone' },
+  { key: 'studentId', label: '学号', type: 'text' },
+  { key: 'school', label: '学校', type: 'text' },
+  { key: 'academy', label: '学院', type: 'text' },
+  { key: 'phone', label: '手机', type: 'link', to: '/legacy-profile/phone-change' },
   { key: 'email', label: '邮箱', type: 'link', to: '/legacy-profile/email' },
 ] as const
 
@@ -34,6 +41,12 @@ export default function PersonalInfo() {
         return USER_INFO.nickname
       case 'realName':
         return USER_INFO.realName
+      case 'studentId':
+        return USER_INFO.studentId
+      case 'school':
+        return USER_INFO.school
+      case 'academy':
+        return USER_INFO.academy
       case 'phone':
         return USER_INFO.phone
       case 'email':
@@ -70,7 +83,6 @@ export default function PersonalInfo() {
             {Array.from({ length: 64 }).map((_, i) => {
               const row = Math.floor(i / 8)
               const col = i % 8
-              // 伪随机生成二维码图案
               const filled = (row * 7 + col * 13 + row * col) % 3 !== 0
               const isCorner =
                 (row < 2 && col < 2) || (row < 2 && col > 5) || (row > 5 && col < 2)
@@ -98,19 +110,24 @@ export default function PersonalInfo() {
 
           if (item.type === 'avatar') {
             return (
-              <div
+              <button
                 key={item.key}
-                className={`flex items-center justify-between px-5 py-3.5 ${
+                type="button"
+                onClick={() => navigate('/legacy-profile/avatar-edit')}
+                className={`flex w-full items-center justify-between px-5 py-3.5 active:bg-[#F8F8FA] ${
                   isLast ? '' : 'border-b border-border-light'
                 }`}
               >
                 <span className="text-sm text-[#B8893D]">{item.label}</span>
-                <img
-                  src={value}
-                  alt="头像"
-                  className="h-10 w-10 rounded-full object-cover"
-                />
-              </div>
+                <div className="flex items-center gap-2">
+                  <img
+                    src={value}
+                    alt="头像"
+                    className="h-10 w-10 rounded-full object-cover"
+                  />
+                  <ChevronRight className="h-4 w-4 text-text-tertiary" />
+                </div>
+              </button>
             )
           }
 
@@ -124,7 +141,7 @@ export default function PersonalInfo() {
               >
                 <span className="text-sm text-[#B8893D]">{item.label}</span>
                 <span className="max-w-[60%] truncate text-sm text-text-primary">
-                  {value}
+                  {value || '未完善'}
                 </span>
               </div>
             )
@@ -136,7 +153,7 @@ export default function PersonalInfo() {
               key={item.key}
               type="button"
               onClick={() => item.to && navigate(item.to)}
-              className={`flex w-full items-center justify-between px-5 py-3.5 active:bg-bg-secondary ${
+              className={`flex w-full items-center justify-between px-5 py-3.5 active:bg-[#F8F8FA] ${
                 isLast ? '' : 'border-b border-border-light'
               }`}
             >

@@ -28,6 +28,15 @@
 - 不做付费头像库。
 - 不做头像框等装饰性增值功能。
 
+## 落地
+
+- `PersonalInfo.tsx`：USER_INFO 新增 `realName/studentId/school/academy`（mock：广州大学 / 计算机科学与网络工程学院 / 20221145141215），INFO_ITEMS 顺序：头像/用户名/昵称/真实姓名/学号/学校/学院/手机/邮箱，手机项跳 `/legacy-profile/phone-change`，头像项跳 `/legacy-profile/avatar-edit`。
+- `AvatarEditPage.tsx`（新建）：28×28 头像预览 + 相机浮标 + 4×3 共 9 个预置头像网格 + 相册/拍照 + 淡金保存。
+- `PhoneChangePage.tsx`（新建）：三步式（原号验证 → 新号验证 → 成功），独立 60s 倒计时，进度条随 step 推进。
+- `LoginPage.tsx`（新建）：微信授权登录主按钮 + 协议勾选 + 模拟授权成功回调。
+- 路由注册：`src/app/router/index.tsx`（imports + `customPages`）与 `src/app/router/routes.ts`（ROUTES 数组）同步添加 `avatar-edit / phone-change / login` 三条新路径（避免 `*` NotFound 兜底）。
+- `npm run typecheck` 通过。
+
 ## 依赖与阻塞决策
 
 | 编号 | 阻塞项 | 风险 | 说明 |
