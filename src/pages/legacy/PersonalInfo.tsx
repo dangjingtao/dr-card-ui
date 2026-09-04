@@ -1,20 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-
-/* ---- Fixture ---- */
-const USER_INFO = {
-  avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=weixin',
-  username: 'weixin_o1jPT0rReq40wuWbvu48ejq5p184',
-  nickname: '微信用户',
-  realName: '张三',
-  phone: '15047757139',
-  email: '',
-  account: 'K011079469',
-  /* T026：学号学院字段（mock） */
-  studentId: '20221145141215',
-  school: '广州大学',
-  academy: '计算机科学与网络工程学院',
-}
+import { useUserInfo } from './userInfoStore'
 
 const INFO_ITEMS = [
   { key: 'avatar', label: '头像', type: 'avatar' },
@@ -28,29 +14,32 @@ const INFO_ITEMS = [
   { key: 'email', label: '邮箱', type: 'link', to: '/legacy-profile/email' },
 ] as const
 
+type InfoKey = (typeof INFO_ITEMS)[number]['key']
+
 export default function PersonalInfo() {
   const navigate = useNavigate()
+  const userInfo = useUserInfo()
 
-  const getValue = (key: string) => {
+  const getValue = (key: InfoKey): string => {
     switch (key) {
       case 'avatar':
-        return USER_INFO.avatar
+        return userInfo.avatar
       case 'username':
-        return USER_INFO.username
+        return userInfo.username
       case 'nickname':
-        return USER_INFO.nickname
+        return userInfo.nickname
       case 'realName':
-        return USER_INFO.realName
+        return userInfo.realName
       case 'studentId':
-        return USER_INFO.studentId
+        return userInfo.studentId
       case 'school':
-        return USER_INFO.school
+        return userInfo.school
       case 'academy':
-        return USER_INFO.academy
+        return userInfo.academy
       case 'phone':
-        return USER_INFO.phone
+        return userInfo.phone
       case 'email':
-        return USER_INFO.email
+        return userInfo.email
       default:
         return ''
     }
@@ -98,7 +87,7 @@ export default function PersonalInfo() {
           </div>
         </div>
         <div className="mt-3 text-sm text-text-secondary">
-          账号：{USER_INFO.account}
+          账号：{userInfo.account}
         </div>
       </div>
 
