@@ -6,6 +6,7 @@ import {
   MessageSquarePlus,
   RefreshCw,
   WrenchIcon,
+  MessageCircle,
 } from 'lucide-react'
 import PageContainer from '../components/mobile/PageContainer'
 import { HOT_QUESTION_BATCHES, type HotQuestion } from '../app/fixtures/service'
@@ -35,18 +36,29 @@ export default function LegacyService() {
         <h1 className="text-lg font-semibold text-text-primary">服务中心</h1>
       </div>
 
-      {/* 客服欢迎语 */}
-      <div className="flex items-start gap-2">
+      {/* 客服欢迎语 + 在线客服入口（T028） */}
+      <button
+        type="button"
+        onClick={() => navigate('/legacy-profile/customer-service')}
+        className="flex w-full items-start gap-2 rounded-2xl text-left active:bg-surface-secondary"
+      >
         <div
           className="flex h-12 w-12 flex-none items-center justify-center rounded-full text-white shadow-sm"
           style={{ background: 'linear-gradient(135deg, #D4A853 0%, #B8893D 100%)' }}
         >
           <HeadphonesIcon className="h-6 w-6" />
         </div>
-        <div className="max-w-[70%] rounded-2xl rounded-tl-sm bg-white px-4 py-3 text-sm text-text-primary shadow-sm border border-border-subtle">
-          Hi~欢迎来到卡博士
+        <div className="flex flex-1 items-center gap-2">
+          <div className="flex-1 rounded-2xl rounded-tl-sm bg-white px-4 py-3 text-sm text-text-primary shadow-sm border border-border-subtle">
+            <div>Hi~欢迎来到卡博士</div>
+            <div className="mt-1 flex items-center gap-1 text-xs text-[#B8893D]">
+              <MessageCircle className="h-3.5 w-3.5" />
+              点击进入 AI 在线客服
+            </div>
+          </div>
+          <ChevronRight className="h-5 w-5 flex-none text-text-tertiary" />
         </div>
-      </div>
+      </button>
 
       {/* 两大入口 */}
       <div className="grid grid-cols-2 gap-4">
