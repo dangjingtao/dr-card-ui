@@ -66,7 +66,6 @@ import MyCardsPage from '../../pages/legacy/MyCardsPage'
 import CouponsPage from '../../pages/legacy/CouponsPage'
 import CustomerServicePage from '../../pages/legacy/CustomerServicePage'
 import SchoolAccountListPage from '../../pages/legacy/SchoolAccountListPage'
-import SchoolAccountDetailPage from '../../pages/legacy/SchoolAccountDetailPage'
 import RechargePage from '../../pages/legacy/RechargePage'
 import SchoolRefundPage from '../../pages/legacy/SchoolRefundPage'
 import NotFound from '../../pages/NotFound'
@@ -161,7 +160,6 @@ const customPages: Record<string, ReactElement> = {
   /* T028：客服中心与学校账户退款 */
   '/legacy-profile/customer-service': <CustomerServicePage />,
   '/legacy-profile/school-accounts': <SchoolAccountListPage />,
-  '/legacy-profile/school-account/:id': <SchoolAccountDetailPage />,
   '/legacy-profile/recharge/:id': <RechargePage />,
   '/legacy-profile/school-refund/:id': <SchoolRefundPage />,
 }

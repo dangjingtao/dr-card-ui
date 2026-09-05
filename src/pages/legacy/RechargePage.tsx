@@ -1,30 +1,31 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ChevronLeft, UserRound, Loader2 } from 'lucide-react'
-import { findSchool, schoolAccountActions } from './schoolAccountStore'
+import { findProject, projectActions, recomputeSchoolTotals } from './schoolAccountStore'
 
 /* 快捷金额按钮 */
 const QUICK_AMOUNTS = [20, 50]
 
 /**
- * T028｜充值/购买页（图2）
+ * T028｜项目充值/购买页（图2）
  * -------------------------------------------------------------
- * 输入金额 + 快捷金额（充20 / 充50）+ 确认提交（蓝色大按钮）
- * + 退款按钮（绿色大按钮，跳学校退款）+ 底部温馨提示。
+ * 顶部蓝色背景：项目名 + 蓝色头像
+ * 购买金额输入 + 快捷金额（充20 / 充50）
+ * 蓝色确认提交 + 绿色退款按钮
  */
 export default function RechargePage() {
   const navigate = useNavigate()
   const { id = '' } = useParams()
-  const account = findSchool(id)
+  const project = findProject(id)
 
   const [amount, setAmount] = useState<string>('20')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
-  if (!account) {
+  if (!project) {
     return (
       <div className="mx-auto flex min-h-full max-w-[480px] flex-col items-center justify-center bg-[#F8F8FA]">
-        <div className="text-sm text-text-tertiary">学校账户不存在</div>
+        <div className="text-sm text-text-tertiary">项目不存在</div>
         <button
           type="button"
           onClick={() => navigate(-1)}
@@ -42,27 +43,29 @@ export default function RechargePage() {
   const handleConfirm = async () => {
     setError('')
     if (numericAmount <= 0) {
-      setError('请输入大于 0 的金额')
+      setError('请输入大于 0的金额')
       return
     }
     setSubmitting(true)
     setTimeout(() => {
       /* 累加小票余额 + 可退款金额 */
-      const list = schoolAccountActions.get()
-      const newList = list.map((s) =>
-        s.id === id
+      const list = projectActions.get()
+      const newList = list.map((p) =>
+        p.id === id
           ? {
-              ...s,
-              ticketBalance: Number((s.ticketBalance + numericAmount).toFixed(2)),
-              refundableBalance: Number((s.refundableBalance + numericAmount).toFixed(2)),
+              ...p,
+              ticketBalance: Number((p.ticketBalance + numericAmount).toFixed(2)),
+              refundableBalance: Number((p.refundableBalance + numericAmount).toFixed(2)),
             }
-          : s,
+          : p,
       )
-      schoolAccountActions.set(newList)
+      projectActions.set(newList)
+      /* 重算学校总余额 */
+      recomputeSchoolTotals()
 
       setSubmitting(false)
       alert(`充值成功 ¥${numericAmount.toFixed(2)}`)
-      navigate(`/legacy-profile/school-account/${id}`)
+      navigate(`/legacy-profile/school-accounts`)
     }, 800)
   }
 
@@ -88,7 +91,7 @@ export default function RechargePage() {
           >
             <UserRound className="h-5 w-5" />
           </div>
-          <div className="text-base font-semibold">{account.schoolName}</div>
+          <div className="text-base font-semibold">{project.projectName}</div>
         </div>
       </div>
 

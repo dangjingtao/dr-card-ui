@@ -366,16 +366,6 @@ export const ROUTES: RouteMeta[] = [
     owner: '学校账户列表页（T028；账户总余额 + 各学校卡片：校徽 + 学校名 + 账号 + 小票余额 + 右箭头）',
   },
   {
-    path: '/legacy-profile/school-account/:id',
-    title: '学校账户',
-    titleBar: 'hidden',
-    nodes: [],
-    task: 'T028',
-    entry: '「我的小票」-学校卡片',
-    returnTo: '我的小票',
-    owner: '学校账户概览页（T028；蓝色头部：账号 + 总余额 + 右上"小票记录"；白色卡：学校信息 + 小票余额 / 可退款金额 / 赠送金额；底部双按钮：购买蓝 / 退款绿）',
-  },
-  {
     path: '/legacy-profile/recharge/:id',
     title: '购买',
     titleBar: 'hidden',

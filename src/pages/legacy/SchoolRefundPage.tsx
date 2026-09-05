@@ -1,30 +1,30 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ChevronLeft, Loader2 } from 'lucide-react'
-import { findSchool, schoolAccountActions } from './schoolAccountStore'
+import { findProject, projectActions, recomputeSchoolTotals } from './schoolAccountStore'
 
 /**
- * T028｜学校账户退款页（图3）
+ * T028｜项目退款页（图3）
  * -------------------------------------------------------------
- * 顶部蓝色背景
+ * 顶部蓝色背景 + 白色卡片：项目名 + 头像 + 余额细分
  * 退款金额(元)（默认 = 可退款金额）+ 退款方式（无选项，预留）
- * 灰色「确认退款」大按钮（loading）+ 底部温馨提示
+ * 灰色「确认退款」大按钮 + 底部温馨提示
  */
 export default function SchoolRefundPage() {
   const navigate = useNavigate()
   const { id = '' } = useParams()
-  const account = findSchool(id)
+  const project = findProject(id)
 
   const [amount, setAmount] = useState<string>(
-    account ? account.refundableBalance.toFixed(2) : '0',
+    project ? project.refundableBalance.toFixed(2) : '0',
   )
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
-  if (!account) {
+  if (!project) {
     return (
       <div className="mx-auto flex min-h-full max-w-[480px] flex-col items-center justify-center bg-[#F8F8FA]">
-        <div className="text-sm text-text-tertiary">学校账户不存在</div>
+        <div className="text-sm text-text-tertiary">项目不存在</div>
         <button
           type="button"
           onClick={() => navigate(-1)}
@@ -44,27 +44,28 @@ export default function SchoolRefundPage() {
       setError('请输入大于 0 的金额')
       return
     }
-    if (numericAmount > account.refundableBalance) {
-      setError(`退款金额不能超过可退款金额 ¥${account.refundableBalance.toFixed(2)}`)
+    if (numericAmount > project.refundableBalance) {
+      setError(`退款金额不能超过可退款金额 ¥${project.refundableBalance.toFixed(2)}`)
       return
     }
 
     setSubmitting(true)
     setTimeout(() => {
-      const list = schoolAccountActions.get()
-      const newList = list.map((s) =>
-        s.id === id
+      const list = projectActions.get()
+      const newList = list.map((p) =>
+        p.id === id
           ? {
-              ...s,
-              ticketBalance: Number((s.ticketBalance - numericAmount).toFixed(2)),
-              refundableBalance: Number((s.refundableBalance - numericAmount).toFixed(2)),
+              ...p,
+              ticketBalance: Number((p.ticketBalance - numericAmount).toFixed(2)),
+              refundableBalance: Number((p.refundableBalance - numericAmount).toFixed(2)),
             }
-          : s,
+          : p,
       )
-      schoolAccountActions.set(newList)
+      projectActions.set(newList)
+      recomputeSchoolTotals()
       setSubmitting(false)
       alert(`退款成功 ¥${numericAmount.toFixed(2)}`)
-      navigate(`/legacy-profile/school-account/${id}`)
+      navigate(`/legacy-profile/school-accounts`)
     }, 800)
   }
 
@@ -85,8 +86,31 @@ export default function SchoolRefundPage() {
         </button>
       </div>
 
+      {/* 项目卡片 */}
+      <div className="mx-4 -mt-4 mb-4 rounded-2xl bg-white p-5 shadow-sm">
+        <div className="flex items-start justify-between">
+          <div className="text-base font-semibold text-text-primary">
+            {project.projectName}
+          </div>
+          <div
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white"
+            style={{ background: 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)' }}
+          >
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden="true">
+              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+            </svg>
+          </div>
+        </div>
+
+        <div className="mt-4 space-y-3">
+          <Row label="小票余额" value={project.ticketBalance} />
+          <Row label="可退款金额" value={project.refundableBalance} highlight />
+          <Row label="赠送金额" value={project.giftBalance} />
+        </div>
+      </div>
+
       {/* 表单区 */}
-      <div className="flex-1 space-y-4 bg-white px-5 pb-4 pt-5">
+      <div className="space-y-4 bg-white px-5 pb-4 pt-2">
         <div>
           <div className="text-sm text-text-primary">退款金额(元)</div>
           <div className="mt-2 flex items-start gap-2 border-b border-divider py-2">
@@ -133,6 +157,31 @@ export default function SchoolRefundPage() {
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+function Row({
+  label,
+  value,
+  highlight = false,
+}: {
+  label: string
+  value: number
+  highlight?: boolean
+}) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-sm text-text-secondary">{label}</span>
+      <span
+        className={
+          highlight
+            ? 'text-base font-bold text-[#B8893D]'
+            : 'text-sm text-text-primary'
+        }
+      >
+        ¥{value.toFixed(2)}
+      </span>
     </div>
   )
 }
