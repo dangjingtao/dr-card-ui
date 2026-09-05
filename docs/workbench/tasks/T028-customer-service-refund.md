@@ -2,7 +2,7 @@
 
 ## 状态与类型
 
-- 状态：`Needs Decision`
+- 状态：`In Progress`（首轮：客服中心页 + APP 内原生退款闭环 + 小票退款入口 + 服务页主入口，业务闭环跑通待接口）
 
 - 类型：Feature / Flow
 
