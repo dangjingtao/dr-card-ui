@@ -1,16 +1,16 @@
 import { useNavigate } from 'react-router-dom'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, Building2 } from 'lucide-react'
 import { useSchools, useProjects, recomputeSchoolTotals } from './schoolAccountStore'
 
 /**
- * T028｜我的小票（账户 + 项目两层）
+ * T028｜我的小票（账户 + 项目两层，卡博士 APP 风格）
  * -------------------------------------------------------------
  * 顶部淡金渐变头部（来自账户维度，仅一份）：
  *   - 账号 + 总余额（聚合所有项目）+ 右上"小票记录"
  * 下方项目列表（每个项目独立卡）：
- *   - 项目名 + 蓝色头像
+ *   - 项目名 + Building2 金色头像
  *   - 三行金额（小票余额 / 可退款金额 / 赠送金额）
- *   - 双按钮：购买（蓝）/ 退款（绿）—— 点进来直接可用
+ *   - 双按钮：购买（淡金渐变）/ 退款（淡金渐变）
  */
 export default function SchoolAccountListPage() {
   const navigate = useNavigate()
@@ -66,19 +66,12 @@ export default function SchoolAccountListPage() {
                 <div className="text-base font-semibold text-text-primary">
                   {project.projectName}
                 </div>
+                {/* 卡博士风格：金色圆角方块 + 项目建筑图标 */}
                 <div
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white"
-                  style={{ background: 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)' }}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white shadow-sm"
+                  style={{ background: 'linear-gradient(135deg, #D4A853 0%, #B8893D 100%)' }}
                 >
-                  {/* 简化的"用户"头像图标 */}
-                  <svg
-                    viewBox="0 0 24 24"
-                    className="h-4 w-4"
-                    fill="currentColor"
-                    aria-hidden="true"
-                  >
-                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                  </svg>
+                  <Building2 className="h-5 w-5" />
                 </div>
               </div>
 
@@ -92,16 +85,16 @@ export default function SchoolAccountListPage() {
                 <button
                   type="button"
                   onClick={() => navigate(`/legacy-profile/recharge/${project.id}`)}
-                  className="rounded-full py-3 text-base font-semibold text-white shadow-sm active:opacity-90"
-                  style={{ background: 'linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%)' }}
+                  className="rounded-full py-3 text-base font-semibold text-white shadow-md active:opacity-90"
+                  style={{ background: 'linear-gradient(135deg, #D4A853 0%, #E8C97A 100%)' }}
                 >
                   购买
                 </button>
                 <button
                   type="button"
                   onClick={() => navigate(`/legacy-profile/school-refund/${project.id}`)}
-                  className="rounded-full py-3 text-base font-semibold text-white shadow-sm active:opacity-90"
-                  style={{ background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)' }}
+                  className="rounded-full py-3 text-base font-semibold text-white shadow-md active:opacity-90"
+                  style={{ background: 'linear-gradient(135deg, #D4A853 0%, #E8C97A 100%)' }}
                 >
                   退款
                 </button>
