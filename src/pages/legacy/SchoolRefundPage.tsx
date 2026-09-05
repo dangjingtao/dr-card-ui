@@ -215,7 +215,7 @@ export default function SchoolRefundPage() {
           onClick={handleConfirm}
           disabled={submitting}
           className="flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-base font-semibold text-white shadow-md active:opacity-90 disabled:opacity-60"
-          style={{ background: 'linear-gradient(135deg, #D4A853 0%, #E8C97A 100%)' }}
+          style={{ background: '#1F2937' }}
         >
           {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
           {submitting

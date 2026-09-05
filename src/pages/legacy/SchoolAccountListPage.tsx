@@ -94,7 +94,7 @@ export default function SchoolAccountListPage() {
                   type="button"
                   onClick={() => navigate(`/legacy-profile/school-refund/${project.id}`)}
                   className="rounded-full py-3 text-base font-semibold text-white shadow-md active:opacity-90"
-                  style={{ background: 'linear-gradient(135deg, #D4A853 0%, #E8C97A 100%)' }}
+                  style={{ background: '#1F2937' }}
                 >
                   退款
                 </button>
