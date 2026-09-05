@@ -73,13 +73,8 @@ export default function SettingsPage() {
                 isLast ? '' : 'border-b border-border-light'
               }`}
             >
-              <span className="flex items-center gap-2">
-                {item.icon === 'service' && (
-                  <MessageCircle className="h-4 w-4 text-[#B8893D]" />
-                )}
-                <span className={`text-sm ${item.danger ? 'text-red-500' : 'text-[#B8893D]'}`}>
-                  {item.label}
-                </span>
+              <span className={`text-sm ${item.danger ? 'text-red-500' : 'text-[#B8893D]'}`}>
+                {item.label}
               </span>
               <ChevronRight className="h-4 w-4 text-text-tertiary" />
             </button>

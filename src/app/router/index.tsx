@@ -65,7 +65,8 @@ import EditProfile from '../../pages/legacy/EditProfile'
 import MyCardsPage from '../../pages/legacy/MyCardsPage'
 import CouponsPage from '../../pages/legacy/CouponsPage'
 import CustomerServicePage from '../../pages/legacy/CustomerServicePage'
-import RefundGuidePage from '../../pages/legacy/RefundGuidePage'
+import RefundApplyPage from '../../pages/legacy/RefundApplyPage'
+import RefundSuccessPage from '../../pages/legacy/RefundSuccessPage'
 import RefundRecordsPage from '../../pages/legacy/RefundRecordsPage'
 import NotFound from '../../pages/NotFound'
 import { ROUTES } from './routes'
@@ -158,7 +159,8 @@ const customPages: Record<string, ReactElement> = {
 
   /* T028：客服中心与退款 */
   '/legacy-profile/customer-service': <CustomerServicePage />,
-  '/legacy-profile/refund-guide': <RefundGuidePage />,
+  '/legacy-profile/refund-apply': <RefundApplyPage />,
+  '/legacy-profile/refund-success': <RefundSuccessPage />,
   '/legacy-profile/refund-records': <RefundRecordsPage />,
 }
 

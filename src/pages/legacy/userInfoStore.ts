@@ -18,6 +18,8 @@ export interface UserInfo {
   studentId: string
   school: string
   academy: string
+  /** 充值账户余额（T028 退款原路返回到此账户） */
+  balance: number
 }
 
 const INITIAL_USER_INFO: UserInfo = {
@@ -31,6 +33,7 @@ const INITIAL_USER_INFO: UserInfo = {
   studentId: '20221145141215',
   school: '广州大学',
   academy: '计算机科学与网络工程学院',
+  balance: 100.0,
 }
 
 /* 全局单例：所有引用都指向同一份 USER_INFO，确保换绑后个人信息同步刷新 */

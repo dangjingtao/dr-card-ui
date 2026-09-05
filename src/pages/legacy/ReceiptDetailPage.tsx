@@ -280,7 +280,7 @@ export default function ReceiptDetailPage() {
         {/* T028：申请退款入口 */}
         <button
           type="button"
-          onClick={() => navigate(`/legacy-profile/refund-guide?receipt=${receipt.id}`)}
+          onClick={() => navigate(`/legacy-profile/refund-apply?receipt=${receipt.id}`)}
           className="flex w-full items-center justify-center gap-2 rounded-2xl bg-white py-3.5 text-sm font-medium text-[#B8893D] shadow-sm active:bg-[#F8F8FA]"
         >
           <RotateCcw className="h-4 w-4" />
