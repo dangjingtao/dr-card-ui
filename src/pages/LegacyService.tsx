@@ -49,14 +49,16 @@ export default function LegacyService() {
           <HeadphonesIcon className="h-6 w-6" />
         </div>
         <div className="flex flex-1 items-center gap-2">
-          <div className="flex-1 rounded-2xl rounded-tl-sm bg-white px-4 py-3 text-sm text-text-primary shadow-sm border border-border-subtle">
-            <div>Hi~欢迎来到卡博士</div>
-            <div className="mt-1 flex items-center gap-1 text-xs text-[#B8893D]">
-              <MessageCircle className="h-3.5 w-3.5" />
-              点击进入 AI 在线客服
+          <div className="flex flex-1 items-center justify-between gap-2 rounded-2xl rounded-tl-sm bg-white px-4 py-3 text-sm text-text-primary shadow-sm border border-border-subtle">
+            <div>
+              <div>Hi~欢迎来到卡博士</div>
+              <div className="mt-1 flex items-center gap-1 text-xs text-[#B8893D]">
+                <MessageCircle className="h-3.5 w-3.5" />
+                点击进入在线客服
+              </div>
             </div>
+            <ChevronRight className="h-4 w-4 flex-none text-text-tertiary" />
           </div>
-          <ChevronRight className="h-5 w-5 flex-none text-text-tertiary" />
         </div>
       </button>
 
