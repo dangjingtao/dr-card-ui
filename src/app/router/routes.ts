@@ -344,6 +344,38 @@ export const ROUTES: RouteMeta[] = [
     owner: '优惠卡列表页（T031；三 Tab：未使用 / 已使用 / 已过期，对齐原小程序）',
   },
 
+  /* ────────────────────────── T028 客服中心与退款 ────────────────────────── */
+  {
+    path: '/legacy-profile/customer-service',
+    title: '客服中心',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T028',
+    entry: '设置-在线客服',
+    returnTo: '设置',
+    owner: '客服中心页（T028；上半部分：热门问题可展开答案；下半部分：AI 对话区，输入文字 → mock AI 回复；含「转人工」按钮 + 关键词命中 → 跳排队页）',
+  },
+  {
+    path: '/legacy-profile/refund-guide',
+    title: '申请退款',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T028',
+    entry: '小票详情-申请退款 / 设置-退款',
+    returnTo: '小票详情 / 设置',
+    owner: '退款引导页（T028；公众号工单推款流程：进度条 + 公众号二维码 + 3 步操作说明 + FAQ + 在线客服入口；带 ?receipt= 时自动显示小票编号）',
+  },
+  {
+    path: '/legacy-profile/refund-records',
+    title: '退款记录',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T028',
+    entry: '设置-退款记录',
+    returnTo: '设置',
+    owner: '退款记录页（T028；当前 APP 内无原生退款流程，先做"暂无记录"空态占位）',
+  },
+
   /* ────────────────────────── T033/T034 卡博士设备服务 ────────────────────────── */
   {
     path: '/device/:type',

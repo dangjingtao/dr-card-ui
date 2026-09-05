@@ -1,17 +1,28 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, MessageCircle } from 'lucide-react'
 
-/* ---- Fixture ---- */
-const SETTING_ITEMS = [
-  { key: 'refund', label: '退款' },
-  { key: 'refund-record', label: '退款记录' },
+/* ---- Fixture：设置项 + 跳转目标 ---- */
+interface SettingItem {
+  key: string
+  label: string
+  to?: string
+  /** true = 红色警示项（注销账户），渲染样式不同 */
+  danger?: boolean
+  /** true = 蓝色图标项（如客服），前面展示图标 */
+  icon?: 'service' | null
+}
+
+const SETTING_ITEMS: SettingItem[] = [
+  { key: 'service', label: '在线客服', icon: 'service', to: '/legacy-profile/customer-service' },
+  { key: 'refund', label: '退款', to: '/legacy-profile/refund-guide' },
+  { key: 'refund-record', label: '退款记录', to: '/legacy-profile/refund-records' },
   { key: 'payment-config', label: '支付流程配置' },
   { key: 'change-password', label: '修改密码' },
   { key: 'online-devices', label: '我的在线设备' },
   { key: 'user-agreement', label: '用户协议' },
   { key: 'privacy', label: '隐私政策' },
-  { key: 'cancel-account', label: '注销账户' },
+  { key: 'cancel-account', label: '注销账户', danger: true },
 ]
 
 export default function SettingsPage() {
@@ -21,6 +32,13 @@ export default function SettingsPage() {
   const handleLogout = () => {
     setShowLogoutConfirm(false)
     // 退出登录逻辑
+  }
+
+  const handleClick = (item: SettingItem) => {
+    if (item.to) {
+      navigate(item.to)
+    }
+    /* 没有 to 的先保留为死链，留待后续任务卡施工 */
   }
 
   return (
@@ -50,11 +68,19 @@ export default function SettingsPage() {
             <button
               key={item.key}
               type="button"
+              onClick={() => handleClick(item)}
               className={`flex w-full items-center justify-between px-5 py-3.5 active:bg-bg-secondary ${
                 isLast ? '' : 'border-b border-border-light'
               }`}
             >
-              <span className="text-sm text-[#B8893D]">{item.label}</span>
+              <span className="flex items-center gap-2">
+                {item.icon === 'service' && (
+                  <MessageCircle className="h-4 w-4 text-[#B8893D]" />
+                )}
+                <span className={`text-sm ${item.danger ? 'text-red-500' : 'text-[#B8893D]'}`}>
+                  {item.label}
+                </span>
+              </span>
               <ChevronRight className="h-4 w-4 text-text-tertiary" />
             </button>
           )

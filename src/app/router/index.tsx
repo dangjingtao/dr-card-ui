@@ -64,6 +64,9 @@ import LoginPage from '../../pages/legacy/LoginPage'
 import EditProfile from '../../pages/legacy/EditProfile'
 import MyCardsPage from '../../pages/legacy/MyCardsPage'
 import CouponsPage from '../../pages/legacy/CouponsPage'
+import CustomerServicePage from '../../pages/legacy/CustomerServicePage'
+import RefundGuidePage from '../../pages/legacy/RefundGuidePage'
+import RefundRecordsPage from '../../pages/legacy/RefundRecordsPage'
 import NotFound from '../../pages/NotFound'
 import { ROUTES } from './routes'
 import type { ReactElement } from 'react'
@@ -152,6 +155,11 @@ const customPages: Record<string, ReactElement> = {
   /* T031：卡券与优惠卡 */
   '/legacy-profile/my-cards': <MyCardsPage />,
   '/legacy-profile/coupons': <CouponsPage />,
+
+  /* T028：客服中心与退款 */
+  '/legacy-profile/customer-service': <CustomerServicePage />,
+  '/legacy-profile/refund-guide': <RefundGuidePage />,
+  '/legacy-profile/refund-records': <RefundRecordsPage />,
 }
 
 export const router = createBrowserRouter([
