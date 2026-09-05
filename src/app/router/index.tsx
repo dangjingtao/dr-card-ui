@@ -65,9 +65,10 @@ import EditProfile from '../../pages/legacy/EditProfile'
 import MyCardsPage from '../../pages/legacy/MyCardsPage'
 import CouponsPage from '../../pages/legacy/CouponsPage'
 import CustomerServicePage from '../../pages/legacy/CustomerServicePage'
-import RefundApplyPage from '../../pages/legacy/RefundApplyPage'
-import RefundSuccessPage from '../../pages/legacy/RefundSuccessPage'
-import RefundRecordsPage from '../../pages/legacy/RefundRecordsPage'
+import SchoolAccountListPage from '../../pages/legacy/SchoolAccountListPage'
+import SchoolAccountDetailPage from '../../pages/legacy/SchoolAccountDetailPage'
+import RechargePage from '../../pages/legacy/RechargePage'
+import SchoolRefundPage from '../../pages/legacy/SchoolRefundPage'
 import NotFound from '../../pages/NotFound'
 import { ROUTES } from './routes'
 import type { ReactElement } from 'react'
@@ -157,11 +158,12 @@ const customPages: Record<string, ReactElement> = {
   '/legacy-profile/my-cards': <MyCardsPage />,
   '/legacy-profile/coupons': <CouponsPage />,
 
-  /* T028：客服中心与退款 */
+  /* T028：客服中心与学校账户退款 */
   '/legacy-profile/customer-service': <CustomerServicePage />,
-  '/legacy-profile/refund-apply': <RefundApplyPage />,
-  '/legacy-profile/refund-success': <RefundSuccessPage />,
-  '/legacy-profile/refund-records': <RefundRecordsPage />,
+  '/legacy-profile/school-accounts': <SchoolAccountListPage />,
+  '/legacy-profile/school-account/:id': <SchoolAccountDetailPage />,
+  '/legacy-profile/recharge/:id': <RechargePage />,
+  '/legacy-profile/school-refund/:id': <SchoolRefundPage />,
 }
 
 export const router = createBrowserRouter([

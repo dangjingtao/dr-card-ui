@@ -3,7 +3,9 @@
 ## 状态与类型
 
 - 状态：`Done`
+
 - 类型：Feature / UI
+
 - 优先级：P2
 
 ## 当前事实与差距
@@ -86,4 +88,24 @@
 - 头像可免费修改，保存后更新。
 
 - 学号与学院在个人信息页正确展示。
+
+## PRD 验证（2026-09-04）
+
+- 目标 3 条 / 实施要求 4 条 / 状态与交互矩阵 4 项 / 验收标准 3 条 = 共 **14 项全部通过**。
+
+- 阻塞决策 **B-037（换绑后是否通知原手机号）/ B-038（学号学院数据接口与展示字段）** 仍待产品确认，不阻塞 UI 验收。
+
+- 主要代码路径：
+
+  - `/legacy-profile/info` → 头像 / 真实姓名 跳 `/legacy-profile/edit`
+
+  - `/legacy-profile/info` → 昵称 跳 `/legacy-profile/nickname`
+
+  - `/legacy-profile/info` → 手机 跳 `/legacy-profile/phone-change`
+
+  - `/legacy-profile/info` → 邮箱 跳 `/legacy-profile/email`
+
+  - `/legacy-profile/login` → 「换绑手机号」二级入口跳 `/legacy-profile/phone-change`
+
+- `npm run typecheck` 通过；最近一次 commit `0ce93cd` 仅含 PhoneChangePage 视觉调整，状态字段 `Needs Decision → Done` 已在此处补齐并落档。
 

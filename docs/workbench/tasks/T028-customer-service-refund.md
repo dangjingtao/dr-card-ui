@@ -80,27 +80,29 @@
 
   - 输入栏右侧"转人工"按钮 + 关键词命中（含"人工/真人/转人工"等）→ 跳 `/service/chat/human` 排队页。
 
-- 新建 `RefundGuidePage.tsx`（`/legacy-profile/refund-guide`）：公众号工单推款流程页。
+- **退款流程（APP 内原生闭环）**（按用户 2026-09-05 最新口径：APP 内直接完成退款动作，不再走公众号工单推款）：
 
-  - 顶部：4 步进度（提交申请 → 关注公众号 → 客服审核 → 退款到账）；
+  - 新建 `RefundApplyPage.tsx`（`/legacy-profile/refund-apply`）：小票信息卡 + 全额退款 / 指定金额切换（金额 ≤ 实付金额，带校验）+ 5 个退款原因 chip（设备故障 / 误操作 / 服务质量 / 不想使用 / 其他）+ 退款到账方式说明 + 提交后累加 `userInfoStore.balance` + 写 `localStorage('kbs_refund_records')` + 跳成功页。
 
-  - 公众号二维码占位 + 「卡博士校园服务」公众号名；
+  - 新建 `RefundSuccessPage.tsx`（`/legacy-profile/refund-success`）：渐变金勾 + 本次退款金额 + 退款后账户余额（实时读 store）+ 双按钮（返回个人中心 / 查看退款记录）。
 
-  - 3 步操作说明（菜单选择 / 回复关键词 / 客服审核）+ FAQ 三条 + 联系在线客服按钮；
+  - 重写 `RefundRecordsPage.tsx`：从 `localStorage('kbs_refund_records')` 读取记录，倒序展示（退款单号 / 原小票 / 金额 / 原因 / 时间 / 状态），无记录时显示空态。
 
-  - 带 `?receipt=xxx` query 参数时自动展示对应小票编号 + 复制按钮。
+  - 删除 `RefundGuidePage.tsx`（公众号引导版已废弃）。
 
-- 新建 `RefundRecordsPage.tsx`（`/legacy-profile/refund-records`）：退款记录占位页（"暂无记录"空态）。
+  - `ReceiptDetailPage.tsx`：底部"申请退款"按钮跳 `/legacy-profile/refund-apply?receipt=${id}`。
 
-- `ReceiptDetailPage.tsx`：底部加"申请退款"按钮（RotateCcw 图标 + 金色文字），点击 → `/legacy-profile/refund-guide?receipt=${id}`。
+  - `userInfoStore.ts`：UserInfo 增加 `balance: number`（默认 100 元），退款提交时累加。
 
-- `SettingsPage.tsx`：重写设置列表，新增"在线客服"入口（顶部 + MessageCircle 图标）；接通"退款" → `/legacy-profile/refund-guide`、"退款记录" → `/legacy-profile/refund-records`。
+- `SettingsPage.tsx`：移除「在线客服」入口（用户口径：客服中心主入口在服务页）；移除「退款」入口（任务卡反转：退款从我的小票发起）；保留「退款记录」入口。
 
-- `LegacyService.tsx`：将原"客服欢迎语"卡片（耳机图标 + Hi\~欢迎来到卡博士气泡）升级为可点击入口，整卡片 onClick 跳 `/legacy-profile/customer-service`；气泡内追加金色「点击进入 AI 在线客服」提示 + 右侧 ChevronRight 引导。
+- `LegacyService.tsx`：将原"客服欢迎语"卡片（耳机图标 + Hi\~欢迎来到卡博士气泡）升级为可点击入口，整卡片 onClick 跳 `/legacy-profile/customer-service`；气泡内追加金色「点击进入在线客服」提示 + 右侧 ChevronRight 引导（后续修正：箭头移入气泡内、文案去掉 "AI"）。
 
-- 客服中心目前两个入口：① 服务 → 在线客服气泡（主入口）② 我的 → 设置 → 在线客服（次入口）。
+- 客服中心唯一入口：服务 → 顶部欢迎卡片（主入口）。
 
-- 路由注册：`src/app/router/index.tsx`（imports + `customPages`）与 `src/app/router/routes.ts`（ROUTES 数组）同步添加 `customer-service / refund-guide / refund-records` 三条新路径。
+- 退款入口：我的小票详情页 → "申请退款"（主入口）；设置 → 退款记录。
+
+- 路由注册：`src/app/router/index.tsx`（imports + `customPages`）与 `src/app/router/routes.ts`（ROUTES 数组）同步添加 `customer-service / refund-apply / refund-success / refund-records` 四条新路径。
 
 - `npm run typecheck` 通过。
 
