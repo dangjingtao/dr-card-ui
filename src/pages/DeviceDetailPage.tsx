@@ -244,8 +244,10 @@ export default function DeviceDetailPage() {
             <button
               type="button"
               onClick={handleOpenRecharge}
-              disabled={phase !== 'idle'}
-              className={`flex h-7 items-center gap-1 rounded-full px-3 text-xs font-medium shadow-sm active:opacity-70 disabled:opacity-40 ${
+              /* T040（2026-09-07 用户决定）：扫码进入设备详情后，任何阶段（idle / starting / running）
+               * 都可以点「充值」快速充值，不限制 phase。避免用户机器上余额不足时
+               * 还要先结束流程才能充值的链路。 */
+              className={`flex h-7 items-center gap-1 rounded-full px-3 text-xs font-medium shadow-sm active:opacity-70 ${
                 selectedAmount > balance
                   ? 'border border-danger bg-danger-bg text-danger-text'
                   : 'border border-transparent'
