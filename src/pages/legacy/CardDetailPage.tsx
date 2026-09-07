@@ -200,6 +200,22 @@ export default function CardDetailPage() {
         </div>
       </div>
 
+      {/* 卡余额与去购买链接（按截图） */}
+      <div className="mx-4 mt-4 flex items-center text-sm">
+        <span className="text-text-primary">
+          {card.projectName} 余额:
+          <span className="text-[#DC2626]">{card.balance.toFixed(2)}</span>
+          元
+        </span>
+        <button
+          type="button"
+          onClick={() => navigate(`/legacy-profile/my-cards/${id}/topup`)}
+          className="ml-2 text-[#3B82F6] active:opacity-70"
+        >
+          {'>'} 去购买
+        </button>
+      </div>
+
       {/* === 字段编辑模态弹窗（不走路由，纯组件 state） === */}
       {editingField && (
         <EditFieldModal

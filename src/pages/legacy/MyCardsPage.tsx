@@ -1,16 +1,19 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronLeft, Plus, CreditCard, FlaskConical } from 'lucide-react'
-import { useCards } from './cardStore'
+import { ChevronLeft, ChevronRight, Plus, CreditCard, FlaskConical, Wallet } from 'lucide-react'
+import { useCards, type CardStatus } from './cardStore'
 
 /**
- * T031｜我的卡（声明状态两态：未绑卡 / 已绑卡）
+ * T031｜我的卡（多张卡列表 + 绑定卡按钮）
  * -------------------------------------------------------------
- * 通过 sessionStorage key=KBS_CARD_DEMO_STATE 切换：
- *   'unbound'：显示"绑定卡"按钮 + 空态文案（用户未绑卡的真实体验）
- *   'bound'  ：直接跳转到卡详情（用户已绑卡 → 直接看到卡信息）
+ * 2026-09-07 T029 迭代：用户可绑定多张卡，"绑定卡"按钮始终保留。
  *
- * 右下角悬浮的"原型状态切换器"是开发工具，不计入业务页面。
+ * 严格按截图结构：
+ * - 顶部渐变背景：返回 + 居中"我的卡"标题
+ * - 中部：已绑定的卡片列表（每张卡一条横排卡片，可点击进详情）
+ * - 下方：始终保留"绑定卡"按钮（带 + 图标）
+ *
+ * 右下角保留原型状态切换器（开发工具，不计入业务页面）。
  */
 const DEMO_STATE_KEY = 'KBS_CARD_DEMO_STATE'
 
@@ -31,26 +34,29 @@ function writeDemoState(v: 'unbound' | 'bound') {
   }
 }
 
+const STATUS_TEXT: Record<CardStatus, string> = {
+  normal: '正常',
+  reported: '已挂失',
+  unreported: '已解挂',
+}
+
 export default function MyCardsPage() {
   const navigate = useNavigate()
-  const cards = useCards()
+  const allCards = useCards()
   const [demoState, setDemoState] = useState<'unbound' | 'bound'>(() => readDemoState())
 
-  /* 当切换到 bound 时，跳到第一张卡的详情；切换到 unbound 时，留在本页 */
-  useEffect(() => {
-    writeDemoState(demoState)
-    if (demoState === 'bound' && cards[0]) {
-      navigate(`/legacy-profile/my-cards/${cards[0].id}`, { replace: true })
-    }
-  }, [demoState, cards, navigate])
+  /* 未绑卡演示态：列表清空 */
+  const cards = demoState === 'unbound' ? [] : allCards
 
   const switchDemoState = () => {
-    setDemoState((cur) => (cur === 'bound' ? 'unbound' : 'bound'))
+    const next = demoState === 'bound' ? 'unbound' : 'bound'
+    setDemoState(next)
+    writeDemoState(next)
   }
 
   return (
     <div className="mx-auto flex min-h-full max-w-[480px] flex-col bg-[#F8F8FA]">
-      {/* 顶部栏：淡金渐变背景 */}
+      {/* 顶部栏：淡金渐变背景（卡博士APP主色） */}
       <div
         className="relative shrink-0 px-4 pt-3 pb-3"
         style={{ background: 'linear-gradient(135deg, #D4A853 0%, #E8C97A 50%, #F0D68E 100%)' }}
@@ -70,32 +76,60 @@ export default function MyCardsPage() {
         </div>
       </div>
 
-      {/* ==== 未绑卡状态：绑定卡按钮 + 空态 ==== */}
-      {demoState === 'unbound' && (
-        <>
-          <div className="px-4 pt-4">
+      {/* 已绑定的卡片列表（按截图：每张卡一条白底横排卡片） */}
+      {cards.length > 0 && (
+        <div className="mt-4 space-y-3 px-4">
+          {cards.map((card) => (
             <button
+              key={card.id}
               type="button"
-              onClick={() => navigate('/legacy-profile/my-cards/scan-bind')}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-white py-3.5 text-base font-medium text-text-primary shadow-sm active:bg-[#F8F8FA]"
+              onClick={() => navigate(`/legacy-profile/my-cards/${card.id}`)}
+              className="flex w-full items-center gap-3 rounded-2xl bg-white px-3 py-3 text-left shadow-sm active:bg-[#F8F8FA]"
             >
-              <Plus className="h-5 w-5 text-[#B8893D]" />
-              绑定卡
-            </button>
-          </div>
+              {/* 左侧：紫色圆形卡片图标 */}
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#7B61FF]">
+                <Wallet className="h-6 w-6 text-white" />
+              </div>
 
-          <div className="flex flex-1 flex-col items-center justify-center px-4 pb-8 pt-12 text-text-tertiary">
-            <CreditCard className="mb-3 h-16 w-16 opacity-30" />
-            <div className="text-base text-text-secondary">暂无绑定卡</div>
-            <div className="mt-1 text-xs">点击上方按钮绑定你的校园卡</div>
-          </div>
-        </>
+              {/* 中部：姓名 + 卡号 */}
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-base font-medium text-text-primary">
+                  {card.realName || '未命名'}
+                </div>
+                <div className="mt-0.5 truncate text-xs text-text-tertiary">
+                  {card.cardNo}（卡号：{card.userCardNo}）
+                </div>
+              </div>
+
+              {/* 右侧：状态 + 用途 + chevron */}
+              <div className="flex shrink-0 items-center gap-2 text-xs text-text-tertiary">
+                <span className="text-[#333]">{STATUS_TEXT[card.status]}</span>
+                <span className="text-text-tertiary">小票消费卡</span>
+                <ChevronRight className="h-4 w-4 text-text-tertiary" />
+              </div>
+            </button>
+          ))}
+        </div>
       )}
 
-      {/* ==== 已绑卡状态：被 useEffect 直接跳转到详情 ==== */}
-      {demoState === 'bound' && cards[0] && (
-        <div className="flex flex-1 items-center justify-center px-4 py-12 text-text-tertiary">
-          <div className="text-sm">正在跳转到卡详情…</div>
+      {/* 绑定卡按钮：始终保留 */}
+      <div className={`px-4 ${cards.length > 0 ? 'mt-4' : 'pt-4'}`}>
+        <button
+          type="button"
+          onClick={() => navigate('/legacy-profile/my-cards/scan-bind')}
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-white py-3.5 text-base font-medium text-text-primary shadow-sm active:bg-[#F8F8FA]"
+        >
+          <Plus className="h-5 w-5 text-[#B8893D]" />
+          绑定卡
+        </button>
+      </div>
+
+      {/* 未绑卡时：在按钮下方显示空态 */}
+      {cards.length === 0 && (
+        <div className="flex flex-1 flex-col items-center justify-center px-4 pb-8 pt-12 text-text-tertiary">
+          <CreditCard className="mb-3 h-16 w-16 opacity-30" />
+          <div className="text-base text-text-secondary">暂无绑定卡</div>
+          <div className="mt-1 text-xs">点击上方按钮绑定你的校园卡</div>
         </div>
       )}
 

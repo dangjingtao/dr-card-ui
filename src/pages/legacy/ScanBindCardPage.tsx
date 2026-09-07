@@ -45,6 +45,7 @@ export default function ScanBindCardPage() {
         className: '1',
         studentId: '1',
         status: 'normal',
+        balance: 10,
       },
     ])
     /* 标记原型状态为已绑卡 */

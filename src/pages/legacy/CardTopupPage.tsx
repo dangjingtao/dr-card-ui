@@ -78,21 +78,21 @@ export default function CardTopupPage() {
 
   return (
     <div className="mx-auto flex min-h-full max-w-[480px] flex-col bg-[#F8F8FA]">
-      {/* 顶部蓝色背景 */}
+      {/* 顶部淡金渐变背景 */}
       <div
-        className="relative shrink-0 px-5 pt-12 pb-6"
+        className="relative shrink-0 px-5 pt-3 pb-5"
         style={{ background: 'linear-gradient(135deg, #D4A853 0%, #E8C97A 50%, #F0D68E 100%)' }}
       >
         <button
           type="button"
           aria-label="返回"
           onClick={() => navigate(-1)}
-          className="absolute left-4 top-12 flex h-10 w-10 items-center justify-center text-white active:opacity-80"
+          className="absolute left-4 top-3 flex h-10 w-10 items-center justify-center text-white active:opacity-80"
         >
           <ChevronLeft className="h-6 w-6" />
         </button>
 
-        <div className="mt-12 flex items-center gap-2.5 text-white">
+        <div className="mt-9 flex items-center gap-2.5 text-white">
           <div
             className="flex h-9 w-9 items-center justify-center rounded-full text-white shadow-sm"
             style={{ background: '#DC2626' }}

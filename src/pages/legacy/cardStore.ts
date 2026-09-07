@@ -26,6 +26,8 @@ export interface CardInfo {
   className: string
   studentId: string
   status: CardStatus
+  /** 卡余额（元） */
+  balance: number
 }
 
 const INITIAL_CARDS: CardInfo[] = [
@@ -40,6 +42,7 @@ const INITIAL_CARDS: CardInfo[] = [
     className: '1',
     studentId: '1',
     status: 'normal',
+    balance: 10,
   },
 ]
 

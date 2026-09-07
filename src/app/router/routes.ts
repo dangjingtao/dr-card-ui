@@ -430,6 +430,16 @@ export const ROUTES: RouteMeta[] = [
     owner: '卡详情页（T031 补充；卡信息列表 8 行：卡序号/卡所属项目/用户卡号/卡MAC/姓名/班级/学号/卡状态；姓名/班级/学号 可点击"修改"跳字段编辑；底部三操作：挂失/解挂 + 设置消费卡 → 充值退款页；点挂失/解挂 弹"您确定要…"确认框）',
   },
   {
+    path: '/legacy-profile/my-cards/:id/topup',
+    title: '充值/退款',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T029',
+    entry: '卡详情页-「设置消费卡」或底部「去购买」',
+    returnTo: '卡详情',
+    owner: '卡的充值/退款页（T031 + T029；卡详情页"去购买"/"设置消费卡"入口，金额选择 + 微信/支付宝支付）',
+  },
+  {
     path: '/card',
     title: '卡包',
     titleBarTitle: '卡包',
