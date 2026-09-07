@@ -4,19 +4,20 @@ import { CheckCircle2, ChevronLeft } from 'lucide-react'
 /**
  * T029｜充值成功反馈页
  * -------------------------------------------------------------
- * URL 形如：/legacy-profile/my-cards/:id/topup/success?amount=10&channel=wechat
+ * URL 形如：/legacy-profile/my-cards/:id/topup/success?amount=10&channel=wechat&cardId=...
  * 来自 CardTopupPage 支付成功后的 redirect。
  *
  * 视觉：
  * - 顶部淡金渐变 + 返回按钮（返回卡详情）
  * - 中部白卡：绿色大圆勾 + "充值成功" + 金额 + 支付方式
- * - 底部两个按钮：「完成」（回卡详情）+ 「查看充值记录」（暂时回卡详情，TODO 列表页）
+ * - 底部两个按钮：「完成」（回卡详情）+ 「查看充值记录」（跳 topup-records 路由）
  */
 export default function CardTopupSuccessPage() {
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const amount = params.get('amount') || '0'
   const channel = params.get('channel') === 'alipay' ? '支付宝' : '微信支付'
+  const cardId = params.get('cardId') || ''
 
   const handleBack = () => {
     /* 返回到来源卡详情：history.back 在嵌套路由里更稳 */
@@ -80,14 +81,14 @@ export default function CardTopupSuccessPage() {
       <div className="mt-auto space-y-3 px-4 pb-6 pt-8">
         <button
           type="button"
-          onClick={() => navigate('/legacy-profile/my-cards')}
+          onClick={() => navigate(`/legacy-profile/my-cards/${cardId}/topup-records`)}
           className="w-full rounded-full bg-[#D4A853] py-3.5 text-base font-semibold text-white shadow-sm active:opacity-90"
         >
           查看充值记录
         </button>
         <button
           type="button"
-          onClick={() => navigate('/legacy-profile/my-cards')}
+          onClick={() => navigate(`/legacy-profile/my-cards/${cardId}`)}
           className="w-full rounded-full bg-white py-3.5 text-base font-semibold text-[#B8893D] shadow-sm active:opacity-90"
         >
           完成

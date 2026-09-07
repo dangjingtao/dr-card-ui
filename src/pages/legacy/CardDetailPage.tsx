@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ChevronLeft, FlaskConical } from 'lucide-react'
+import { ChevronLeft, FlaskConical, CreditCard, ArrowDownToLine, ChevronRight } from 'lucide-react'
 import { findCard, updateCard, getCardTopupRecords, getCardRefundRecords, type CardStatus } from './cardStore'
 
 type EditField = 'realName' | 'className' | 'studentId'
@@ -220,28 +220,44 @@ export default function CardDetailPage() {
         </button>
       </div>
 
-      {/* 充值 / 退款记录入口 */}
-      <div className="mx-4 mt-3 grid grid-cols-2 gap-3 rounded-2xl bg-white px-4 py-3 shadow-sm">
+      {/* 充值 / 退款记录入口（左侧图标 + 中部文字 + 右侧 chevron） */}
+      <div className="mx-4 mt-3 grid grid-cols-2 gap-3">
+        {/* 充值记录 */}
         <button
           type="button"
           onClick={() => navigate(`/legacy-profile/my-cards/${id}/topup-records`)}
-          className="flex flex-col items-center py-2 active:opacity-70"
+          className="group flex items-center gap-2.5 rounded-2xl bg-white px-3 py-3 text-left shadow-sm transition active:scale-[0.98] active:bg-[#FAFAFA]"
         >
-          <span className="text-base font-medium text-text-primary">充值记录</span>
-          <span className="mt-0.5 text-xs text-text-tertiary">
-            共 {topupCount} 笔
-          </span>
+          <div
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+            style={{ background: 'linear-gradient(135deg, #F0D78E 0%, #D4A853 100%)' }}
+          >
+            <CreditCard className="h-4.5 w-4.5 text-white" strokeWidth={2.5} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <span className="text-sm font-medium text-text-primary">充值记录</span>
+            <div className="mt-0.5 text-xs text-text-tertiary">查看历史充值</div>
+          </div>
+          <ChevronRight className="h-4 w-4 shrink-0 text-text-tertiary" />
         </button>
-        <div className="mx-2 w-px self-stretch bg-divider" />
+
+        {/* 退款记录 */}
         <button
           type="button"
           onClick={() => navigate(`/legacy-profile/my-cards/${id}/refund-records`)}
-          className="flex flex-col items-center py-2 active:opacity-70"
+          className="group flex items-center gap-2.5 rounded-2xl bg-white px-3 py-3 text-left shadow-sm transition active:scale-[0.98] active:bg-[#FAFAFA]"
         >
-          <span className="text-base font-medium text-text-primary">退款记录</span>
-          <span className="mt-0.5 text-xs text-text-tertiary">
-            共 {refundCount} 笔
-          </span>
+          <div
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+            style={{ background: 'linear-gradient(135deg, #FCA5A5 0%, #DC2626 100%)' }}
+          >
+            <ArrowDownToLine className="h-4.5 w-4.5 text-white" strokeWidth={2.5} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <span className="text-sm font-medium text-text-primary">退款记录</span>
+            <div className="mt-0.5 text-xs text-text-tertiary">查看历史退款</div>
+          </div>
+          <ChevronRight className="h-4 w-4 shrink-0 text-text-tertiary" />
         </button>
       </div>
 

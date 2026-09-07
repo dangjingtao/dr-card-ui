@@ -104,6 +104,7 @@ export default function CardTopupPage() {
       const params = new URLSearchParams({
         amount: numericAmount.toFixed(2),
         channel,
+        cardId: id,
       })
       navigate(`/legacy-profile/my-cards/${id}/topup/success?${params.toString()}`, { replace: true })
     }, 1200)
