@@ -338,10 +338,10 @@ export const ROUTES: RouteMeta[] = [
     title: '登录',
     titleBar: 'hidden',
     nodes: [],
-    task: 'T026',
+    task: 'T037',
     entry: '个人中心-设置-退出登录 / 未登录状态',
     returnTo: '个人中心',
-    owner: '微信授权登录页（T026；微信主按钮 + 协议勾选 + 淡金渐变品牌色 + 「换绑手机号」二级入口）',
+    owner: '登录页（T037；紫色渐变改版：账号 + 密码 + 二次确认密码 + 睁眼/闭眼切换 + 5 次错误显示图形验证码 + 微信授权 + 登录后弹窗引导绑定学校/专业/学号）',
   },
   {
     path: '/legacy-profile/edit',
@@ -352,6 +352,16 @@ export const ROUTES: RouteMeta[] = [
     entry: '个人信息-头像 / 真实姓名',
     returnTo: '个人信息',
     owner: '编辑资料页（T026；合一编辑 头像 / 昵称 / 真实姓名，含 9 宫格头像选择 + 字长度校验 + 加载态 + 保存回写 store）',
+  },
+  {
+    path: '/legacy-profile/bind-school',
+    title: '绑定学校信息',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T037',
+    entry: '登录页绑定引导弹窗-去绑定',
+    returnTo: '个人中心',
+    owner: '绑定学校信息页（T037；学校选择 + 学院输入 + 学号校验，保存回写 userInfoStore 后跳 /legacy-profile）',
   },
 
   /* ────────────────────────── T031 卡券与优惠卡 ────────────────────────── */

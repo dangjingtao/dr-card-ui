@@ -20,6 +20,13 @@ export interface UserInfo {
   academy: string
   /** 充值账户余额（T028 退款原路返回到此账户） */
   balance: number
+  /**
+   * 账号是否已注册（T037）。
+   * - true：当前账号已存在，登录页不显示「确认密码」输入框。
+   * - false：账号未注册，登录页展示「确认密码」输入框，要求两次密码一致。
+   * mock 默认 false，触发二次确认密码演示态。
+   */
+  isRegistered: boolean
 }
 
 const INITIAL_USER_INFO: UserInfo = {
@@ -34,6 +41,7 @@ const INITIAL_USER_INFO: UserInfo = {
   school: '广州大学',
   academy: '计算机科学与网络工程学院',
   balance: 100.0,
+  isRegistered: false,
 }
 
 /* 全局单例：所有引用都指向同一份 USER_INFO，确保换绑后个人信息同步刷新 */

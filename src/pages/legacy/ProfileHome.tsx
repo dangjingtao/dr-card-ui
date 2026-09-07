@@ -13,14 +13,9 @@ import {
   Wallet,
   Tag,
 } from 'lucide-react'
+import { useUserInfo } from './userInfoStore'
 
-/* ---- Fixture ---- */
-const USER_INFO = {
-  avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=weixin',
-  nickname: '微信用户',
-  account: 'K011079469',
-}
-
+/* ---- T035：8 项功能宫格（对齐原小程序「我的」布局） ---- */
 const ORDER_ENTRIES = [
   { key: 'pending', label: '待支付', icon: CreditCard, bg: 'from-[#FFB347] to-[#FFCC66]' },
   { key: 'paid', label: '已支付', icon: Smartphone, bg: 'from-[#A78BFA] to-[#C4B5FD]' },
@@ -30,13 +25,8 @@ const ORDER_ENTRIES = [
 
 /**
  * T031：功能宫格（8 项），对齐原小程序「我的」页面布局
- * -------------------------------------------------------------
- * 第一行（4 项）：我的卡 / 刮刮充值卡 / 优惠卡 / 我的小票
- * 第二行（4 项）：常用设备 / 收藏设备 / 报修 / 帮助与反馈
- *
- * 当前状态：
- * - 我的卡 / 优惠卡：T031 范围，本轮先以 alert「施工中」占位，下一轮接业务页
- * - 刮刮充值卡：按用户口径暂时不做，留位占坑
+ * - 第一行（4 项）：我的卡 / 刮刮充值卡 / 优惠卡 / 我的小票
+ * - 第二行（4 项）：常用设备 / 收藏设备 / 报修 / 帮助与反馈
  */
 const QUICK_ENTRIES: Array<{
   key: string
@@ -58,19 +48,20 @@ const QUICK_ENTRIES: Array<{
 
 export default function ProfileHome() {
   const navigate = useNavigate()
+  /* T037：从 userInfoStore 读取用户信息，包含学校/学院/学号 */
+  const userInfo = useUserInfo()
 
   const handleQuick = (entry: (typeof QUICK_ENTRIES)[number]) => {
     if (entry.to) {
       navigate(entry.to)
     } else {
-      /* T031：占位入口，原型对位但本轮不实现业务页 */
       alert(`${entry.label} 施工中`)
     }
   }
 
   return (
     <div className="mx-auto flex min-h-full max-w-[480px] flex-col bg-[#F8F8FA]">
-      {/* 顶部区 */}
+      {/* 顶部区：金色渐变 */}
       <div
         className="relative shrink-0 px-5 pt-12 pb-10"
         style={{ background: 'linear-gradient(135deg, #D4A853 0%, #E8C97A 50%, #F0D68E 100%)' }}
@@ -88,7 +79,7 @@ export default function ProfileHome() {
         {/* 用户信息 */}
         <div className="flex items-center gap-3">
           <img
-            src={USER_INFO.avatar}
+            src={userInfo.avatar}
             alt="头像"
             className="h-16 w-16 rounded-full border-2 border-white/50 bg-white object-cover shadow-lg"
           />
@@ -98,14 +89,33 @@ export default function ProfileHome() {
               onClick={() => navigate('/legacy-profile/info')}
               className="flex items-center gap-1.5 text-white"
             >
-              <span className="text-lg font-semibold">{USER_INFO.nickname}</span>
+              <span className="text-lg font-semibold">{userInfo.nickname}</span>
               <Pencil className="h-4 w-4 opacity-80" />
             </button>
             <div className="mt-1 text-sm text-white/80">
-              账号：{USER_INFO.account}
+              账号：{userInfo.account}
             </div>
           </div>
         </div>
+
+        {/* T037：学校 / 学院 / 学号摘要 */}
+        {(userInfo.school || userInfo.academy || userInfo.studentId) && (
+          <button
+            type="button"
+            onClick={() => navigate('/legacy-profile/info')}
+            className="mt-3 flex w-full items-center gap-2 text-left text-sm text-white/85 active:opacity-80"
+          >
+            {userInfo.school && (
+              <span className="rounded-full bg-white/20 px-2 py-0.5">{userInfo.school}</span>
+            )}
+            {userInfo.academy && (
+              <span className="truncate">{userInfo.academy}</span>
+            )}
+            {userInfo.studentId && (
+              <span className="shrink-0 rounded-full bg-white/20 px-2 py-0.5">学号 {userInfo.studentId}</span>
+            )}
+          </button>
+        )}
       </div>
 
       {/* 内容区 */}
@@ -144,7 +154,7 @@ export default function ProfileHome() {
           </div>
         </div>
 
-        {/* T031：功能宫格（8 项），对齐原小程序「我的」页面 */}
+        {/* T031：功能宫格（8 项） */}
         <div className="rounded-2xl bg-white px-4 pt-4 pb-2 shadow-sm">
           <div className="grid grid-cols-4 gap-2">
             {QUICK_ENTRIES.map((entry) => {
