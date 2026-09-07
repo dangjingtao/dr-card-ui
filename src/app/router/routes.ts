@@ -136,6 +136,38 @@ export const ROUTES: RouteMeta[] = [
     owner: '历史首页独立扫码页，与 /card/verify 券码核销链路不共用；T033 设备服务扫码复用此页',
   },
 
+  /* ────────────────────────── T036 四大设备功能页面 ────────────────────────── */
+  {
+    path: '/device/:type',
+    title: '设备列表',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T036',
+    entry: '首页四金刚区 → 淋浴/洗烘/饮水/吹风 设备列表',
+    returnTo: '卡博士APP首页',
+    owner: '设备列表页（T036；四套设备共用列表组件，按 type 切换主题色与设备数据）',
+  },
+  {
+    path: '/device/connecting',
+    title: '设备详情',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T036',
+    entry: '设备列表 → 设备详情（连接中态）',
+    returnTo: '设备列表',
+    owner: '设备详情页（T036；金额选择、启动流程、结算、紧急停止、保修悬浮球）',
+  },
+  {
+    path: '/device/success',
+    title: '设备详情',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T036',
+    entry: '设备详情 → 启动成功态',
+    returnTo: '设备列表',
+    owner: '设备详情页（T036；启动成功 / 结算展示态）',
+  },
+
   /* ────────────────────────── T034 卡博士服务中心 ────────────────────────── */
   {
     path: '/legacy-service',
