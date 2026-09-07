@@ -71,6 +71,8 @@ import CustomerServicePage from '../../pages/legacy/CustomerServicePage'
 import SchoolAccountListPage from '../../pages/legacy/SchoolAccountListPage'
 import RechargePage from '../../pages/legacy/RechargePage'
 import SchoolRefundPage from '../../pages/legacy/SchoolRefundPage'
+import SignInPage from '../../pages/legacy/SignInPage'
+import PointsPage from '../../pages/legacy/PointsPage'
 import NotFound from '../../pages/NotFound'
 import { ROUTES } from './routes'
 import type { ReactElement } from 'react'
@@ -170,6 +172,10 @@ const customPages: Record<string, ReactElement> = {
   '/legacy-profile/school-accounts': <SchoolAccountListPage />,
   '/legacy-profile/recharge/:id': <RechargePage />,
   '/legacy-profile/school-refund/:id': <SchoolRefundPage />,
+
+  /* T025：积分商城与泡泡值体系统一（卡博士"福袋"入口） */
+  '/signin': <SignInPage />,
+  '/signin/detail': <PointsPage />,
 }
 
 export const router = createBrowserRouter([

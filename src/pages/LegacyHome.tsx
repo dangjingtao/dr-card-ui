@@ -199,7 +199,7 @@ export default function LegacyHome() {
       <button
         type="button"
         aria-label="福袋"
-        onClick={() => navigate('/redeem')}
+        onClick={() => navigate('/signin')}
         className="fixed bottom-[calc(59px+env(safe-area-inset-bottom)+1rem)] right-4 z-30 flex h-14 w-14 flex-col items-center justify-center rounded-full border border-border-subtle bg-reward-subtle text-reward-text shadow-sm"
       >
         <span className="absolute right-2 top-2 h-2 w-2 rounded-full border-2 border-surface bg-danger" aria-hidden />

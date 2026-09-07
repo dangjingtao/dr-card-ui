@@ -376,6 +376,28 @@ export const ROUTES: RouteMeta[] = [
     owner: '优惠卡列表页（T031；三 Tab：未使用 / 已使用 / 已过期，对齐原小程序）',
   },
 
+  /* ────────────────────────── T025 积分商城与泡泡值体系统一 ────────────────────────── */
+  {
+    path: '/signin',
+    title: '每日签到',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T025',
+    entry: '首页-福袋悬浮按钮',
+    returnTo: '首页',
+    owner: '每日签到/薅羊毛主页（T025；淡金+红色+北极熊IP，广告mock，积分与泡泡值打通）',
+  },
+  {
+    path: '/signin/detail',
+    title: '积分明细',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T025',
+    entry: '签到页-积分余额卡 / 积分明细入口',
+    returnTo: '签到页',
+    owner: '积分明细（卡博士版；与泡泡值共用 pointsStore，文案叫"积分"）',
+  },
+
   /* ────────────────────────── T028 客服中心与退款 ────────────────────────── */
   {
     path: '/legacy-profile/customer-service',
