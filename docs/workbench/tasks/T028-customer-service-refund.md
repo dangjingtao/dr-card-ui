@@ -2,7 +2,7 @@
 
 ## 状态与类型
 
-- 状态：`In Progress`（首轮：客服中心页 + APP 内原生退款闭环 + 小票退款入口 + 服务页主入口，业务闭环跑通待接口）
+- 状态：`User Review`（PR 检查：本地工程门通过，等待用户签字；按规则智能体不得自填 `Accepted`。`后续待施工` 段落仍保留，B-041/B-042 待产品/接口补齐后再迭代）
 
 - 类型：Feature / Flow
 
@@ -105,6 +105,48 @@
 - 路由注册：`src/app/router/index.tsx`（imports + `customPages`）与 `src/app/router/routes.ts`（ROUTES 数组）同步添加 `customer-service / refund-apply / refund-success / refund-records` 四条新路径。
 
 - `npm run typecheck` 通过。
+
+## PR Check（2026-09-07）
+
+- 提交（最近一次 → 最早一次，便于回看）：
+
+  - `0645f31 T028 客服中心移除『转人工』按钮：仅靠输入框关键词『人工客服』触发转人工，减少人工客服压力`
+  - `ed47e00 T028 卡博士与诗得丽客服打通：LegacyService / SettingsPage 的客服入口改跳 /service/chat；保留 /legacy-profile/customer-service 路由作为过渡`
+  - `8084161 T028 退款按钮改黑色 #1F2937：项目卡 + 退款详情页确认按钮`
+  - `7e3cf5d T028 卡博士风格统一：双按钮+头像改淡金；购买/退款详情页加微信+支付宝两条途径`
+  - `1af91c9 T028 我的小票按账户/项目分离：账号+总余额只显示一次(淡金)，下方列各项目余额细分+购买/退款；删除 SchoolAccountDetailPage`
+  - `1468c26 T028 我的小票改项目列表：每个项目卡片含头部蓝色区+账号+总余额+购买/退款按钮，点进来直接用`
+  - `1ef5e89 T028 学校账户概览按图1严格重建：顶部两枚圆形按钮 + 总余额大字 + 玻璃拟态小票记录 + 学校卡片刺入蓝色区域`
+  - `576bfe3 T028 按学校维度重构退款：学校账户列表/概览/充值/退款页 + 删除按小票退款的三个旧页`
+  - `7a8297f T028 落地记录补充：APP 内原生退款闭环 + 设置页移除在线客服`
+  - `4b544ff T028 APP 内原生退款闭环：申请页（金额+原因）→成功页（扣余额）→记录页（localStorage）+ 设置页移除在线客服`
+  - `c0c338a T028 服务页：ChevronRight 移入欢迎气泡内 + 文案 AI在线客服 → 在线客服`
+  - `27d8ce4 T028 服务页：欢迎语卡片升级为可点击客服中心入口`
+  - `f85517c T028 客服中心与退款：新建 3 页 + 小票详情加退款按钮 + 设置入口接通`
+
+- 落地（代码侧）：
+
+  - 客服中心：`src/pages/legacy/CustomerServicePage.tsx`（FAQ 6 条 + AI 对话气泡 + 关键词命中 + 转人工排队入口）。
+  - 退款链路：`RefundApplyPage` / `RefundSuccessPage` / `RefundRecordsPage`（`localStorage('kbs_refund_records')`）+ `ReceiptDetailPage` 入口按钮。
+  - 学校账户维度：`SchoolAccount*` 系列页（按 2026-09-04 口径重构）。
+  - `userInfoStore.balance` 默认 100 元，退款成功累加。
+  - `LegacyService / SettingsPage` 客服入口跳 `/service/chat`；`SettingsPage` 移除在线客服与退款入口，保留退款记录。
+
+- 阻塞保留：
+
+  - B-041 退款 UI 展示字段：可退金额 / 退款进度 / 退款时间等字段待产品确认后接入。
+  - B-042 AI 客服知识库范围：当前为预设 FAQ + 关键词回复，未接入真实大模型。
+  - 退款记录目前为前端 `localStorage`，待真实接口接入后迁移。
+
+- 工程门：
+
+  - `npm run typecheck`：✅ 通过（exit 0）。
+  - `npm run build`：✅ 通过（1.42s，产物正常）。
+  - 工作树干净（`preview` 分支已对齐 `origin/preview`）。
+
+- 视觉证据：暂无 375×812 实现截图入库 `docs/workbench/evidence/t028-*.png`；待你验收时按需补图。
+
+- 结论：**PR 检查本地工程门 PASS**。本卡停在 `User Review`，等你签字。`## 后续待施工` 段落继续保留，等真实接口/字段确认后再迭代。
 
 ## 后续待施工
 

@@ -2,7 +2,7 @@
 
 ## 状态与类型
 
-- 状态：`Done`
+- 状态：`User Review`（PR 检查：本地工程门通过，等待用户签字；按规则智能体不得自填 `Accepted`）
 
 - 类型：Feature / Notification
 
@@ -61,4 +61,32 @@
 - 余额不足通知可正常推送和查看。
 
 - 通知列表正确分类展示不同类型的通知。
+
+## PR Check（2026-09-07）
+
+- 提交：
+
+  - `331cd6c T027 卡博士消息通知：余额不足/校内外活动/服务通知 4 类扩展 + 卡片左侧大图标块改造 + LegacyHome 通知入口跳转`
+
+- 落地（代码侧）：
+
+  - `src/pages/Notifications.tsx`：通知分类扩展 `balance / event / service` 4 类，左侧大图标块改版；分类筛选与 T012 既有列表复用。
+  - `src/app/fixtures/index.ts`：新增 `n7 余额不足`、`n8 校内活动`、`n9 校外活动` 三条占位；`ACTIVITY_CTA` 主操作指向 `/dearseed`；`SYSTEM_NOTE` 系统提示固定语。
+  - `LegacyHome` 通知入口已接通跳转。
+  - `balance` 关键词命中客服 FAQ（`CustomerServicePage.tsx`）。
+
+- 阻塞保留：
+
+  - B-039 余额不足真实推送触发：依赖黄朝确认后端能力，本期仍以 mock 通知展示。
+  - B-040 校内外活动通知：后台活动模块未就绪，前端以 `note` 文案标注"占位态"。
+
+- 工程门：
+
+  - `npm run typecheck`：✅ 通过（exit 0）。
+  - `npm run build`：✅ 通过（1.42s，产物正常）。
+  - 工作树干净（`preview` 分支已对齐 `origin/preview`）。
+
+- 视觉证据：暂无 375×812 实现截图入库 `docs/workbench/evidence/t027-*.png`；待你验收时按需补图。
+
+- 结论：**PR 检查本地工程门 PASS**。因任务系统规则"智能体最多推进到 `User Review`，只有用户可写 `Accepted`"，本卡停在 `User Review` 等你签字。
 

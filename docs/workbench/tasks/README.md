@@ -37,8 +37,8 @@ T001–T015 基于 2026-08-21 的仓库与 Mockplus 实际盘点建立，并已�
 | [T024](./T024-2026-08-27-ui-change-acceptance.md) | 2026-08-27 UI 变更验收 | User Review |
 | [T025](./T025-mall-bubble-points-integration.md) | 积分商城与泡泡值体系统一 | Draft |
 | [T026](./T026-login-profile-school.md) | 注册登录与个人信息 | Draft |
-| [T027](./T027-notifications-balance-activity.md) | 消息通知：余额不足与校内外活动 | Draft |
-| [T028](./T028-customer-service-refund.md) | 客服中心与退款 | Draft |
+| [T027](./T027-notifications-balance-activity.md) | 消息通知：余额不足与校内外活动 | User Review |
+| [T028](./T028-customer-service-refund.md) | 客服中心与退款 | User Review |
 | [T029](./T029-recharge.md) | APP 充值功能 | Draft |
 | [T030](./T030-device-scan-launch.md) | 设备扫码启动优化 | Draft |
 | [T031](./T031-card-coupon.md) | 积分卡券与优惠券 | Draft |
