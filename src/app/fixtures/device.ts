@@ -28,7 +28,7 @@ export const DEVICE_THEMES: Record<DeviceType, DeviceThemeConfig> = {
     iconBg: 'linear-gradient(135deg, #8671F5 0%, #5A42D1 100%)',
     themeAttr: 'shower',
     pageTitle: '自助淋浴',
-    buttonText: '扫码使用',
+    buttonText: '启动',
     scanButtonText: '立即扫码',
   },
   laundry: {
@@ -37,7 +37,7 @@ export const DEVICE_THEMES: Record<DeviceType, DeviceThemeConfig> = {
     iconBg: 'linear-gradient(135deg, #52D9BA 0%, #0E8A6E 100%)',
     themeAttr: 'laundry',
     pageTitle: '自助洗烘',
-    buttonText: '扫码使用',
+    buttonText: '启动',
     scanButtonText: '立即扫码',
   },
   water: {
@@ -46,8 +46,8 @@ export const DEVICE_THEMES: Record<DeviceType, DeviceThemeConfig> = {
     iconBg: 'linear-gradient(135deg, #6BA3FF 0%, #1F55BD 100%)',
     themeAttr: 'water',
     pageTitle: '直饮水',
-    buttonText: '扫码取水',
-    scanButtonText: '扫码取水',
+    buttonText: '取水',
+    scanButtonText: '立即扫码',
   },
   hairdryer: {
     type: 'hairdryer',
@@ -55,7 +55,7 @@ export const DEVICE_THEMES: Record<DeviceType, DeviceThemeConfig> = {
     iconBg: 'linear-gradient(135deg, #FFC942 0%, #BB7708 100%)',
     themeAttr: 'hairdryer',
     pageTitle: '吹风机',
-    buttonText: '扫码使用',
+    buttonText: '启动',
     scanButtonText: '立即扫码',
   },
 }
