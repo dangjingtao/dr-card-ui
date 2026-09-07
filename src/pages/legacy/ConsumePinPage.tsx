@@ -248,8 +248,8 @@ export default function ConsumePinPage() {
         </div>
       </div>
 
-      {/* 当前状态卡（除 delete 外都展示） */}
-      {phase !== 'delete' && (
+      {/* 当前状态卡（除 set / delete 外都展示：未设置密码时不展示，避免显示「未设置」语义错） */}
+      {phase !== 'set' && phase !== 'delete' && (
         <div className="mx-4 mt-4 flex items-center justify-between rounded-xl bg-white px-4 py-3 shadow-sm">
           <div className="flex items-center gap-2">
             <KeyRound className="h-4 w-4 text-[#B8893D]" />
