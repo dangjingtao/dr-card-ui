@@ -2,7 +2,7 @@
 
 ## 状态与类型
 
-- 状态：`Doing`
+- 状态：`PASS`（2026-09-07 PRD 全门槛通过，详见「PRD 验收」章节）
 
 - 类型：Feature / UI
 
@@ -93,3 +93,61 @@
 - `routes.ts` + `router/index.tsx` 注册新路由。
 - `ProfileHome.tsx` 调整「刮刮充值卡」入口跳转。
 - 本卡文档与证据截图。
+
+## 提交号（按时间顺序）
+
+| 提交号 | 说明 |
+| --- | --- |
+| `8cd483e` | T038 刮刮充值卡补全（首版：顶部栏 / 输入 / 扫码 / 充值按钮 / 充值记录入口 / 温馨提示 / 协议勾选） |
+| `8536770` | T038 刮刮充值卡精简元素 + 扫码回弹充值成功弹窗（去除冗余区块；扫码跳 /legacy-home/scan → 2s 回弹弹窗） |
+
+## PRD 验收（2026-09-07）
+
+按 `docs/workbench/task-ledger.md` §4 五项门槛 + 本卡验收标准逐条核对，全部通过。
+
+### 4.1 事实门槛
+
+- 原型依据：用户 2026-09-07 上传小程序原版刮刮充值卡截图（10位充值码输入 + 扫码 + 充值按钮 + 空态文案），并明确「保持卡博士 APP 淡金色风格」。
+- 完成度判定：ScratchCardRechargePage 已落地；冗余区块（充值记录横条 / 温馨提示卡 / 协议勾选）按用户后续决定删除；扫码入口接通既有 `/legacy-home/scan` 通用扫一扫。
+
+### 4.2 UI 门槛
+
+- 375 × 812 视觉：金色渐变顶部栏 `linear-gradient(135deg, #D4A853 0%, #E8C97A 50%, #F0D68E 100%)` + 白底圆角输入 + 金渐变充值按钮 + 充值成功弹窗（金色对勾 + 浅金底圆形图标）。
+- 状态矩阵：默认态 / 输入校验失败（红字「请输入 10 位数字充值码」）/ 加载中（loader + 「充值中」）/ 充值成功弹窗 / 扫码进入 `/legacy-home/scan` → 2s 后回弹弹窗。
+
+### 4.3 交互门槛
+
+- 入口可达：路由 `/legacy-profile`、`/legacy-profile/scratch-card`、`/legacy-home/scan`、`/legacy-profile/my-cards` 在 dev server 全部返回 200。
+- 返回路径：
+  - ProfileHome 「刮刮充值卡」宫格 `navigate('/legacy-profile/scratch-card')`（去掉占位 alert）。
+  - 扫码按钮 `navigate('/legacy-home/scan')`；通过 `useLocation.key` 递增 + `pendingReturnRef` 标记判定从扫一扫返回，回到本页 2s 后自动弹「充值成功」弹窗。
+  - 充值按钮：loading → 600ms 后弹「充值成功」弹窗；弹窗含「返回我的」/「继续充值」两个动作。
+- 按钮均为真实点击事件，无静态高亮或假按钮。
+
+### 4.4 工程门槛
+
+- `npm run typecheck` ✅ 0 错误。
+- `npm run build`（含 `verify:images` 与 `vite build`）✅ 成功；image assets: 36 WebP files, 1.98 MiB。
+- 路由可直接刷新不白屏（dev server 200 验证）。
+- 控制台无新增阻塞错误（T038 范围内）。
+
+### 4.5 证据门槛
+
+- 路由与覆盖节点清单：`/legacy-profile/scratch-card` 在 `routes.ts`（owner 同步更新）与 `router/index.tsx` 注册。
+- 原型依据：用户上传的小程序原版截图 +「保持卡博士 APP 淡金色风格」决策；与已 PASS 的 T037（登录页金色系）视觉一致。
+- 状态/交互检查：详见上文状态矩阵与交互矩阵。
+- 已知差异与未决项：B-044（充值码后 4 位匹配规则）/ B-045（无卡场景）已在本卡后续简化中去除，验收标准亦相应更新（仅保留 10 位数字校验 + 扫码回弹弹窗）。
+- 对应提交号：`8cd483e` → `8536770`（共 2 个本地 commit，见「提交号」表）。
+
+### 验收标准核对（6/6 通过）
+
+1. ✅ `/legacy-profile/scratch-card` 在 dev server 返回 200。
+2. ✅ 页面元素精简到：顶部栏、输入框、扫码按钮、充值按钮、充值成功弹窗。
+3. ✅ 10 位数字校验正常工作。
+4. ✅ 点击扫码按钮跳转 `/legacy-home/scan`（卡博士通用扫一扫页），从扫一扫返回 2s 后自动弹出「充值成功」弹窗。
+5. ✅ 充值按钮走「loading → 充值成功弹窗」（不再额外校验协议 / 卡号匹配）。
+6. ✅ 视觉与卡博士 APP 淡金色风格一致。
+
+### 结论
+
+T038 全部门槛通过，状态由 `Doing` 推进为 `PASS`，已 `git push origin preview`（不 merge main，等待用户评审）。
