@@ -59,7 +59,7 @@ export default function MyCardsPage() {
           <button
             type="button"
             aria-label="返回"
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/legacy-profile')}
             className="flex h-10 w-10 items-center justify-center text-white active:opacity-80"
           >
             <ChevronLeft className="h-6 w-6" />
