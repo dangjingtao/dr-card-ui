@@ -57,8 +57,8 @@ T001–T015 基于 2026-08-21 的仓库与 Mockplus 实际盘点建立，并已�
 | [T036](./T036-four-device-features.md) | 四大设备功能页面（淋浴/洗烘/饮水/吹风） | Done |
 | [T037](./T037-login-page-completion.md) | 登录页补全（卡博士淡金色风格 + 学校/专业/学号绑定） | PASS |
 | [T038](./T038-scratch-card-recharge.md) | 刮刮充值卡补全（卡博士淡金色风格） | PASS |
-| [T039](./T039-machine-pin-consume.md) | 设置消费密码（双状态 + 修改/删除） | Doing |
-| [T040](./T040-device-quick-recharge.md) | 设备列表扫码启动 + 设备详情快速充值 | Doing |
+| [T039](./T039-machine-pin-consume.md) | 设置消费密码（双状态 + 修改/删除） | PASS |
+| [T040](./T040-device-quick-recharge.md) | 设备列表扫码启动 + 设备详情快速充值 | PASS |
 
 ## 依赖顺序
 
