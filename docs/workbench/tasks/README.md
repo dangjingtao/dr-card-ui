@@ -40,7 +40,7 @@ T001–T015 基于 2026-08-21 的仓库与 Mockplus 实际盘点建立，并已�
 | [T027](./T027-notifications-balance-activity.md) | 消息通知：余额不足与校内外活动 | User Review |
 | [T028](./T028-customer-service-refund.md) | 客服中心与退款 | User Review |
 | [T029](./T029-recharge.md) | APP 充值功能 | Draft |
-| [T030](./T030-device-scan-launch.md) | 设备扫码启动优化 | Draft |
+| [T030](./T030-device-scan-launch.md) | 设备扫码启动优化 | User Review |
 | [T031](./T031-card-coupon.md) | 积分卡券与优惠券 | Draft |
 | [T032](./T032-scope-closure-phase2.md) | 范围关闭：本期不做项 | Draft |
 | [T033](./T033-card-doctor-homepage.md) | 卡博士APP首页 | Done |

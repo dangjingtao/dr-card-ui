@@ -11,6 +11,9 @@ type DevicePhase = 'idle' | 'starting' | 'running'
 
 const AMOUNTS = [1, 3, 5, 10, 20]
 
+// T030：淋浴 / 饮水 扫码后直接启动，跳过金额选择
+const AUTO_START_TYPES: DeviceType[] = ['shower', 'water']
+
 // 四步启动状态
 const START_STEPS = [
   '设备连接成功',
@@ -21,7 +24,8 @@ const START_STEPS = [
 
 /**
  * 设备详情页（扫码后进入）
- * - 选择金额 → 确定启动 → 四步启动动画 → 运行中 → 结算 → 弹窗
+ * - 淋浴 / 饮水：扫码后直接启动 → 运行中 → 结算（T030 优化，跳过金额选择）
+ * - 洗烘 / 吹风：选择金额 → 确定启动 → 四步启动动画 → 运行中 → 结算 → 弹窗
  * - 右上角紧急停止按钮
  * - 右下角保修悬浮球
  */
@@ -36,6 +40,8 @@ export default function DeviceDetailPage() {
     ?? DEVICE_LISTS[deviceType]?.[0]
     ?? null
 
+  const isAutoStart = AUTO_START_TYPES.includes(deviceType)
+
   const [selectedAmount, setSelectedAmount] = useState(5)
   const [phase, setPhase] = useState<DevicePhase>('idle')
   const [currentStep, setCurrentStep] = useState(-1) // -1 = 未开始
@@ -43,6 +49,16 @@ export default function DeviceDetailPage() {
   const [usedAmount, setUsedAmount] = useState(0)
   const [showSettleDialog, setShowSettleDialog] = useState(false)
   const [showEmergencyDialog, setShowEmergencyDialog] = useState(false)
+
+  // T030：淋浴 / 饮水 进入页面后自动启动
+  useEffect(() => {
+    if (!isAutoStart) return
+    if (phase !== 'idle') return
+    if (selectedAmount > balance) return
+    setCurrentStep(-1)
+    setPhase('starting')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAutoStart])
 
   // 启动流程动画
   useEffect(() => {
@@ -176,32 +192,34 @@ export default function DeviceDetailPage() {
           </span>
         </div>
 
-        {/* 选择金额 */}
-        <div className="mx-4 mt-3 rounded-2xl bg-white p-4 shadow-sm">
-          <p className="text-sm font-medium text-gray-700">选择金额</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {AMOUNTS.map((amount) => (
-              <button
-                key={amount}
-                type="button"
-                onClick={() => phase === 'idle' && setSelectedAmount(amount)}
-                disabled={phase !== 'idle'}
-                className={`h-9 min-w-[60px] rounded-full px-4 text-sm font-medium transition ${
-                  selectedAmount === amount
-                    ? 'text-white shadow-sm'
-                    : 'bg-gray-100 text-gray-600 active:bg-gray-200'
-                } disabled:opacity-60`}
-                style={
-                  selectedAmount === amount
-                    ? { background: `linear-gradient(135deg, var(--device-400) 0%, var(--device-600) 100%)` }
-                    : undefined
-                }
-              >
-                {amount}元
-              </button>
-            ))}
+        {/* 选择金额（洗烘/吹风展示；淋浴/饮水直接启动，不展示） */}
+        {!isAutoStart && (
+          <div className="mx-4 mt-3 rounded-2xl bg-white p-4 shadow-sm">
+            <p className="text-sm font-medium text-gray-700">选择金额</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {AMOUNTS.map((amount) => (
+                <button
+                  key={amount}
+                  type="button"
+                  onClick={() => phase === 'idle' && setSelectedAmount(amount)}
+                  disabled={phase !== 'idle'}
+                  className={`h-9 min-w-[60px] rounded-full px-4 text-sm font-medium transition ${
+                    selectedAmount === amount
+                      ? 'text-white shadow-sm'
+                      : 'bg-gray-100 text-gray-600 active:bg-gray-200'
+                  } disabled:opacity-60`}
+                  style={
+                    selectedAmount === amount
+                      ? { background: `linear-gradient(135deg, var(--device-400) 0%, var(--device-600) 100%)` }
+                      : undefined
+                  }
+                >
+                  {amount}元
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* 启动状态（四步，始终展示） */}
         <div className="mx-4 mt-3 rounded-2xl bg-white p-4 shadow-sm">
