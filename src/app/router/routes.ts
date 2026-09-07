@@ -374,6 +374,16 @@ export const ROUTES: RouteMeta[] = [
     owner: '注册账号页（T037；卡博士淡金色风格：手机号 + 验证码 + 密码 + 二次确认密码；注册成功后 isRegistered=true 并弹窗引导绑定学校/专业/学号）',
   },
   {
+    path: '/legacy-profile/machine-pin',
+    title: '消费密码',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T039',
+    entry: '「我的」-消费密码',
+    returnTo: '我的',
+    owner: '机器端消费密码领取/核销页（T039；卡博士淡金色风格：手机尾号 4 位 + 6 位消费密码格方框 + 确认按钮 + 成功弹窗；mock 校验 userInfo.phone.slice(-4) + userInfo.pin 默认 000000）',
+  },
+  {
     path: '/legacy-profile/scratch-card',
     title: '刮刮充值卡',
     titleBar: 'hidden',

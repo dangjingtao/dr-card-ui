@@ -12,6 +12,7 @@ import {
   Wrench,
   Wallet,
   Tag,
+  KeyRound,
 } from 'lucide-react'
 import { useUserInfo } from './userInfoStore'
 
@@ -24,9 +25,9 @@ const ORDER_ENTRIES = [
 ]
 
 /**
- * T031：功能宫格（8 项），对齐原小程序「我的」页面布局
+ * T031：功能宫格，对齐原小程序「我的」页面布局
  * - 第一行（4 项）：我的卡 / 刮刮充值卡 / 优惠卡 / 我的小票
- * - 第二行（4 项）：常用设备 / 收藏设备 / 报修 / 帮助与反馈
+ * - 第二行（4 项）：常用设备 / 收藏设备 / 消费密码（T039）/ 报修
  */
 const QUICK_ENTRIES: Array<{
   key: string
@@ -44,6 +45,8 @@ const QUICK_ENTRIES: Array<{
   { key: 'receipt', label: '我的小票', icon: Receipt, bg: 'from-[#F472B6] to-[#F9A8D4]', to: '/legacy-profile/school-accounts' },
   { key: 'frequent', label: '常用设备', icon: Phone, bg: 'from-[#5EEAD4] to-[#99F6E4]', to: '/legacy-profile/devices/frequent' },
   { key: 'favorite', label: '收藏设备', icon: Heart, bg: 'from-[#FB7185] to-[#FDA4AF]', to: '/legacy-profile/devices/favorite' },
+  /* T039：「我的」宫格新增消费密码入口（紧跟收藏设备之后） */
+  { key: 'pin', label: '消费密码', icon: KeyRound, bg: 'from-[#FBBF24] to-[#D97706]', to: '/legacy-profile/machine-pin' },
   { key: 'repair', label: '报修', icon: Wrench, bg: 'from-[#FB923C] to-[#FDBA74]', to: '/legacy-service/repair/projects' },
 ]
 

@@ -2,7 +2,7 @@
 
 ## 状态与类型
 
-- 状态：`Draft`
+- 状态：`Doing`
 
 - 类型：Feature / UI
 
@@ -11,23 +11,23 @@
 ## 当前事实与差距
 
 - 卡博士 APP 在校园布设了多台自助机器（淋浴、洗烘、饮水、吹风），学生无需打开手机扫码，直接在机器小屏上输入**手机尾号 + 6 位消费密码**即可完成领取 / 核销动作。
-- 当前 `userInfoStore.phone` mock 值为 `15047757139`（手机号），已有 6 位 `pin` 字段定义场景但项目里**没有任何入口承载**这一交互。
+- 当前 `userInfoStore.phone` mock 值为 `15047757139`（手机号），项目里**没有任何入口承载**这一交互。
 - 已有的 `Settings` 页 / `Onboarding` 页 / `/card/verify/password` 密码核销页都不是机器端视角，不能直接复用：
   - `Settings` 是"在 APP 设置消费密码"，与机器端操作不同；
   - `Onboarding` 仅新人 onboarding 流程；
   - `/card/verify/password` 是体验券卡包的核销密码入口，与自助机器动作语义不同。
-- 因此需要新增独立的"机器端消费密码"页面：顶部说明（"请输入手机尾号 + 消费密码"） + 6 位手机尾号（末尾 6 位或 4 位？以"尾号 4 位"为最常见 mock） + 6 位消费密码 + 主操作「确认」 + 成功反馈 + 失败反馈。
+- 因此需要新增独立的"机器端消费密码"页面：顶部说明（"请输入手机尾号 + 消费密码"） + 4 位手机尾号（mock 限制 4 位数字，匹配 `userInfo.phone` 末尾 4 位） + 6 位消费密码 + 主操作「确认」 + 成功反馈 + 失败反馈。
 
 ## 目标
 
-1. 新增独立 `/legacy-profile/machine-pin` 页面，承载机器端"手机尾号 + 消费密码"二阶段输入的领取/核销交互。
-2. 入口：从「我的」→「设置」二级面板中的「消费密码」增加"去机器端演示"链接，或者直接在「设置消费密码」顶部加"使用机器端版本"入口。
+1. 新增独立 `/legacy-profile/machine-pin` 页面，承载机器端"手机尾号 + 6 位消费密码"二阶段输入的领取/核销交互。
+2. 入口位置（2026-09-07 用户决定）：「我的」页宫格新增"消费密码"图标，紧跟「常用设备」/「收藏设备」之后。
 3. 复用既有 6 位数字密码 UI（参考 `PasswordVerify` 与 `LoginPage` 6 格方框样式），保持卡博士 APP 淡金色风格。
 
 ## 原型范围
 
 - 视觉源：现有 6 位密码核销组件（PasswordVerify / LoginPage 的 CaptchaImage / 6 格方框）。
-- 顶部：金色渐变顶部栏 + 返回 + 「机器端消费密码」标题。
+- 顶部：金色渐变顶部栏 + 返回 + 「消费密码」标题。
 - 主区：
   - 标题「请输入手机尾号和消费密码」
   - 提示文案「在卡博士自助机器上，学生无需打开手机，输入手机尾号 + 6 位消费密码即可领取/核销」
@@ -52,14 +52,13 @@
 | --- | --- | --- | --- |
 | B-046 | 手机尾号位数 | 低 | mock 限制 4 位数字（`userInfo.phone` 末尾 4 位 = `7139`） |
 | B-047 | 消费密码校验源 | 中 | mock 用 `userInfoStore.pin` 默认 `000000`；后续如需做用户实际密码则需 T026 接入 pin 字段；当前 T026 userInfoStore 没有 `pin` 字段，本卡新增 |
-| B-048 | 机器端入口位置 | 中 | 入口放在「我的」→「设置」二级面板 vs 「我的」宫格新增 vs 直接地址栏可达，需用户确认 |
 
 ## 实施要求
 
-#### MachinePinConsumePage（新建，`/legacy-profile/machine-pin`）
+#### ConsumePinPage（新建，`/legacy-profile/machine-pin`）
 
-- 顶部：金色渐变顶部栏 `linear-gradient(135deg, #D4A853 0%, #E8C97A 50%, #F0D68E 100%)`，返回箭头 + 居中标题「机器端消费密码」。
-- 头部说明：图标（lucide `Smartphone` 或 `Cpu`）+ 标题「请输入手机尾号和消费密码」+ 灰色副标题。
+- 顶部：金色渐变顶部栏 `linear-gradient(135deg, #D4A853 0%, #E8C97A 50%, #F0D68E 100%)`，返回箭头 + 居中标题「消费密码」。
+- 头部说明：图标（lucide `KeyRound` 或 `ShieldCheck`）+ 标题「请输入手机尾号和消费密码」+ 灰色副标题。
 - 输入区：
   - 手机尾号输入：白底圆角胶囊，限制输入 0-9 + 最大 4 位；inputMode="numeric"；placeholder「请输入手机尾号后 4 位」。
   - 消费密码输入：6 格方框样式（复用既有 PasswordVerify 风格），点击聚焦底层 `<input>`，限制数字 + 最大 6 位。
@@ -74,14 +73,14 @@
 - 新增 `pin: string` 字段（mock 默认 `000000`），与 `isValidPhone` 校验一起 export。
 - 不影响既有 T026 数据流。
 
-#### 入口接入（待 B-048 确认）
+#### 入口接入
 
-- 临时方案：在 `SettingsPage` 的「消费密码」行下方增加一个二级链接「机器端演示入口」直接跳 `/legacy-profile/machine-pin`；如用户最终决定走「我的」宫格或地址栏，再调整。
+- `ProfileHome.tsx`：在 `QUICK_ENTRIES` 数组的「常用设备」/「收藏设备」之后插入「消费密码」项，图标 `KeyRound`，跳转 `/legacy-profile/machine-pin`。
 
 ## 状态与交互矩阵
 
-- **MachinePinConsumePage**：默认态 / 手机尾号校验失败 / 消费密码校验失败 / 加载中 / 成功弹窗 / 清空重新输入。
-- **SettingsPage**：消费密码行下加演示入口（占位）。
+- **ConsumePinPage**：默认态 / 手机尾号校验失败 / 消费密码校验失败 / 加载中 / 成功弹窗 / 清空重新输入。
+- **ProfileHome**：宫格点击「消费密码」正确跳转，去掉占位。
 
 ## 验收标准
 
@@ -91,20 +90,21 @@
 - 消费密码 6 位校验：输入非数字 / 不足 6 位 / 不匹配 mock 默认 `000000` 均给出明确错误。
 - 成功路径：弹窗正确展示成功 + 继续操作/返回我的两条路径可用。
 - 视觉与卡博士 APP 淡金色风格一致。
+- 「我的」页宫格正确显示「消费密码」入口，点击跳转 `/legacy-profile/machine-pin`。
 - `npm run typecheck` 与 `npm run build` 通过。
 
 ## 必交证据
 
 - 路由与覆盖节点清单。
-- MachinePinConsumePage 375 × 812 截图（默认 / 错误 / 成功）。
+- ConsumePinPage 375 × 812 截图（默认 / 错误 / 成功）。
 - 状态/交互检查结果。
 - 已知差异与未决项。
 - 对应提交号。
 
 ## 产出
 
-- 新增 `MachinePinConsumePage.tsx`（`src/pages/legacy/`）。
+- 新增 `ConsumePinPage.tsx`（`src/pages/legacy/`）。
 - `userInfoStore.ts` 新增 `pin` 字段。
 - `routes.ts` + `router/index.tsx` 注册新路由。
-- `SettingsPage.tsx` 增加机器端演示入口（占位）。
+- `ProfileHome.tsx` 宫格新增「消费密码」入口。
 - 本卡文档与证据截图。

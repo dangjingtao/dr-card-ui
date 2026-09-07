@@ -27,6 +27,12 @@ export interface UserInfo {
    * mock 默认 false，触发二次确认密码演示态。
    */
   isRegistered: boolean
+  /**
+   * 6 位消费密码（T039）。
+   * 用于自助机器端"手机尾号 + 6 位消费密码"领取/核销场景。
+   * mock 默认 000000。
+   */
+  pin: string
 }
 
 const INITIAL_USER_INFO: UserInfo = {
@@ -42,6 +48,7 @@ const INITIAL_USER_INFO: UserInfo = {
   academy: '计算机科学与网络工程学院',
   balance: 100.0,
   isRegistered: false,
+  pin: '000000',
 }
 
 /* 全局单例：所有引用都指向同一份 USER_INFO，确保换绑后个人信息同步刷新 */
