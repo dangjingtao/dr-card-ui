@@ -1,13 +1,20 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ChevronLeft, Image, ScanLine, Zap } from 'lucide-react'
 
 /**
  * 历史首页入口的独立扫一扫页。
  * 与卡包核销链路的 /card/verify 相互独立：这里是首页通用扫码入口，
  * 不承接券码核销语义，识别结果暂不接后续页面。
+ *
+ * 演示态（2026-09-07 T038 后续）：当 URL 带 `from=scratch-card` 时（即刮刮充值卡
+ * 页的扫码按钮跳转而来），下方追加一个「模拟扫码完成」按钮，点击立即返回
+ * `/legacy-profile/scratch-card`，由 ScratchCardRechargePage 自身的 location.key
+ * 监听触发"充值成功"弹窗；其它入口（首页扫一扫、设备服务扫码）看不到这个按钮。
  */
 export default function LegacyScan() {
   const navigate = useNavigate()
+  const [params] = useSearchParams()
+  const fromScratchCard = params.get('from') === 'scratch-card'
 
   return (
     <div className="min-h-full bg-black text-white">
@@ -58,6 +65,22 @@ export default function LegacyScan() {
             相册
           </button>
         </div>
+
+        {/* T038 演示态：仅在刮刮充值卡的扫码链路展示「模拟扫码完成」按钮 */}
+        {fromScratchCard && (
+          <div className="relative z-10 mt-10 w-full px-4 pb-4">
+            <button
+              type="button"
+              onClick={() => navigate('/legacy-profile/scratch-card')}
+              className="w-full rounded-full bg-gradient-to-r from-[#D4A853] to-[#E8C97A] py-3.5 text-sm font-semibold text-white shadow-md active:opacity-90"
+            >
+              模拟扫码完成
+            </button>
+            <p className="mt-2 text-center text-xs text-white/40">
+              仅供设计演示：点击立即返回刮刮充值卡页并弹"充值成功"
+            </p>
+          </div>
+        )}
       </main>
     </div>
   )

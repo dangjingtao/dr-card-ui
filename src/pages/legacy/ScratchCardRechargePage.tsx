@@ -6,12 +6,13 @@ import { ChevronLeft, Loader2, ScanLine } from 'lucide-react'
  * -------------------------------------------------------------
  * 2026-09-07 用户决定：
  * - 只保留输入 + 充值；去掉"充值记录"、"温馨提示"、"协议勾选"三块
- * - 扫码按钮点击进入 `/legacy-home/scan`（已有扫一扫）；2 秒后自动返回本页并弹"充值成功"
+ * - 扫码按钮点击进入 `/legacy-home/scan?from=scratch-card`（已有扫一扫，仅在
+ *   该来源下展示「模拟扫码完成」按钮）；点击模拟按钮立即返回本页并弹"充值成功"
  *
  * Mock 校验：必须 10 位数字。
  */
 
-const SCAN_REDIRECT_PATH = '/legacy-home/scan'
+const SCAN_REDIRECT_PATH = '/legacy-home/scan?from=scratch-card'
 
 export default function ScratchCardRechargePage() {
   const navigate = useNavigate()
@@ -22,8 +23,7 @@ export default function ScratchCardRechargePage() {
   const [errorMsg, setErrorMsg] = useState('')
   const [successOpen, setSuccessOpen] = useState(false)
 
-  /* 监听 location.key 递增 = 用户从扫一扫返回；2s 后弹"充值成功"
-   * - 记录上一次 key，当 key 再次变化时说明从扫一扫返回
+  /* 监听 location.key 递增 = 用户从扫一扫返回（点"模拟扫码完成"按钮触发）。
    * - 仅当 handleScan 主动跳转到扫一扫时打 pendingReturnRef 标记，
    *   避免用户首次进入 / 浏览器后退等场景误弹 */
   const lastKeyRef = useRef<string>(location.key)
@@ -34,8 +34,7 @@ export default function ScratchCardRechargePage() {
     lastKeyRef.current = location.key
     if (pendingReturnRef.current) {
       pendingReturnRef.current = false
-      const timer = setTimeout(() => setSuccessOpen(true), 2000)
-      return () => clearTimeout(timer)
+      setSuccessOpen(true)
     }
   }, [location.key])
 
