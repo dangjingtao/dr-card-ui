@@ -1,6 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ChevronLeft } from 'lucide-react'
 import { findCard, updateCard } from './cardStore'
 
 const FIELD_META: Record<string, { label: string; placeholder: string; maxLength: number }> = {
@@ -10,10 +9,12 @@ const FIELD_META: Record<string, { label: string; placeholder: string; maxLength
 }
 
 /**
- * T031｜卡字段编辑页（姓名 / 班级 / 学号）
+ * T031｜卡字段编辑弹窗（姓名 / 班级 / 学号）
  * -------------------------------------------------------------
  * 路径：`/legacy-profile/my-cards/:id/edit/:field`
- * 顶部白色标题栏 + 输入框 + 底部"保存"按钮（淡金渐变）
+ * 模态弹窗（不是整页）：黑色蒙层 + 居中白卡 + 输入框 + 取消/保存按钮
+ *
+ * 打开即聚焦输入框，回车提交，ESC 关闭。
  */
 export default function CardFieldEditPage() {
   const navigate = useNavigate()
@@ -25,20 +26,25 @@ export default function CardFieldEditPage() {
   const initial = (card as any)?.[field] ?? ''
   const [value, setValue] = useState<string>(initial)
   const [error, setError] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
 
-  if (!card || !meta) {
-    return (
-      <div className="mx-auto flex min-h-full max-w-[480px] flex-col items-center justify-center bg-[#F8F8FA]">
-        <div className="text-sm text-text-tertiary">字段不存在</div>
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          className="mt-4 text-sm text-[#B8893D]"
-        >
-          返回
-        </button>
-      </div>
-    )
+  /* 进入即聚焦 */
+  useEffect(() => {
+    inputRef.current?.focus()
+  }, [])
+
+  /* ESC 关闭 */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') close()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, [])
+
+  const close = () => {
+    navigate(`/legacy-profile/my-cards/${id}`)
   }
 
   const handleSave = () => {
@@ -49,55 +55,65 @@ export default function CardFieldEditPage() {
       return
     }
     updateCard(id, { [field]: trimmed })
+    close()
+  }
+
+  if (!card || !meta) {
+    /* 字段不存在 → 直接返回卡详情 */
     navigate(`/legacy-profile/my-cards/${id}`)
+    return null
   }
 
   return (
-    <div className="mx-auto flex min-h-full max-w-[480px] flex-col bg-[#F8F8FA]">
-      {/* 顶部白色标题栏 */}
-      <div className="relative shrink-0 bg-white px-4 pt-3 pb-3 shadow-sm">
-        <div className="relative flex items-center">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-6"
+      onClick={close}
+    >
+      {/* 阻止冒泡，点击弹窗内部不关闭 */}
+      <div
+        className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 className="text-center text-base font-semibold text-text-primary">
+          修改{meta.label}
+        </h3>
+
+        <div className="mt-4 flex items-center gap-2 border-b border-divider py-2 focus-within:border-[#D4A853]">
+          <span className="text-sm text-text-secondary">{meta.label}</span>
+          <input
+            ref={inputRef}
+            type="text"
+            value={value}
+            onChange={(e) => {
+              setValue(e.target.value)
+              setError('')
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleSave()
+            }}
+            maxLength={meta.maxLength}
+            placeholder={meta.placeholder}
+            className="flex-1 bg-transparent text-base font-medium text-text-primary outline-none placeholder:text-text-tertiary"
+          />
+        </div>
+        {error && <div className="mt-2 text-xs text-red-500">{error}</div>}
+
+        <div className="mt-6 flex divide-x divide-divider overflow-hidden rounded-xl border border-divider">
           <button
             type="button"
-            aria-label="返回"
-            onClick={() => navigate(-1)}
-            className="flex h-10 w-10 items-center justify-center text-text-primary active:opacity-70"
+            onClick={close}
+            className="flex-1 py-3 text-sm text-text-secondary active:bg-bg-secondary"
           >
-            <ChevronLeft className="h-6 w-6" />
+            取消
           </button>
-          <div className="absolute left-1/2 -translate-x-1/2 text-lg font-semibold text-text-primary">
-            修改{meta.label}
-          </div>
+          <button
+            type="button"
+            onClick={handleSave}
+            className="flex-1 py-3 text-sm text-[#B8893D] active:bg-bg-secondary"
+          >
+            保存
+          </button>
         </div>
-      </div>
-
-      {/* 输入区 */}
-      <div className="mx-4 mt-4 rounded-2xl bg-white p-5 shadow-sm">
-        <div className="text-sm font-semibold text-text-primary">{meta.label}</div>
-        <input
-          type="text"
-          value={value}
-          onChange={(e) => {
-            setValue(e.target.value)
-            setError('')
-          }}
-          maxLength={meta.maxLength}
-          placeholder={meta.placeholder}
-          className="mt-3 w-full border-b border-divider bg-transparent py-2 text-base text-text-primary outline-none focus:border-[#D4A853]"
-        />
-        {error && <div className="mt-2 text-xs text-red-500">{error}</div>}
-      </div>
-
-      {/* 底部保存 */}
-      <div className="mt-auto px-4 pb-6 pt-4">
-        <button
-          type="button"
-          onClick={handleSave}
-          className="w-full rounded-full py-3.5 text-base font-semibold text-white shadow-md active:opacity-90"
-          style={{ background: 'linear-gradient(135deg, #D4A853 0%, #E8C97A 100%)' }}
-        >
-          保存
-        </button>
       </div>
     </div>
   )
