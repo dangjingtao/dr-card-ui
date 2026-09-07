@@ -4,9 +4,12 @@ import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import CaptchaImage from '../../components/ui/CaptchaImage'
 import { useUserInfo, userInfoActions } from './userInfoStore'
 
-/* T037｜登录页（紫色渐变改版）
+/* T037｜登录页（卡博士淡金色风格改版）
  * -------------------------------------------------------------
- * 视觉来源：用户 2026-09-07 上传的小程序原版截图。
+ * 视觉来源：与卡博士 APP 整体保持一致的淡金色品牌色
+ * - 顶部为金色径向柔光，下方暖白渐隐
+ * - 主操作金色渐变胶囊；微信授权绿色调（保留与外部品牌识别）
+ *
  * 关键改动：
    1. 密码可见切换（睁眼 / 闭眼）
    2. 新注册用户显示二次确认密码
@@ -116,43 +119,53 @@ export default function LoginPage() {
     <div
       className="mx-auto flex min-h-full max-w-[480px] flex-col"
       style={{
-        background: 'linear-gradient(180deg, #A6A6F5 0%, #D6D6FA 36%, #FFFFFF 78%)',
+        background:
+          'radial-gradient(ellipse 90% 34% at 68% 0%, rgba(248, 203, 111, .36) 0%, rgba(255, 230, 180, .18) 42%, transparent 72%), radial-gradient(ellipse 72% 30% at 4% 44%, rgba(255, 237, 207, .32) 0%, transparent 74%), linear-gradient(180deg, #FFF9EE 0%, #FFFCF7 42%, #FFF8EF 100%)',
       }}
     >
-      {/* 标题 */}
-      <div className="px-8 pt-16 pb-6 text-center">
-        <h1 className="text-2xl font-medium text-white drop-shadow-sm">你好，欢迎来到卡博士</h1>
+      {/* 品牌头部：金色 Logo + 标题 */}
+      <div className="flex flex-col items-center px-8 pt-16 pb-8">
+        <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-[#D4A853] to-[#E8C97A] text-2xl font-bold text-white shadow-md">
+          卡
+        </div>
+        <h1 className="mt-4 text-2xl font-semibold text-text-primary">卡博士 APP</h1>
+        <p className="mt-1 text-sm text-text-secondary">一站式校园卡自助服务</p>
+      </div>
+
+      {/* 标题文案 */}
+      <div className="px-8 pb-2 text-center">
+        <span className="text-base text-text-secondary">你好，欢迎来到卡博士</span>
       </div>
 
       {/* 表单卡片 */}
-      <div className="flex-1 px-8 pb-6">
+      <div className="flex-1 px-8 pb-6 pt-2">
         <div className="space-y-3.5">
           {/* 账号 */}
-          <div className="flex h-12 items-center gap-2 rounded-full bg-white px-5 shadow-sm">
+          <div className="flex h-12 items-center gap-2 rounded-full border border-[#E8D9B8] bg-white px-5 shadow-sm">
             <input
               value={account}
               onChange={(e) => setAccount(e.target.value)}
               placeholder="请输入账号"
               autoComplete="username"
-              className="h-full flex-1 bg-transparent text-base text-text-primary outline-none placeholder:text-[#A6A6F5]"
+              className="h-full flex-1 bg-transparent text-base text-text-primary outline-none placeholder:text-[#B8893D]"
             />
           </div>
 
           {/* 密码 */}
-          <div className="flex h-12 items-center gap-2 rounded-full bg-white px-5 shadow-sm">
+          <div className="flex h-12 items-center gap-2 rounded-full border border-[#E8D9B8] bg-white px-5 shadow-sm">
             <input
               type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="请输入密码"
               autoComplete="current-password"
-              className="h-full flex-1 bg-transparent text-base text-text-primary outline-none placeholder:text-[#A6A6F5]"
+              className="h-full flex-1 bg-transparent text-base text-text-primary outline-none placeholder:text-[#B8893D]"
             />
             <button
               type="button"
               aria-label={showPassword ? '隐藏密码' : '显示密码'}
               onClick={() => setShowPassword(!showPassword)}
-              className="flex h-8 w-8 items-center justify-center text-[#6B6BE0] active:opacity-70"
+              className="flex h-8 w-8 items-center justify-center text-[#B8893D] active:opacity-70"
             >
               {showPassword ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
             </button>
@@ -160,20 +173,20 @@ export default function LoginPage() {
 
           {/* 二次确认密码（新账号） */}
           {requireConfirm && (
-            <div className="flex h-12 items-center gap-2 rounded-full bg-white px-5 shadow-sm">
+            <div className="flex h-12 items-center gap-2 rounded-full border border-[#E8D9B8] bg-white px-5 shadow-sm">
               <input
                 type={showConfirm ? 'text' : 'password'}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="请再次输入密码"
                 autoComplete="new-password"
-                className="h-full flex-1 bg-transparent text-base text-text-primary outline-none placeholder:text-[#A6A6F5]"
+                className="h-full flex-1 bg-transparent text-base text-text-primary outline-none placeholder:text-[#B8893D]"
               />
               <button
                 type="button"
                 aria-label={showConfirm ? '隐藏密码' : '显示密码'}
                 onClick={() => setShowConfirm(!showConfirm)}
-                className="flex h-8 w-8 items-center justify-center text-[#6B6BE0] active:opacity-70"
+                className="flex h-8 w-8 items-center justify-center text-[#B8893D] active:opacity-70"
               >
                 {showConfirm ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
               </button>
@@ -184,8 +197,8 @@ export default function LoginPage() {
           {requireCaptcha && (
             <div className="space-y-2">
               <div
-                className={`flex h-12 items-center gap-2 rounded-full bg-white px-5 shadow-sm ${
-                  captchaInvalid ? 'ring-2 ring-danger' : ''
+                className={`flex h-12 items-center gap-2 rounded-full border bg-white px-5 shadow-sm ${
+                  captchaInvalid ? 'border-danger' : 'border-[#E8D9B8]'
                 }`}
               >
                 <input
@@ -196,7 +209,7 @@ export default function LoginPage() {
                   }}
                   placeholder="请输入图形验证码"
                   maxLength={4}
-                  className="h-full flex-1 bg-transparent text-base uppercase tracking-widest text-text-primary outline-none placeholder:text-[#A6A6F5]"
+                  className="h-full flex-1 bg-transparent text-base uppercase tracking-widest text-text-primary outline-none placeholder:text-[#B8893D]"
                 />
               </div>
               <CaptchaImage length={4} invalid={captchaInvalid} onChange={setCurrentCaptcha} />
@@ -208,7 +221,7 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => alert('忘记密码功能施工中（T037 不展开）')}
-              className="text-sm text-[#6B6BE0] active:opacity-70"
+              className="text-sm text-[#B8893D] active:opacity-70"
             >
               忘记密码？
             </button>
@@ -216,16 +229,14 @@ export default function LoginPage() {
         </div>
 
         {/* 错误反馈 */}
-        {errorMsg && (
-          <div className="mt-3 text-center text-sm text-danger-text">{errorMsg}</div>
-        )}
+        {errorMsg && <div className="mt-3 text-center text-sm text-danger-text">{errorMsg}</div>}
 
-        {/* 主操作 */}
+        {/* 主操作：金渐变胶囊 */}
         <button
           type="button"
           onClick={handleLogin}
           disabled={submitting}
-          className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#6B6BE0] to-[#8585F5] text-base font-semibold text-white shadow-md active:opacity-90 disabled:opacity-60"
+          className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#D4A853] to-[#E8C97A] text-base font-semibold text-white shadow-md active:opacity-90 disabled:opacity-60"
         >
           {submitting && <Loader2 className="h-5 w-5 animate-spin" />}
           {submitting ? '登录中' : '立即登录'}
@@ -247,7 +258,7 @@ export default function LoginPage() {
         {/* 引导文案 */}
         <div className="mt-5 text-center text-sm">
           <span className="text-text-secondary">还没有账号？</span>
-          <span className="ml-1 text-[#6B6BE0]">请在卡博士小程序中绑定手机号</span>
+          <span className="ml-1 text-[#B8893D]">请在卡博士小程序中绑定手机号</span>
         </div>
       </div>
 
@@ -259,7 +270,7 @@ export default function LoginPage() {
             aria-label={agreed ? '取消同意' : '同意协议'}
             onClick={() => setAgreed(!agreed)}
             className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition ${
-              agreed ? 'border-[#6B6BE0] bg-[#6B6BE0]' : 'border-text-tertiary bg-white'
+              agreed ? 'border-[#D4A853] bg-gradient-to-br from-[#D4A853] to-[#E8C97A]' : 'border-text-tertiary bg-white'
             }`}
           >
             {agreed && (
@@ -270,9 +281,9 @@ export default function LoginPage() {
           </button>
           <span className="leading-relaxed">
             我已阅读并同意
-            <span className="text-[#6B6BE0]">《用户协议》</span>
+            <span className="text-[#B8893D]">《用户协议》</span>
             和
-            <span className="text-[#6B6BE0]">《隐私政策》</span>
+            <span className="text-[#B8893D]">《隐私政策》</span>
           </span>
         </label>
       </div>
@@ -282,8 +293,8 @@ export default function LoginPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim px-6">
           <div className="w-full max-w-[327px] overflow-hidden rounded-2xl bg-surface shadow-modal">
             <div className="px-6 pt-6 pb-3 text-center">
-              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#EFEEFF]">
-                <svg viewBox="0 0 24 24" className="h-6 w-6 text-[#6B6BE0]" fill="none" stroke="currentColor" strokeWidth="2">
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#FFF3D9]">
+                <svg viewBox="0 0 24 24" className="h-6 w-6 text-[#B8893D]" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M12 14l9-5-9-5-9 5 9 5z" />
                   <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
                   <path d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222" />
@@ -306,7 +317,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={handleBindNow}
-                className="flex-1 py-3 text-sm font-semibold text-[#6B6BE0] active:bg-surface-pressed"
+                className="flex-1 py-3 text-sm font-semibold text-[#B8893D] active:bg-surface-pressed"
               >
                 去绑定
               </button>

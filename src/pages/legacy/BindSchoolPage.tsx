@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, ChevronDown, Loader2 } from 'lucide-react'
 import { useUserInfo, userInfoActions } from './userInfoStore'
 
-/* T037：登录后引导绑定学校/专业/学号 */
+/* T037：登录后引导绑定学校/专业/学号（卡博士淡金色风格） */
 const SCHOOL_OPTIONS = ['广州大学', '华南理工大学', '中山大学', '暨南大学']
 
 export default function BindSchoolPage() {
@@ -48,9 +48,15 @@ export default function BindSchoolPage() {
   }
 
   return (
-    <div className="mx-auto flex min-h-full max-w-[480px] flex-col bg-[#F8F8FA]">
+    <div
+      className="mx-auto flex min-h-full max-w-[480px] flex-col"
+      style={{
+        background:
+          'radial-gradient(ellipse 90% 30% at 68% 0%, rgba(248, 203, 111, .28) 0%, rgba(255, 230, 180, .14) 42%, transparent 72%), linear-gradient(180deg, #FFF9EE 0%, #FFFCF7 50%, #FFF8EF 100%)',
+      }}
+    >
       {/* 顶部栏 */}
-      <div className="relative shrink-0 bg-white px-4 pt-3 pb-3 shadow-sm">
+      <div className="relative shrink-0 px-4 pt-3 pb-3">
         <div className="relative flex items-center">
           <button
             type="button"
@@ -67,8 +73,8 @@ export default function BindSchoolPage() {
       </div>
 
       {/* 提示区 */}
-      <div className="px-6 pt-6 pb-2">
-        <div className="rounded-xl bg-[#EFEEFF] px-4 py-3 text-sm text-[#5A5ABF]">
+      <div className="px-6 pt-4 pb-2">
+        <div className="rounded-xl bg-[#FFF3D9] px-4 py-3 text-sm text-[#A3691F]">
           完善学校、专业和学号信息，便于享受校园卡权益与专属服务。
         </div>
       </div>
@@ -82,7 +88,7 @@ export default function BindSchoolPage() {
             type="button"
             onClick={() => setSchoolPickerOpen(true)}
             className={`flex h-12 w-full items-center justify-between rounded-xl border bg-white px-4 text-left text-base transition ${
-              schoolErr ? 'border-danger' : 'border-[#D9D8FF]'
+              schoolErr ? 'border-danger' : 'border-[#E8D9B8]'
             }`}
           >
             <span className="text-text-primary">{school || '请选择学校'}</span>
@@ -98,8 +104,8 @@ export default function BindSchoolPage() {
             value={academy}
             onChange={(e) => setAcademy(e.target.value)}
             placeholder="请输入学院，如：计算机科学与网络工程学院"
-            className={`h-12 w-full rounded-xl border bg-white px-4 text-base outline-none transition placeholder:text-text-placeholder focus:border-[#6B6BE0] ${
-              academyErr ? 'border-danger' : 'border-[#D9D8FF]'
+            className={`h-12 w-full rounded-xl border bg-white px-4 text-base outline-none transition placeholder:text-[#B8893D] focus:border-[#D4A853] ${
+              academyErr ? 'border-danger' : 'border-[#E8D9B8]'
             }`}
           />
           {academyErr && <span className="text-xs text-danger-text">{academyErr}</span>}
@@ -113,8 +119,8 @@ export default function BindSchoolPage() {
             onChange={(e) => setStudentId(e.target.value.replace(/\D/g, '').slice(0, 20))}
             placeholder="请输入学号"
             inputMode="numeric"
-            className={`h-12 w-full rounded-xl border bg-white px-4 text-base outline-none transition placeholder:text-text-placeholder focus:border-[#6B6BE0] ${
-              studentIdErr ? 'border-danger' : 'border-[#D9D8FF]'
+            className={`h-12 w-full rounded-xl border bg-white px-4 text-base outline-none transition placeholder:text-[#B8893D] focus:border-[#D4A853] ${
+              studentIdErr ? 'border-danger' : 'border-[#E8D9B8]'
             }`}
           />
           {studentIdErr && <span className="text-xs text-danger-text">{studentIdErr}</span>}
@@ -127,7 +133,7 @@ export default function BindSchoolPage() {
           type="button"
           onClick={handleSubmit}
           disabled={submitting}
-          className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#6B6BE0] to-[#8585F5] text-base font-semibold text-white shadow-md active:opacity-90 disabled:opacity-60"
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#D4A853] to-[#E8C97A] text-base font-semibold text-white shadow-md active:opacity-90 disabled:opacity-60"
         >
           {submitting && <Loader2 className="h-5 w-5 animate-spin" />}
           {submitting ? '绑定中' : '确认绑定'}
@@ -155,11 +161,11 @@ export default function BindSchoolPage() {
                       setSchoolPickerOpen(false)
                     }}
                     className={`flex w-full items-center justify-between px-5 py-3.5 text-left text-base active:bg-surface-pressed ${
-                      opt === school ? 'text-[#6B6BE0] font-semibold' : 'text-text-primary'
+                      opt === school ? 'text-[#B8893D] font-semibold' : 'text-text-primary'
                     }`}
                   >
                     <span>{opt}</span>
-                    {opt === school && <span className="text-xs text-[#6B6BE0]">✓</span>}
+                    {opt === school && <span className="text-xs text-[#B8893D]">✓</span>}
                   </button>
                 </li>
               ))}

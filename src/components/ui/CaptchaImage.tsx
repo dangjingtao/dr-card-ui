@@ -57,8 +57,8 @@ export function CaptchaImage({ length = 4, onChange, invalid = false, className 
         type="button"
         onClick={refresh}
         aria-label="点击刷新图形验证码"
-        className={`relative h-11 w-[124px] overflow-hidden rounded-lg border bg-gradient-to-br from-[#EFEEFF] to-[#D9D8FF] transition active:opacity-80 ${
-          invalid ? 'border-danger' : 'border-[#BFBFE8]'
+        className={`relative h-11 w-[124px] overflow-hidden rounded-lg border bg-gradient-to-br from-[#FFF6E2] to-[#FBE9C1] transition active:opacity-80 ${
+          invalid ? 'border-danger' : 'border-[#E8D9B8]'
         }`}
       >
         <svg viewBox="0 0 124 44" className="absolute inset-0 h-full w-full" aria-hidden>
@@ -70,7 +70,7 @@ export function CaptchaImage({ length = 4, onChange, invalid = false, className 
               y1={4}
               x2={120 - i * 28}
               y2={40}
-              stroke="#7E7ECF"
+              stroke="#C9A458"
               strokeWidth={1}
               strokeDasharray="3 3"
               opacity={0.55}
@@ -83,8 +83,8 @@ export function CaptchaImage({ length = 4, onChange, invalid = false, className 
               cx={8 + ((i * 13) % 110)}
               cy={6 + ((i * 7) % 32)}
               r={1}
-              fill="#8585F5"
-              opacity={0.5}
+              fill="#B8893D"
+              opacity={0.55}
             />
           ))}
           {/* 字符 */}
@@ -96,7 +96,7 @@ export function CaptchaImage({ length = 4, onChange, invalid = false, className 
               fontSize={22}
               fontWeight={700}
               fontFamily="'Helvetica Neue', Arial, sans-serif"
-              fill="#3F3FA0"
+              fill="#7A4B12"
               transform={`rotate(${(i % 2 === 0 ? -1 : 1) * (10 + (i * 5) % 8)} ${18 + i * 22} 26)`}
             >
               {ch}
@@ -107,7 +107,7 @@ export function CaptchaImage({ length = 4, onChange, invalid = false, className 
       <button
         type="button"
         onClick={refresh}
-        className="flex h-11 items-center gap-1 px-2 text-xs text-[#6B6BE0] active:opacity-70"
+        className="flex h-11 items-center gap-1 px-2 text-xs text-[#B8893D] active:opacity-70"
       >
         <RefreshCw className="h-3.5 w-3.5" />
         换一张

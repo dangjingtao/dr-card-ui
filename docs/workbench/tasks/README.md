@@ -49,7 +49,7 @@ T001–T015 基于 2026-08-21 的仓库与 Mockplus 实际盘点建立，并已�
 | [T034](./T034-device-service-page.md) | 设备服务页 | Done |
 | [T035](./T035-card-doctor-profile.md) | 卡博士个人中心 | Done |
 | [T036](./T036-four-device-features.md) | 四大设备功能页面（淋浴/洗烘/饮水/吹风） | Done |
-| [T037](./T037-login-page-completion.md) | 登录页补全（紫色渐变改版 + 学校/专业/学号绑定） | Doing |
+| [T037](./T037-login-page-completion.md) | 登录页补全（卡博士淡金色风格 + 学校/专业/学号绑定） | Doing |
 
 ## 依赖顺序
 
