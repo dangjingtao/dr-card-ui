@@ -98,18 +98,26 @@ export default function ProfileHome() {
           </div>
         </div>
 
-        {/* T037：学校 / 学院 / 学号摘要 */}
+        {/* T037：学校 / 学院 / 学号摘要
+         * 拆两行展示避免一行过挤：
+         *  - 第一行：学校 · 学院
+         *  - 第二行：学号
+         * 各项空值时只隐藏对应行/项，不出现孤立分隔符 */}
         {(userInfo.school || userInfo.academy || userInfo.studentId) && (
           <button
             type="button"
             onClick={() => navigate('/legacy-profile/info')}
-            className="mt-3 flex w-full items-center gap-2 text-left text-sm text-white/85 active:opacity-80"
+            className="mt-3 flex w-full flex-col items-start gap-1 text-left text-sm text-white/85 active:opacity-80"
           >
-            {userInfo.school && (
-              <span className="rounded-full bg-white/20 px-2 py-0.5">{userInfo.school}</span>
-            )}
-            {userInfo.academy && (
-              <span className="truncate">{userInfo.academy}</span>
+            {(userInfo.school || userInfo.academy) && (
+              <span className="flex w-full items-center gap-1.5">
+                {userInfo.school && (
+                  <span className="shrink-0 rounded-full bg-white/20 px-2 py-0.5">{userInfo.school}</span>
+                )}
+                {userInfo.academy && (
+                  <span className="min-w-0 flex-1 truncate">{userInfo.academy}</span>
+                )}
+              </span>
             )}
             {userInfo.studentId && (
               <span className="shrink-0 rounded-full bg-white/20 px-2 py-0.5">学号 {userInfo.studentId}</span>
