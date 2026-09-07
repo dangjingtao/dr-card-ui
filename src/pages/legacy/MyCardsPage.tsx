@@ -1,19 +1,30 @@
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, Plus, CreditCard } from 'lucide-react'
+import { useCards } from './cardStore'
 
 /**
- * T031｜我的卡 二级页面
+ * T031｜我的卡（绑完卡后页面）
  * -------------------------------------------------------------
- * 顶部「+ 绑定卡」按钮 + 列表空态，对齐原小程序"我的卡"页面布局。
- * 数据先空态（mock），待 B-047 决策后再接入实体卡列表接口。
+ * 每张卡独立卡片：卡面 + 状态 + 编号 + 所属项目
+ * 点击进卡详情 / 点击 + 按钮进绑定卡流程（占位）
  */
 export default function MyCardsPage() {
   const navigate = useNavigate()
+  const cards = useCards()
+
+  const STATUS_LABEL: Record<string, { label: string; color: string }> = {
+    normal: { label: '正常', color: 'bg-[#D1FAE5] text-[#047857]' },
+    reported: { label: '已挂失', color: 'bg-[#FEE2E2] text-[#B91C1C]' },
+    unreported: { label: '已解挂', color: 'bg-[#FEF3C7] text-[#92400E]' },
+  }
 
   return (
     <div className="mx-auto flex min-h-full max-w-[480px] flex-col bg-[#F8F8FA]">
-      {/* 顶部栏：淡金渐变背景（与状态栏同色） */}
-      <div className="relative shrink-0 bg-gradient-to-br from-[#D4A853] to-[#E8C97A] px-4 pt-3 pb-3">
+      {/* 顶部栏：淡金渐变背景 */}
+      <div
+        className="relative shrink-0 px-4 pt-3 pb-3"
+        style={{ background: 'linear-gradient(135deg, #D4A853 0%, #E8C97A 50%, #F0D68E 100%)' }}
+      >
         <div className="relative flex items-center">
           <button
             type="button"
@@ -33,7 +44,7 @@ export default function MyCardsPage() {
       <div className="px-4 pt-4">
         <button
           type="button"
-          onClick={() => alert('绑定卡施工中（T031 待 B-047 决策）')}
+          onClick={() => alert('绑定卡流程施工中')}
           className="flex w-full items-center justify-center gap-2 rounded-2xl bg-white py-3.5 text-base font-medium text-text-primary shadow-sm active:bg-[#F8F8FA]"
         >
           <Plus className="h-5 w-5 text-[#B8893D]" />
@@ -41,13 +52,52 @@ export default function MyCardsPage() {
         </button>
       </div>
 
-      {/* 空态 */}
-      <div className="flex flex-1 flex-col items-center justify-center px-4 pb-12 pt-16">
-        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-bg-secondary text-text-tertiary">
-          <CreditCard className="h-10 w-10" />
-        </div>
-        <div className="mt-4 text-base text-text-secondary">暂无绑定卡</div>
-        <div className="mt-1 text-xs text-text-tertiary">点击上方按钮绑定你的校园卡</div>
+      {/* 卡列表 */}
+      <div className="flex-1 space-y-3 px-4 pb-8 pt-3">
+        {cards.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-text-tertiary">
+            <CreditCard className="mb-3 h-12 w-12 opacity-30" />
+            <div className="text-sm">暂无绑定卡</div>
+            <div className="mt-1 text-xs">点击上方按钮绑定你的校园卡</div>
+          </div>
+        ) : (
+          cards.map((card) => {
+            const status = STATUS_LABEL[card.status]
+            return (
+              <button
+                key={card.id}
+                type="button"
+                onClick={() => navigate(`/legacy-profile/my-cards/${card.id}`)}
+                className="flex w-full items-center gap-3 rounded-2xl bg-white p-4 text-left shadow-sm active:bg-[#F8F8FA]"
+              >
+                <div
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-white shadow-sm"
+                  style={{ background: 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)' }}
+                >
+                  <CreditCard className="h-6 w-6" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <div className="text-sm font-medium text-text-primary">
+                      {card.projectName}
+                    </div>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${status.color}`}
+                    >
+                      {status.label}
+                    </span>
+                  </div>
+                  <div className="mt-1 text-xs text-text-tertiary">
+                    卡序号：{card.cardNo}
+                  </div>
+                  <div className="text-xs text-text-tertiary">
+                    用户卡号：{card.userCardNo}
+                  </div>
+                </div>
+              </button>
+            )
+          })
+        )}
       </div>
     </div>
   )

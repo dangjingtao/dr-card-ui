@@ -64,6 +64,9 @@ import LoginPage from '../../pages/legacy/LoginPage'
 import EditProfile from '../../pages/legacy/EditProfile'
 import MyCardsPage from '../../pages/legacy/MyCardsPage'
 import CouponsPage from '../../pages/legacy/CouponsPage'
+import CardDetailPage from '../../pages/legacy/CardDetailPage'
+import CardFieldEditPage from '../../pages/legacy/CardFieldEditPage'
+import CardTopupPage from '../../pages/legacy/CardTopupPage'
 import CustomerServicePage from '../../pages/legacy/CustomerServicePage'
 import SchoolAccountListPage from '../../pages/legacy/SchoolAccountListPage'
 import RechargePage from '../../pages/legacy/RechargePage'
@@ -156,6 +159,11 @@ const customPages: Record<string, ReactElement> = {
   /* T031：卡券与优惠卡 */
   '/legacy-profile/my-cards': <MyCardsPage />,
   '/legacy-profile/coupons': <CouponsPage />,
+
+  /* T031：我的卡补充：卡详情 / 字段编辑 / 充值退款 */
+  '/legacy-profile/my-cards/:id': <CardDetailPage />,
+  '/legacy-profile/my-cards/:id/edit/:field': <CardFieldEditPage />,
+  '/legacy-profile/my-cards/:id/topup': <CardTopupPage />,
 
   /* T028：客服中心与学校账户退款 */
   '/legacy-profile/customer-service': <CustomerServicePage />,
