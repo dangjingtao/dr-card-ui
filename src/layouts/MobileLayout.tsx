@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Bell, Settings } from 'lucide-react'
 import BottomNav from '../components/mobile/BottomNav'
@@ -5,6 +6,7 @@ import StatusBar from '../components/mobile/StatusBar'
 import TitleBar from '../components/mobile/TitleBar'
 import { findRouteByPathname, isLegacyTabPath, isTabPath } from '../app/router/routes'
 import { useNotifications } from '../app/state/notifications'
+import { useUserInfo } from '../pages/legacy/userInfoStore'
 
 /**
  * 移动应用壳层（T004）
@@ -13,11 +15,15 @@ import { useNotifications } from '../app/state/notifications'
  * - TabBar 位于壳层底部，自身负责底部安全区，页面不再重复预留
  * - 二级页不显示底部导航，避免遮挡输入区/弹层
  * - /legacy-home 为独立入口，使用「首页 / 服务 / 我的」三项导航，与主入口五项 TabBar 并存
+ * - T037（2026-09-07 用户决定）：冷启动进入 `/` 且未登录时，自动重定向到登录页
+ *   `/legacy-profile/login`；已登录（账号已写入 userInfoStore 且 isRegistered=true）
+ *   则正常渲染诗得丽专栏首页。
  */
 export default function MobileLayout() {
   const location = useLocation()
   const navigate = useNavigate()
   const { unreadCount } = useNotifications()
+  const userInfo = useUserInfo()
   const showLegacyNav = isLegacyTabPath(location.pathname)
   const showNav = showLegacyNav || isTabPath(location.pathname)
   const route = findRouteByPathname(location.pathname)
@@ -26,6 +32,14 @@ export default function MobileLayout() {
   const title = route?.titleBarTitle ?? route?.title ?? fallbackTitle
   const isNotificationsPage = location.pathname === '/notifications'
   const allNotificationsRead = unreadCount === 0
+
+  /* T037：未登录访问根路由时引导到登录页；登录后（account 非空且 isRegistered=true）放行 */
+  const isLoggedIn = Boolean(userInfo.account) && userInfo.isRegistered
+  useEffect(() => {
+    if (location.pathname === '/' && !isLoggedIn) {
+      navigate('/legacy-profile/login', { replace: true })
+    }
+  }, [location.pathname, isLoggedIn, navigate])
 
   const openMarkAllRead = () => {
     const params = new URLSearchParams(location.search)
