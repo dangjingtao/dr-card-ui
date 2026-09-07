@@ -22,7 +22,6 @@ export default function ConsumePinPage() {
   const [step, setStep] = useState<Step>(1)
   const [newPin, setNewPin] = useState('')
   const [confirmPin, setConfirmPin] = useState('')
-  const [agreed, setAgreed] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const [pinFocus, setPinFocus] = useState(false)
@@ -47,10 +46,6 @@ export default function ConsumePinPage() {
     setErrorMsg('')
     if (newPin.length !== PIN_LEN) {
       setErrorMsg(`请输入 ${PIN_LEN} 位数字密码`)
-      return
-    }
-    if (!agreed) {
-      setErrorMsg('请先勾选并同意《用户协议》与《隐私政策》')
       return
     }
     setStep(2)
@@ -223,32 +218,6 @@ export default function ConsumePinPage() {
           <p className="mt-1 text-xs text-text-tertiary">
             {newPin.length === 0 ? `共 ${PIN_LEN} 位数字` : `已输入 ${newPin.length} / ${PIN_LEN} 位`}
           </p>
-
-          {/* 协议勾选（整行居中） */}
-          <label className="mx-auto mt-5 flex items-start gap-2 text-xs text-text-secondary">
-            <button
-              type="button"
-              aria-label={agreed ? '取消同意' : '同意协议'}
-              onClick={() => setAgreed(!agreed)}
-              className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition ${
-                agreed
-                  ? 'border-[#D4A853] bg-gradient-to-br from-[#D4A853] to-[#E8C97A]'
-                  : 'border-text-tertiary bg-white'
-              }`}
-            >
-              {agreed && (
-                <svg viewBox="0 0 24 24" className="h-3 w-3 text-white" fill="none" stroke="currentColor" strokeWidth="4">
-                  <polyline points="5 12 10 17 19 7" />
-                </svg>
-              )}
-            </button>
-            <span className="leading-relaxed">
-              我已阅读并同意
-              <span className="text-[#B8893D]">《用户协议》</span>
-              和
-              <span className="text-[#B8893D]">《隐私政策》</span>
-            </span>
-          </label>
 
           {/* 下一步 */}
           <button
