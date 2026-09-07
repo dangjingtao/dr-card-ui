@@ -55,10 +55,10 @@ export default function CardDetailPage() {
 
   return (
     <div className="mx-auto flex min-h-full max-w-[480px] flex-col bg-[#F8F8FA]">
-      {/* 顶部蓝色背景 */}
+      {/* 顶部淡金渐变背景 */}
       <div
         className="relative shrink-0 px-4 pt-12 pb-4"
-        style={{ background: '#1E40AF' }}
+        style={{ background: 'linear-gradient(135deg, #D4A853 0%, #E8C97A 50%, #F0D68E 100%)' }}
       >
         <button
           type="button"
@@ -125,7 +125,7 @@ export default function CardDetailPage() {
           <button
             type="button"
             onClick={() => setShowConfirm('report')}
-            className="text-sm text-[#1E40AF] active:opacity-70"
+            className="text-sm text-[#B8893D] active:opacity-70"
           >
             挂失
           </button>
@@ -133,7 +133,7 @@ export default function CardDetailPage() {
           <button
             type="button"
             onClick={() => setShowConfirm('unreport')}
-            className="text-sm text-[#1E40AF] active:opacity-70"
+            className="text-sm text-[#B8893D] active:opacity-70"
           >
             解挂
           </button>
@@ -144,7 +144,7 @@ export default function CardDetailPage() {
         <button
           type="button"
           onClick={() => navigate(`/legacy-profile/my-cards/${id}/topup`)}
-          className="text-sm text-[#1E40AF] active:opacity-70"
+          className="text-sm text-[#B8893D] active:opacity-70"
         >
           设置消费卡
         </button>

@@ -1,21 +1,51 @@
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronLeft, Plus, CreditCard } from 'lucide-react'
+import { ChevronLeft, Plus, CreditCard, FlaskConical } from 'lucide-react'
 import { useCards } from './cardStore'
 
 /**
- * T031｜我的卡（绑完卡后页面）
+ * T031｜我的卡（声明状态两态：未绑卡 / 已绑卡）
  * -------------------------------------------------------------
- * 每张卡独立卡片：卡面 + 状态 + 编号 + 所属项目
- * 点击进卡详情 / 点击 + 按钮进绑定卡流程（占位）
+ * 通过 sessionStorage key=KBS_CARD_DEMO_STATE 切换：
+ *   'unbound'：显示"绑定卡"按钮 + 空态文案（用户未绑卡的真实体验）
+ *   'bound'  ：直接跳转到卡详情（用户已绑卡 → 直接看到卡信息）
+ *
+ * 右下角悬浮的"原型状态切换器"是开发工具，不计入业务页面。
  */
+const DEMO_STATE_KEY = 'KBS_CARD_DEMO_STATE'
+
+function readDemoState(): 'unbound' | 'bound' {
+  try {
+    const v = sessionStorage.getItem(DEMO_STATE_KEY)
+    return v === 'unbound' ? 'unbound' : 'bound'
+  } catch {
+    return 'bound'
+  }
+}
+
+function writeDemoState(v: 'unbound' | 'bound') {
+  try {
+    sessionStorage.setItem(DEMO_STATE_KEY, v)
+  } catch {
+    /* ignore */
+  }
+}
+
 export default function MyCardsPage() {
   const navigate = useNavigate()
   const cards = useCards()
+  const [demoState, setDemoState] = useState<'unbound' | 'bound'>(() => readDemoState())
 
-  const STATUS_LABEL: Record<string, { label: string; color: string }> = {
-    normal: { label: '正常', color: 'bg-[#D1FAE5] text-[#047857]' },
-    reported: { label: '已挂失', color: 'bg-[#FEE2E2] text-[#B91C1C]' },
-    unreported: { label: '已解挂', color: 'bg-[#FEF3C7] text-[#92400E]' },
+  /* 当切换到 bound 时，跳到第一张卡的详情；切换到 unbound 时，留在本页 */
+  useEffect(() => {
+    writeDemoState(demoState)
+    if (demoState === 'bound' && cards[0]) {
+      navigate(`/legacy-profile/my-cards/${cards[0].id}`, { replace: true })
+    }
+  }, [demoState, cards, navigate])
+
+  const switchDemoState = () => {
+    setDemoState((cur) => (cur === 'bound' ? 'unbound' : 'bound'))
   }
 
   return (
@@ -40,65 +70,45 @@ export default function MyCardsPage() {
         </div>
       </div>
 
-      {/* 绑定卡按钮 */}
-      <div className="px-4 pt-4">
-        <button
-          type="button"
-          onClick={() => alert('绑定卡流程施工中')}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-white py-3.5 text-base font-medium text-text-primary shadow-sm active:bg-[#F8F8FA]"
-        >
-          <Plus className="h-5 w-5 text-[#B8893D]" />
-          绑定卡
-        </button>
-      </div>
+      {/* ==== 未绑卡状态：绑定卡按钮 + 空态 ==== */}
+      {demoState === 'unbound' && (
+        <>
+          <div className="px-4 pt-4">
+            <button
+              type="button"
+              onClick={() => alert('绑定卡流程施工中（T031 待 B-047）')}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-white py-3.5 text-base font-medium text-text-primary shadow-sm active:bg-[#F8F8FA]"
+            >
+              <Plus className="h-5 w-5 text-[#B8893D]" />
+              绑定卡
+            </button>
+          </div>
 
-      {/* 卡列表 */}
-      <div className="flex-1 space-y-3 px-4 pb-8 pt-3">
-        {cards.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-text-tertiary">
-            <CreditCard className="mb-3 h-12 w-12 opacity-30" />
-            <div className="text-sm">暂无绑定卡</div>
+          <div className="flex flex-1 flex-col items-center justify-center px-4 pb-8 pt-12 text-text-tertiary">
+            <CreditCard className="mb-3 h-16 w-16 opacity-30" />
+            <div className="text-base text-text-secondary">暂无绑定卡</div>
             <div className="mt-1 text-xs">点击上方按钮绑定你的校园卡</div>
           </div>
-        ) : (
-          cards.map((card) => {
-            const status = STATUS_LABEL[card.status]
-            return (
-              <button
-                key={card.id}
-                type="button"
-                onClick={() => navigate(`/legacy-profile/my-cards/${card.id}`)}
-                className="flex w-full items-center gap-3 rounded-2xl bg-white p-4 text-left shadow-sm active:bg-[#F8F8FA]"
-              >
-                <div
-                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-white shadow-sm"
-                  style={{ background: 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)' }}
-                >
-                  <CreditCard className="h-6 w-6" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <div className="text-sm font-medium text-text-primary">
-                      {card.projectName}
-                    </div>
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${status.color}`}
-                    >
-                      {status.label}
-                    </span>
-                  </div>
-                  <div className="mt-1 text-xs text-text-tertiary">
-                    卡序号：{card.cardNo}
-                  </div>
-                  <div className="text-xs text-text-tertiary">
-                    用户卡号：{card.userCardNo}
-                  </div>
-                </div>
-              </button>
-            )
-          })
-        )}
-      </div>
+        </>
+      )}
+
+      {/* ==== 已绑卡状态：被 useEffect 直接跳转到详情 ==== */}
+      {demoState === 'bound' && cards[0] && (
+        <div className="flex flex-1 items-center justify-center px-4 py-12 text-text-tertiary">
+          <div className="text-sm">正在跳转到卡详情…</div>
+        </div>
+      )}
+
+      {/* 右下角：原型状态切换器（开发用，不计入业务页面） */}
+      <button
+        type="button"
+        onClick={switchDemoState}
+        title="切换卡的绑定状态（开发用）"
+        className="fixed bottom-6 right-4 z-40 flex items-center gap-1.5 rounded-full bg-text-primary px-3 py-2 text-xs font-medium text-white shadow-lg active:opacity-80"
+      >
+        <FlaskConical className="h-3.5 w-3.5" />
+        {demoState === 'bound' ? '已绑卡' : '未绑卡'}
+      </button>
     </div>
   )
 }

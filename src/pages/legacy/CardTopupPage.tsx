@@ -81,7 +81,7 @@ export default function CardTopupPage() {
       {/* 顶部蓝色背景 */}
       <div
         className="relative shrink-0 px-5 pt-12 pb-6"
-        style={{ background: '#1E40AF' }}
+        style={{ background: 'linear-gradient(135deg, #D4A853 0%, #E8C97A 50%, #F0D68E 100%)' }}
       >
         <button
           type="button"
