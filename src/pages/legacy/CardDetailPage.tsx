@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ChevronLeft, FlaskConical } from 'lucide-react'
-import { findCard, updateCard, type CardStatus } from './cardStore'
+import { findCard, updateCard, getCardTopupRecords, getCardRefundRecords, type CardStatus } from './cardStore'
 
 type EditField = 'realName' | 'className' | 'studentId'
 
@@ -28,6 +28,10 @@ export default function CardDetailPage() {
 
   const [showConfirm, setShowConfirm] = useState<null | 'report' | 'unreport'>(null)
   const [editingField, setEditingField] = useState<EditField | null>(null)
+
+  /* 读取流水，详情页底部展示近期概要 */
+  const topupCount = getCardTopupRecords(id).length
+  const refundCount = getCardRefundRecords(id).length
   const [demoState, setDemoState] = useState<'unbound' | 'bound'>(() => {
     try {
       return sessionStorage.getItem('KBS_CARD_DEMO_STATE') === 'unbound' ? 'unbound' : 'bound'
@@ -213,6 +217,31 @@ export default function CardDetailPage() {
           className="ml-2 text-[#3B82F6] active:opacity-70"
         >
           {'>'} 去购买
+        </button>
+      </div>
+
+      {/* 充值 / 退款记录入口 */}
+      <div className="mx-4 mt-3 grid grid-cols-2 gap-3 rounded-2xl bg-white px-4 py-3 shadow-sm">
+        <button
+          type="button"
+          onClick={() => navigate(`/legacy-profile/my-cards/${id}/topup-records`)}
+          className="flex flex-col items-center py-2 active:opacity-70"
+        >
+          <span className="text-base font-medium text-text-primary">充值记录</span>
+          <span className="mt-0.5 text-xs text-text-tertiary">
+            共 {topupCount} 笔
+          </span>
+        </button>
+        <div className="mx-2 w-px self-stretch bg-divider" />
+        <button
+          type="button"
+          onClick={() => navigate(`/legacy-profile/my-cards/${id}/refund-records`)}
+          className="flex flex-col items-center py-2 active:opacity-70"
+        >
+          <span className="text-base font-medium text-text-primary">退款记录</span>
+          <span className="mt-0.5 text-xs text-text-tertiary">
+            共 {refundCount} 笔
+          </span>
         </button>
       </div>
 

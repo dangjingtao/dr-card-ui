@@ -68,6 +68,8 @@ import CardDetailPage from '../../pages/legacy/CardDetailPage'
 import CardTopupPage from '../../pages/legacy/CardTopupPage'
 import CardTopupSuccessPage from '../../pages/legacy/CardTopupSuccessPage'
 import CardTopupFailPage from '../../pages/legacy/CardTopupFailPage'
+import CardTopupRecordsPage from '../../pages/legacy/CardTopupRecordsPage'
+import CardRefundRecordsPage from '../../pages/legacy/CardRefundRecordsPage'
 import ScanBindCardPage from '../../pages/legacy/ScanBindCardPage'
 import CustomerServicePage from '../../pages/legacy/CustomerServicePage'
 import SchoolAccountListPage from '../../pages/legacy/SchoolAccountListPage'
@@ -169,6 +171,8 @@ const customPages: Record<string, ReactElement> = {
   '/legacy-profile/my-cards/:id/topup': <CardTopupPage />,
   '/legacy-profile/my-cards/:id/topup/success': <CardTopupSuccessPage />,
   '/legacy-profile/my-cards/:id/topup/fail': <CardTopupFailPage />,
+  '/legacy-profile/my-cards/:id/topup-records': <CardTopupRecordsPage />,
+  '/legacy-profile/my-cards/:id/refund-records': <CardRefundRecordsPage />,
   '/legacy-profile/my-cards/scan-bind': <ScanBindCardPage />,
 
   /* T028：客服中心与学校账户退款 */
