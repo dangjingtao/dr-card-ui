@@ -351,9 +351,9 @@ export const ROUTES: RouteMeta[] = [
     titleBar: 'hidden',
     nodes: [],
     task: 'T028',
-    entry: '设置-在线客服',
+    entry: '设置-在线客服（已跳转至诗得丽 /service/chat，本页面保留不再被业务入口使用）',
     returnTo: '设置',
-    owner: '客服中心页（T028；上半部分：热门问题可展开答案；下半部分：AI 对话区，输入文字 → mock AI 回复；含「转人工」按钮 + 关键词命中 → 跳排队页）',
+    owner: '客服中心页（T028；当前业务入口（卡博士服务页 / 我的设置）均改跳诗得丽品牌专栏的 /service/chat；本页面作为过渡保留，地址栏直接访问仍可达）',
   },
   {
     path: '/legacy-profile/school-accounts',

@@ -39,7 +39,7 @@ export default function LegacyService() {
       {/* 客服欢迎语 + 在线客服入口（T028） */}
       <button
         type="button"
-        onClick={() => navigate('/legacy-profile/customer-service')}
+        onClick={() => navigate('/service/chat')}
         className="flex w-full items-start gap-2 rounded-2xl text-left active:bg-surface-secondary"
       >
         <div
