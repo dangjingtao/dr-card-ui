@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, MessageCircle } from 'lucide-react'
+import { userInfoActions } from './userInfoStore'
 
 /* ---- Fixture：设置项 + 跳转目标 ---- */
 interface SettingItem {
@@ -31,7 +32,12 @@ export default function SettingsPage() {
 
   const handleLogout = () => {
     setShowLogoutConfirm(false)
-    // 退出登录逻辑
+    /* T037：退出登录 → 清空登录态 → 跳转登录页
+     * - 重置 isRegistered 让二次确认密码回到未注册演示态
+     * - 清空 account 让 MobileLayout 的未登录守卫放行根路径跳转
+     * - 用 replace 避免返回栈回到设置页 */
+    userInfoActions.update({ isRegistered: false, account: '' })
+    navigate('/legacy-profile/login', { replace: true })
   }
 
   const handleClick = (item: SettingItem) => {

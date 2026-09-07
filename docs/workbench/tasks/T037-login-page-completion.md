@@ -31,6 +31,7 @@
 4. 登录成功后弹窗引导绑定学校 / 专业 / 学号。
 5. 「我的」页 ProfileHome 顶部区增加学校 / 学院 / 学号展示。
 6. 冷启动进入 APP 默认先打开登录页（用户 2026-09-07 决定）。
+7. 「我的」→「设置」→「退出登录」→ 确认后跳转回登录页（用户 2026-09-07 决定）。
 
 ## 原型范围
 
@@ -99,6 +100,7 @@
 - `router/index.tsx`：在 T026 imports + `customPages` 中新增 `BindSchoolPage` 路由项。
 - `userInfoStore.ts`：扩展 `UserInfo` 新增 `isRegistered: boolean`（mock 默认为 `false`，触发二次确认密码），`account` 与 `school/academy/studentId` 字段已存在。
 - `MobileLayout.tsx`：在壳层增加"未登录访问 `/` 时 `replace` 跳 `/legacy-profile/login`"的副作用，登录后（`account` 非空且 `isRegistered=true`）放行诗得丽专栏首页；保留底部 Tab「首页」语义不被破坏。
+- `SettingsPage.tsx`：`handleLogout` 落实 — 调用 `userInfoActions.update({ isRegistered: false, account: '' })` 清空登录态后 `navigate('/legacy-profile/login', { replace: true })` 跳转；`replace` 避免返回栈回退到设置页。
 
 ## 状态与交互矩阵
 
@@ -116,6 +118,7 @@
 - 登录成功弹窗正确引导绑定学校/专业/学号，跳转 BindSchoolPage 后保存成功。
 - ProfileHome 顶部区正确展示学校 / 学院 / 学号摘要。
 - 冷启动进入 `/` 自动跳转到登录页；登录后回 `/` 正常渲染诗得丽专栏首页。
+- 「我的」→「设置」→「退出登录」确认后跳回登录页，登录态被清空（`account` 空、`isRegistered=false`）。
 - `npm run typecheck` 与 `npm run build` 通过。
 
 ## 必交证据
