@@ -38,7 +38,8 @@ const QUICK_ENTRIES: Array<{
   badge?: string
 }> = [
   { key: 'my-card', label: '我的卡', icon: Wallet, bg: 'from-[#FFB347] to-[#FFCC66]', to: '/legacy-profile/my-cards' },
-  { key: 'scratch', label: '刮刮充值卡', icon: CreditCard, bg: 'from-[#F472B6] to-[#F9A8D4]' },
+  /* T038：刮刮充值卡补全 — 去掉占位 alert，跳真实页面 */
+  { key: 'scratch', label: '刮刮充值卡', icon: CreditCard, bg: 'from-[#F472B6] to-[#F9A8D4]', to: '/legacy-profile/scratch-card' },
   { key: 'coupon', label: '优惠卡', icon: Tag, bg: 'from-[#F87171] to-[#FCA5A5]', to: '/legacy-profile/coupons' },
   { key: 'receipt', label: '我的小票', icon: Receipt, bg: 'from-[#F472B6] to-[#F9A8D4]', to: '/legacy-profile/school-accounts' },
   { key: 'frequent', label: '常用设备', icon: Phone, bg: 'from-[#5EEAD4] to-[#99F6E4]', to: '/legacy-profile/devices/frequent' },

@@ -373,6 +373,16 @@ export const ROUTES: RouteMeta[] = [
     returnTo: '登录',
     owner: '注册账号页（T037；卡博士淡金色风格：手机号 + 验证码 + 密码 + 二次确认密码；注册成功后 isRegistered=true 并弹窗引导绑定学校/专业/学号）',
   },
+  {
+    path: '/legacy-profile/scratch-card',
+    title: '刮刮充值卡',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T038',
+    entry: '「我的」-刮刮充值卡',
+    returnTo: '我的',
+    owner: '刮刮充值卡页（T038；卡博士淡金色风格：顶部金色渐变 + 10位充值码输入 + 扫码按钮 + 金渐变充值按钮 + 充值记录入口 + 浅金温馨提示卡 + 空态文案；mock 校验充值码后 4 位匹配演示卡 cardNo 后 4 位）',
+  },
 
   /* ────────────────────────── T031 卡券与优惠卡 ────────────────────────── */
   {
