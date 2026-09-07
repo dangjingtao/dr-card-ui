@@ -110,12 +110,14 @@ export default function ProfileHome() {
             className="mt-3 flex w-full flex-col items-start gap-1 text-left text-sm text-white/85 active:opacity-80"
           >
             {(userInfo.school || userInfo.academy) && (
-              <span className="flex w-full items-center gap-1.5">
+              <span className="flex w-full flex-wrap items-center gap-1.5">
                 {userInfo.school && (
                   <span className="shrink-0 rounded-full bg-white/20 px-2 py-0.5">{userInfo.school}</span>
                 )}
                 {userInfo.academy && (
-                  <span className="min-w-0 flex-1 truncate">{userInfo.academy}</span>
+                  <span className="min-w-0 max-w-full shrink truncate rounded-full bg-white/20 px-2 py-0.5">
+                    {userInfo.academy}
+                  </span>
                 )}
               </span>
             )}
