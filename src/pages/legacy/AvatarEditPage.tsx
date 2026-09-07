@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, Camera, Image as ImageIcon } from 'lucide-react'
 import { userInfoActions } from './userInfoStore'
@@ -18,15 +18,44 @@ const AVATAR_OPTIONS = [
 
 export default function AvatarEditPage() {
   const navigate = useNavigate()
-  const [selected, setSelected] = useState(0)
+  const [selectedPreset, setSelectedPreset] = useState(0)
+  /** 用户从相册/拍照上传的自定义头像（base64 data URL），null 表示使用预置头像 */
+  const [customAvatar, setCustomAvatar] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+
+  const albumInputRef = useRef<HTMLInputElement>(null)
+  const cameraInputRef = useRef<HTMLInputElement>(null)
+
+  const currentAvatar = customAvatar ?? AVATAR_OPTIONS[selectedPreset]
+
+  const handleFilePick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      alert('请选择图片文件')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = reader.result as string
+      setCustomAvatar(result)
+    }
+    reader.readAsDataURL(file)
+    /* 允许重复选择同一张图 */
+    e.target.value = ''
+  }
+
+  const handlePresetClick = (idx: number) => {
+    setSelectedPreset(idx)
+    setCustomAvatar(null)
+  }
 
   const handleSave = () => {
     if (saving) return
     setSaving(true)
     /* 模拟异步保存；成功后回写 store */
     setTimeout(() => {
-      userInfoActions.update({ avatar: AVATAR_OPTIONS[selected] })
+      userInfoActions.update({ avatar: currentAvatar })
       setSaving(false)
       alert('头像保存成功')
       navigate(-1)
@@ -58,13 +87,14 @@ export default function AvatarEditPage() {
           <div className="flex flex-col items-center">
             <div className="relative">
               <img
-                src={AVATAR_OPTIONS[selected]}
+                src={currentAvatar}
                 alt="头像预览"
                 className="h-28 w-28 rounded-full border-2 border-[#D4A853] object-cover"
               />
               <button
                 type="button"
-                aria-label="拍照"
+                aria-label="从相册选择"
+                onClick={() => albumInputRef.current?.click()}
                 className="absolute right-0 bottom-0 flex h-8 w-8 items-center justify-center rounded-full bg-[#D4A853] text-white shadow-md active:opacity-80"
               >
                 <Camera className="h-4 w-4" />
@@ -83,13 +113,17 @@ export default function AvatarEditPage() {
             <button
               key={idx}
               type="button"
-              onClick={() => setSelected(idx)}
-              className={`relative aspect-2 overflow-hidden rounded-xl border-2 transition ${
-                selected === idx ? 'border-[#D4A853]' : 'border-transparent'
+              onClick={() => handlePresetClick(idx)}
+              className={`relative aspect-square overflow-hidden rounded-xl border-2 transition ${
+                !customAvatar && selectedPreset === idx
+                  ? 'border-[#D4A853]'
+                  : 'border-transparent'
               }`}
             >
               <img src={src} alt={`头像${idx + 1}`} className="h-full w-full object-cover" />
-              {selected === idx && <div className="absolute inset-0 bg-[#D4A853]/20" />}
+              {!customAvatar && selectedPreset === idx && (
+                <div className="absolute inset-0 bg-[#D4A853]/20" />
+              )}
             </button>
           ))}
         </div>
@@ -100,6 +134,7 @@ export default function AvatarEditPage() {
         <div className="grid grid-cols-2 gap-3">
           <button
             type="button"
+            onClick={() => albumInputRef.current?.click()}
             className="flex items-center justify-center gap-2 rounded-2xl bg-white py-3 text-sm text-text-primary shadow-sm active:bg-[#F8F8FA]"
           >
             <ImageIcon className="h-4 w-4 text-[#D4A853]" />
@@ -107,6 +142,7 @@ export default function AvatarEditPage() {
           </button>
           <button
             type="button"
+            onClick={() => cameraInputRef.current?.click()}
             className="flex items-center justify-center gap-2 rounded-2xl bg-white py-3 text-sm text-text-primary shadow-sm active:bg-[#F8F8FA]"
           >
             <Camera className="h-4 w-4 text-[#D4A853]" />
@@ -114,6 +150,23 @@ export default function AvatarEditPage() {
           </button>
         </div>
       </div>
+
+      {/* 隐藏的文件输入 */}
+      <input
+        ref={albumInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFilePick}
+        className="hidden"
+      />
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={handleFilePick}
+        className="hidden"
+      />
 
       {/* 底部保存按钮 */}
       <div className="flex-1" />

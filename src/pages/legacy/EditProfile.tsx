@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, Camera } from 'lucide-react'
 import { useUserInfo, userInfoActions } from './userInfoStore'
@@ -20,7 +20,7 @@ const AVATAR_OPTIONS = [
  * T026：编辑资料页
  * -------------------------------------------------------------
  * 一站式修改 头像 / 昵称 / 真实姓名（任务卡「实施要求」第 4 条）。
- * - 头像：点击 4×3 网格切换，外部预览实时更新；
+ * - 头像：点击相机按钮从相册/拍照上传，或从 5×2 网格切换；
  * - 昵称：必填，1-16 字；
  * - 真实姓名：必填，1-20 字；
  * - 点击「保存」一次性写回 store，再返回个人信息。
@@ -29,17 +29,45 @@ export default function EditProfile() {
   const navigate = useNavigate()
   const userInfo = useUserInfo()
 
-  /* 当前选中的预置头像 index；初值由 store.avatar 决定（找不到则回落到 0） */
-  const initialAvatarIdx = Math.max(
-    0,
-    AVATAR_OPTIONS.findIndex((src) => src === userInfo.avatar),
-  )
+  /* 当前选中的预置头像 index；如果 store 里是自定义上传的（data: 开头），则 avatarIdx 取 0 但 customAvatar 有值 */
+  const isStoredCustom = userInfo.avatar.startsWith('data:')
+  const initialAvatarIdx = isStoredCustom
+    ? 0
+    : Math.max(0, AVATAR_OPTIONS.findIndex((src) => src === userInfo.avatar))
   const [avatarIdx, setAvatarIdx] = useState(initialAvatarIdx)
+  const [customAvatar, setCustomAvatar] = useState<string | null>(
+    isStoredCustom ? userInfo.avatar : null,
+  )
   const [nickname, setNickname] = useState(userInfo.nickname)
   const [realName, setRealName] = useState(userInfo.realName)
   const [saving, setSaving] = useState(false)
   const [nicknameErr, setNicknameErr] = useState('')
   const [realNameErr, setRealNameErr] = useState('')
+
+  const albumInputRef = useRef<HTMLInputElement>(null)
+
+  const currentAvatar = customAvatar ?? AVATAR_OPTIONS[avatarIdx]
+
+  const handleFilePick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      alert('请选择图片文件')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = reader.result as string
+      setCustomAvatar(result)
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
+
+  const handlePresetClick = (idx: number) => {
+    setAvatarIdx(idx)
+    setCustomAvatar(null)
+  }
 
   const handleSave = () => {
     if (saving) return
@@ -70,7 +98,7 @@ export default function EditProfile() {
     setSaving(true)
     setTimeout(() => {
       userInfoActions.update({
-        avatar: AVATAR_OPTIONS[avatarIdx],
+        avatar: currentAvatar,
         nickname: trimmedNick,
         realName: trimmedReal,
       })
@@ -105,32 +133,53 @@ export default function EditProfile() {
           <div className="flex flex-col items-center">
             <div className="relative">
               <img
-                src={AVATAR_OPTIONS[avatarIdx]}
+                src={currentAvatar}
                 alt="头像预览"
                 className="h-20 w-20 rounded-full border-2 border-[#D4A853] object-cover"
               />
-              <div className="absolute right-0 bottom-0 flex h-7 w-7 items-center justify-center rounded-full bg-[#D4A853] text-white shadow-md">
+              <button
+                type="button"
+                aria-label="从相册选择头像"
+                onClick={() => albumInputRef.current?.click()}
+                className="absolute right-0 bottom-0 flex h-7 w-7 items-center justify-center rounded-full bg-[#D4A853] text-white shadow-md active:opacity-80"
+              >
                 <Camera className="h-3.5 w-3.5" />
-              </div>
+              </button>
             </div>
-            <div className="mt-2 text-xs text-text-secondary">点击下方网格更换头像</div>
+            <div className="mt-2 text-xs text-text-secondary">
+              点击相机图标从相册/拍照上传，或从下方选择
+            </div>
             <div className="mt-3 grid w-full grid-cols-5 gap-2">
               {AVATAR_OPTIONS.slice(0, 9).map((src, idx) => (
                 <button
                   key={idx}
                   type="button"
-                  onClick={() => setAvatarIdx(idx)}
+                  onClick={() => handlePresetClick(idx)}
                   className={`relative aspect-square overflow-hidden rounded-lg border-2 transition ${
-                    avatarIdx === idx ? 'border-[#D4A853]' : 'border-transparent'
+                    !customAvatar && avatarIdx === idx
+                      ? 'border-[#D4A853]'
+                      : 'border-transparent'
                   }`}
                 >
                   <img src={src} alt={`头像${idx + 1}`} className="h-full w-full object-cover" />
+                  {!customAvatar && avatarIdx === idx && (
+                    <div className="absolute inset-0 bg-[#D4A853]/20" />
+                  )}
                 </button>
               ))}
             </div>
           </div>
         </div>
       </div>
+
+      {/* 隐藏的文件输入（手机端会弹系统菜单：拍照 / 从相册 / 文件） */}
+      <input
+        ref={albumInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFilePick}
+        className="hidden"
+      />
 
       {/* 昵称 + 真实姓名 */}
       <div className="space-y-3 px-4 pt-4">
