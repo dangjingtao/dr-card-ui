@@ -1,16 +1,15 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, FlaskConical } from 'lucide-react'
 import { findCard, updateCard, type CardStatus } from './cardStore'
 
 /**
- * T031｜卡详情页（图1）
+ * T031｜卡详情页
  * -------------------------------------------------------------
- * 顶部蓝色背景
- * 卡信息列表（卡序号 / 卡所属项目 / 用户卡号 / 卡MAC / 姓名 / 班级 / 学号 / 卡状态）
- * 底部三个蓝色文字操作：挂失 / 解挂 / 设置消费卡
- * 姓名 / 班级 / 学号 后挂"修改"链接 → CardFieldEditPage
- * 点击"挂失"弹"您确定要挂失这张卡吗？"确认框
+ * 顶部淡金渐变（返回箭头 z-index 提升避免被白卡挡住）
+ * 卡信息列表 8 行
+ * 底部三操作：挂失 ↔ 解挂（互斥，根据当前状态显示） / 设置消费卡
+ * 右下角：原型状态切换器（仅在绑卡态可见）
  */
 export default function CardDetailPage() {
   const navigate = useNavigate()
@@ -18,6 +17,13 @@ export default function CardDetailPage() {
   const card = findCard(id)
 
   const [showConfirm, setShowConfirm] = useState<null | 'report' | 'unreport'>(null)
+  const [demoState, setDemoState] = useState<'unbound' | 'bound'>(() => {
+    try {
+      return sessionStorage.getItem('KBS_CARD_DEMO_STATE') === 'unbound' ? 'unbound' : 'bound'
+    } catch {
+      return 'bound'
+    }
+  })
 
   if (!card) {
     return (
@@ -53,25 +59,45 @@ export default function CardDetailPage() {
     setShowConfirm(null)
   }
 
+  /* 挂失 / 解挂互斥：根据当前状态决定 */
+  const isReported = card.status === 'reported'
+
+  const toggleDemoState = () => {
+    const next = demoState === 'bound' ? 'unbound' : 'bound'
+    try {
+      sessionStorage.setItem('KBS_CARD_DEMO_STATE', next)
+    } catch {
+      /* ignore */
+    }
+    setDemoState(next)
+    if (next === 'unbound') {
+      navigate('/legacy-profile/my-cards')
+    }
+  }
+
   return (
     <div className="mx-auto flex min-h-full max-w-[480px] flex-col bg-[#F8F8FA]">
-      {/* 顶部淡金渐变背景 */}
+      {/* 顶部淡金渐变（z-10 保证返回箭头在白卡之上） */}
       <div
-        className="relative shrink-0 px-4 pt-12 pb-4"
+        className="relative z-10 shrink-0 px-4 pt-3 pb-12"
         style={{ background: 'linear-gradient(135deg, #D4A853 0%, #E8C97A 50%, #F0D68E 100%)' }}
       >
-        <button
-          type="button"
-          aria-label="返回"
-          onClick={() => navigate(-1)}
-          className="absolute left-4 top-12 flex h-10 w-10 items-center justify-center text-white active:opacity-80"
-        >
-          <ChevronLeft className="h-6 w-6" />
-        </button>
+        {/* 状态栏占位 */}
+        <div className="h-9" />
+        <div className="relative flex items-center">
+          <button
+            type="button"
+            aria-label="返回"
+            onClick={() => navigate(-1)}
+            className="relative z-20 flex h-10 w-10 items-center justify-center text-white active:opacity-80"
+          >
+            <ChevronLeft className="h-6 w-6" />
+          </button>
+        </div>
       </div>
 
       {/* 卡信息列表 */}
-      <div className="mx-4 -mt-2 rounded-2xl bg-white px-4 py-2 shadow-sm">
+      <div className="mx-4 -mt-6 rounded-2xl bg-white px-4 py-2 shadow-sm">
         <Row label="卡序号" value={card.cardNo} mono />
         <Row label="卡所属项目" value={`${card.projectName}（${card.projectId}）`} />
         <Row label="用户卡号" value={card.userCardNo} mono />
@@ -119,9 +145,10 @@ export default function CardDetailPage() {
         <Row label="卡状态" value={STATUS_TEXT[card.status]} last />
       </div>
 
-      {/* 底部三个蓝色文字操作 */}
+      {/* 底部三操作：挂失 ↔ 解挂（互斥） / 设置消费卡 */}
       <div className="mx-4 mt-3 grid grid-cols-3 rounded-2xl bg-white px-4 py-3 shadow-sm">
-        {card.status === 'normal' ? (
+        {!isReported ? (
+          /* 正常状态：可点挂失 */
           <button
             type="button"
             onClick={() => setShowConfirm('report')}
@@ -129,7 +156,8 @@ export default function CardDetailPage() {
           >
             挂失
           </button>
-        ) : card.status === 'reported' ? (
+        ) : (
+          /* 挂失状态：可点解挂 */
           <button
             type="button"
             onClick={() => setShowConfirm('unreport')}
@@ -137,8 +165,6 @@ export default function CardDetailPage() {
           >
             解挂
           </button>
-        ) : (
-          <span className="text-sm text-text-tertiary">解挂</span>
         )}
         <span className="border-x border-divider" />
         <button
@@ -181,6 +207,17 @@ export default function CardDetailPage() {
           </div>
         </div>
       )}
+
+      {/* 右下角：原型状态切换器（开发用） */}
+      <button
+        type="button"
+        onClick={toggleDemoState}
+        title="切换卡的绑定状态（开发用）"
+        className="fixed bottom-6 right-4 z-40 flex items-center gap-1.5 rounded-full bg-text-primary px-3 py-2 text-xs font-medium text-white shadow-lg active:opacity-80"
+      >
+        <FlaskConical className="h-3.5 w-3.5" />
+        {demoState === 'bound' ? '已绑卡' : '未绑卡'}
+      </button>
     </div>
   )
 }
