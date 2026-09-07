@@ -204,20 +204,12 @@ export default function CustomerServicePage() {
           ))}
         </div>
 
-        {/* 输入区 + 转人工 */}
+        {/* 输入区（无独立"转人工"按钮，关键词「人工客服」触发） */}
         <form
           onSubmit={handleSubmit}
           className="shrink-0 border-t border-divider bg-white px-3 py-2"
         >
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => sendMessage('人工客服')}
-              className="flex shrink-0 items-center gap-1 rounded-full bg-[#FFF8E8] px-3 py-1.5 text-xs font-medium text-[#B8893D] active:opacity-70"
-            >
-              <UserRound className="h-3.5 w-3.5" />
-              转人工
-            </button>
             <input
               type="text"
               value={input}
