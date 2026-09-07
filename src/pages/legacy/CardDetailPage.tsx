@@ -88,13 +88,13 @@ export default function CardDetailPage() {
 
   return (
     <div className="mx-auto flex min-h-full max-w-[480px] flex-col bg-[#F8F8FA]">
-      {/* 顶部淡金渐变背景 */}
+      {/* 顶部淡金渐变背景：左侧返回 + 居中"我的卡"标题 */}
       <div
         className="relative shrink-0 px-4 pt-3 pb-4"
         style={{ background: 'linear-gradient(135deg, #D4A853 0%, #E8C97A 50%, #F0D68E 100%)' }}
       >
-        <div className="flex items-center">
-          {/* 关键：返回直接 navigate 到列表，不依赖 -1 */}
+        <div className="relative flex items-center">
+          {/* 返回按钮：跳"我的"页面 */}
           <button
             type="button"
             aria-label="返回"
@@ -103,6 +103,10 @@ export default function CardDetailPage() {
           >
             <ChevronLeft className="h-6 w-6" />
           </button>
+          {/* 居中标题"我的卡" */}
+          <div className="absolute left-1/2 -translate-x-1/2 text-lg font-semibold text-white">
+            我的卡
+          </div>
         </div>
       </div>
 
