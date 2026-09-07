@@ -32,6 +32,7 @@
 5. 「我的」页 ProfileHome 顶部区增加学校 / 学院 / 学号展示。
 6. 冷启动进入 APP 默认先打开登录页（用户 2026-09-07 决定）。
 7. 「我的」→「设置」→「退出登录」→ 确认后跳转回登录页（用户 2026-09-07 决定）。
+8. 注册入口：登录页底部新增「还没有账号？请注册」；注册页 = 手机号 + 验证码 + 设置密码 + 二次确认密码；二次确认密码仅出现在注册页（用户 2026-09-07 决定）。
 
 ## 原型范围
 
@@ -41,7 +42,7 @@
 - 主操作按钮：金色渐变胶囊 `#D4A853 → #E8C97A`；微信授权保留绿色调（外部品牌识别）。
 - 输入框：白底圆角胶囊，边框 `#E8D9B8`（与「我的」顶部金色区一致），placeholder 与图标色 `#B8893D`。
 - 协议勾选：底部居左，金色径向渐变填充。
-- 辅助文案：「还没有账号？请在卡博士小程序中绑定手机号」。
+- 辅助文案：「还没有账号？请注册」（点击注册入口跳转 `RegisterPage`）。
 
 ## 不在范围
 
@@ -64,10 +65,11 @@
 - **标题文案**：「你好，欢迎来到卡博士」。
 - **账号输入框**：白底圆角胶囊，placeholder「请输入账号」。
 - **密码输入框**：白底圆角胶囊，右侧「睁眼/闭眼」图标切换 `type="password"` 与 `type="text"`，切换过程中光标与已输入内容保持一致。
-- **二次确认密码输入框**：仅当检测到「当前账号未注册」（mock 通过本地 `userInfoStore.account` 比对）时显示；输入完成后做一致性校验，不一致给出红色错误提示。
+- **二次确认密码输入框**：[已迁移] 仅出现在注册页 `RegisterPage`，登录页不再要求二次确认（用户 2026-09-07 决定）。
 - **忘记密码**：右上角小字链接，点击仅弹 toast「功能施工中」（T037 不展开）。
 - **主操作按钮**：「立即登录」，紫色渐变胶囊，宽度撑满，登录中显示 loading。
 - **微信授权按钮**：「微信授权登录」绿色调渐变胶囊，宽度撑满，含微信图标。
+- **注册入口**：「还没有账号？请注册」金色文字按钮，点击跳 `/legacy-profile/register`。
 - **协议勾选**：底部居左复选框 + 文案「我已阅读并同意《用户协议》和《隐私政策》」。
 - **错误反馈**：
   - 输入校验：账号 / 密码非空、密码 6-20 位、两次密码一致。
@@ -81,6 +83,20 @@
 - 接收 `length`（默认 4 位）与 `onChange`（输出当前验证码字符串）。
 - 内部维护一个随机生成的字符串（字母 + 数字，区分大小写），点击图片或右侧「换一张」刷新。
 - 视觉：120×44 SVG 风格（圆角矩形底 + 干扰线 + 轻微旋转字符），与输入框右对齐显示。
+
+### RegisterPage（新建，`/legacy-profile/register`）
+
+- 顶部栏：「注册账号」+ 返回登录页。
+- 字段（按顺序）：
+  1. **手机号 + 获取验证码**：手机号白底圆角胶囊，输入框 `inputMode="numeric"`，右侧「获取验证码」金色渐变按钮；点击触发 60s 倒计时（与 PhoneChangePage 复用 `isValidPhone` 校验）。
+  2. **验证码**：4-6 位数字。
+  3. **设置密码**：6-20 位，睁眼/闭眼切换。
+  4. **二次确认密码**：必须与设置密码一致，睁眼/闭眼切换。
+- 协议勾选：底部居左；未勾选提交给出明确红字提示。
+- 主操作：「注册并登录」金色渐变胶囊；提交时校验所有字段，任一失败给出对应红字 + 不发请求。
+- 提交成功：调用 `userInfoActions.update({ account: phone, phone, isRegistered: true })`，弹窗「完善账号信息」引导绑定学校 / 专业 / 学号；点「去绑定」跳 `/legacy-profile/bind-school`，点「稍后再说」跳 `/legacy-profile`。
+- 辅助入口：「已有账号？去登录」金色文字按钮跳回 `/legacy-profile/login`。
+- 视觉与 LoginPage 同款淡金色风格，保证品牌一致。
 
 ### BindSchoolPage（新建，`/legacy-profile/bind-school`）
 
@@ -96,15 +112,17 @@
 
 ### 路由与状态
 
-- `routes.ts`：在 T026 区块内更新 `/legacy-profile/login` 的 owner 描述；新增 `/legacy-profile/bind-school`。
-- `router/index.tsx`：在 T026 imports + `customPages` 中新增 `BindSchoolPage` 路由项。
+- `routes.ts`：在 T026 区块内更新 `/legacy-profile/login` 的 owner 描述；新增 `/legacy-profile/bind-school` 与 `/legacy-profile/register`。
+- `router/index.tsx`：在 T026 imports + `customPages` 中新增 `BindSchoolPage` 与 `RegisterPage` 路由项。
 - `userInfoStore.ts`：扩展 `UserInfo` 新增 `isRegistered: boolean`（mock 默认为 `false`，触发二次确认密码），`account` 与 `school/academy/studentId` 字段已存在。
 - `MobileLayout.tsx`：在壳层增加"未登录访问 `/` 时 `replace` 跳 `/legacy-profile/login`"的副作用，登录后（`account` 非空且 `isRegistered=true`）放行诗得丽专栏首页；保留底部 Tab「首页」语义不被破坏。
 - `SettingsPage.tsx`：`handleLogout` 落实 — 调用 `userInfoActions.update({ isRegistered: false, account: '' })` 清空登录态后 `navigate('/legacy-profile/login', { replace: true })` 跳转；`replace` 避免返回栈回退到设置页。
+- `LoginPage.tsx`：移除"未注册则显示二次确认密码"逻辑（已迁移到 RegisterPage）；底部新增「请注册」入口。
 
 ## 状态与交互矩阵
 
-- **LoginPage**：默认态 / 输入校验失败 / 密码可见切换 / 二次确认密码一致性 / 加载中 / 错误提示（含剩余次数）/ 需图形验证码 / 换一张验证码 / 登录成功 + 绑定引导弹窗。
+- **LoginPage**：默认态 / 输入校验失败 / 密码可见切换 / 加载中 / 错误提示（含剩余次数）/ 需图形验证码 / 换一张验证码 / 登录成功 + 绑定引导弹窗 / 「请注册」入口。
+- **RegisterPage**：默认态 / 各字段校验失败 / 验证码 60s 倒计时 / 加载中 / 提交成功 + 绑定引导弹窗 / 「去登录」入口。
 - **CaptchaImage**：初始渲染 / 校验失败高亮 / 刷新。
 - **BindSchoolPage**：默认态 / 表单校验失败 / 加载中 / 提交成功跳转。
 - **ProfileHome**：未绑定态（仅昵称 + 账号）/ 已绑定态（昵称 + 账号 + 学校学院学号）。
@@ -112,13 +130,14 @@
 ## 验收标准
 
 - 用户可输入账号 + 密码登录，密码可切换显示/隐藏。
-- 新账号（未注册）场景下显示二次确认密码，不一致给出明确错误。
+- 注册页可填写手机号 + 验证码 + 设置密码 + 二次确认密码，二次确认密码不一致给出明确错误。
 - 连续 5 次错误后自动显示图形验证码，可点击切换。
 - 微信授权按钮与登录按钮均能正常触发对应流程。
-- 登录成功弹窗正确引导绑定学校/专业/学号，跳转 BindSchoolPage 后保存成功。
+- 登录成功 / 注册成功 弹窗正确引导绑定学校/专业/学号，跳转 BindSchoolPage 后保存成功。
 - ProfileHome 顶部区正确展示学校 / 学院 / 学号摘要。
 - 冷启动进入 `/` 自动跳转到登录页；登录后回 `/` 正常渲染诗得丽专栏首页。
 - 「我的」→「设置」→「退出登录」确认后跳回登录页，登录态被清空（`account` 空、`isRegistered=false`）。
+- 登录页底部「请注册」入口跳转注册页；注册页「去登录」返回登录页。
 - `npm run typecheck` 与 `npm run build` 通过。
 
 ## 必交证据
@@ -136,7 +155,10 @@
 - `LoginPage.tsx` 重写。
 - 新增 `CaptchaImage.tsx`（`src/components/ui/`）。
 - 新增 `BindSchoolPage.tsx`（`src/pages/legacy/`）。
+- 新增 `RegisterPage.tsx`（`src/pages/legacy/`）。
 - `userInfoStore.ts` 增加 `isRegistered` 字段。
 - `routes.ts` + `router/index.tsx` 注册新路由。
 - `ProfileHome.tsx` 顶部区改造。
+- `MobileLayout.tsx` 增加未登录守卫。
+- `SettingsPage.tsx` 退出登录落地。
 - 本卡文档与证据截图。

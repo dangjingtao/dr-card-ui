@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import CaptchaImage from '../../components/ui/CaptchaImage'
-import { useUserInfo, userInfoActions } from './userInfoStore'
+import { userInfoActions } from './userInfoStore'
 
 /* T037｜登录页（卡博士淡金色风格改版）
  * -------------------------------------------------------------
@@ -12,25 +12,24 @@ import { useUserInfo, userInfoActions } from './userInfoStore'
  *
  * 关键改动：
    1. 密码可见切换（睁眼 / 闭眼）
-   2. 新注册用户显示二次确认密码
-   3. 连续输错 5 次后强制图形验证码
-   4. 保留微信授权登录入口
-   5. 登录成功后弹窗引导绑定学校/专业/学号
+   2. 连续输错 5 次后强制图形验证码
+   3. 保留微信授权登录入口
+   4. 登录成功后弹窗引导绑定学校/专业/学号
+   5. 「还没有账号？请注册」入口跳转注册页（手机号 + 验证码 + 密码 + 二次确认）
+ *
+ * 二次确认密码仅出现在注册页（用户 2026-09-07 决定）；登录页只负责已注册用户登录。
  */
 
 const MAX_ATTEMPTS = 5
 
 export default function LoginPage() {
   const navigate = useNavigate()
-  const userInfo = useUserInfo()
 
   const [account, setAccount] = useState('')
   const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
   const [captcha, setCaptcha] = useState('')
 
   const [showPassword, setShowPassword] = useState(false)
-  const [showConfirm, setShowConfirm] = useState(false)
 
   const [agreed, setAgreed] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -42,8 +41,9 @@ export default function LoginPage() {
   const [currentCaptcha, setCurrentCaptcha] = useState('')
   const requireCaptcha = attempts >= MAX_ATTEMPTS
 
-  /* 未注册 mock：当前 userInfoStore.isRegistered = false，因此显示二次确认密码 */
-  const requireConfirm = !userInfo.isRegistered
+  const goRegister = () => {
+    navigate('/legacy-profile/register')
+  }
 
   const handleLogin = async () => {
     if (!agreed) {
@@ -61,10 +61,6 @@ export default function LoginPage() {
     }
     if (password.length < 6 || password.length > 20) {
       setErrorMsg('密码需为 6-20 位')
-      return
-    }
-    if (requireConfirm && password !== confirmPassword) {
-      setErrorMsg('两次输入的密码不一致')
       return
     }
     if (requireCaptcha && captcha.toUpperCase() !== currentCaptcha.toUpperCase()) {
@@ -171,28 +167,6 @@ export default function LoginPage() {
             </button>
           </div>
 
-          {/* 二次确认密码（新账号） */}
-          {requireConfirm && (
-            <div className="flex h-12 items-center gap-2 rounded-full border border-[#E8D9B8] bg-white px-5 shadow-sm">
-              <input
-                type={showConfirm ? 'text' : 'password'}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="请再次输入密码"
-                autoComplete="new-password"
-                className="h-full flex-1 bg-transparent text-base text-text-primary outline-none placeholder:text-[#B8893D]"
-              />
-              <button
-                type="button"
-                aria-label={showConfirm ? '隐藏密码' : '显示密码'}
-                onClick={() => setShowConfirm(!showConfirm)}
-                className="flex h-8 w-8 items-center justify-center text-[#B8893D] active:opacity-70"
-              >
-                {showConfirm ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
-              </button>
-            </div>
-          )}
-
           {/* 图形验证码（错误次数 >= 5） */}
           {requireCaptcha && (
             <div className="space-y-2">
@@ -255,10 +229,16 @@ export default function LoginPage() {
           {submitting ? '授权中' : '微信授权登录'}
         </button>
 
-        {/* 引导文案 */}
+        {/* 引导文案：注册入口 */}
         <div className="mt-5 text-center text-sm">
           <span className="text-text-secondary">还没有账号？</span>
-          <span className="ml-1 text-[#B8893D]">请在卡博士小程序中绑定手机号</span>
+          <button
+            type="button"
+            onClick={goRegister}
+            className="ml-1 font-medium text-[#B8893D] active:opacity-70"
+          >
+            请注册
+          </button>
         </div>
       </div>
 

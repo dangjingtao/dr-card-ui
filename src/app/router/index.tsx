@@ -63,6 +63,7 @@ import PhoneChangePage from '../../pages/legacy/PhoneChangePage'
 import LoginPage from '../../pages/legacy/LoginPage'
 import EditProfile from '../../pages/legacy/EditProfile'
 import BindSchoolPage from '../../pages/legacy/BindSchoolPage'
+import RegisterPage from '../../pages/legacy/RegisterPage'
 import MyCardsPage from '../../pages/legacy/MyCardsPage'
 import CouponsPage from '../../pages/legacy/CouponsPage'
 import CardDetailPage from '../../pages/legacy/CardDetailPage'
@@ -164,6 +165,8 @@ const customPages: Record<string, ReactElement> = {
   '/legacy-profile/edit': <EditProfile />,
   /* T037：登录后引导绑定学校/专业/学号 */
   '/legacy-profile/bind-school': <BindSchoolPage />,
+  /* T037：注册账号（手机号 + 验证码 + 密码 + 二次确认） */
+  '/legacy-profile/register': <RegisterPage />,
 
   /* T031：卡券与优惠卡 */
   '/legacy-profile/my-cards': <MyCardsPage />,

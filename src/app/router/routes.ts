@@ -363,6 +363,16 @@ export const ROUTES: RouteMeta[] = [
     returnTo: '个人中心',
     owner: '绑定学校信息页（T037；卡博士淡金色风格：学校选择 + 学院输入 + 学号校验，保存回写 userInfoStore 后跳 /legacy-profile）',
   },
+  {
+    path: '/legacy-profile/register',
+    title: '注册账号',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T037',
+    entry: '登录页底部「还没有账号？请注册」',
+    returnTo: '登录',
+    owner: '注册账号页（T037；卡博士淡金色风格：手机号 + 验证码 + 密码 + 二次确认密码；注册成功后 isRegistered=true 并弹窗引导绑定学校/专业/学号）',
+  },
 
   /* ────────────────────────── T031 卡券与优惠卡 ────────────────────────── */
   {
