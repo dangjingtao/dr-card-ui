@@ -381,7 +381,7 @@ export const ROUTES: RouteMeta[] = [
     task: 'T039',
     entry: '「我的」-消费密码',
     returnTo: '我的',
-    owner: '机器端消费密码领取/核销页（T039；卡博士淡金色风格：手机尾号 4 位 + 6 位消费密码格方框 + 确认按钮 + 成功弹窗；mock 校验 userInfo.phone.slice(-4) + userInfo.pin 默认 000000）',
+    owner: '设置消费密码页（T039；卡博士淡金色风格：步骤指示器 ① 输入密码 → ② 确认密码 + 当前密码首尾掩码 + 6 格方框两次输入 + 协议勾选 + 设置成功弹窗；写入 userInfoStore.pin）',
   },
   {
     path: '/legacy-profile/scratch-card',

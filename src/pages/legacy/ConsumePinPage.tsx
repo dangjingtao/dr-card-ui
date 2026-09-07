@@ -1,75 +1,102 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, KeyRound, Loader2, ShieldCheck } from 'lucide-react'
-import { useUserInfo } from './userInfoStore'
+import { userInfoActions, useUserInfo } from './userInfoStore'
 
-/* T039｜机器端消费密码领取/核销（卡博士淡金色风格）
- * ------------------------------------------------------------- - 流程：手机尾号（4 位）+ 消费密码（6 位）→ 提交 → 成功弹窗
- * - 复用 `PasswordVerify` 的 6 格方框视觉与样式
- * - mock 校验：与 `userInfo.phone.slice(-4)` + 默认密码 `000000` 匹配才返回成功
+/* T039｜设置消费密码（卡博士淡金色风格）
+ * ------------------------------------------------------------- - 用户决策（2026-09-07）：APP 上只需要进行"设置消费密码"这一流程，
+ *   不再做"输入尾号 + 密码"那种机器端核销交互。
+ * - 流程：步骤1 输入 6 位新密码 → 步骤2 二次确认 → 一致后 mock 600ms 写入
+ *   userInfoStore.pin → 弹"设置成功"弹窗。
+ * - 复用 PasswordVerify 的 6 格方框视觉与卡博士淡金色品牌色。
  */
 
 const PIN_LEN = 6
-const TAIL_LEN = 4
+
+type Step = 1 | 2
 
 export default function ConsumePinPage() {
   const navigate = useNavigate()
   const userInfo = useUserInfo()
 
-  const [tail, setTail] = useState('')
-  const [pin, setPin] = useState('')
+  const [step, setStep] = useState<Step>(1)
+  const [newPin, setNewPin] = useState('')
+  const [confirmPin, setConfirmPin] = useState('')
   const [agreed, setAgreed] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
-  const [successOpen, setSuccessOpen] = useState(false)
   const [pinFocus, setPinFocus] = useState(false)
+  const [confirmFocus, setConfirmFocus] = useState(false)
+  const [successOpen, setSuccessOpen] = useState(false)
 
-  const pinInputRef = useRef<HTMLInputElement>(null)
+  /* 6 格方框底层 input ref：点击方框聚焦 */
+  const newPinRef = useRef<HTMLInputElement>(null)
+  const confirmPinRef = useRef<HTMLInputElement>(null)
 
-  const expectedTail = userInfo.phone.slice(-TAIL_LEN)
-  const filledPin = pin.length
+  /* 顶部步骤指示 */
+  const steps = [
+    { idx: 1 as const, label: '输入密码' },
+    { idx: 2 as const, label: '确认密码' },
+  ]
 
-  const handleConfirm = async () => {
+  const focusNew = () => newPinRef.current?.focus()
+  const focusConfirm = () => confirmPinRef.current?.focus()
+
+  /** 步骤 1 → 2 的过渡 */
+  const handleNext = () => {
     setErrorMsg('')
+    if (newPin.length !== PIN_LEN) {
+      setErrorMsg(`请输入 ${PIN_LEN} 位数字密码`)
+      return
+    }
     if (!agreed) {
       setErrorMsg('请先勾选并同意《用户协议》与《隐私政策》')
       return
     }
-    if (tail.length !== TAIL_LEN) {
-      setErrorMsg(`请输入手机尾号后 ${TAIL_LEN} 位`)
-      return
-    }
-    if (tail !== expectedTail) {
-      setErrorMsg('手机尾号不匹配，请确认后重试')
-      return
-    }
-    if (pin.length !== PIN_LEN) {
-      setErrorMsg(`请输入 ${PIN_LEN} 位消费密码`)
-      return
-    }
-    if (pin !== userInfo.pin) {
-      setErrorMsg('消费密码错误，请重试')
-      return
-    }
+    setStep(2)
+    /* 自动聚焦到第二步输入框，提升演示连贯性 */
+    setTimeout(() => focusConfirm(), 50)
+  }
 
+  /** 步骤 2 提交：mock 600ms → 写入 userInfoStore.pin */
+  const handleConfirm = async () => {
+    setErrorMsg('')
+    if (confirmPin.length !== PIN_LEN) {
+      setErrorMsg(`请输入 ${PIN_LEN} 位数字密码`)
+      return
+    }
+    if (confirmPin !== newPin) {
+      setErrorMsg('两次输入的密码不一致，请重新输入')
+      return
+    }
     setSubmitting(true)
-    /* mock 请求 600ms */
     await new Promise((resolve) => setTimeout(resolve, 600))
+    userInfoActions.update({ pin: newPin })
     setSubmitting(false)
     setSuccessOpen(true)
   }
 
+  /** 成功弹窗：继续修改（清空状态回到步骤 1） */
   const handleContinue = () => {
     setSuccessOpen(false)
-    setTail('')
-    setPin('')
+    setStep(1)
+    setNewPin('')
+    setConfirmPin('')
     setErrorMsg('')
+    setTimeout(() => focusNew(), 50)
   }
 
+  /** 成功弹窗：返回我的 */
   const handleBack = () => {
     setSuccessOpen(false)
     navigate('/legacy-profile')
   }
+
+  /** 顶部提示卡：根据 step 切换提示文案 */
+  const tipText =
+    step === 1
+      ? `请输入 ${PIN_LEN} 位数字作为新的消费密码，用于校园消费/核销时的身份验证`
+      : '请再次输入刚才设置的密码以确认无误'
 
   return (
     <div className="mx-auto flex min-h-full max-w-[480px] flex-col bg-[#F8F8FA]">
@@ -88,158 +115,243 @@ export default function ConsumePinPage() {
             <ChevronLeft className="h-6 w-6" />
           </button>
           <div className="absolute left-1/2 -translate-x-1/2 text-lg font-semibold text-white">
-            消费密码
+            设置消费密码
           </div>
         </div>
       </div>
 
-      {/* 头部说明 */}
-      <div className="mx-4 mt-6 flex flex-col items-center px-2 text-center">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#FFF3D9]">
-          <KeyRound className="h-6 w-6 text-[#B8893D]" />
-        </div>
-        <h2 className="mt-3 text-lg font-semibold text-text-primary">请输入手机尾号和消费密码</h2>
-        <p className="mt-1 text-xs text-text-secondary">
-          在卡博士自助机器上，学生无需打开手机，输入手机尾号 + 6 位消费密码即可领取 / 核销
-        </p>
+      {/* 步骤指示器 */}
+      <div className="mx-4 mt-5 flex items-center justify-center gap-3">
+        {steps.map((s, i) => {
+          const active = step === s.idx
+          const done = step > s.idx
+          return (
+            <div key={s.idx} className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <span
+                  className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold transition ${
+                    active || done
+                      ? 'bg-gradient-to-br from-[#D4A853] to-[#E8C97A] text-white'
+                      : 'bg-gray-100 text-text-tertiary'
+                  }`}
+                >
+                  {s.idx}
+                </span>
+                <span
+                  className={`text-sm ${
+                    active || done ? 'font-medium text-text-primary' : 'text-text-tertiary'
+                  }`}
+                >
+                  {s.label}
+                </span>
+              </div>
+              {i < steps.length - 1 && (
+                <span
+                  className={`h-px w-10 ${done ? 'bg-[#D4A853]' : 'bg-gray-200'}`}
+                />
+              )}
+            </div>
+          )
+        })}
       </div>
 
-      {/* 提示卡 */}
+      {/* 当前状态卡 */}
+      <div className="mx-4 mt-4 rounded-xl bg-white px-4 py-3 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <KeyRound className="h-4 w-4 text-[#B8893D]" />
+            <span className="text-sm text-text-secondary">当前消费密码</span>
+          </div>
+          <span className="text-sm font-semibold text-text-primary">
+            {userInfo.pin ? `${userInfo.pin.slice(0, 2)}****` : '未设置'}
+          </span>
+        </div>
+      </div>
+
+      {/* 步骤说明 */}
       <div className="mx-4 mt-4 flex items-start gap-2 rounded-xl bg-[#FFF8E8] px-4 py-3 text-xs leading-relaxed text-[#8B6F2F]">
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#B8893D]" />
-        <span>仅用于演示流程：当前账号尾号后 {TAIL_LEN} 位为「{expectedTail}」，消费密码默认「{userInfo.pin}」</span>
+        <span>{tipText}</span>
       </div>
 
-      {/* 手机尾号输入 */}
-      <div className="mx-4 mt-5">
-        <label className="text-sm font-medium text-text-primary">手机尾号</label>
-        <div
-          className={`mt-2 flex h-12 items-center gap-2 rounded-full border bg-white px-5 shadow-sm ${
-            errorMsg && tail.length > 0 && tail !== expectedTail ? 'border-danger' : 'border-[#E8D9B8]'
-          }`}
-        >
-          <input
-            value={tail}
-            onChange={(e) => {
-              const next = e.target.value.replace(/\D/g, '').slice(0, TAIL_LEN)
-              setTail(next)
-              setErrorMsg('')
-            }}
-            inputMode="numeric"
-            autoComplete="off"
-            maxLength={TAIL_LEN}
-            placeholder="请输入手机尾号后 4 位"
-            className="h-full flex-1 bg-transparent text-base tracking-widest text-text-primary outline-none placeholder:text-[#B8893D] placeholder:tracking-normal"
-          />
-        </div>
-        {errorMsg && (tail.length > 0 && tail !== expectedTail) && (
-          <div className="mt-1 text-xs text-danger-text">{errorMsg}</div>
-        )}
-      </div>
-
-      {/* 消费密码输入（6 格方框样式，复用 PasswordVerify 视觉） */}
-      <div className="mx-4 mt-5">
-        <label className="text-sm font-medium text-text-primary">消费密码</label>
-        <button
-          type="button"
-          onClick={() => pinInputRef.current?.focus()}
-          aria-label="输入 6 位消费密码"
-          className="mt-2 flex w-full justify-between"
-        >
-          {Array.from({ length: PIN_LEN }).map((_, i) => {
-            const isFilled = i < filledPin
-            const isFocus = i === filledPin && pinFocus
-            const isError = errorMsg !== '' && pin.length >= PIN_LEN && pin !== userInfo.pin
-            return (
-              <span
-                key={i}
-                className={`flex h-12 w-12 items-center justify-center rounded-xl border text-xl font-bold shadow-sm ${
-                  isFilled
-                    ? isError
-                      ? 'border-danger bg-surface text-text-primary'
-                      : 'border-primary bg-surface text-text-primary'
-                    : isFocus
-                      ? 'border-primary bg-surface'
-                      : 'border-border bg-surface text-transparent'
-                }`}
-              >
-                {isFilled
-                  ? '•'
-                  : isFocus
-                    ? '|'
-                    : ''}
-              </span>
-            )
-          })}
-        </button>
-        <input
-          ref={pinInputRef}
-          type="text"
-          inputMode="numeric"
-          autoComplete="off"
-          maxLength={PIN_LEN}
-          value={pin}
-          onFocus={() => setPinFocus(true)}
-          onBlur={() => setPinFocus(false)}
-          onChange={(e) => {
-            const next = e.target.value.replace(/\D/g, '').slice(0, PIN_LEN)
-            setPin(next)
-            setErrorMsg('')
-          }}
-          className="sr-only"
-          aria-label="6 位消费密码"
-        />
-        <p className="mt-1 text-xs text-text-tertiary">
-          {pin.length === 0 ? `共 ${PIN_LEN} 位数字` : `已输入 ${pin.length} / ${PIN_LEN} 位`}
-        </p>
-        {errorMsg && pin.length >= PIN_LEN && pin !== userInfo.pin && (
-          <div className="mt-1 text-xs text-danger-text">{errorMsg}</div>
-        )}
-      </div>
-
-      {/* 主操作 */}
-      <button
-        type="button"
-        onClick={handleConfirm}
-        disabled={submitting}
-        className="mx-4 mt-6 flex h-12 items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#D4A853] to-[#E8C97A] text-base font-semibold text-white shadow-md active:opacity-90 disabled:opacity-60"
-      >
-        {submitting && <Loader2 className="h-5 w-5 animate-spin" />}
-        {submitting ? '核销中…' : '确认领取/核销'}
-      </button>
-
-      {/* 协议勾选（整行居中） */}
-      <div className="mt-5 flex justify-center px-4">
-        <label className="flex items-start gap-2 text-xs text-text-secondary">
+      {/* 步骤 1：输入新密码 */}
+      {step === 1 && (
+        <div className="mx-4 mt-5">
+          <label className="text-sm font-medium text-text-primary">新密码</label>
           <button
             type="button"
-            aria-label={agreed ? '取消同意' : '同意协议'}
-            onClick={() => setAgreed(!agreed)}
-            className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition ${
-              agreed
-                ? 'border-[#D4A853] bg-gradient-to-br from-[#D4A853] to-[#E8C97A]'
-                : 'border-text-tertiary bg-white'
-            }`}
+            onClick={focusNew}
+            aria-label="输入 6 位消费密码"
+            className="mt-2 flex w-full justify-between"
           >
-            {agreed && (
-              <svg viewBox="0 0 24 24" className="h-3 w-3 text-white" fill="none" stroke="currentColor" strokeWidth="4">
-                <polyline points="5 12 10 17 19 7" />
-              </svg>
-            )}
+            {Array.from({ length: PIN_LEN }).map((_, i) => {
+              const isFilled = i < newPin.length
+              const isFocus = i === newPin.length && pinFocus
+              return (
+                <span
+                  key={i}
+                  className={`flex h-12 w-12 items-center justify-center rounded-xl border text-xl font-bold shadow-sm transition ${
+                    isFilled
+                      ? 'border-[#D4A853] bg-surface text-text-primary'
+                      : isFocus
+                        ? 'border-[#D4A853] bg-surface'
+                        : 'border-border bg-surface text-transparent'
+                  }`}
+                >
+                  {isFilled ? '•' : isFocus ? '|' : ''}
+                </span>
+              )
+            })}
           </button>
-          <span className="leading-relaxed">
-            我已阅读并同意
-            <span className="text-[#B8893D]">《用户协议》</span>
-            和
-            <span className="text-[#B8893D]">《隐私政策》</span>
-          </span>
-        </label>
-      </div>
+          <input
+            ref={newPinRef}
+            type="text"
+            inputMode="numeric"
+            autoComplete="off"
+            maxLength={PIN_LEN}
+            value={newPin}
+            onFocus={() => setPinFocus(true)}
+            onBlur={() => setPinFocus(false)}
+            onChange={(e) => {
+              const next = e.target.value.replace(/\D/g, '').slice(0, PIN_LEN)
+              setNewPin(next)
+              setErrorMsg('')
+            }}
+            className="sr-only"
+            aria-label="6 位新消费密码"
+          />
+          <p className="mt-1 text-xs text-text-tertiary">
+            {newPin.length === 0 ? `共 ${PIN_LEN} 位数字` : `已输入 ${newPin.length} / ${PIN_LEN} 位`}
+          </p>
+
+          {/* 协议勾选（整行居中） */}
+          <div className="mt-5 flex justify-center">
+            <label className="flex items-start gap-2 text-xs text-text-secondary">
+              <button
+                type="button"
+                aria-label={agreed ? '取消同意' : '同意协议'}
+                onClick={() => setAgreed(!agreed)}
+                className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition ${
+                  agreed
+                    ? 'border-[#D4A853] bg-gradient-to-br from-[#D4A853] to-[#E8C97A]'
+                    : 'border-text-tertiary bg-white'
+                }`}
+              >
+                {agreed && (
+                  <svg viewBox="0 0 24 24" className="h-3 w-3 text-white" fill="none" stroke="currentColor" strokeWidth="4">
+                    <polyline points="5 12 10 17 19 7" />
+                  </svg>
+                )}
+              </button>
+              <span className="leading-relaxed">
+                我已阅读并同意
+                <span className="text-[#B8893D]">《用户协议》</span>
+                和
+                <span className="text-[#B8893D]">《隐私政策》</span>
+              </span>
+            </label>
+          </div>
+
+          {/* 下一步 */}
+          <button
+            type="button"
+            onClick={handleNext}
+            disabled={newPin.length !== PIN_LEN}
+            className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#D4A853] to-[#E8C97A] text-base font-semibold text-white shadow-md active:opacity-90 disabled:opacity-50"
+          >
+            下一步
+          </button>
+          {errorMsg && step === 1 && (
+            <div className="mt-2 text-center text-xs text-danger-text">{errorMsg}</div>
+          )}
+        </div>
+      )}
+
+      {/* 步骤 2：二次确认 */}
+      {step === 2 && (
+        <div className="mx-4 mt-5">
+          <label className="text-sm font-medium text-text-primary">再次输入密码</label>
+          <button
+            type="button"
+            onClick={focusConfirm}
+            aria-label="再次输入 6 位消费密码"
+            className="mt-2 flex w-full justify-between"
+          >
+            {Array.from({ length: PIN_LEN }).map((_, i) => {
+              const isFilled = i < confirmPin.length
+              const isFocus = i === confirmPin.length && confirmFocus
+              return (
+                <span
+                  key={i}
+                  className={`flex h-12 w-12 items-center justify-center rounded-xl border text-xl font-bold shadow-sm transition ${
+                    isFilled
+                      ? 'border-[#D4A853] bg-surface text-text-primary'
+                      : isFocus
+                        ? 'border-[#D4A853] bg-surface'
+                        : 'border-border bg-surface text-transparent'
+                  }`}
+                >
+                  {isFilled ? '•' : isFocus ? '|' : ''}
+                </span>
+              )
+            })}
+          </button>
+          <input
+            ref={confirmPinRef}
+            type="text"
+            inputMode="numeric"
+            autoComplete="off"
+            maxLength={PIN_LEN}
+            value={confirmPin}
+            onFocus={() => setConfirmFocus(true)}
+            onBlur={() => setConfirmFocus(false)}
+            onChange={(e) => {
+              const next = e.target.value.replace(/\D/g, '').slice(0, PIN_LEN)
+              setConfirmPin(next)
+              setErrorMsg('')
+            }}
+            className="sr-only"
+            aria-label="6 位再次确认消费密码"
+          />
+          <p className="mt-1 text-xs text-text-tertiary">
+            {confirmPin.length === 0
+              ? `共 ${PIN_LEN} 位数字`
+              : `已输入 ${confirmPin.length} / ${PIN_LEN} 位`}
+          </p>
+          {errorMsg && (
+            <div className="mt-1 text-xs text-danger-text">{errorMsg}</div>
+          )}
+
+          {/* 提交 */}
+          <button
+            type="button"
+            onClick={handleConfirm}
+            disabled={submitting || confirmPin.length !== PIN_LEN}
+            className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#D4A853] to-[#E8C97A] text-base font-semibold text-white shadow-md active:opacity-90 disabled:opacity-50"
+          >
+            {submitting && <Loader2 className="h-5 w-5 animate-spin" />}
+            {submitting ? '保存中…' : '确认保存'}
+          </button>
+
+          {/* 返回上一步 */}
+          <button
+            type="button"
+            onClick={() => {
+              setStep(1)
+              setConfirmPin('')
+              setErrorMsg('')
+            }}
+            className="mt-3 block w-full text-center text-sm text-text-secondary active:opacity-70"
+          >
+            返回上一步
+          </button>
+        </div>
+      )}
 
       {/* 底部安全区 */}
       <div className="mt-auto pb-[calc(20px+env(safe-area-inset-bottom))]" />
 
-      {/* 成功弹窗 */}
+      {/* 设置成功弹窗 */}
       {successOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim px-6">
           <div className="w-full max-w-[327px] overflow-hidden rounded-2xl bg-surface shadow-modal">
@@ -249,9 +361,9 @@ export default function ConsumePinPage() {
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
               </div>
-              <h2 className="text-lg font-semibold text-text-primary">领取/核销成功</h2>
+              <h2 className="text-lg font-semibold text-text-primary">设置成功</h2>
               <p className="mt-2 text-sm text-text-secondary">
-                机器端消费密码使用成功，可在「我的小票」查看最新流水。
+                新的消费密码已生效，可在校园自助机器上使用。
               </p>
             </div>
             <div className="flex border-t border-border-subtle">
@@ -260,7 +372,7 @@ export default function ConsumePinPage() {
                 onClick={handleContinue}
                 className="flex-1 py-3 text-sm text-text-secondary active:bg-surface-pressed"
               >
-                继续操作
+                继续修改
               </button>
               <div className="w-px bg-border-subtle" />
               <button
