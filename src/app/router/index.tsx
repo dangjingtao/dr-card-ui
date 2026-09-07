@@ -66,6 +66,8 @@ import MyCardsPage from '../../pages/legacy/MyCardsPage'
 import CouponsPage from '../../pages/legacy/CouponsPage'
 import CardDetailPage from '../../pages/legacy/CardDetailPage'
 import CardTopupPage from '../../pages/legacy/CardTopupPage'
+import CardTopupSuccessPage from '../../pages/legacy/CardTopupSuccessPage'
+import CardTopupFailPage from '../../pages/legacy/CardTopupFailPage'
 import ScanBindCardPage from '../../pages/legacy/ScanBindCardPage'
 import CustomerServicePage from '../../pages/legacy/CustomerServicePage'
 import SchoolAccountListPage from '../../pages/legacy/SchoolAccountListPage'
@@ -165,6 +167,8 @@ const customPages: Record<string, ReactElement> = {
   /* T031：我的卡补充：卡详情 / 字段编辑 / 充值退款 */
   '/legacy-profile/my-cards/:id': <CardDetailPage />,
   '/legacy-profile/my-cards/:id/topup': <CardTopupPage />,
+  '/legacy-profile/my-cards/:id/topup/success': <CardTopupSuccessPage />,
+  '/legacy-profile/my-cards/:id/topup/fail': <CardTopupFailPage />,
   '/legacy-profile/my-cards/scan-bind': <ScanBindCardPage />,
 
   /* T028：客服中心与学校账户退款 */

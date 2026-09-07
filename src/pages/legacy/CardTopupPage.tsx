@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ChevronLeft, Building2, Loader2, Check } from 'lucide-react'
-import { findCard } from './cardStore'
+import { ChevronLeft, Building2, Loader2, Check, FlaskConical } from 'lucide-react'
+import { findCard, topupCard, recordTopupFailure, refundCard } from './cardStore'
 
 /* 快捷金额按钮：1 / 10 / 20 / 50 / 100 / 200 */
 const QUICK_AMOUNTS = [1, 10, 20, 50, 100, 200]
@@ -43,6 +43,16 @@ export default function CardTopupPage() {
   const [channel, setChannel] = useState<'wechat' | 'alipay'>('wechat')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  /* mock 失败触发器（开发用） */
+  const [forceFail, setForceFail] = useState(false)
+
+  /* Mock 失败原因（forceFail 开启时从中随机抽一条） */
+  const FAIL_REASONS = [
+    '支付通道繁忙，请稍后重试',
+    '账户余额不足',
+    '网络异常，请检查网络后重试',
+    '支付已取消',
+  ]
 
   if (!card) {
     return (
@@ -69,11 +79,54 @@ export default function CardTopupPage() {
       return
     }
     setSubmitting(true)
+
+    /* mock：强制失败模式 → 写一条失败流水后跳失败页 */
+    if (forceFail) {
+      const reason = FAIL_REASONS[Math.floor(Math.random() * FAIL_REASONS.length)]
+      setTimeout(() => {
+        recordTopupFailure(id, numericAmount, channel, reason)
+        setSubmitting(false)
+        const params = new URLSearchParams({
+          amount: numericAmount.toFixed(2),
+          channel,
+          reason,
+          cardId: id,
+        })
+        navigate(`/legacy-profile/my-cards/${id}/topup/fail?${params.toString()}`, { replace: true })
+      }, 1200)
+      return
+    }
+
+    /* 正常成功：写流水 + 更新余额 → 跳成功页 */
     setTimeout(() => {
+      topupCard(id, numericAmount, channel)
       setSubmitting(false)
-      alert(`充值成功 ¥${numericAmount.toFixed(2)}`)
-      navigate(`/legacy-profile/my-cards/${id}`)
-    }, 800)
+      const params = new URLSearchParams({
+        amount: numericAmount.toFixed(2),
+        channel,
+      })
+      navigate(`/legacy-profile/my-cards/${id}/topup/success?${params.toString()}`, { replace: true })
+    }, 1200)
+  }
+
+  /* mock 退款：扣余额 + 写退款流水 + 提示 */
+  const handleRefund = () => {
+    const refundAmount = window.prompt(
+      `当前余额：¥${card.balance.toFixed(2)}\n请输入退款金额：`,
+      String(Math.min(card.balance, 50))
+    )
+    if (!refundAmount) return
+    const num = parseFloat(refundAmount)
+    if (!num || num <= 0) {
+      alert('请输入大于 0 的金额')
+      return
+    }
+    if (num > card.balance) {
+      alert('退款金额不能超过当前余额')
+      return
+    }
+    refundCard(id, num, channel)
+    alert(`退款成功 ¥${num.toFixed(2)}\n退款流水已写入`)
   }
 
   return (
@@ -222,7 +275,7 @@ export default function CardTopupPage() {
 
         <button
           type="button"
-          onClick={() => alert('卡的退款流程施工中')}
+          onClick={handleRefund}
           className="w-full rounded-full py-3.5 text-base font-semibold text-white shadow-sm active:opacity-90"
           style={{ background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)' }}
         >
@@ -242,6 +295,32 @@ export default function CardTopupPage() {
           </div>
         </div>
       </div>
+
+      {/* 支付中遮罩 */}
+      {submitting && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
+          <div className="flex flex-col items-center rounded-2xl bg-white px-8 py-6 shadow-xl">
+            <Loader2 className="h-10 w-10 animate-spin text-[#D4A853]" />
+            <div className="mt-3 text-sm font-medium text-text-primary">
+              {forceFail ? '正在校验支付通道…' : '正在支付…'}
+            </div>
+            <div className="mt-1 text-xs text-text-tertiary">请稍候，不要关闭页面</div>
+          </div>
+        </div>
+      )}
+
+      {/* mock 失败触发器（开发用，置于左下角避开广告位） */}
+      <button
+        type="button"
+        onClick={() => setForceFail((v) => !v)}
+        title="切换：是否强制本次支付失败（开发用）"
+        className={`fixed bottom-6 left-4 z-30 flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-medium shadow-lg active:opacity-80 ${
+          forceFail ? 'bg-[#DC2626] text-white' : 'bg-text-primary text-white'
+        }`}
+      >
+        <FlaskConical className="h-3.5 w-3.5" />
+        {forceFail ? '强制失败 ON' : '强制失败 OFF'}
+      </button>
     </div>
   )
 }

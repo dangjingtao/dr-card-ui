@@ -57,3 +57,138 @@ export function updateCard(id: string, patch: Partial<CardInfo>) {
   const list = cardActions.get()
   cardActions.set(list.map((c) => (c.id === id ? { ...c, ...patch } : c)))
 }
+
+/* ============================================================
+ * 充值 / 退款流水（T029 核心闭环）
+ * - topupRecords：充值记录，按时间倒序
+ * - refundRecords：退款记录，按时间倒序
+ * - addBalance / subtractBalance：更新卡余额并写流水
+ * ============================================================ */
+
+export type TopupStatus = 'success' | 'pending' | 'failed'
+
+export interface TopupRecord {
+  id: string
+  cardId: string
+  /** 交易类型 */
+  type: 'topup' | 'refund'
+  /** 金额（元，正数） */
+  amount: number
+  /** 支付方式 */
+  channel: 'wechat' | 'alipay'
+  /** 状态 */
+  status: TopupStatus
+  /** 创建时间戳 */
+  createdAt: number
+  /** 失败原因（仅 failed 状态有值） */
+  failReason?: string
+}
+
+const INITIAL_RECORDS: TopupRecord[] = [
+  /* 给演示用留 2 条成功记录，方便卡详情页的"充值记录"链接看效果 */
+  {
+    id: 'rec-001',
+    cardId: 'card-001',
+    type: 'topup',
+    amount: 10,
+    channel: 'wechat',
+    status: 'success',
+    createdAt: Date.now() - 1000 * 60 * 60 * 24,
+  },
+  {
+    id: 'rec-002',
+    cardId: 'card-001',
+    type: 'topup',
+    amount: 5,
+    channel: 'alipay',
+    status: 'success',
+    createdAt: Date.now() - 1000 * 60 * 60 * 48,
+  },
+]
+
+export const [useRecords, recordsActions] = create<TopupRecord[]>(INITIAL_RECORDS)
+
+/** 给指定卡充值（成功场景）：更新余额 + 写流水 */
+export function topupCard(
+  cardId: string,
+  amount: number,
+  channel: 'wechat' | 'alipay'
+): TopupRecord {
+  const list = cardActions.get()
+  cardActions.set(list.map((c) => (c.id === cardId ? { ...c, balance: c.balance + amount } : c)))
+
+  const record: TopupRecord = {
+    id: `rec-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    cardId,
+    type: 'topup',
+    amount,
+    channel,
+    status: 'success',
+    createdAt: Date.now(),
+  }
+  recordsActions.set([record, ...recordsActions.get()])
+  return record
+}
+
+/** 写一条失败的充值记录（用于 mock 失败场景，不动余额） */
+export function recordTopupFailure(
+  cardId: string,
+  amount: number,
+  channel: 'wechat' | 'alipay',
+  failReason: string
+): TopupRecord {
+  const record: TopupRecord = {
+    id: `rec-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    cardId,
+    type: 'topup',
+    amount,
+    channel,
+    status: 'failed',
+    createdAt: Date.now(),
+    failReason,
+  }
+  recordsActions.set([record, ...recordsActions.get()])
+  return record
+}
+
+/** 给指定卡退款：扣减余额 + 写退款流水 */
+export function refundCard(
+  cardId: string,
+  amount: number,
+  channel: 'wechat' | 'alipay'
+): TopupRecord {
+  const list = cardActions.get()
+  cardActions.set(
+    list.map((c) =>
+      c.id === cardId ? { ...c, balance: Math.max(0, c.balance - amount) } : c
+    )
+  )
+
+  const record: TopupRecord = {
+    id: `rec-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    cardId,
+    type: 'refund',
+    amount,
+    channel,
+    status: 'success',
+    createdAt: Date.now(),
+  }
+  recordsActions.set([record, ...recordsActions.get()])
+  return record
+}
+
+/** 取某张卡的充值记录（按时间倒序） */
+export function getCardTopupRecords(cardId: string): TopupRecord[] {
+  return recordsActions
+    .get()
+    .filter((r) => r.cardId === cardId && r.type === 'topup')
+    .sort((a, b) => b.createdAt - a.createdAt)
+}
+
+/** 取某张卡的退款记录（按时间倒序） */
+export function getCardRefundRecords(cardId: string): TopupRecord[] {
+  return recordsActions
+    .get()
+    .filter((r) => r.cardId === cardId && r.type === 'refund')
+    .sort((a, b) => b.createdAt - a.createdAt)
+}
