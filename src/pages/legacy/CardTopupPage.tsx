@@ -138,13 +138,13 @@ export default function CardTopupPage() {
                 }}
                 className={`relative rounded-xl border py-3 text-center text-base transition ${
                   active
-                    ? 'border-[#DC2626] bg-white text-text-primary'
+                    ? 'border-[#D4A853] bg-white text-[#B8893D]'
                     : 'border-divider bg-white text-text-primary'
                 }`}
               >
                 充{q}元
                 {active && (
-                  <span className="absolute right-1 bottom-1 text-[10px] text-[#DC2626]">✓</span>
+                  <span className="absolute right-1 bottom-1 text-[10px] text-[#D4A853]">✓</span>
                 )}
               </button>
             )

@@ -173,7 +173,7 @@ export default function CardDetailPage() {
               <button
                 type="button"
                 onClick={handleConfirm}
-                className="flex-1 py-3 text-sm text-[#1E40AF] active:bg-bg-secondary"
+                className="flex-1 py-3 text-sm text-[#B8893D] active:bg-bg-secondary"
               >
                 确认
               </button>
