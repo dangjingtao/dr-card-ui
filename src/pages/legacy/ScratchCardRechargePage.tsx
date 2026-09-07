@@ -1,85 +1,61 @@
-import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import {
-  ChevronLeft,
-  ChevronRight,
-  Loader2,
-  ScanLine,
-  ShieldCheck,
-  AlertCircle,
-} from 'lucide-react'
-import { getCardTopupRecords, topupCard, useCards } from './cardStore'
+import { useEffect, useRef, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { ChevronLeft, Loader2, ScanLine } from 'lucide-react'
 
 /* T038｜刮刮充值卡补全（卡博士淡金色风格）
  * -------------------------------------------------------------
- * - 顶部：金色渐变标题栏（与卡博士 APP 主色一致）
- * - 输入：10 位数字充值码 + 扫码按钮
- * - 主操作：金渐变「充值」按钮
- * - 充值记录入口：横条卡片，点击跳既有 /topup-records 列表
- * - 温馨提示：浅金背景卡，含安全提醒
- * - 空态：底部"没有更多数据了"
+ * 2026-09-07 用户决定：
+ * - 只保留输入 + 充值；去掉"充值记录"、"温馨提示"、"协议勾选"三块
+ * - 扫码按钮点击进入 `/legacy-home/scan`（已有扫一扫）；2 秒后自动返回本页并弹"充值成功"
  *
- * Mock 校验规则（2026-09-07 用户决定）：
- * - 必须 10 位数字
- * - 充值码后 4 位需匹配演示卡 cardNo 后 4 位（"9EC"），不匹配时弹错误
- * - 无卡时禁用主操作并提示「请先绑定校园卡」
+ * Mock 校验：必须 10 位数字。
  */
 
-const DEMO_CARD_ID = 'card-001'
-const DEMO_CARD_TAIL = '9EC'
+const SCAN_REDIRECT_PATH = '/legacy-home/scan'
 
 export default function ScratchCardRechargePage() {
   const navigate = useNavigate()
-  const cards = useCards()
-  const card = cards.find((c) => c.id === DEMO_CARD_ID) ?? cards[0]
-  const hasCard = Boolean(card)
-
-  /* 实时计算"最近 N 笔" — 充值成功后回到本页能看到数量变化 */
-  const recordCount = useMemo(
-    () => (card ? getCardTopupRecords(card.id).length : 0),
-    // 依赖 card.id；store 内部 useState 触发重渲染时也会带动本页刷新
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [card?.id]
-  )
+  const location = useLocation()
 
   const [code, setCode] = useState('')
-  const [agreed, setAgreed] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
+  const [successOpen, setSuccessOpen] = useState(false)
+
+  /* 监听 location.key 递增 = 用户从扫一扫返回；2s 后弹"充值成功"
+   * - 记录上一次 key，当 key 再次变化时说明从扫一扫返回
+   * - 仅当 handleScan 主动跳转到扫一扫时打 pendingReturnRef 标记，
+   *   避免用户首次进入 / 浏览器后退等场景误弹 */
+  const lastKeyRef = useRef<string>(location.key)
+  const pendingReturnRef = useRef(false)
+
+  useEffect(() => {
+    if (lastKeyRef.current === location.key) return
+    lastKeyRef.current = location.key
+    if (pendingReturnRef.current) {
+      pendingReturnRef.current = false
+      const timer = setTimeout(() => setSuccessOpen(true), 2000)
+      return () => clearTimeout(timer)
+    }
+  }, [location.key])
 
   const handleScan = () => {
-    /* 扫码按钮仅做占位演示，不进入主流程 */
-    alert('扫一扫施工中（T038 仅展示入口）')
+    pendingReturnRef.current = true
+    navigate(SCAN_REDIRECT_PATH)
   }
 
   const handleRecharge = async () => {
     setErrorMsg('')
-    if (!hasCard) {
-      setErrorMsg('请先在「我的卡」中绑定校园卡')
-      return
-    }
-    if (!agreed) {
-      setErrorMsg('请先勾选并同意《用户协议》与《隐私政策》')
-      return
-    }
     if (code.length !== 10 || !/^\d{10}$/.test(code)) {
       setErrorMsg('请输入 10 位数字充值码')
       return
     }
-    if (code.slice(-3).toUpperCase() !== DEMO_CARD_TAIL) {
-      setErrorMsg('充值码无效，请检查后重新输入')
-      return
-    }
 
     setSubmitting(true)
-    /* 模拟请求：800ms 后落 mock 流水 */
-    await new Promise((resolve) => setTimeout(resolve, 800))
-    /* 演示金额 100 元 */
-    topupCard(card!.id, 100, 'wechat')
+    /* 模拟请求：600ms */
+    await new Promise((resolve) => setTimeout(resolve, 600))
     setSubmitting(false)
-    navigate(
-      `/legacy-profile/my-cards/${card!.id}/topup/success?amount=100&channel=wechat&cardId=${card!.id}&from=scratch-card`
-    )
+    setSuccessOpen(true)
   }
 
   return (
@@ -139,7 +115,7 @@ export default function ScratchCardRechargePage() {
         <button
           type="button"
           onClick={handleRecharge}
-          disabled={submitting || !hasCard}
+          disabled={submitting}
           className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#D4A853] to-[#E8C97A] text-base font-semibold text-white shadow-md active:opacity-90 disabled:opacity-60"
         >
           {submitting && <Loader2 className="h-5 w-5 animate-spin" />}
@@ -147,86 +123,47 @@ export default function ScratchCardRechargePage() {
         </button>
       </div>
 
-      {/* 充值记录入口：横条卡片 */}
-      {hasCard && (
-        <button
-          type="button"
-          onClick={() =>
-            navigate(
-              `/legacy-profile/my-cards/${card!.id}/topup-records?from=scratch-card`
-            )
-          }
-          className="mx-4 mt-6 flex items-center justify-between rounded-2xl bg-white px-5 py-4 shadow-sm active:bg-[#F8F8FA]"
-        >
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-text-primary">充值记录</span>
-            <span className="text-xs text-text-tertiary">最近 {recordCount} 笔</span>
-          </div>
-          <ChevronRight className="h-4 w-4 text-text-tertiary" />
-        </button>
-      )}
-
-      {/* 温馨提示：浅金背景卡 */}
-      <div className="mx-4 mt-4 rounded-xl bg-[#FFF8E8] px-4 py-3 text-xs leading-relaxed text-[#8B6F2F]">
-        <div className="flex items-start gap-2">
-          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#B8893D]" />
-          <div className="space-y-1">
-            <div>· 充值码仅用于本次充值，请妥善保管，平台不会再次索取。</div>
-            <div>· 请勿将充值码截图、转发或告知他人，避免账户余额被盗用。</div>
-            <div>· 充值成功后金额实时到账，可在「我的卡」对应卡查看最新余额。</div>
-          </div>
-        </div>
-      </div>
-
-      {/* 无卡提示 */}
-      {!hasCard && (
-        <div className="mx-4 mt-3 flex items-start gap-2 rounded-xl bg-[#FFF8E8] px-4 py-3 text-xs leading-relaxed text-[#8B6F2F]">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#B8893D]" />
-          <div>
-            暂未绑定校园卡，请先到「我的卡」绑定后再充值。
-            <button
-              type="button"
-              onClick={() => navigate('/legacy-profile/my-cards')}
-              className="ml-1 underline"
-            >
-              去绑定
-            </button>
+      {/* 充值成功弹窗 */}
+      {successOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim px-6">
+          <div className="w-full max-w-[327px] overflow-hidden rounded-2xl bg-surface shadow-modal">
+            <div className="px-6 pt-6 pb-3 text-center">
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#FFF3D9]">
+                <svg viewBox="0 0 24 24" className="h-6 w-6 text-[#B8893D]" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </div>
+              <h2 className="text-lg font-semibold text-text-primary">充值成功</h2>
+              <p className="mt-2 text-sm text-text-secondary">
+                刮刮充值卡已到账，可在「我的卡」查看最新余额。
+              </p>
+            </div>
+            <div className="flex border-t border-border-subtle">
+              <button
+                type="button"
+                onClick={() => {
+                  setSuccessOpen(false)
+                  navigate('/legacy-profile')
+                }}
+                className="flex-1 py-3 text-sm text-text-secondary active:bg-surface-pressed"
+              >
+                返回我的
+              </button>
+              <div className="w-px bg-border-subtle" />
+              <button
+                type="button"
+                onClick={() => {
+                  setSuccessOpen(false)
+                  setCode('')
+                }}
+                className="flex-1 py-3 text-sm font-semibold text-[#B8893D] active:bg-surface-pressed"
+              >
+                继续充值
+              </button>
+            </div>
           </div>
         </div>
       )}
-
-      {/* 空态：底部居中灰字 */}
-      <div className="mt-auto flex flex-col items-center pb-8 pt-12 text-xs text-text-tertiary">
-        没有更多数据了
-      </div>
-
-      {/* 协议勾选（与登录页同款金色） */}
-      <div className="px-4 pb-[calc(20px+env(safe-area-inset-bottom))]">
-        <label className="flex items-start gap-2 text-xs text-text-secondary">
-          <button
-            type="button"
-            aria-label={agreed ? '取消同意' : '同意协议'}
-            onClick={() => setAgreed(!agreed)}
-            className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition ${
-              agreed
-                ? 'border-[#D4A853] bg-gradient-to-br from-[#D4A853] to-[#E8C97A]'
-                : 'border-text-tertiary bg-white'
-            }`}
-          >
-            {agreed && (
-              <svg viewBox="0 0 24 24" className="h-3 w-3 text-white" fill="none" stroke="currentColor" strokeWidth="4">
-                <polyline points="5 12 10 17 19 7" />
-              </svg>
-            )}
-          </button>
-          <span className="leading-relaxed">
-            我已阅读并同意
-            <span className="text-[#B8893D]">《用户协议》</span>
-            和
-            <span className="text-[#B8893D]">《隐私政策》</span>
-          </span>
-        </label>
-      </div>
     </div>
   )
 }
