@@ -257,8 +257,8 @@ export default function RegisterPage() {
           {confirmErr && <span className="text-xs text-danger-text">{confirmErr}</span>}
         </div>
 
-        {/* 协议勾选 */}
-        <div className="mt-5">
+        {/* 协议勾选（整行居中） */}
+        <div className="mt-5 flex justify-center">
           <label className="flex items-start gap-2 text-xs text-text-secondary">
             <button
               type="button"

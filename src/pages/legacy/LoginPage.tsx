@@ -285,8 +285,8 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* 协议勾选 */}
-      <div className="px-8 pb-[calc(20px+env(safe-area-inset-bottom))]">
+      {/* 协议勾选（整行居中） */}
+      <div className="flex justify-center px-8 pb-[calc(20px+env(safe-area-inset-bottom))]">
         <label className="flex items-start gap-2 text-xs text-text-secondary">
           <button
             type="button"
