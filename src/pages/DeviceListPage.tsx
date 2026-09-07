@@ -1,17 +1,21 @@
+import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, MapPin } from 'lucide-react'
+import { ArrowLeft, MapPin, ScanLine, X } from 'lucide-react'
 import PageContainer from '../components/mobile/PageContainer'
 import {
   DEVICE_LISTS,
   DEVICE_THEMES,
+  type DeviceInfo,
   type DeviceType,
 } from '../app/fixtures/device'
 
 /**
- * 设备列表页
+ * 设备列表页（T040：扫码启动版）
  * - 淋浴 / 洗烘 / 饮水 / 吹风 共用此组件
  * - 通过路由参数 :type 切换设备类型和主题色
- * - 卡片结构：设备图标 + 名称/位置/编号 + 状态 + 扫码按钮
+ * - 卡片结构：设备图标 + 名称/位置/编号 + 状态 + 「扫码启动/扫码取水」按钮
+ * - 卡片右侧按钮点击 → 弹本地扫码 BottomSheet（含模拟扫码完成）
+ * - 顶部固定扫码按钮保持不变
  */
 export default function DeviceListPage() {
   const navigate = useNavigate()
@@ -21,12 +25,23 @@ export default function DeviceListPage() {
   const theme = DEVICE_THEMES[deviceType]
   const devices = DEVICE_LISTS[deviceType] ?? []
 
-  const handleScan = () => {
+  const [scanTarget, setScanTarget] = useState<DeviceInfo | null>(null)
+
+  const handleTopScan = () => {
     navigate(`/legacy-home/scan?device=${deviceType}`)
   }
 
-  const handleUse = (deviceId: string) => {
-    navigate(`/device/connecting?type=${deviceType}&id=${deviceId}`)
+  const handleScanStart = (device: DeviceInfo) => {
+    setScanTarget(device)
+  }
+
+  const closeSheet = () => setScanTarget(null)
+
+  const confirmScan = () => {
+    if (!scanTarget) return
+    const target = scanTarget
+    setScanTarget(null)
+    navigate(`/device/connecting?type=${deviceType}&id=${target.id}`)
   }
 
   if (!theme) {
@@ -104,11 +119,11 @@ export default function DeviceListPage() {
                   </div>
                 </div>
 
-                {/* 右侧按钮/状态 */}
+                {/* 右侧按钮/状态（T040：扫码启动/扫码取水） */}
                 {device.status === 'idle' ? (
                   <button
                     type="button"
-                    onClick={() => handleUse(device.id)}
+                    onClick={() => handleScanStart(device)}
                     className="flex-none rounded-full px-4 py-2 text-xs font-medium text-white shadow-sm active:opacity-90"
                     style={{
                       background: `linear-gradient(135deg, var(--device-400) 0%, var(--device-600) 100%)`,
@@ -130,11 +145,11 @@ export default function DeviceListPage() {
         </PageContainer>
       </div>
 
-      {/* 底部固定扫码按钮 */}
+      {/* 底部固定扫码按钮（保持不变） */}
       <div className="absolute bottom-0 left-0 right-0 px-4 pb-4 pt-2 bg-gradient-to-t from-[#F5F6FA] via-[#F5F6FA]/95 to-transparent">
         <button
           type="button"
-          onClick={handleScan}
+          onClick={handleTopScan}
           className="flex h-12 w-full items-center justify-center gap-2 rounded-full text-white font-medium shadow-md active:opacity-90"
           style={{
             background: `linear-gradient(135deg, var(--device-400) 0%, var(--device-600) 100%)`,
@@ -150,6 +165,81 @@ export default function DeviceListPage() {
           <span className="text-sm font-semibold">{theme.scanButtonText}</span>
         </button>
       </div>
+
+      {/* T040：扫码启动底部面板（卡片按钮触发） */}
+      {scanTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 px-4 pb-[env(safe-area-inset-bottom)]"
+          role="presentation"
+          onClick={closeSheet}
+        >
+          <div
+            data-device-theme={deviceType}
+            className="w-full max-w-[480px] overflow-hidden rounded-t-2xl bg-white shadow-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 顶部条 + 标题 */}
+            <div className="relative px-5 pt-3 pb-3">
+              <div className="mx-auto mb-3 h-1 w-10 rounded-pill bg-gray-200" />
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <ScanLine className="h-4 w-4" style={{ color: 'var(--device-500)' }} />
+                    <h3 className="text-base font-semibold text-text-primary">
+                      {theme.buttonText} · {scanTarget.name}
+                    </h3>
+                  </div>
+                  <p className="mt-1 text-xs text-text-tertiary">
+                    将二维码 / 条形码对准下方扫描框，自动识别设备
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  aria-label="关闭"
+                  onClick={closeSheet}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-text-tertiary active:bg-surface-pressed"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* 模拟扫描框（参考 LegacyScan 视觉） */}
+            <div className="mx-5 rounded-2xl bg-black p-6">
+              <div className="relative mx-auto aspect-square w-[220px] max-w-full">
+                  <span className="absolute left-0 top-0 h-7 w-7 rounded-tl-2xl border-l-4 border-t-4 border-white/90" aria-hidden />
+                  <span className="absolute right-0 top-0 h-7 w-7 rounded-tr-2xl border-r-4 border-t-4 border-white/90" aria-hidden />
+                  <span className="absolute bottom-0 left-0 h-7 w-7 rounded-bl-2xl border-b-4 border-l-4 border-white/90" aria-hidden />
+                  <span className="absolute bottom-0 right-0 h-7 w-7 rounded-br-2xl border-b-4 border-r-4 border-white/90" aria-hidden />
+                  <span
+                    className="absolute inset-x-3 top-1/2 h-0.5 -translate-y-1/2 rounded bg-white/80 shadow-[0_0_12px_2px_rgba(255,255,255,0.6)]"
+                    aria-hidden
+                  />
+                </div>
+              <p className="mt-4 text-center text-xs text-white/60">
+                编号 {scanTarget.code}
+              </p>
+            </div>
+
+            {/* 模拟扫码完成按钮 */}
+            <div className="space-y-2 px-5 pt-4 pb-5">
+              <button
+                type="button"
+                onClick={confirmScan}
+                className="flex h-12 w-full items-center justify-center rounded-full text-sm font-semibold text-white shadow-md active:opacity-90"
+                style={{
+                  background: `linear-gradient(135deg, var(--device-400) 0%, var(--device-600) 100%)`,
+                }}
+              >
+                模拟扫码完成
+              </button>
+              <p className="text-center text-[11px] text-text-tertiary">
+                仅供设计演示：点击立即进入设备详情
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
