@@ -6,10 +6,10 @@ import { findCard, updateCard, type CardStatus } from './cardStore'
 /**
  * T031｜卡详情页
  * -------------------------------------------------------------
- * 顶部淡金渐变（返回箭头 z-index 提升避免被白卡挡住）
+ * 顶部淡金渐变（极简：仅返回按钮，不再与 StatusBar 重叠）
  * 卡信息列表 8 行
- * 底部三操作：挂失 ↔ 解挂（互斥，根据当前状态显示） / 设置消费卡
- * 右下角：原型状态切换器（仅在绑卡态可见）
+ * 底部三操作：挂失 ↔ 解挂（互斥）/ 设置消费卡
+ * 右下角：原型状态切换器
  */
 export default function CardDetailPage() {
   const navigate = useNavigate()
@@ -59,7 +59,6 @@ export default function CardDetailPage() {
     setShowConfirm(null)
   }
 
-  /* 挂失 / 解挂互斥：根据当前状态决定 */
   const isReported = card.status === 'reported'
 
   const toggleDemoState = () => {
@@ -77,27 +76,25 @@ export default function CardDetailPage() {
 
   return (
     <div className="mx-auto flex min-h-full max-w-[480px] flex-col bg-[#F8F8FA]">
-      {/* 顶部淡金渐变（z-10 保证返回箭头在白卡之上） */}
+      {/* 顶部淡金渐变背景：仅承载返回按钮（标题交给 TitleBar 在壳层渲染） */}
       <div
-        className="relative z-10 shrink-0 px-4 pt-3 pb-12"
+        className="relative shrink-0 px-4 pt-3 pb-4"
         style={{ background: 'linear-gradient(135deg, #D4A853 0%, #E8C97A 50%, #F0D68E 100%)' }}
       >
-        {/* 状态栏占位 */}
-        <div className="h-9" />
-        <div className="relative flex items-center">
+        <div className="flex items-center">
           <button
             type="button"
             aria-label="返回"
             onClick={() => navigate(-1)}
-            className="relative z-20 flex h-10 w-10 items-center justify-center text-white active:opacity-80"
+            className="relative z-10 flex h-10 w-10 items-center justify-center text-white active:opacity-80"
           >
             <ChevronLeft className="h-6 w-6" />
           </button>
         </div>
       </div>
 
-      {/* 卡信息列表 */}
-      <div className="mx-4 -mt-6 rounded-2xl bg-white px-4 py-2 shadow-sm">
+      {/* 卡信息列表（白卡不再 -mt，完全独立显示在金色区下方） */}
+      <div className="mx-4 mt-4 rounded-2xl bg-white px-4 py-2 shadow-sm">
         <Row label="卡序号" value={card.cardNo} mono />
         <Row label="卡所属项目" value={`${card.projectName}（${card.projectId}）`} />
         <Row label="用户卡号" value={card.userCardNo} mono />
@@ -145,10 +142,9 @@ export default function CardDetailPage() {
         <Row label="卡状态" value={STATUS_TEXT[card.status]} last />
       </div>
 
-      {/* 底部三操作：挂失 ↔ 解挂（互斥） / 设置消费卡 */}
+      {/* 底部三操作 */}
       <div className="mx-4 mt-3 grid grid-cols-3 rounded-2xl bg-white px-4 py-3 shadow-sm">
         {!isReported ? (
-          /* 正常状态：可点挂失 */
           <button
             type="button"
             onClick={() => setShowConfirm('report')}
@@ -157,7 +153,6 @@ export default function CardDetailPage() {
             挂失
           </button>
         ) : (
-          /* 挂失状态：可点解挂 */
           <button
             type="button"
             onClick={() => setShowConfirm('unreport')}

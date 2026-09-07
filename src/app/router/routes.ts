@@ -396,6 +396,16 @@ export const ROUTES: RouteMeta[] = [
     owner: '卡的充值/退款页（T031 补充；蓝色头部 + 6 档快捷金额 + 微信/支付宝两条途径 + 灰色确认提交 + 绿色退款 + 温馨提示 + 广告位）',
   },
   {
+    path: '/legacy-profile/my-cards/scan-bind',
+    title: '扫一扫绑卡',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T031',
+    entry: '「我的」-我的卡-绑定卡',
+    returnTo: '我的卡',
+    owner: '扫码绑卡页（T031；顶部淡金 + 黑色全屏扫码区 + 四角白色 L 形线 + 红绿渐变扫描条 + 蒙层 + 3 秒 mock 识别后弹"识别到卡号 073249EC，是否绑定"；确认后写入 store 并跳卡详情）',
+  },
+  {
     path: '/legacy-profile/recharge/:id',
     title: '购买',
     titleBar: 'hidden',

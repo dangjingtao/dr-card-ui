@@ -76,7 +76,7 @@ export default function MyCardsPage() {
           <div className="px-4 pt-4">
             <button
               type="button"
-              onClick={() => alert('绑定卡流程施工中（T031 待 B-047）')}
+              onClick={() => navigate('/legacy-profile/my-cards/scan-bind')}
               className="flex w-full items-center justify-center gap-2 rounded-2xl bg-white py-3.5 text-base font-medium text-text-primary shadow-sm active:bg-[#F8F8FA]"
             >
               <Plus className="h-5 w-5 text-[#B8893D]" />
