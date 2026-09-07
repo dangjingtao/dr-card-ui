@@ -109,3 +109,26 @@
 
 - `npm run typecheck` 通过；最近一次 commit `0ce93cd` 仅含 PhoneChangePage 视觉调整，状态字段 `Needs Decision → Done` 已在此处补齐并落档。
 
+## 迭代（2026-09-07 头像上传增强）
+
+- 背景：用户反馈"卡博士个人资料设置那里，头像需要支持用户从手机相册上传"。T026 原文已列"头像编辑（相册选择 / 拍照 / 预览 / 保存）"，但此前仅实现了预置头像网格选择，本次补齐相册 / 拍照上传能力。
+
+- 改动：
+
+  - `AvatarEditPage.tsx`（`/legacy-profile/avatar-edit`）：
+    - 新增「从相册选择」「拍照」两个按钮，分别通过 `<input type="file" accept="image/*">` 和 `capture="environment"` 调起系统相册 / 后置摄像头。
+    - 预览区右下角相机图标也可点，调起相册选择。
+    - 选中后用 `FileReader` 读为 base64 data URL 实时预览，保存时回写 `userInfoStore.avatar`。
+    - 选预置头像时清除自定义上传状态。
+
+  - `EditProfile.tsx`（`/legacy-profile/edit`，个人信息 → 头像入口）：
+    - 头像右下角相机按钮可调起系统图片选择器（手机上弹拍照/相册/文件菜单）。
+    - 初始化时识别 store 中 `avatar` 是否为 `data:` 开头的自定义头像，是则直接展示上传图。
+    - 保存时统一回写 `userInfoStore.avatar`。
+
+- 工程门：`npm run typecheck` ✅ 通过。
+
+- 提交：`b6d7e15 头像上传：AvatarEditPage / EditProfile 支持从相册选择或拍照上传头像`。
+
+- 状态影响：T026 原 `Done` 状态不变，本次为已有功能的体验增强，不改变验收结论。
+
