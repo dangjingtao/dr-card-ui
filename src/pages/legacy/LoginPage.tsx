@@ -1,29 +1,33 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Eye, EyeOff, Loader2 } from 'lucide-react'
+import { Eye, EyeOff, FlaskConical, Loader2 } from 'lucide-react'
 import CaptchaImage from '../../components/ui/CaptchaImage'
 import { userInfoActions } from './userInfoStore'
 
-/* T037｜登录页（卡博士淡金色风格改版）
+/* T037｜登录页（卡博士淡金色风格）
  * -------------------------------------------------------------
- * 视觉来源：与卡博士 APP 整体保持一致的淡金色品牌色
- * - 顶部为金色径向柔光，下方暖白渐隐
- * - 主操作金色渐变胶囊；微信授权绿色调（保留与外部品牌识别）
+ * 演示逻辑（2026-09-07 用户决定）：
+ * - 任何账号 + 密码（满足 6-20 位校验）均能直接登录成功，不做真实账号匹配。
+ * - 右下角"原型切换按钮"提供两种演示场景：
+ *    1) 正常：用户可正常登录（默认）
+ *    2) 错误：连续 4 次错误 → 第 5 次提交要求图形验证码 → 输入正确后登录成功
  *
  * 关键改动：
    1. 密码可见切换（睁眼 / 闭眼）
-   2. 连续输错 5 次后强制图形验证码
+   2. 错误场景下，输错 4 次后第 5 次要求图形验证码
    3. 保留微信授权登录入口
    4. 登录成功后弹窗引导绑定学校/专业/学号
    5. 「还没有账号？请注册」入口跳转注册页（手机号 + 验证码 + 密码 + 二次确认）
- *
- * 二次确认密码仅出现在注册页（用户 2026-09-07 决定）；登录页只负责已注册用户登录。
  */
 
-const MAX_ATTEMPTS = 5
+const MAX_ATTEMPTS_IN_ERROR_FLOW = 5
+
+type DemoScenario = 'normal' | 'error'
 
 export default function LoginPage() {
   const navigate = useNavigate()
+
+  const [scenario, setScenario] = useState<DemoScenario>('normal')
 
   const [account, setAccount] = useState('')
   const [password, setPassword] = useState('')
@@ -39,7 +43,12 @@ export default function LoginPage() {
   const [bindDialogOpen, setBindDialogOpen] = useState(false)
 
   const [currentCaptcha, setCurrentCaptcha] = useState('')
-  const requireCaptcha = attempts >= MAX_ATTEMPTS
+
+  /* 错误态：仅当错误计数达到阈值时才显示图形验证码
+   *  - 4 次错误后，第 5 次提交时要求图形验证码
+   *  - 显示态用 attempts 推导：attempts >= 4 时，验证码模块常驻展示；
+   *    进入下一轮输入时也会保留（避免演示态下"验证码一闪就没"） */
+  const requireCaptcha = scenario === 'error' && attempts >= MAX_ATTEMPTS_IN_ERROR_FLOW - 1
 
   const goRegister = () => {
     navigate('/legacy-profile/register')
@@ -71,20 +80,41 @@ export default function LoginPage() {
 
     setSubmitting(true)
     setErrorMsg('')
-    await new Promise((resolve) => setTimeout(resolve, 700))
+    await new Promise((resolve) => setTimeout(resolve, 600))
 
-    /* mock 校验：除「000000」外都视为密码错误，用于演示错误次数与图形验证码 */
-    if (password !== '000000') {
+    /* 演示逻辑（2026-09-07）：
+     * - 正常场景：账号密码满足 6-20 位校验即直接登录成功
+     * - 错误场景：第 1-4 次提交无论账号密码是什么都返回错误；
+     *            第 5 次提交必须输入正确图形验证码才能登录成功 */
+    if (scenario === 'error') {
       const nextAttempts = attempts + 1
+      const isFinalAttempt = nextAttempts >= MAX_ATTEMPTS_IN_ERROR_FLOW
+      if (isFinalAttempt) {
+        if (captcha.toUpperCase() !== currentCaptcha.toUpperCase()) {
+          /* 防御性分支：requireCaptcha=true 时已在校验阶段拦截；
+           * 这里再次兜底，避免 requireCaptcha 推导与按钮 disabled 出现竞态 */
+          setCaptchaInvalid(true)
+          setErrorMsg('图形验证码错误，请重新输入')
+          setSubmitting(false)
+          return
+        }
+        /* 图形验证码通过：登录成功，重置演示态 */
+        setAttempts(0)
+        setSubmitting(false)
+        userInfoActions.update({ account: account.trim(), isRegistered: true })
+        setBindDialogOpen(true)
+        return
+      }
+      /* 第 1-4 次：演示错误态 */
       setAttempts(nextAttempts)
-      const left = Math.max(0, MAX_ATTEMPTS - nextAttempts)
-      setErrorMsg(`账号或密码错误，还可输入 ${left} 次${requireCaptcha ? '（已开启图形验证码）' : ''}`)
+      const left = MAX_ATTEMPTS_IN_ERROR_FLOW - nextAttempts
+      setErrorMsg(`账号或密码错误，还可输入 ${left} 次`)
       setCaptchaInvalid(false)
       setSubmitting(false)
       return
     }
 
-    /* 登录成功：写入账号与状态 */
+    /* 正常场景：直接登录成功 */
     userInfoActions.update({ account: account.trim(), isRegistered: true })
     setSubmitting(false)
     setBindDialogOpen(true)
@@ -96,7 +126,7 @@ export default function LoginPage() {
       return
     }
     setSubmitting(true)
-    await new Promise((resolve) => setTimeout(resolve, 800))
+    await new Promise((resolve) => setTimeout(resolve, 600))
     setSubmitting(false)
     setBindDialogOpen(true)
   }
@@ -111,6 +141,19 @@ export default function LoginPage() {
     navigate('/legacy-profile/bind-school')
   }
 
+  const toggleScenario = () => {
+    setScenario((prev) => {
+      const next = prev === 'normal' ? 'error' : 'normal'
+      /* 切换场景时清空错误态残留（计数 / 错误文案 / 验证码），
+       * 避免跨场景的状态污染。 */
+      setAttempts(0)
+      setErrorMsg('')
+      setCaptcha('')
+      setCaptchaInvalid(false)
+      return next
+    })
+  }
+
   return (
     <div
       className="mx-auto flex min-h-full max-w-[480px] flex-col"
@@ -120,7 +163,7 @@ export default function LoginPage() {
       }}
     >
       {/* 品牌头部：金色 Logo + 标题 */}
-      <div className="flex flex-col items-center px-8 pt-16 pb-8">
+      <div className="flex flex-col items-center px-8 pt-12 pb-6">
         <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-[#D4A853] to-[#E8C97A] text-2xl font-bold text-white shadow-md">
           卡
         </div>
@@ -167,7 +210,7 @@ export default function LoginPage() {
             </button>
           </div>
 
-          {/* 图形验证码（错误次数 >= 5） */}
+          {/* 图形验证码：错误场景且已错 4 次后常驻展示 */}
           {requireCaptcha && (
             <div className="space-y-2">
               <div
@@ -267,6 +310,18 @@ export default function LoginPage() {
           </span>
         </label>
       </div>
+
+      {/* 原型切换按钮：右下角浮动，仅供设计演示用（不进入生产态） */}
+      <button
+        type="button"
+        onClick={toggleScenario}
+        aria-label="切换演示场景"
+        title="切换演示场景（仅供设计演示）"
+        className="fixed right-4 bottom-[calc(80px+env(safe-area-inset-bottom))] z-40 flex h-11 items-center gap-1.5 rounded-full border border-[#E8D9B8] bg-white px-4 text-xs font-medium text-[#B8893D] shadow-md active:opacity-70"
+      >
+        <FlaskConical className="h-4 w-4" />
+        {scenario === 'normal' ? '正常状态' : '错误状态'}
+      </button>
 
       {/* 绑定学校引导弹窗 */}
       {bindDialogOpen && (
