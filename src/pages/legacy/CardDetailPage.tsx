@@ -142,8 +142,9 @@ export default function CardDetailPage() {
         <Row label="卡状态" value={STATUS_TEXT[card.status]} last />
       </div>
 
-      {/* 底部三操作 */}
+      {/* 底部三操作：始终显示 挂失 / 解挂 / 设置消费卡，按状态切颜色 */}
       <div className="mx-4 mt-3 grid grid-cols-3 rounded-2xl bg-white px-4 py-3 shadow-sm">
+        {/* 挂失：正常态可点（淡金），挂失态置灰不可点 */}
         {!isReported ? (
           <button
             type="button"
@@ -153,6 +154,11 @@ export default function CardDetailPage() {
             挂失
           </button>
         ) : (
+          <span className="cursor-not-allowed text-sm text-text-tertiary">挂失</span>
+        )}
+
+        {/* 解挂：正常态置灰不可点，挂失态可点（淡金） */}
+        {isReported ? (
           <button
             type="button"
             onClick={() => setShowConfirm('unreport')}
@@ -160,8 +166,11 @@ export default function CardDetailPage() {
           >
             解挂
           </button>
+        ) : (
+          <span className="cursor-not-allowed text-sm text-text-tertiary">解挂</span>
         )}
-        <span className="border-x border-divider" />
+
+        {/* 设置消费卡：始终可点（淡金） */}
         <button
           type="button"
           onClick={() => navigate(`/legacy-profile/my-cards/${id}/topup`)}
