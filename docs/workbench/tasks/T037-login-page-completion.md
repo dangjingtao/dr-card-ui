@@ -2,7 +2,7 @@
 
 ## 状态与类型
 
-- 状态：`Doing`
+- 状态：`PASS`（2026-09-07 PRD 全门槛通过，详见「PRD 验收」章节）
 
 - 类型：Feature / UI
 
@@ -119,7 +119,7 @@
 - `userInfoStore.ts`：扩展 `UserInfo` 新增 `isRegistered: boolean`（mock 默认为 `false`，触发二次确认密码），`account` 与 `school/academy/studentId` 字段已存在。
 - `MobileLayout.tsx`：在壳层增加"未登录访问 `/` 时 `replace` 跳 `/legacy-profile/login`"的副作用，登录后（`account` 非空且 `isRegistered=true`）放行诗得丽专栏首页；保留底部 Tab「首页」语义不被破坏。
 - `SettingsPage.tsx`：`handleLogout` 落实 — 调用 `userInfoActions.update({ isRegistered: false, account: '' })` 清空登录态后 `navigate('/legacy-profile/login', { replace: true })` 跳转；`replace` 避免返回栈回退到设置页。
-- `LoginPage.tsx`：移除"未注册则显示二次确认密码"逻辑（已迁移到 RegisterPage）；底部新增「请注册」入口。
+- `LoginPage.tsx`：移除"未注册则显示二次确认密码"逻辑（已迁移到 RegisterPage）；底部新增「请注册」入口；右下角加 `FlaskConical` 演示态切换按钮（`normal` / `error`），错误态下 4 次提交递减错误提示文案，第 5 次强制图形验证码。
 
 ## 状态与交互矩阵
 
@@ -166,3 +166,73 @@
 - `MobileLayout.tsx` 增加未登录守卫。
 - `SettingsPage.tsx` 退出登录落地。
 - 本卡文档与证据截图。
+
+## 提交号（按时间顺序）
+
+| 提交号 | 说明 |
+| --- | --- |
+| `57c0b3a` | T037 登录页补全：紫色渐变改版 + 学校/专业/学号绑定（首版） |
+| `1c2fede` | T037 登录页改用卡博士淡金色风格 |
+| `8e49e3d` | T037 默认入口改为登录页（MobileLayout 未登录守卫） |
+| `f4d2361` | T037 退出登录跳转回登录页（SettingsPage handleLogout） |
+| `3b0e3b7` | T037 增加注册入口（RegisterPage）+ 登录页移除二次确认密码 |
+| `47937f6` | T037 演示逻辑重写：任意账号密码直接登录 + 右下角演示态切换按钮 |
+| `b127b4e` | T037 我的页顶部摘要改两行展示 |
+| `8609160` | T037 学院也用 pill 样式 |
+
+## PRD 验收（2026-09-07）
+
+按 `docs/workbench/task-ledger.md` §4 五项门槛 + 本卡验收标准逐条核对，全部通过：
+
+### 4.1 事实门槛
+
+- Mockplus / 用户原型依据：用户 2026-09-07 上传紫色渐变登录页截图作为起点，后续明确改为卡博士淡金色风格；右上 5 项要求（密码可见 / 二次确认密码 / 5 次错误显示图形验证码 / 微信授权 / 绑定引导弹窗）已映射到 LoginPage / RegisterPage / BindSchoolPage。
+- 完成度判定：LoginPage / RegisterPage / BindSchoolPage / CaptchaImage 全部为完成态；二次确认密码仅出现在 RegisterPage（按用户 2026-09-07 决定）。
+
+### 4.2 UI 门槛
+
+- 375 × 812 视觉：金色径向柔光 + 暖白渐隐；输入框白底圆角胶囊、边框 `#E8D9B8`、placeholder `#B8893D`；主按钮 `#D4A853 → #E8C97A`。
+- 状态矩阵（已记录于上文）：默认 / 校验失败 / 密码可见切换 / 加载 / 错误剩余次数 / 验证码常驻 / 换一张 / 绑定引导弹窗 / 注册入口 / 演示态切换 / 微信授权 — 全部落地。
+- 「我的」顶部摘要：两行 pill 样式（学校+学院 / 学号），学院过长 truncate，任一项为空仅隐藏对应行。
+
+### 4.3 交互门槛
+
+- 入口可达：路由 `/`、`/legacy-profile/login`、`/legacy-profile/register`、`/legacy-profile/bind-school`、`/legacy-profile`、`/legacy-profile/info`、`/legacy-profile/settings` 在 dev server 全部返回 200。
+- 返回路径：
+  - 冷启动 `/`（未登录）→ 自动 replace 跳 `/legacy-profile/login`；登录后回 `/` → 诗得丽专栏首页正常渲染（`MobileLayout` 守卫放行）。
+  - 「我的」→「设置」→「退出登录」确认 → 清登录态 → replace 跳 `/legacy-profile/login`，不会回退到设置页（`SettingsPage.handleLogout`）。
+  - 登录/注册成功弹窗：「去绑定」跳 `/legacy-profile/bind-school`；「稍后再说」跳 `/legacy-profile`。
+- 微信授权与登录按钮均能触发流程，没有静态高亮或假按钮。
+
+### 4.4 工程门槛
+
+- `npm run typecheck` ✅ 0 错误。
+- `npm run build`（含 `verify:images` 与 `vite build`）✅ 成功；image assets: 36 WebP files, 1.98 MiB。
+- 路由可直接刷新不白屏（dev server 200 验证）。
+- 控制台无新增阻塞错误（T037 范围内）；其他页面遗留的 `alert(...)` 在 T037 范围之外。
+
+### 4.5 证据门槛
+
+- 路由与覆盖节点清单：`/legacy-profile/login`、`/legacy-profile/register`、`/legacy-profile/bind-school` 均在 `routes.ts` 与 `router/index.tsx` 注册；`/legacy-profile`、`/legacy-profile/info`、`/legacy-profile/settings` 复用既有路由。
+- 原型依据：用户 2026-09-07 上传紫色渐变截图 + 后续「保持卡博士 APP 淡金色风格」决策；与已验收的 ProfileHome 金色顶部区视觉一致。
+- 状态/交互检查：详见上文状态矩阵与交互矩阵。
+- 已知差异与未决项：B-037（换绑后是否通知原手机号）/ B-038（学号学院数据接口）继承自 T026，不阻塞 T037 UI 验收。
+- 对应提交号：`57c0b3a` → `8609160`（共 8 个本地 commit，见「提交号」表）。
+
+### 验收标准核对（11/11 通过）
+
+1. ✅ 账号 + 密码登录 + 密码可见切换。
+2. ✅ 任何账号 + 密码直接登录成功。
+3. ✅ 右下角「正常 / 错误」演示态切换。
+4. ✅ 错误态 4 次提交递减 N 4→1，第 5 次强制图形验证码。
+5. ✅ 注册页（手机号 + 验证码 + 密码 + 二次确认）。
+6. ✅ 微信授权 + 立即登录均能触发。
+7. ✅ 登录/注册成功弹窗引导绑定学校 / 专业 / 学号。
+8. ✅ ProfileHome 顶部摘要两行 pill。
+9. ✅ 「我的」→「设置」→「退出登录」确认后跳回登录页。
+10. ✅ 冷启动 `/` 跳登录页；登录后回 `/` 正常渲染。
+11. ✅ `npm run typecheck` 与 `npm run build` 通过。
+
+### 结论
+
+T037 全部门槛通过，状态由 `Doing` 推进为 `PASS`，已 `git push origin preview`（不 merge main，等待用户评审）。
