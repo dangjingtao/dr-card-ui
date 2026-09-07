@@ -35,17 +35,17 @@ T001–T015 基于 2026-08-21 的仓库与 Mockplus 实际盘点建立，并已�
 | [T022](./T022-points-tasks-luck-entry.md) | 泡泡值任务页与独立明细 | Accepted |
 | [T023](./T023-coupon-mall-membership-change.md) | 体验券核销与 H5 商城入口调整 | Accepted |
 | [T024](./T024-2026-08-27-ui-change-acceptance.md) | 2026-08-27 UI 变更验收 | User Review |
-| [T025](./T025-mall-bubble-points-integration.md) | 积分商城与泡泡值体系统一 | Draft |
-| [T026](./T026-login-profile-school.md) | 注册登录与个人信息 | Draft |
+| [T025](./T025-mall-bubble-points-integration.md) | 积分商城与泡泡值体系统一 | User Review |
+| [T026](./T026-login-profile-school.md) | 注册登录与个人信息 | Done |
 | [T027](./T027-notifications-balance-activity.md) | 消息通知：余额不足与校内外活动 | User Review |
 | [T028](./T028-customer-service-refund.md) | 客服中心与退款 | User Review |
-| [T029](./T029-recharge.md) | APP 充值功能 | Draft |
+| [T029](./T029-recharge.md) | APP 充值功能 | Needs Decision |
 | [T030](./T030-device-scan-launch.md) | 设备扫码启动优化 | User Review |
-| [T031](./T031-card-coupon.md) | 积分卡券与优惠券 | Draft |
-| [T032](./T032-scope-closure-phase2.md) | 范围关闭：本期不做项 | Draft |
+| [T031](./T031-card-coupon.md) | 积分卡券与优惠券 | Needs Decision |
+| [T032](./T032-scope-closure-phase2.md) | 范围关闭：本期不做项 | Accepted |
 | [T033](./T033-card-doctor-homepage.md) | 卡博士APP首页 | Done |
-| [T034](./T034-device-service-page.md) | 设备服务页 | Draft |
-| [T035](./T035-card-doctor-profile.md) | 卡博士个人中心 | Draft |
+| [T034](./T034-device-service-page.md) | 设备服务页 | Done |
+| [T035](./T035-card-doctor-profile.md) | 卡博士个人中心 | Done |
 | [T036](./T036-four-device-features.md) | 四大设备功能页面（淋浴/洗烘/饮水/吹风） | Done |
 
 ## 依赖顺序
