@@ -62,7 +62,7 @@ export default function LoginPage() {
     }
 
     if (!account.trim()) {
-      setErrorMsg('请输入账号')
+      setErrorMsg('请输入手机号')
       return
     }
     if (!password) {
@@ -129,13 +129,14 @@ export default function LoginPage() {
       {/* 表单卡片 */}
       <div className="flex-1 px-8 pb-6 pt-2">
         <div className="space-y-3.5">
-          {/* 账号 */}
+          {/* 账号：只支持手机号登录（T037R9：placeholder 改为「请输入手机号」） */}
           <div className="flex h-12 items-center gap-2 rounded-full border border-[#E8D9B8] bg-white px-5 shadow-sm">
             <input
               value={account}
-              onChange={(e) => setAccount(e.target.value)}
-              placeholder="请输入账号"
+              onChange={(e) => setAccount(e.target.value.replace(/\D/g, '').slice(0, 11))}
+              placeholder="请输入手机号"
               autoComplete="username"
+              inputMode="numeric"
               className="h-full flex-1 bg-transparent text-base text-text-primary outline-none placeholder:text-[#B8893D]"
             />
           </div>
