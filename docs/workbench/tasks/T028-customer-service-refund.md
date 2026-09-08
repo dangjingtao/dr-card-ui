@@ -148,6 +148,18 @@
 
 - 结论：**PR 检查本地工程门 PASS**。本卡停在 `User Review`，等你签字。`## 后续待施工` 段落继续保留，等真实接口/字段确认后再迭代。
 
+## 迭代（T028R1｜2026-09-08 充值/退款页 404 修复）
+
+- 问题：用户反馈从「我的小票」点项目卡的「购买」「退款」按钮后显示"页面不存在"。
+- 根因：`customPages` 里注册了 `RechargePage` / `SchoolRefundPage` 组件，但 `routes.ts` 缺少对应的路由项（`/legacy-profile/recharge/:id` 和 `/legacy-profile/school-refund/:id`）。
+  路由生成逻辑是遍历 `ROUTES` 数组并匹配 `customPages[route.path]`，没有路由项就不会进入路由表 → 被 `*` 通配到 NotFound。
+- 修复：`src/app/router/routes.ts` 补两条路由定义：
+  - `/legacy-profile/recharge/:id`（充值，T028）
+  - `/legacy-profile/school-refund/:id`（退款，T028）
+- 工程门：`npm run typecheck` ✅ 通过；`npm run build` ✅ 通过（1.59s）。
+- 任务编号：**T028R1**（T028 的 1 号增量任务卡）。
+- 状态影响：T028 原 `User Review` 状态不变；本次为路由注册缺失的 bugfix。
+
 ## 后续待施工
 
 - 客服：B-042（AI 客服知识库范围）确定后接入真实大模型 API；
