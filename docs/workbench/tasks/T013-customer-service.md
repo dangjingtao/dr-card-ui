@@ -116,6 +116,43 @@
 - 工程门：`npm run typecheck` ✅ 通过；`npm run build` ✅ 通过（1.54s）。
 - 任务编号：**T013R3**（T013 的 3 号增量任务卡）。
 - 状态影响：T013 原 `Accepted` 状态不变；本次为顶部布局微调与壳层接管，与 R1+R2 一脉相承。
+
+## 迭代（T013R4｜2026-09-08 智能客服真对话逻辑：企微入口回到弹窗 + 人工客服页内状态机）
+
+- 背景：用户 2026-09-08 反馈三项修订（语义与 R1+R2+R3 部分反转）：
+  1. 「企微客服」`button` 在壳层 TitleBar 内的横向 pill 形态看起来"很奇怪"——改为页内独立的横向 pill（居中小字之下、自成一行）；点击行为回归 R1 之前的"弹二维码 BottomSheet"，**不再跳人工页**。
+  2. 「人工客服」点击**不跳转路由**，改为在当前消息列表下方插入：
+     - 系统提示「正在为您接入人工客服...」
+     - 排队位次「前面还有 2 位」
+     - mock 1.2s 后追加坐席开场语「人工客服 小霜 为您服务」（同步启用底部输入框进入 APP 内对话）。
+  3. 演示坐席名由 fixture 中的「诗得丽-吴哥 / 吴哥」调整为「小霜」（用户验收指定的演示坐席）。
+- 改动：
+  - `src/app/fixtures/index.ts`：
+    - `CHAT_QUEUE.connected`：`agentName: '小霜'`、`title: '人工客服 小霜 为您服务'`。
+    - `CHAT_AGENT_GREETING`：`text` 文案使用「小霜」，`glyph: '霜'`。
+    - 注释行注明 T013R4 调整理由（替换 fixture 原文案的演示值）。
+  - `src/layouts/MobileLayout.tsx`：撤回 T013R3 中"企微客服" pill 作为 TitleBar `action` 的分支；`import MessageSquare` 移除；`actionWide` 不再叠加 `/service/chat` 路径。TitleBar 恢复为「< 智能客服」纯净态。
+  - `src/pages/ServiceChat.tsx`：
+    - 删除 `useNavigate`（不再跳路由）；新增 `useState<HumanStage>`（`idle` / `queuing` / `connected`）与 `useState<boolean>` 控制企微弹层。
+    - 顶部区结构：居中小字 `AI 客服 小诗 为您服务`（沿用 R3）+ 居中独立 pill「企微客服」（`data-chat-wecom-entry`，`inline-flex items-center gap-1.5 rounded-pill bg-surface px-4 py-1.5`，居中放置在第二行）。
+    - 「企微客服」pill `onClick={openWecom}` → 渲染 `<BottomSheet>`（`<WecomQrPlaceholder />` + `WELFARE_OFFICER` 文案 + 「取消」），与 T013 原型 §10 行为一致。
+    - 「人工」按钮（`data-chat-human-entry`）`onClick={requestHuman}`：状态机 `idle → queuing → connected`，已接入后按钮 `disabled`。
+    - `requestHuman` 在当前消息列表下方插入两条 `role: 'bot'` 提示（系统提示 + 排队位次），mock 1.2s 后追加 `CHAT_AGENT_GREETING` 开场语。
+    - 输入框 `placeholder` 三态联动：`idle` → CHAT_BOT.inputPlaceholder；`queuing` → 「正在为您接入人工客服...」；`connected` → 「与小霜对话中…」。
+    - 输入框 `disabled={!humanActive}`：仅坐席接入后允许发送；坐席消息走 `send()` 普通逻辑，不再单独模拟坐席回复（保持 mock 阶段确定性）。
+    - 输入「人工客服 / 转人工 / 真人…」等关键词触发 `requestHuman()`，与按钮行为一致。
+- 不动的部分：
+  - `ServiceHuman.tsx`（`/service/chat/human`）：作为 `?state=queuing|connected` 直达路由保留，验证脚本/证据脚本/调试面板仍可访问；本次「人工」入口从 UI 路径上解耦，但路由项不删除。
+  - `routes.ts`：`?overlay=request-human` 路由项保留以兼容回归脚本。
+  - `verify-t015.mjs` / `verify-reference-pages.mjs` / `evidence-matrix.md` / `route-table.md` 中 `?overlay=request-human` 引用保留不动。
+- 与 R1+R2+R3 的语义边界：
+  - **T013R1**：人工入口改为 APP 内（已跳 `/service/chat/human`）。
+  - **T013R2**：人工跳转稳定化为 `navigate('/service/chat/human')`。
+  - **T013R3**：壳层 TitleBar 接管 + 居中小字。
+  - **T013R4（本次）**：将"人工跳转"语义**回退**为页内状态机（吸收 `ServiceHuman` 的排队接入流程）；同时把 R3 的壳层 pill 撤回页内；企微入口**回归** R1 之前的弹二维码行为。这是用户在三次迭代后的最终业务决策。
+- 工程门：`npm run typecheck` ✅ 通过；`npm run build` ✅ 通过（1.36s）。
+- 任务编号：**T013R4**（T013 的 4 号增量任务卡）。
+- 状态影响：T013 原 `Accepted` 状态不变；本次为入口语义的关键回归修正，与 R1+R2+R3 形成完整演进链。
 - 外部能力失败有明确回退。
 
 ## 必交证据

@@ -1166,6 +1166,7 @@ export const CHAT_HUMAN_PROMPT = {
  * #70 人工客服排队两态。
  * 原型 §11 只给出「排队中」与「已接入」两个确定状态，
  * 历史稿 T10 的 6 秒队列递减、取消排队 Toast 与 IP 占位插画均非摹客需求，已废弃。
+ * T013R4：演示坐席名由「诗得丽-吴哥 / 吴哥」调整为「小霜」，文案一并更新。
  */
 export const CHAT_QUEUE = {
   /** 排队中：原型给出的固定前置人数，静态展示，不做递减 */
@@ -1174,10 +1175,10 @@ export const CHAT_QUEUE = {
     aheadCount: 2,
     aheadText: '前面还有 2 位',
   },
-  /** 已接入：原型示例「诗得丽-吴哥 为您服务」 */
+  /** 已接入 */
   connected: {
-    agentName: '诗得丽-吴哥',
-    title: '诗得丽-吴哥 为您服务',
+    agentName: '小霜',
+    title: '人工客服 小霜 为您服务',
   },
 } as const
 
@@ -1185,13 +1186,14 @@ export const CHAT_QUEUE = {
  * #70 已接入后的人工对话。
  * 原型 §11 明确「智能客服历史消息保留在当前页面中」，故排队页复用 CHAT_CONVERSATION_MESSAGES 作为历史，
  * 接入后仅追加一条人工客服开场语，不另起完整客服系统。
+ * T013R4：开场语同步使用「小霜」作为坐席。
  */
 export const CHAT_AGENT_GREETING: ChatMessage = {
   id: 'agent-greeting',
   role: 'bot',
-  text: '你好，我是人工客服吴哥，已经看到你的问题，请稍等我为你处理。',
+  text: '你好，我是人工客服小霜，已经看到你的问题，请稍等我为你处理。',
   status: 'sent',
-  glyph: '哥',
+  glyph: '霜',
 }
 
 /**
