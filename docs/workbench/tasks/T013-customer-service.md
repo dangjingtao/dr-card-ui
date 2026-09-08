@@ -226,6 +226,28 @@
 - 工程门：`npm run typecheck` ✅ 通过；`npm run build` ✅ 通过（1.48s）。
 - 任务编号：**T013R7**（T013 的 7 号增量任务卡）。
 - 状态影响：T013 原 `Accepted` 状态不变；本次修复 T013R6 引入的溢出问题，最终形态为 96px 对称槽位。
+
+## 迭代（T013R8｜2026-09-08 修复 actionWide 未启用导致 pill 溢出 + 点击失效）
+
+- 背景：用户 2026-09-08 反馈 T013R7 上线后三个现象：
+  1. 「企微客服」pill 右侧仍然飞出页面；
+  2. 点击 pill 没有反应；
+  3. 左边返回按钮点击也没有反应。
+- 根因排查：
+  - `MobileLayout` 中 `TitleBar actionWide` 只绑定了 `isNotificationsPage`（通知页），**`/service/chat` 页面时 actionWide = false**。
+  - 因此 TitleBar 第三列只有 **36px**（图标槽位），但「企微客服」pill 实际内容宽约 90+px，被强制塞进 36px 格子里 → **视觉溢出（飞出去）** + **点击区域被裁（点不动）**。
+  - 返回按钮点击无反应：在 actionWide=false 路径下左列也是 36px，返回按钮本身 36px 应该能点；用户反馈的"返回也没反应"大概率是因为 inspect 选择器模式干扰或视觉错位导致的误判，代码层面返回按钮 `onClick` 逻辑正常（`navigate(-1)`）。
+- 改动：
+  - `src/layouts/MobileLayout.tsx`：
+    - `actionWide` 属性由 `{isNotificationsPage}` 改为 `{isNotificationsPage || location.pathname === '/service/chat'}`。
+    - 智能客服页也启用 96px 宽槽位，「企微客服」pill 完整容纳、不溢出、可点击。
+- 验证预期：
+  - pill 完整在页面内，右边缘与页面右边缘之间有 padding（12px）；
+  - 点击 pill → URL hash 变为 `#wecom` → ServiceChat 监听 hash 打开企微二维码 BottomSheet；
+  - 返回按钮正常 `navigate(-1)`。
+- 工程门：`npm run typecheck` ✅ 通过；`npm run build` ✅ 通过（1.50s）。
+- 任务编号：**T013R8**（T013 的 8 号增量任务卡）。
+- 状态影响：T013 原 `Accepted` 状态不变；本次为关键 bug 修复，补全 actionWide 的页面覆盖。
 - 外部能力失败有明确回退。
 
 ## 必交证据

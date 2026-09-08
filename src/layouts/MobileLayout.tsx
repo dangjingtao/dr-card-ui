@@ -98,7 +98,7 @@ export default function MobileLayout() {
             title={title}
             back={titleBarMode === 'back'}
             action={titleAction}
-            actionWide={isNotificationsPage}
+            actionWide={isNotificationsPage || location.pathname === '/service/chat'}
           />
         )}
       </div>
