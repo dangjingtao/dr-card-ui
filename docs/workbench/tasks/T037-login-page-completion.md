@@ -243,6 +243,14 @@
 - 工程门：`npm run typecheck` ✅ 通过；`npm run build` ✅ 通过（1.53s）。
 - 与 T037R10 的关系：T037R10 负责绑定学校页字段简化（学校+身份+年级），T037R11 负责「我的」页展示形态修正（左学校+右积分）。
 
+## 迭代（T037R12｜2026-09-08 积分 pill 增加点击跳转）
+
+- 背景：T037R11 积分 pill 仅做纯展示，用户补充要求可点击跳转。
+- **T037R12** 改动：
+  - `src/pages/legacy/ProfileHome.tsx`：积分 pill 由 `<div>` 改为 `<button>`，`onClick` 跳 `/signin/detail`（签到/积分详情页，legacy 体系下的积分页入口）。
+- 提交号：待提交
+- 工程门：`npm run typecheck` ✅ 通过；`npm run build` ✅ 通过。
+
 ## PRD 验收（2026-09-07）
 
 按 `docs/workbench/task-ledger.md` §4 五项门槛 + 本卡验收标准逐条核对，全部通过：

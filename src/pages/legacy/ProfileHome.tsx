@@ -106,10 +106,9 @@ export default function ProfileHome() {
           </div>
         </div>
 
-        {/* T037R11：左侧学校 pill + 右侧积分 pill 对称
-         * - 学校 pill（点击跳绑定学校页修改）
-         * - 积分 pill（纯展示，不跳转）
-         * 两边用 justify-between 左右对齐 */}
+        {/* T037R12：左侧学校 pill + 右侧积分 pill 对称（均可点击跳转）
+         * - 学校 pill → 绑定学校页（修改）
+         * - 积分 pill → 签到/积分页（查看明细） */}
         <div className="mt-3 flex w-full items-center justify-between gap-2">
           <button
             type="button"
@@ -118,9 +117,13 @@ export default function ProfileHome() {
           >
             {userInfo.school || '去绑定学校'}
           </button>
-          <div className="shrink-0 flex items-center gap-1 rounded-full bg-white/20 px-3 py-1 text-sm text-white/90">
+          <button
+            type="button"
+            onClick={() => navigate('/signin/detail')}
+            className="shrink-0 flex items-center gap-1 rounded-full bg-white/20 px-3 py-1 text-sm text-white/90 active:opacity-80"
+          >
             积分 {points.balance}
-          </div>
+          </button>
         </div>
       </div>
 
