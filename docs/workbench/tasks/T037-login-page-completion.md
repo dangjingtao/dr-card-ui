@@ -227,10 +227,21 @@
     - 点击仍跳 `/legacy-profile/info`（绑定学校页入口）。
 - 提交号：待提交
 - 工程门：`npm run typecheck` ✅ 通过；`npm run build` ✅ 通过（1.50s）。
-- 影响范围：
-  - 绑定学校页（`/legacy-profile/bind-school`）整体重构。
-  - 「我的」页（`/legacy-profile`）学校信息展示简化。
-  - 用户信息 store 字段扩展（向后兼容，旧字段保留）。
+- 影响范围：绑定学校页重构 + 「我的」页学校信息展示简化 + userInfoStore 字段扩展。
+
+## 迭代（T037R11｜2026-09-08 我的页：左侧学校 pill + 右侧积分 pill 对称）
+
+- 背景：用户指出 T037R10 把「我的」页学校/学院/学号三个 pill 全删了，不符合预期。
+  正确做法：保留学校 pill 在左侧，右侧对称位置展示用户当前积分数额。
+- **T037R11** 改动：
+  - `src/pages/legacy/ProfileHome.tsx`：
+    - 用户信息区底部一行改为左右对称布局（`justify-between`）。
+    - 左侧：学校 pill（点击跳 `/legacy-profile/info` 绑定学校页修改）；未绑定时显示"去绑定学校"。
+    - 右侧：积分 pill（纯展示，数据来自 `pointsStore.usePoints().balance`），同样式半透明白底白字圆角胶囊。
+    - 新增 `import { usePoints } from './pointsStore'`。
+- 提交号：待提交
+- 工程门：`npm run typecheck` ✅ 通过；`npm run build` ✅ 通过（1.53s）。
+- 与 T037R10 的关系：T037R10 负责绑定学校页字段简化（学校+身份+年级），T037R11 负责「我的」页展示形态修正（左学校+右积分）。
 
 ## PRD 验收（2026-09-07）
 

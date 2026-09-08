@@ -15,6 +15,7 @@ import {
   QrCode,
 } from 'lucide-react'
 import { useUserInfo } from './userInfoStore'
+import { usePoints } from './pointsStore'
 
 /* ---- T035：8 项功能宫格（对齐原小程序「我的」布局） ---- */
 const ORDER_ENTRIES = [
@@ -56,6 +57,7 @@ export default function ProfileHome() {
   const navigate = useNavigate()
   /* T037：从 userInfoStore 读取用户信息，包含学校/学院/学号 */
   const userInfo = useUserInfo()
+  const points = usePoints()
 
   const handleQuick = (entry: (typeof QUICK_ENTRIES)[number]) => {
     if (entry.to) {
@@ -104,22 +106,22 @@ export default function ProfileHome() {
           </div>
         </div>
 
-        {/* T037R10：学校 + 年级（学生身份时）摘要
-         * - 老师：只展示学校
-         * - 学生：展示学校 + 年级
-         * 点击进入绑定学校页（修改） */}
-        {userInfo.school && (
+        {/* T037R11：左侧学校 pill + 右侧积分 pill 对称
+         * - 学校 pill（点击跳绑定学校页修改）
+         * - 积分 pill（纯展示，不跳转）
+         * 两边用 justify-between 左右对齐 */}
+        <div className="mt-3 flex w-full items-center justify-between gap-2">
           <button
             type="button"
             onClick={() => navigate('/legacy-profile/info')}
-            className="mt-3 flex w-full flex-wrap items-center gap-1.5 text-left text-sm text-white/85 active:opacity-80"
+            className="shrink-0 rounded-full bg-white/20 px-3 py-1 text-sm text-white/90 active:opacity-80"
           >
-            <span className="shrink-0 rounded-full bg-white/20 px-2 py-0.5">{userInfo.school}</span>
-            {userInfo.role === 'student' && userInfo.grade && (
-              <span className="shrink-0 rounded-full bg-white/20 px-2 py-0.5">{userInfo.grade}</span>
-            )}
+            {userInfo.school || '去绑定学校'}
           </button>
-        )}
+          <div className="shrink-0 flex items-center gap-1 rounded-full bg-white/20 px-3 py-1 text-sm text-white/90">
+            积分 {points.balance}
+          </div>
+        </div>
       </div>
 
       {/* 内容区 */}
