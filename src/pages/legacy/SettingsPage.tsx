@@ -16,8 +16,8 @@ interface SettingItem {
 
 const SETTING_ITEMS: SettingItem[] = [
   { key: 'service', label: '在线客服', icon: 'service', to: '/service/chat' },
-  { key: 'refund', label: '退款', to: '/legacy-profile/refund-guide' },
-  { key: 'refund-record', label: '退款记录', to: '/legacy-profile/refund-records' },
+  { key: 'refund', label: '退款', to: '/legacy-profile/school-accounts' },
+  { key: 'refund-record', label: '退款记录', to: '/legacy-profile/school-accounts' },
   { key: 'payment-config', label: '支付流程配置' },
   { key: 'change-password', label: '修改密码' },
   { key: 'online-devices', label: '我的在线设备' },

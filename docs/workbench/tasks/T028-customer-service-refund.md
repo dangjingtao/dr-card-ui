@@ -160,6 +160,18 @@
 - 任务编号：**T028R1**（T028 的 1 号增量任务卡）。
 - 状态影响：T028 原 `User Review` 状态不变；本次为路由注册缺失的 bugfix。
 
+## 迭代（T028R2｜2026-09-08 设置页退款/退款记录入口 404 修复）
+
+- 问题：用户反馈「设置 → 退款」「设置 → 退款记录」点进去都是"页面不存在"。
+- 根因：SettingsPage 里两个入口分别跳 `/legacy-profile/refund-guide` 和 `/legacy-profile/refund-records`，
+  这两条路径从未在路由表中注册（只有卡维度的 `/legacy-profile/my-cards/:id/refund-records`）。
+- 修复：`src/pages/legacy/SettingsPage.tsx` 中两个入口都改跳 `/legacy-profile/school-accounts`（我的小票 / 学校账户列表页）：
+  - 退款 → 我的小票（用户选择项目后点"退款"按钮进入退款流程）
+  - 退款记录 → 我的小票（各项目卡片上查看退款记录）
+- 工程门：`npm run typecheck` ✅ 通过；`npm run build` ✅ 通过（1.46s）。
+- 任务编号：**T028R2**（T028 的 2 号增量任务卡）。
+- 状态影响：T028 原 `User Review` 状态不变；本次为入口路径缺失的 bugfix。
+
 ## 后续待施工
 
 - 客服：B-042（AI 客服知识库范围）确定后接入真实大模型 API；
