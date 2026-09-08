@@ -251,6 +251,22 @@
 - 提交号：待提交
 - 工程门：`npm run typecheck` ✅ 通过；`npm run build` ✅ 通过。
 
+## 迭代（T037R13｜2026-09-08 个人信息页：去学号学院 + 新增身份栏）
+
+- 背景：用户要求"我的 → 个人设置"里去掉学号、学院，加上一栏「身份」：
+  学生身份显示"大一 学生"（年级+身份），老师身份显示"老师"。
+- **T037R13** 改动：
+  - `src/pages/legacy/PersonalInfo.tsx`：
+    - `INFO_ITEMS` 删除 `studentId`（学号）、`academy`（学院）两项。
+    - 新增 `role`（身份）一栏，类型为 `link`，点击跳 `/legacy-profile/bind-school`（绑定学校页修改）。
+    - `getValue` 中 `role` 分支的展示逻辑：
+      - `student` + 有年级 → `"{grade} 学生"`（如"大一 学生"）
+      - `student` + 无年级 → "未完善"
+      - `teacher` → "老师"
+      - 其他 → "未完善"
+- 提交号：待提交
+- 工程门：`npm run typecheck` ✅ 通过；`npm run build` ✅ 通过（1.49s）。
+
 ## PRD 验收（2026-09-07）
 
 按 `docs/workbench/task-ledger.md` §4 五项门槛 + 本卡验收标准逐条核对，全部通过：

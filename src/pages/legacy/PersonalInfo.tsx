@@ -2,14 +2,22 @@ import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useUserInfo } from './userInfoStore'
 
+/* T037R13：个人信息页（卡博士淡金色风格）
+ * -------------------------------------------------------------
+ * 字段调整：去掉学号、学院（T037R10 后不再收集），新增「身份」一栏。
+ * 身份展示：
+ *   - 学生：显示「年级 + 学生」，如「大一 学生」
+ *   - 老师：显示「老师」
+ * 点击身份栏跳绑定学校页修改。
+ */
+
 const INFO_ITEMS = [
   { key: 'avatar', label: '头像', type: 'avatar' },
   { key: 'username', label: '用户名', type: 'text' },
   { key: 'nickname', label: '昵称', type: 'link', to: '/legacy-profile/nickname' },
   { key: 'realName', label: '真实姓名', type: 'link', to: '' },
-  { key: 'studentId', label: '学号', type: 'text' },
   { key: 'school', label: '学校', type: 'text' },
-  { key: 'academy', label: '学院', type: 'text' },
+  { key: 'role', label: '身份', type: 'link', to: '/legacy-profile/bind-school' },
   { key: 'phone', label: '手机', type: 'link', to: '/legacy-profile/phone-change' },
   { key: 'email', label: '邮箱', type: 'link', to: '/legacy-profile/email' },
 ] as const
@@ -30,12 +38,14 @@ export default function PersonalInfo() {
         return userInfo.nickname
       case 'realName':
         return userInfo.realName
-      case 'studentId':
-        return userInfo.studentId
       case 'school':
         return userInfo.school
-      case 'academy':
-        return userInfo.academy
+      case 'role':
+        /* T037R13：身份展示 —— 学生带年级，老师仅显示"老师" */
+        if (userInfo.role === 'student') {
+          return userInfo.grade ? `${userInfo.grade} 学生` : '未完善'
+        }
+        return userInfo.role === 'teacher' ? '老师' : '未完善'
       case 'phone':
         return userInfo.phone
       case 'email':
