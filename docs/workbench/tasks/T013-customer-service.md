@@ -56,6 +56,23 @@
 - 4 个节点逐一可定位：#57 / #58 / #71（`?overlay=request-human`）走页内入口，#70 走直达路由 `?state=queuing|connected`（前进入口未确认，不伪造）。
 - 输入区在键盘/小屏场景不被底部安全区遮挡。
 - 不出现未经确认的 4 个热门问题、队列递减或额外服务项。
+
+## 迭代（T013R1｜2026-09-08 智能客服「人工」入口改为 APP 内排队/对话）
+
+- 背景：用户 2026-09-08 验收时反馈，智能客服页底部「人工」按钮目前弹的是企业微信二维码引导 BottomSheet（#71），期望行为是：点击「人工」直接进入人工客服**排队状态**，接入后在 APP 内与人工客服对话，不再让用户跳企微。
+- 改动（`src/pages/ServiceChat.tsx`）：
+  - 删除页内右上角「企微客服」入口（`data-chat-wecom-entry` 按钮 + `MessageSquare` 图标 + `CHAT_BOT.wecomEntry` 文案）。
+  - 删除 #71 企微二维码 `BottomSheet`（`<WecomQrPlaceholder />` + `CHAT_HUMAN_PROMPT` 文案 + 「取消」操作），不再消费 `useOverlay()` 与 `overlay === 'request-human'` 渲染。
+  - 底部「人工」按钮（`data-chat-human-entry`）`onClick` 由 `open('request-human')` 改为 `navigate('/service/chat/human')`，统一走排队页。
+  - 输入框发送触发 `isChatHumanRequest(text)`（输入「人工 / 真人 / 客服人员 / 人工服务 / 转人工」）时，行为同步由 `open('request-human')` 改为 `navigate('/service/chat/human')`，与底部按钮行为一致。
+  - 移除不再使用的 import：`MessageSquare`、`WecomQrPlaceholder`、`BottomSheet` / `Button`、`useOverlay`、`CHAT_HUMAN_PROMPT`、`WELFARE_OFFICER`。
+- 不动的部分：
+  - `/service/chat/human` 页面（`ServiceHuman.tsx`）：`?state=queuing` 排队态 + `?state=connected` 接入态 + APP 内对话输入区均不动，本次仅消费现有页面作为跳转目标。
+  - 路由表 `routes.ts`：`overlays: [{ key: 'request-human', ... }]` 路由项保留（`useOverlay` fixture 与回归脚本会引用），但页面不再渲染对应弹层。
+  - `verify-t015.mjs` / `verify-reference-pages.mjs` / `evidence-matrix.md` / `route-table.md` 中 `?overlay=request-human` 引用保留以兼容证据脚本。
+- 工程门：`npm run typecheck` ✅ 通过；`npm run build` ✅ 通过（1.50s）。
+- 任务编号：**T013R1**（T013 的 1 号增量任务卡）。
+- 状态影响：T013 原 `Accepted` 状态不变；本次把 #71 入口行为从「企微引导」改为「APP 内排队/对话」，#71 在新行为下不再被页面渲染（`request-human` 路由项保留兼容）；#70 排队/对话态继续作为新增入口落点。
 - 外部能力失败有明确回退。
 
 ## 必交证据

@@ -165,26 +165,9 @@ export default function ServiceChat() {
         </div>
       </div>
 
-      {/* #71 请求人工客服：原型 §10 在智能客服页上叠加企业微信引导 */}
-      <BottomSheet
-        open={overlay === 'request-human'}
-        title={CHAT_HUMAN_PROMPT.title}
-        onClose={close}
-        actions={
-          /* 原型 §10 弹层内只有「取消」；#71 → #70 的前进入口未确认，按项目硬规则不实现 */
-          <Button variant="ghost" onClick={close}>
-            {CHAT_HUMAN_PROMPT.cancelLabel}
-          </Button>
-        }
-      >
-        <div className="flex flex-col items-center pb-1 text-center" data-chat-human-sheet>
-          <WecomQrPlaceholder />
-          <p className="mt-3 text-sm font-medium text-text-primary">
-            {WELFARE_OFFICER.brand}{WELFARE_OFFICER.role} · {WELFARE_OFFICER.name}
-          </p>
-          <p className="mt-1 text-xs text-text-tertiary">{WELFARE_OFFICER.qrHint}</p>
-        </div>
-      </BottomSheet>
+      {/* T013R1：原 #71 企微二维码 BottomSheet 已下线；
+        * 「人工」入口与「人工客服」关键词均直接跳 /service/chat/human（排队 → 接入对话）。
+        * `?overlay=request-human` 路由项仍保留以兼容回归脚本，但不渲染。 */}
 
       <DebugPanel route={route} />
     </PageContainer>
