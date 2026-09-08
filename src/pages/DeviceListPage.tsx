@@ -51,7 +51,7 @@ export default function DeviceListPage() {
   }
 
   return (
-    <div data-device-theme={deviceType} className="cd-app mx-auto flex h-full max-w-[480px] flex-col">
+    <div data-device-theme={deviceType} className="cd-app relative mx-auto flex h-full max-w-[480px] flex-col">
       {/* 顶部栏 */}
       <div
         className="relative shrink-0 px-4 pt-12 pb-4 text-white"
@@ -156,7 +156,7 @@ export default function DeviceListPage() {
       </div>
 
       {/* 底部固定扫码按钮（保持不变） */}
-      <div className="absolute bottom-0 left-0 right-0 px-4 pb-4 pt-2 bg-gradient-to-t from-[#F5F6FA] via-[#F5F6FA]/95 to-transparent">
+      <div className="absolute bottom-0 left-0 right-0 mx-auto max-w-[480px] px-4 pb-4 pt-2 bg-gradient-to-t from-[#F5F6FA] via-[#F5F6FA]/95 to-transparent">
         <button
           type="button"
           onClick={handleTopScan}
