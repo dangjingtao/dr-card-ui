@@ -35,6 +35,7 @@ type HumanStage = 'idle' | 'queuing' | 'connected'
 export default function ServiceChat() {
   const route = findRouteByPathname('/service/chat')
   const { state } = useFixtureState(route)
+  const location = useLocation()
 
   const [messages, setMessages] = useState<ChatMessage[]>(CHAT_WELCOME_MESSAGES)
   const [draft, setDraft] = useState('')
@@ -44,9 +45,24 @@ export default function ServiceChat() {
   /** 人工客服状态机：idle → queuing（→ mock 1.2s 后 connected） */
   const [humanStage, setHumanStage] = useState<HumanStage>('idle')
 
-  /** 企微二维码弹层控制 */
+  /** T013R5：企微二维码弹层 —— 与壳层 TitleBar 联动，靠 `#wecom` hash 触发 */
   const [wecomOpen, setWecomOpen] = useState(false)
-  const closeWecom = () => setWecomOpen(false)
+  const closeWecom = () => {
+    setWecomOpen(false)
+    /* 关闭时清掉 hash，避免下次进页时旧状态自动重弹 */
+    if (location.hash === '#wecom') {
+      window.history.replaceState(null, '', location.pathname + location.search)
+    }
+  }
+
+  /* T013R5+R9：监听 location.hash 变化，#wecom 时打开企微二维码弹层。
+   * 注意：必须用 useLocation() 的 location 对象，React Router 才能感知
+   * hash 变化并触发重渲染；直接读 window.location.hash 不会触发更新。 */
+  useEffect(() => {
+    if (location.hash === '#wecom') {
+      setWecomOpen(true)
+    }
+  }, [location.hash])
 
   /** `?state=` 直达：欢迎 / 有对话 / 发送失败 */
   useEffect(() => {

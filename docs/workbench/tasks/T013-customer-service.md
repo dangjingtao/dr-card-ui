@@ -248,6 +248,26 @@
 - 工程门：`npm run typecheck` ✅ 通过；`npm run build` ✅ 通过（1.50s）。
 - 任务编号：**T013R8**（T013 的 8 号增量任务卡）。
 - 状态影响：T013 原 `Accepted` 状态不变；本次为关键 bug 修复，补全 actionWide 的页面覆盖。
+
+## 迭代（T013R9｜2026-09-08 修复 ServiceChat hash 监听丢失导致企微弹窗点不出）
+
+- 背景：用户 2026-09-08 反馈「企微客服」按钮点击没反应（同时反馈返回按钮也没反应，后确认是 inspect 选择器模式拦截了点击事件）。
+- 根因排查：
+  - `ServiceChat.tsx` 顶部 import 了 `useLocation`，但组件函数体内**漏掉了 `const location = useLocation()` 调用**，也**漏掉了监听 `location.hash` 的 `useEffect`**。
+  - 因此壳层 TitleBar pill 点击后虽然 `navigate('/service/chat#wecom')` 改了 URL，但 ServiceChat 完全感知不到 hash 变化 → `wecomOpen` 始终 false → BottomSheet 不弹出。
+  - 该逻辑在 T013R5 初次实现，后续 R6-R8 迭代中因多次 SearchReplace 操作意外丢失了函数体内的调用代码。
+- 改动：
+  - `src/pages/ServiceChat.tsx`：
+    - 组件内加回 `const location = useLocation()`。
+    - 加回 `useEffect(() => { if (location.hash === '#wecom') setWecomOpen(true) }, [location.hash])`。
+    - `closeWecom` 恢复完整逻辑：关闭弹层 + `history.replaceState` 清掉 hash，避免下次进页时旧 hash 触发重弹。
+- 返回按钮说明：
+  - TitleBar 返回按钮使用 `navigate(-1)`，代码逻辑正常。
+  - 若用户在浏览器的元素选择（inspect）模式下点击，点击事件会被选择器拦截用于选中元素，这是检查工具的正常行为，退出选择模式后按钮恢复正常点击。
+  - 若从登录页或首页直接跳转进智能客服，history 栈只有 1-2 条记录，`navigate(-1)` 可能回到上一页（如首页/登录页），表现正常。
+- 工程门：`npm run typecheck` ✅ 通过；`npm run build` ✅ 通过（1.54s）。
+- 任务编号：**T013R9**（T013 的 9 号增量任务卡）。
+- 状态影响：T013 原 `Accepted` 状态不变；本次为关键 bug 修复，补全 T013R5 引入但后续迭代中丢失的 hash 监听逻辑。
 - 外部能力失败有明确回退。
 
 ## 必交证据
