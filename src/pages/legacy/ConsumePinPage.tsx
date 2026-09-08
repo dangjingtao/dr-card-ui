@@ -137,33 +137,15 @@ export default function ConsumePinPage() {
     setSuccessOpen(true)
   }
 
-  /* —— 成功弹窗：继续操作 / 返回我的 —— */
-  const handleSuccessContinue = () => {
+  /* T039R1：成功弹窗按钮 ——
+   * - 设置/修改成功：只留「返回我的」（去掉「继续操作」）
+   * - 删除成功：换成「设置新密码 / 返回我的」 */
+  const handleSuccessSetNew = () => {
+    /* 删除成功后点「设置新密码」：切到未设置 demo 态，进入 set 流程 */
     setSuccessOpen(false)
-    if (phase === 'change') {
-      /* 修改完成：回到验证页（已设置状态） */
-      setPhase('verify')
-      setNewPin('')
-      setConfirmPin('')
-      setStep(1)
-      setDemo('set')
-      writeDemo('set')
-      setTimeout(() => verifyRef.current?.focus(), 50)
-    } else if (phase === 'delete') {
-      /* 删除完成：切到未设置 demo 态，回到 set 流程 */
-      setPhase('set')
-      setDemo('unset')
-      writeDemo('unset')
-    } else {
-      /* set 完成：切到已设置 demo 态，回到 verify 流程 */
-      setPhase('verify')
-      setNewPin('')
-      setConfirmPin('')
-      setStep(1)
-      setDemo('set')
-      writeDemo('set')
-      setTimeout(() => verifyRef.current?.focus(), 50)
-    }
+    setPhase('set')
+    setDemo('unset')
+    writeDemo('unset')
   }
 
   const handleSuccessBack = () => {
@@ -447,23 +429,38 @@ export default function ConsumePinPage() {
               <h2 className="text-lg font-semibold text-text-primary">{successTitle}</h2>
               <p className="mt-2 text-sm text-text-secondary">{successDesc}</p>
             </div>
-            <div className="flex border-t border-border-subtle">
-              <button
-                type="button"
-                onClick={handleSuccessContinue}
-                className="flex-1 py-3 text-sm text-text-secondary active:bg-surface-pressed"
-              >
-                继续操作
-              </button>
-              <div className="w-px bg-border-subtle" />
-              <button
-                type="button"
-                onClick={handleSuccessBack}
-                className="flex-1 py-3 text-sm font-semibold text-[#B8893D] active:bg-surface-pressed"
-              >
-                返回我的
-              </button>
-            </div>
+            {/* T039R1：成功弹窗底部按钮按场景动态渲染
+               * - set/change 成功：只有「返回我的」单按钮（全宽、金色强调）
+               * - delete 成功：「设置新密码 / 返回我的」双按钮 */}
+            {phase === 'delete' ? (
+              <div className="flex border-t border-border-subtle">
+                <button
+                  type="button"
+                  onClick={handleSuccessSetNew}
+                  className="flex-1 py-3 text-sm text-text-secondary active:bg-surface-pressed"
+                >
+                  设置新密码
+                </button>
+                <div className="w-px bg-border-subtle" />
+                <button
+                  type="button"
+                  onClick={handleSuccessBack}
+                  className="flex-1 py-3 text-sm font-semibold text-[#B8893D] active:bg-surface-pressed"
+                >
+                  返回我的
+                </button>
+              </div>
+            ) : (
+              <div className="border-t border-border-subtle">
+                <button
+                  type="button"
+                  onClick={handleSuccessBack}
+                  className="w-full py-3 text-sm font-semibold text-[#B8893D] active:bg-surface-pressed"
+                >
+                  返回我的
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
