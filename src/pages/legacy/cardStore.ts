@@ -58,6 +58,16 @@ export function updateCard(id: string, patch: Partial<CardInfo>) {
   cardActions.set(list.map((c) => (c.id === id ? { ...c, ...patch } : c)))
 }
 
+/**
+ * 解绑指定卡：仅从卡列表中移除，**不动充值/退款记录**（T031 2026-09-08 用户口径）。
+ * - 历史 TopupRecord 仍保留在 recordsActions 中，未来若需要"按账户维度"展示可继续使用。
+ * - 移除后页面侧需把 demo state 切到 'unbound'（KBS_CARD_DEMO_STATE）以回到未绑卡空态。
+ */
+export function unbindCard(id: string) {
+  const list = cardActions.get()
+  cardActions.set(list.filter((c) => c.id !== id))
+}
+
 /* ============================================================
  * 充值 / 退款流水（T029 核心闭环）
  * - topupRecords：充值记录，按时间倒序

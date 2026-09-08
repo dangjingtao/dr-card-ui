@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ChevronLeft, FlaskConical, CreditCard, ArrowDownToLine, ChevronRight } from 'lucide-react'
-import { findCard, updateCard, getCardTopupRecords, getCardRefundRecords, type CardStatus } from './cardStore'
+import { findCard, updateCard, unbindCard, getCardTopupRecords, getCardRefundRecords, type CardStatus } from './cardStore'
 
 type EditField = 'realName' | 'className' | 'studentId'
 
@@ -27,6 +27,7 @@ export default function CardDetailPage() {
   const card = findCard(id)
 
   const [showConfirm, setShowConfirm] = useState<null | 'report' | 'unreport'>(null)
+  const [showUnbindConfirm, setShowUnbindConfirm] = useState(false)
   const [editingField, setEditingField] = useState<EditField | null>(null)
 
   /* 读取流水，详情页底部展示近期概要 */
@@ -75,6 +76,18 @@ export default function CardDetailPage() {
     setShowConfirm(null)
   }
 
+  /* 解绑：仅弹窗文案二次确认，无密码；解绑后切到 demo 'unbound' 并回到列表 */
+  const handleUnbindConfirm = () => {
+    unbindCard(id)
+    setShowUnbindConfirm(false)
+    try {
+      sessionStorage.setItem('KBS_CARD_DEMO_STATE', 'unbound')
+    } catch {
+      /* ignore */
+    }
+    navigate('/legacy-profile/my-cards')
+  }
+
   const isReported = card.status === 'reported'
 
   const toggleDemoState = () => {
@@ -111,6 +124,15 @@ export default function CardDetailPage() {
           <div className="absolute left-1/2 -translate-x-1/2 text-lg font-semibold text-white">
             我的卡
           </div>
+          {/* 右侧解绑 pill（T031 2026-09-08，红色圆角药丸） */}
+          <button
+            type="button"
+            aria-label="解绑此卡"
+            onClick={() => setShowUnbindConfirm(true)}
+            className="relative z-10 ml-auto rounded-full bg-[#DC2626] px-3 py-1 text-xs font-medium text-white shadow-sm active:opacity-80"
+          >
+            解绑
+          </button>
         </div>
       </div>
 
@@ -272,6 +294,42 @@ export default function CardDetailPage() {
             setEditingField(null)
           }}
         />
+      )}
+
+      {/* === 解绑确认弹窗（T031 2026-09-08，仅文案二次确认，无密码） === */}
+      {showUnbindConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-8"
+          onClick={() => setShowUnbindConfirm(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-center text-base font-semibold text-text-primary">
+              温馨提示
+            </h3>
+            <p className="mt-2 text-center text-sm text-text-secondary">
+              解绑后此卡将不再显示在"我的卡"列表中，确认解绑？
+            </p>
+            <div className="mt-6 flex divide-x divide-divider overflow-hidden rounded-xl border border-divider">
+              <button
+                type="button"
+                onClick={() => setShowUnbindConfirm(false)}
+                className="flex-1 py-3 text-sm text-text-secondary active:bg-bg-secondary"
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                onClick={handleUnbindConfirm}
+                className="flex-1 py-3 text-sm text-[#DC2626] active:bg-bg-secondary"
+              >
+                确认解绑
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* === 挂失/解挂确认弹窗 === */}

@@ -139,3 +139,17 @@
 - 随机性边界：`Math.random()` 仅按 1:1（D-079）决定无 `?state=` 时的默认落点，且惰性求值一次、生命周期内不变；验收状态一律走夹具与 URL 参数（D-074），不把随机数作为验收状态来源。
 - 取证参数边界：`?newcomer=off` 只用于让脚本确定性拿到首页无遮挡形态，不改变产品行为，不进 `states` / `overlays`，`RouteMeta` 也未为它新增字段（D-078）。
 - **归属纠正**：T022 卡「施工边界与遗留」把 `verify-t015.mjs` `FAIL #18 /exchange`、`FAIL #19 /profile` 与 `verify-reference-pages.mjs` `/profile MISSING:热门兑换` 记为「T021 / T023 在建」，经核实与 T021 无关，本卡不认领——`Exchange.tsx` 本轮未改动且 `HEAD` 即渲染「体验券兑换专区」，而脚本期望「洗护兑换专区」；`Profile.tsx` 的 `HEAD` 即渲染「热门体验券」，而脚本期望「热门兑换」，本轮对该文件的唯一改动是 T023 侧的 `to: '/membership' → '/mall'`。三条均为既有脚本期望值与页面文案的历史偏差，需由文案定稿方单独收口。
+
+### PRD 自检（2026-09-08）
+
+按 `task-ledger.md` §4 五道门槛逐条核验，对照本卡「实施要求」「状态与交互矩阵」「验收标准」「必交证据」全量条款：
+
+| 门槛 | 检查项 | 证据 / 结果 |
+| --- | --- | --- |
+| 事实门槛 | Mockplus 节点引用；当前代码状态 | `RouteMeta.task: 'T021'` + `routes.ts` `nodes: []` 占位已说明需求变更无 artboard；`Home.tsx` 头部注释逐条对应需求 §2.1–§3.2；mock 资源 `NEWCOMER_COUPON_RULE_STATUS` 隔离 B-031/B-032/B-033；T005 历史验收结论未回改 |
+| UI 门槛 | 375 × 812 截图与原型对照；空态/加载/成功/错误 | 截图 6 张齐（首屏 / 长页底 / 1 张券 / 2 张券 / 领取成功 / 默认自动弹窗），最新跑测时戳 2026-09-03 14:54；`CheckinBoard` 四段 `aria-label` 覆盖默认/已签到/任务/精选；`/checkin` 回归 PASS，无重复外壳 |
+| 交互门槛 | 入口可达、点击有真状态变化、不假按钮 | `capture-t021.mjs` 退出码 0；默认自动弹出 → 关闭不复现 → 取证抑制 → 关闭出口 → 领取成功 → 查看体验券跳 `/exchange` → 首页补签反馈 → `/checkin` 回归，9 条交互链全过；公益板块 `action/to=null` 静态承载不假装可点 |
+| 工程门槛 | typecheck / build / 控制台 | 2026-09-08 重跑：`npm run typecheck` 退出码 0；`npm run build` 通过（`tsc --noEmit` → `verify:images` 36 WebP / 1.98 MiB → Vite build）；`console-check-t004.mjs` 对 `/` 与 `/?newcomer=off` 均报 `NO_BLOCKING_ERRORS` |
+| 证据门槛 | 路由/节点清单、原型依据、375 截图、状态/交互、差异、提交号 | 「必交证据」清单全部覆盖；主要提交 `babe29e feat(T021-T023): 首页栏目化改造…`，脚本/文档尾随 `0a43503`、`b621bb1`；剩余 B-031/B-032/B-033 已记录在「施工边界与遗留」并降为「中」风险 |
+
+**PRD 自检结论：五道门槛全部通过，T021 满足 `Agent Review → User Review` 推进条件。** 智能体已据此将状态自 `Agent Review` 推进至 `User Review`，最终签字仍由用户完成。
