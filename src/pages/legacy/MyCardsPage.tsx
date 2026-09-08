@@ -55,7 +55,7 @@ export default function MyCardsPage() {
   }
 
   return (
-    <div className="mx-auto flex min-h-full max-w-[480px] flex-col bg-[#F8F8FA]">
+    <div className="relative mx-auto flex min-h-full max-w-[480px] flex-col bg-[#F8F8FA]">
       {/* 顶部栏：淡金渐变背景（卡博士APP主色） */}
       <div
         className="relative shrink-0 px-4 pt-3 pb-3"
@@ -138,7 +138,7 @@ export default function MyCardsPage() {
         type="button"
         onClick={switchDemoState}
         title="切换卡的绑定状态（开发用）"
-        className="fixed bottom-6 right-4 z-40 flex items-center gap-1.5 rounded-full bg-text-primary px-3 py-2 text-xs font-medium text-white shadow-lg active:opacity-80"
+        className="absolute bottom-6 right-4 z-40 flex items-center gap-1.5 rounded-full bg-text-primary px-3 py-2 text-xs font-medium text-white shadow-lg active:opacity-80"
       >
         <FlaskConical className="h-3.5 w-3.5" />
         {demoState === 'bound' ? '已绑卡' : '未绑卡'}

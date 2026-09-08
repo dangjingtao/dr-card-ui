@@ -217,7 +217,7 @@ export default function ConsumePinPage() {
   }
 
   return (
-    <div className="mx-auto flex min-h-full max-w-[480px] flex-col bg-[#F8F8FA]">
+    <div className="relative mx-auto flex min-h-full max-w-[480px] flex-col bg-[#F8F8FA]">
       {/* 顶部栏：淡金渐变 + 返回 + 居中标题 */}
       <div
         className="relative shrink-0 px-4 pt-3 pb-4"
@@ -473,7 +473,7 @@ export default function ConsumePinPage() {
         type="button"
         onClick={toggleDemo}
         title="切换消费密码演示态（仅供设计演示）"
-        className="fixed right-4 bottom-[calc(80px+env(safe-area-inset-bottom))] z-40 flex h-11 items-center gap-1.5 rounded-full border border-[#E8D9B8] bg-white px-4 text-xs font-medium text-[#B8893D] shadow-md active:opacity-70"
+        className="absolute right-4 bottom-[calc(80px+env(safe-area-inset-bottom))] z-40 flex h-11 items-center gap-1.5 rounded-full border border-[#E8D9B8] bg-white px-4 text-xs font-medium text-[#B8893D] shadow-md active:opacity-70"
       >
         <FlaskConical className="h-4 w-4" />
         {demo === 'set' ? '已设置密码' : '未设置密码'}

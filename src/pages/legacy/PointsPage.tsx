@@ -143,7 +143,7 @@ export default function PointsPage() {
       <button
         type="button"
         onClick={() => navigate('/legacy-profile/customer-service')}
-        className="fixed bottom-20 right-4 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-white text-[#FF4D4F] shadow-lg"
+        className="absolute bottom-20 right-4 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-white text-[#FF4D4F] shadow-lg"
         aria-label="客服"
       >
         <Headset className="h-5 w-5" />

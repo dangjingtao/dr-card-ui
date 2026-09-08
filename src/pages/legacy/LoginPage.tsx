@@ -156,7 +156,7 @@ export default function LoginPage() {
 
   return (
     <div
-      className="mx-auto flex min-h-full max-w-[480px] flex-col"
+      className="relative mx-auto flex min-h-full max-w-[480px] flex-col"
       style={{
         background:
           'radial-gradient(ellipse 90% 34% at 68% 0%, rgba(248, 203, 111, .36) 0%, rgba(255, 230, 180, .18) 42%, transparent 72%), radial-gradient(ellipse 72% 30% at 4% 44%, rgba(255, 237, 207, .32) 0%, transparent 74%), linear-gradient(180deg, #FFF9EE 0%, #FFFCF7 42%, #FFF8EF 100%)',
@@ -317,7 +317,7 @@ export default function LoginPage() {
         onClick={toggleScenario}
         aria-label="切换演示场景"
         title="切换演示场景（仅供设计演示）"
-        className="fixed right-4 bottom-[calc(80px+env(safe-area-inset-bottom))] z-40 flex h-11 items-center gap-1.5 rounded-full border border-[#E8D9B8] bg-white px-4 text-xs font-medium text-[#B8893D] shadow-md active:opacity-70"
+        className="absolute right-4 bottom-[calc(80px+env(safe-area-inset-bottom))] z-40 flex h-11 items-center gap-1.5 rounded-full border border-[#E8D9B8] bg-white px-4 text-xs font-medium text-[#B8893D] shadow-md active:opacity-70"
       >
         <FlaskConical className="h-4 w-4" />
         {scenario === 'normal' ? '正常状态' : '错误状态'}
