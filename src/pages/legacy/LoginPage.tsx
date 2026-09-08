@@ -1,39 +1,37 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Eye, EyeOff, FlaskConical, Loader2 } from 'lucide-react'
+import { Eye, EyeOff, ImageIcon, Loader2 } from 'lucide-react'
 import CaptchaImage from '../../components/ui/CaptchaImage'
 import { userInfoActions } from './userInfoStore'
 
 /* T037｜登录页（卡博士淡金色风格）
  * -------------------------------------------------------------
- * 演示逻辑（2026-09-07 用户决定）：
+ * 演示逻辑（2026-09-08 用户决定）：
  * - 任何账号 + 密码（满足 6-20 位校验）均能直接登录成功，不做真实账号匹配。
- * - 右下角"原型切换按钮"提供两种演示场景：
- *    1) 正常：用户可正常登录（默认）
- *    2) 错误：连续 4 次错误 → 第 5 次提交要求图形验证码 → 输入正确后登录成功
+ * - 右下角"弹出图形验证码"按钮：随时可点开图形验证码用于演示，
+ *   同时输错 20 次后强制要求图形验证码才能登录成功。
  *
- * 关键改动：
-   1. 密码可见切换（睁眼 / 闭眼）
-   2. 错误场景下，输错 4 次后第 5 次要求图形验证码
-   3. 保留微信授权登录入口
-   4. 登录成功后弹窗引导绑定学校/专业/学号
-   5. 「还没有账号？请注册」入口跳转注册页（手机号 + 验证码 + 密码 + 二次确认）
+ * 关键改动（2026-09-08）：
+ *   1. 取消微信授权登录入口，仅保留「手机号 + 密码」一种登录方式
+ *   2. 密码可见切换（睁眼 / 闭眼）
+ *   3. 输错 20 次后要求图形验证码（演示阈值调大，便于演示）
+ *   4. 右下角"弹出图形验证码"按钮替换原"原型切换按钮"，位置保持在登录容器内
+ *   5. 登录成功后弹窗引导绑定学校/专业/学号
+ *   6. 「还没有账号？请注册」入口跳转注册页（手机号 + 验证码 + 密码 + 二次确认）
+ *   7. 「忘记密码？」入口跳转忘记密码流程（手机号 + 短信验证码 + 图形验证码 + 新密码 + 确认密码）
  */
 
-const MAX_ATTEMPTS_IN_ERROR_FLOW = 5
-
-type DemoScenario = 'normal' | 'error'
+const MAX_ATTEMPTS_BEFORE_CAPTCHA = 20
 
 export default function LoginPage() {
   const navigate = useNavigate()
-
-  const [scenario, setScenario] = useState<DemoScenario>('normal')
 
   const [account, setAccount] = useState('')
   const [password, setPassword] = useState('')
   const [captcha, setCaptcha] = useState('')
 
   const [showPassword, setShowPassword] = useState(false)
+  const [showCaptcha, setShowCaptcha] = useState(false)
 
   const [agreed, setAgreed] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -44,14 +42,17 @@ export default function LoginPage() {
 
   const [currentCaptcha, setCurrentCaptcha] = useState('')
 
-  /* 错误态：仅当错误计数达到阈值时才显示图形验证码
-   *  - 4 次错误后，第 5 次提交时要求图形验证码
-   *  - 显示态用 attempts 推导：attempts >= 4 时，验证码模块常驻展示；
-   *    进入下一轮输入时也会保留（避免演示态下"验证码一闪就没"） */
-  const requireCaptcha = scenario === 'error' && attempts >= MAX_ATTEMPTS_IN_ERROR_FLOW - 1
+  /* 图形验证码显示态：主动点击"弹出图形验证码"按钮 或 错误计数达到阈值
+   *  - 用户主动点击后强制显示验证码，便于演示
+   *  - 阈值改为 20 次（2026-09-08 用户决定，便于演示） */
+  const requireCaptcha = showCaptcha || attempts >= MAX_ATTEMPTS_BEFORE_CAPTCHA
 
   const goRegister = () => {
     navigate('/legacy-profile/register')
+  }
+
+  const goForgotPassword = () => {
+    navigate('/legacy-profile/forgot-password')
   }
 
   const handleLogin = async () => {
@@ -82,51 +83,13 @@ export default function LoginPage() {
     setErrorMsg('')
     await new Promise((resolve) => setTimeout(resolve, 600))
 
-    /* 演示逻辑（2026-09-07）：
-     * - 正常场景：账号密码满足 6-20 位校验即直接登录成功
-     * - 错误场景：第 1-4 次提交无论账号密码是什么都返回错误；
-     *            第 5 次提交必须输入正确图形验证码才能登录成功 */
-    if (scenario === 'error') {
-      const nextAttempts = attempts + 1
-      const isFinalAttempt = nextAttempts >= MAX_ATTEMPTS_IN_ERROR_FLOW
-      if (isFinalAttempt) {
-        if (captcha.toUpperCase() !== currentCaptcha.toUpperCase()) {
-          /* 防御性分支：requireCaptcha=true 时已在校验阶段拦截；
-           * 这里再次兜底，避免 requireCaptcha 推导与按钮 disabled 出现竞态 */
-          setCaptchaInvalid(true)
-          setErrorMsg('图形验证码错误，请重新输入')
-          setSubmitting(false)
-          return
-        }
-        /* 图形验证码通过：登录成功，重置演示态 */
-        setAttempts(0)
-        setSubmitting(false)
-        userInfoActions.update({ account: account.trim(), isRegistered: true })
-        setBindDialogOpen(true)
-        return
-      }
-      /* 第 1-4 次：演示错误态 */
-      setAttempts(nextAttempts)
-      const left = MAX_ATTEMPTS_IN_ERROR_FLOW - nextAttempts
-      setErrorMsg(`账号或密码错误，还可输入 ${left} 次`)
-      setCaptchaInvalid(false)
-      setSubmitting(false)
-      return
-    }
-
-    /* 正常场景：直接登录成功 */
+    /* 演示逻辑（2026-09-08）：
+     * - 任何账号密码满足 6-20 位校验即直接登录成功
+     * - 若已弹出图形验证码且未通过校验则在前面已拦截；
+     *   若通过则无论是否主动弹出验证码都视为登录成功。 */
     userInfoActions.update({ account: account.trim(), isRegistered: true })
-    setSubmitting(false)
-    setBindDialogOpen(true)
-  }
-
-  const handleWechatLogin = async () => {
-    if (!agreed) {
-      setErrorMsg('请先勾选并同意《用户协议》与《隐私政策》')
-      return
-    }
-    setSubmitting(true)
-    await new Promise((resolve) => setTimeout(resolve, 600))
+    setAttempts(0)
+    setShowCaptcha(false)
     setSubmitting(false)
     setBindDialogOpen(true)
   }
@@ -139,19 +102,6 @@ export default function LoginPage() {
   const handleBindNow = () => {
     setBindDialogOpen(false)
     navigate('/legacy-profile/bind-school')
-  }
-
-  const toggleScenario = () => {
-    setScenario((prev) => {
-      const next = prev === 'normal' ? 'error' : 'normal'
-      /* 切换场景时清空错误态残留（计数 / 错误文案 / 验证码），
-       * 避免跨场景的状态污染。 */
-      setAttempts(0)
-      setErrorMsg('')
-      setCaptcha('')
-      setCaptchaInvalid(false)
-      return next
-    })
   }
 
   return (
@@ -210,7 +160,7 @@ export default function LoginPage() {
             </button>
           </div>
 
-          {/* 图形验证码：错误场景且已错 4 次后常驻展示 */}
+          {/* 图形验证码：主动弹出 或 已输错 20 次 */}
           {requireCaptcha && (
             <div className="space-y-2">
               <div
@@ -237,7 +187,7 @@ export default function LoginPage() {
           <div className="flex justify-end">
             <button
               type="button"
-              onClick={() => alert('忘记密码功能施工中（T037 不展开）')}
+              onClick={goForgotPassword}
               className="text-sm text-[#B8893D] active:opacity-70"
             >
               忘记密码？
@@ -257,19 +207,6 @@ export default function LoginPage() {
         >
           {submitting && <Loader2 className="h-5 w-5 animate-spin" />}
           {submitting ? '登录中' : '立即登录'}
-        </button>
-
-        {/* 微信授权 */}
-        <button
-          type="button"
-          onClick={handleWechatLogin}
-          disabled={submitting}
-          className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#5BC275] to-[#3FB05F] text-base font-semibold text-white shadow-sm active:opacity-90 disabled:opacity-60"
-        >
-          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
-            <path d="M9.5 4C5.36 4 2 6.69 2 10c0 1.81 1 3.44 2.59 4.53L4 17l2.71-1.41c.88.21 1.81.34 2.79.36-.07-.34-.1-.7-.1-1.06 0-3.31 3.13-6 7-6 .36 0 .72.02 1.06.07C16.95 6.06 13.55 4 9.5 4zm-2.4 4.5a.9.9 0 110 1.8.9.9 0 010-1.8zm4.8 0a.9.9 0 110 1.8.9.9 0 010-1.8zM16.4 10c-3.31 0-6 2.13-6 4.75 0 1.5.85 2.85 2.18 3.74L12 20l1.99-1.04c.71.16 1.46.27 2.24.29.21 0 .42-.01.62-.02L19 20l-.43-1.85C20.32 17.18 22 15.45 22 13.5c0-2.62-2.69-4.75-6-4.75zm-2 3.2a.7.7 0 110 1.4.7.7 0 010-1.4zm4 0a.7.7 0 110 1.4.7.7 0 010-1.4z" />
-          </svg>
-          {submitting ? '授权中' : '微信授权登录'}
         </button>
 
         {/* 引导文案：注册入口 */}
@@ -311,16 +248,22 @@ export default function LoginPage() {
         </label>
       </div>
 
-      {/* 原型切换按钮：右下角浮动，仅供设计演示用（不进入生产态） */}
+      {/* "弹出图形验证码"按钮：固定在登录容器右下角内，不溢出页面
+        *  - 位置在容器内部（absolute 相对登录卡片）
+        *  - 替换原"原型切换按钮"，改名为"弹出图形验证码"用于演示触发 */}
       <button
         type="button"
-        onClick={toggleScenario}
-        aria-label="切换演示场景"
-        title="切换演示场景（仅供设计演示）"
-        className="absolute right-4 bottom-[calc(80px+env(safe-area-inset-bottom))] z-40 flex h-11 items-center gap-1.5 rounded-full border border-[#E8D9B8] bg-white px-4 text-xs font-medium text-[#B8893D] shadow-md active:opacity-70"
+        onClick={() => {
+          setShowCaptcha(true)
+          setCaptcha('')
+          setCaptchaInvalid(false)
+        }}
+        aria-label="弹出图形验证码"
+        title="弹出图形验证码（仅供设计演示）"
+        className="absolute right-4 bottom-[calc(20px+env(safe-area-inset-bottom))] z-40 flex h-11 items-center gap-1.5 rounded-full border border-[#E8D9B8] bg-white px-4 text-xs font-medium text-[#B8893D] shadow-md active:opacity-70"
       >
-        <FlaskConical className="h-4 w-4" />
-        {scenario === 'normal' ? '正常状态' : '错误状态'}
+        <ImageIcon className="h-4 w-4" />
+        弹出图形验证码
       </button>
 
       {/* 绑定学校引导弹窗 */}

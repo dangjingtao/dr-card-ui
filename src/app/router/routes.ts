@@ -374,6 +374,16 @@ export const ROUTES: RouteMeta[] = [
     owner: '注册账号页（T037；卡博士淡金色风格：手机号 + 验证码 + 密码 + 二次确认密码；注册成功后 isRegistered=true 并弹窗引导绑定学校/专业/学号）',
   },
   {
+    path: '/legacy-profile/forgot-password',
+    title: '忘记密码',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T037',
+    entry: '登录页「忘记密码？」入口',
+    returnTo: '登录',
+    owner: '忘记密码页（T037；卡博士淡金色风格：手机号 + 短信验证码（演示固定 123456）+ 图形验证码（固定显示）+ 新密码 + 确认新密码，两个密码框均带小眼睛明密文切换；提交后弹窗"修改成功"并自动返回登录页）',
+  },
+  {
     path: '/legacy-profile/machine-pin',
     title: '消费密码',
     titleBar: 'hidden',

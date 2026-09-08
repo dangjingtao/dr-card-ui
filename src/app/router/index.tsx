@@ -64,6 +64,7 @@ import LoginPage from '../../pages/legacy/LoginPage'
 import EditProfile from '../../pages/legacy/EditProfile'
 import BindSchoolPage from '../../pages/legacy/BindSchoolPage'
 import RegisterPage from '../../pages/legacy/RegisterPage'
+import ForgotPasswordPage from '../../pages/legacy/ForgotPasswordPage'
 import ConsumePinPage from '../../pages/legacy/ConsumePinPage'
 import ScratchCardRechargePage from '../../pages/legacy/ScratchCardRechargePage'
 import MyCardsPage from '../../pages/legacy/MyCardsPage'
@@ -170,6 +171,8 @@ const customPages: Record<string, ReactElement> = {
   '/legacy-profile/bind-school': <BindSchoolPage />,
   /* T037：注册账号（手机号 + 验证码 + 密码 + 二次确认） */
   '/legacy-profile/register': <RegisterPage />,
+  /* T037：忘记密码（手机号 + 短信验证码（演示 123456）+ 图形验证码 + 新密码 + 确认密码） */
+  '/legacy-profile/forgot-password': <ForgotPasswordPage />,
   /* T039：机器端消费密码（手机尾号 + 6 位消费密码领取/核销） */
   '/legacy-profile/machine-pin': <ConsumePinPage />,
   /* T038：刮刮充值卡补全 */
