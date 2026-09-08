@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ChevronRight, PlayCircle, Share2, ShoppingBag, HelpCircle } from 'lucide-react'
 import PageContainer from '../../components/mobile/PageContainer'
 import { usePoints, dailyCheckIn, watchVideoReward } from './pointsStore'
-import polarBear from '../../assets/signin/polar-bear.png'
+import polarBear from '../../assets/signin/polar-bear.webp'
 
 /**
  * 每日签到 / 薅羊毛 主页（T025）
