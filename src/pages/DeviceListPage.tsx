@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, MapPin, ScanLine, X } from 'lucide-react'
 import PageContainer from '../components/mobile/PageContainer'
 import DeviceListWithAd from '../components/mobile/DeviceListWithAd'
+import { useUserInfo } from './legacy/userInfoStore'
 import {
   DEVICE_LISTS,
   DEVICE_THEMES,
@@ -26,6 +27,10 @@ export default function DeviceListPage() {
 
   const theme = DEVICE_THEMES[deviceType]
   const devices = DEVICE_LISTS[deviceType] ?? []
+
+  /* T036R2: 账户余额 pill 直接展示余额，不跳转学校账户/小票页 */
+  const currentUser = useUserInfo()
+  const balanceText = `¥ ${currentUser.balance.toFixed(2)}`
 
   const [scanTarget, setScanTarget] = useState<DeviceInfo | null>(null)
 
@@ -69,13 +74,15 @@ export default function DeviceListPage() {
           <h1 className="absolute left-1/2 -translate-x-1/2 text-lg font-semibold">
             {theme.pageTitle}
           </h1>
-          <button
-            type="button"
-            className="rounded-full bg-white/20 px-3 py-1.5 text-xs font-medium text-white backdrop-blur active:bg-white/30"
-            onClick={() => navigate('/legacy-profile/school-accounts')}
+          {/* T036R2：账户余额 pill —— 只读展示余额（¥ + 数字），不再跳转。
+            * 保留半透明白底 + 白字的 pill 视觉，与原按钮一致；移除 onClick 与可点击样式。 */}
+          <div
+            aria-label={`账户余额 ${balanceText}`}
+            className="flex items-center gap-1 rounded-full bg-white/20 px-3 py-1.5 text-xs font-medium text-white backdrop-blur"
           >
-            账户余额
-          </button>
+            <span className="text-white/80">余额</span>
+            <span className="font-semibold tabular-nums">{balanceText}</span>
+          </div>
         </div>
       </div>
 
@@ -107,17 +114,6 @@ export default function DeviceListPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <h3 className="truncate text-sm font-semibold text-gray-800">{device.name}</h3>
-                      <span
-                        className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                          device.status === 'idle'
-                            ? 'bg-green-100 text-green-700'
-                            : device.status === 'in-use'
-                              ? 'bg-orange-100 text-orange-700'
-                              : 'bg-gray-100 text-gray-500'
-                        }`}
-                      >
-                        {device.status === 'idle' ? '空闲' : device.status === 'in-use' ? '使用中' : '离线'}
-                      </span>
                     </div>
                     <div className="mt-1 flex items-center gap-1 text-xs text-gray-500">
                       <MapPin className="h-3 w-3 flex-none" />
@@ -128,23 +124,19 @@ export default function DeviceListPage() {
                     </div>
                   </div>
 
-                  {/* 右侧按钮/状态（T040：扫码启动/扫码取水） */}
-                  {device.status === 'idle' ? (
-                    <button
-                      type="button"
-                      onClick={() => handleScanStart(device)}
-                      className="flex-none rounded-full px-4 py-2 text-xs font-medium text-white shadow-sm active:opacity-90"
-                      style={{
-                        background: `linear-gradient(135deg, var(--device-400) 0%, var(--device-600) 100%)`,
-                      }}
-                    >
-                      {theme.buttonText}
-                    </button>
-                  ) : (
-                    <span className="flex-none rounded-full bg-gray-100 px-4 py-2 text-xs font-medium text-gray-500">
-                      使用中
-                    </span>
-                  )}
+                  {/* 右侧按钮（T040：扫码启动/扫码取水）
+                    * 2026-09-08：硬件设备不一定能显示使用状态，设备列表统一展示「扫码启动」按钮，
+                    * 不再根据 status 显示「使用中」灰态。 */}
+                  <button
+                    type="button"
+                    onClick={() => handleScanStart(device)}
+                    className="flex-none rounded-full px-4 py-2 text-xs font-medium text-white shadow-sm active:opacity-90"
+                    style={{
+                      background: `linear-gradient(135deg, var(--device-400) 0%, var(--device-600) 100%)`,
+                    }}
+                  >
+                    {theme.buttonText}
+                  </button>
                 </div>
               )}
             />

@@ -179,6 +179,25 @@
 | `47937f6` | T037 演示逻辑重写：任意账号密码直接登录 + 右下角演示态切换按钮 |
 | `b127b4e` | T037 我的页顶部摘要改两行展示 |
 | `8609160` | T037 学院也用 pill 样式 |
+| `6ad026d` | T037 R1-R5：登录页取消微信授权 / 新增完整忘记密码流程 / 阈值改 20 次 / 替换演示态切换按钮 |
+| `（待提交）` | T037 R6-R8：绑定学校页改为关键字弹出学校 + 三项必填校验 |
+
+## 迭代（T037R1-R8｜2026-09-08 与运营负责人沟通后 8 项增量改动）
+
+- 背景：与卡博士运营负责人 2026-09-08 沟通确认 8 项增量改动，统一作为本卡的 1-8 号增量任务（T037R1-T037R8）落到登录页体系内。涉及登录页、忘记密码页、绑定学校页三个入口，均为登录链路上的 UI/交互调整，与 T037 原 PRD 一脉相承。
+- **T037R1**：登录页删除微信授权按钮与 `handleWechatLogin`，登录态只走「手机号 + 密码」。
+- **T037R2**：新增完整忘记密码流程。路由 `/legacy-profile/forgot-password`，新文件 `src/pages/legacy/ForgotPasswordPage.tsx`。流程：手机号 → 60s 倒计时获取短信验证码（演示固定 `123456`）→ 图形验证码（固定显示，不走输错阈值）→ 新密码（带小眼睛）→ 确认新密码（带小眼睛）→「确定修改」→ 弹窗「修改成功」→ 自动 `replace` 跳回 `/legacy-profile/login`。
+- **T037R3**：忘记密码页「新密码 / 确认新密码」两个输入框右侧加 `Eye / EyeOff` 小眼睛图标，分别用 `showNew` / `showConfirm` 独立控制 `type="password"` / `type="text"`。
+- **T037R4**：登录页错误阈值 `MAX_ATTEMPTS_BEFORE_CAPTCHA = 20`（用户 2026-09-08 决定，演示态调大便于演示）；忘记密码流程中图形验证码**固定展示**，与登录页阈值逻辑解耦。
+- **T037R5**：登录页右下角「原型切换按钮」（`FlaskConical`，「正常状态 / 错误状态」）替换为「弹出图形验证码」按钮（`ImageIcon` + 「弹出图形验证码」）；位置由 `bottom-[calc(20px+env(safe-area-inset-bottom))]` 固定在登录容器内、不溢出；点击后强制把验证码面板显示出来（`setShowCaptcha(true)`）便于演示触发。
+- **T037R6**：绑定学校页「学校」字段改为关键字弹出相应选择项形式 —— 输入框受控 `schoolQuery` + `useMemo` 实时过滤 `SCHOOL_OPTIONS`（空关键字时显示前 8 所作为热门候选），候选列表渲染在输入框正下方；用户点击候选项即填入，不再要求下拉全列选择或全名称输入。
+- **T037R7**：绑定学校页「确认绑定」按钮 `disabled = submitting || !canSubmit`，`canSubmit = school.trim().length > 0 && academy.trim().length > 0 && /^\d{8,20}$/.test(studentId.trim())`，三项都填完才允许点击；学校 / 学院 / 学号三个 label 后面加红色 `*` 标识必填。
+- **T037R8**：`SCHOOL_OPTIONS` 从 4 所扩充到 **27 所**，覆盖「广州 / 华南 / 华工 / 华师 / 中山 / 暨南 / 广东 / 汕头 / 深圳 / 南方 / 师范 / 武汉」等词根，便于任意关键字都能命中候选。
+- 工程门：`npm run typecheck` ✅ 通过；`npm run build` ✅ 通过（1.52s / 1.52s）。
+- 路由与状态更新：`src/app/router/index.tsx` 新增 `ForgotPasswordPage` 的 import 与 `'/legacy-profile/forgot-password': <ForgotPasswordPage />` 路由项；`src/app/router/routes.ts` 新增对应 `RouteMeta`，task=T037、owner 描述同步更新。
+- 任务编号：
+  - **T037R1-T037R5** 在 `6ad026d` commit 中；
+  - **T037R6-T037R8** 在 `（待提交）` 提交号对应的 commit 中。
 
 ## PRD 验收（2026-09-07）
 

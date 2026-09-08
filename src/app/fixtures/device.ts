@@ -79,7 +79,8 @@ export const DEVICE_LISTS: Record<DeviceType, DeviceInfo[]> = {
       name: 'A栋1楼302室',
       location: 'A栋1楼',
       code: 'B42000060F',
-      status: 'in-use',
+      /* 2026-09-08：硬件不一定能回传使用状态，列表不再区分 in-use，统一 idle */
+      status: 'idle',
     },
     {
       id: 'shower-003',
