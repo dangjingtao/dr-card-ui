@@ -65,6 +65,7 @@ export const DEVICE_THEMES: Record<DeviceType, DeviceThemeConfig> = {
 }
 
 export const DEVICE_LISTS: Record<DeviceType, DeviceInfo[]> = {
+  /* T041：淋浴扩到 4 个设备，用于演示「≥3 时广告位于第 2、3 个设备中间」 */
   shower: [
     {
       id: 'shower-001',
@@ -80,7 +81,22 @@ export const DEVICE_LISTS: Record<DeviceType, DeviceInfo[]> = {
       code: 'B42000060F',
       status: 'in-use',
     },
+    {
+      id: 'shower-003',
+      name: 'B栋1楼103室',
+      location: 'B栋1楼',
+      code: 'B42000061G',
+      status: 'idle',
+    },
+    {
+      id: 'shower-004',
+      name: 'B栋2楼205室',
+      location: 'B栋2楼',
+      code: 'B42000062H',
+      status: 'idle',
+    },
   ],
+  /* T041：洗烘仅 1 个设备，演示「<3 时广告位末尾展示」 */
   laundry: [
     {
       id: 'laundry-001',
@@ -89,14 +105,8 @@ export const DEVICE_LISTS: Record<DeviceType, DeviceInfo[]> = {
       code: 'B42000071G',
       status: 'idle',
     },
-    {
-      id: 'laundry-002',
-      name: 'B栋1楼洗烘区',
-      location: 'B栋1楼',
-      code: 'B42000072H',
-      status: 'in-use',
-    },
   ],
+  /* T041：饮水仅 1 个设备，演示「<3 时广告位末尾展示」 */
   water: [
     {
       id: 'water-001',
@@ -105,14 +115,8 @@ export const DEVICE_LISTS: Record<DeviceType, DeviceInfo[]> = {
       code: 'B42000083I',
       status: 'idle',
     },
-    {
-      id: 'water-002',
-      name: 'B栋3楼饮水机',
-      location: 'B栋3楼走廊',
-      code: 'B42000084J',
-      status: 'idle',
-    },
   ],
+  /* T041：吹风仅 1 个设备，演示「<3 时广告位末尾展示」 */
   hairdryer: [
     {
       id: 'hairdryer-001',
@@ -120,13 +124,6 @@ export const DEVICE_LISTS: Record<DeviceType, DeviceInfo[]> = {
       location: 'A栋1楼淋浴区',
       code: 'B42000095K',
       status: 'idle',
-    },
-    {
-      id: 'hairdryer-002',
-      name: 'B栋2楼吹风机',
-      location: 'B栋2楼',
-      code: 'B42000096L',
-      status: 'in-use',
     },
   ],
 }

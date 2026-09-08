@@ -102,3 +102,17 @@
   --cd-button-gradient: linear-gradient(135deg, var(--device-400) 0%, var(--device-600) 100%);
   --cd-button-pressed: var(--device-700);
 }
+
+/* T041：广告位主题（与设备卡片等高，左上角带「广告」角标） */
+.cd-app {
+  --ad-banner-bg-from: #FFF6E0;
+  --ad-banner-bg-to: #FFE8B8;
+  --ad-banner-border: #F2D58A;
+  --ad-banner-title: #6B4A12;
+  --ad-banner-subtitle: #9A7A33;
+  --ad-banner-badge-bg: #FFE6A6;
+  --ad-banner-badge-text: #8A5A10;
+  --ad-banner-cta-from: #FFD27A;
+  --ad-banner-cta-to: #E0A23A;
+  --ad-banner-cta-text: #4A3206;
+}

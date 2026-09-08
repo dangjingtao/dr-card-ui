@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, MapPin, ScanLine, X } from 'lucide-react'
 import PageContainer from '../components/mobile/PageContainer'
+import DeviceListWithAd from '../components/mobile/DeviceListWithAd'
 import {
   DEVICE_LISTS,
   DEVICE_THEMES,
@@ -10,11 +11,12 @@ import {
 } from '../app/fixtures/device'
 
 /**
- * 设备列表页（T040：扫码启动版）
+ * 设备列表页（T040：扫码启动版 + T041：广告位插入策略）
  * - 淋浴 / 洗烘 / 饮水 / 吹风 共用此组件
  * - 通过路由参数 :type 切换设备类型和主题色
  * - 卡片结构：设备图标 + 名称/位置/编号 + 状态 + 「扫码启动/扫码取水」按钮
  * - 卡片右侧按钮点击 → 弹本地扫码 BottomSheet（含模拟扫码完成）
+ * - T041：设备列表中按数量插入广告位（≥3 中间 / <3 末尾）
  * - 顶部固定扫码按钮保持不变
  */
 export default function DeviceListPage() {
@@ -77,67 +79,75 @@ export default function DeviceListPage() {
         </div>
       </div>
 
-      {/* 设备列表 */}
+      {/* 设备列表（T041：按数量插入广告位） */}
       <div className="flex-1 overflow-y-auto bg-[#F5F6FA]">
         <PageContainer inset={false} className="py-4">
-          <div className="space-y-3 px-4">
-            {devices.map((device) => (
-              <div
-                key={device.id}
-                className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm"
-              >
-                {/* 设备图标 */}
-                <div
-                  className="flex h-14 w-14 flex-none items-center justify-center rounded-xl"
-                  style={{ background: theme.iconBg }}
-                >
-                  <DeviceIcon type={deviceType} />
-                </div>
-
-                {/* 设备信息 */}
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="truncate text-sm font-semibold text-gray-800">{device.name}</h3>
-                    <span
-                      className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                        device.status === 'idle'
-                          ? 'bg-green-100 text-green-700'
-                          : device.status === 'in-use'
-                            ? 'bg-orange-100 text-orange-700'
-                            : 'bg-gray-100 text-gray-500'
-                      }`}
-                    >
-                      {device.status === 'idle' ? '空闲' : device.status === 'in-use' ? '使用中' : '离线'}
-                    </span>
-                  </div>
-                  <div className="mt-1 flex items-center gap-1 text-xs text-gray-500">
-                    <MapPin className="h-3 w-3 flex-none" />
-                    <span className="truncate">{device.location}</span>
-                  </div>
-                  <div className="mt-0.5 text-[11px] text-gray-400">
-                    编号：{device.code}
-                  </div>
-                </div>
-
-                {/* 右侧按钮/状态（T040：扫码启动/扫码取水） */}
-                {device.status === 'idle' ? (
-                  <button
-                    type="button"
-                    onClick={() => handleScanStart(device)}
-                    className="flex-none rounded-full px-4 py-2 text-xs font-medium text-white shadow-sm active:opacity-90"
-                    style={{
-                      background: `linear-gradient(135deg, var(--device-400) 0%, var(--device-600) 100%)`,
-                    }}
+          <div className="px-4">
+            <DeviceListWithAd
+              items={devices}
+              getKey={(device) => device.id}
+              className="space-y-3"
+              adProps={{
+                title: `${theme.label}设备 · 限时充值福利`,
+                subtitle: '满 50 减 8，新生专享 7 天',
+                ctaText: '去看看',
+                slotId: `device-list-${deviceType}`,
+              }}
+              renderItem={(device) => (
+                <div className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm">
+                  {/* 设备图标 */}
+                  <div
+                    className="flex h-14 w-14 flex-none items-center justify-center rounded-xl"
+                    style={{ background: theme.iconBg }}
                   >
-                    {theme.buttonText}
-                  </button>
-                ) : (
-                  <span className="flex-none rounded-full bg-gray-100 px-4 py-2 text-xs font-medium text-gray-500">
-                    使用中
-                  </span>
-                )}
-              </div>
-            ))}
+                    <DeviceIcon type={deviceType} />
+                  </div>
+
+                  {/* 设备信息 */}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="truncate text-sm font-semibold text-gray-800">{device.name}</h3>
+                      <span
+                        className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                          device.status === 'idle'
+                            ? 'bg-green-100 text-green-700'
+                            : device.status === 'in-use'
+                              ? 'bg-orange-100 text-orange-700'
+                              : 'bg-gray-100 text-gray-500'
+                        }`}
+                      >
+                        {device.status === 'idle' ? '空闲' : device.status === 'in-use' ? '使用中' : '离线'}
+                      </span>
+                    </div>
+                    <div className="mt-1 flex items-center gap-1 text-xs text-gray-500">
+                      <MapPin className="h-3 w-3 flex-none" />
+                      <span className="truncate">{device.location}</span>
+                    </div>
+                    <div className="mt-0.5 text-[11px] text-gray-400">
+                      编号：{device.code}
+                    </div>
+                  </div>
+
+                  {/* 右侧按钮/状态（T040：扫码启动/扫码取水） */}
+                  {device.status === 'idle' ? (
+                    <button
+                      type="button"
+                      onClick={() => handleScanStart(device)}
+                      className="flex-none rounded-full px-4 py-2 text-xs font-medium text-white shadow-sm active:opacity-90"
+                      style={{
+                        background: `linear-gradient(135deg, var(--device-400) 0%, var(--device-600) 100%)`,
+                      }}
+                    >
+                      {theme.buttonText}
+                    </button>
+                  ) : (
+                    <span className="flex-none rounded-full bg-gray-100 px-4 py-2 text-xs font-medium text-gray-500">
+                      使用中
+                    </span>
+                  )}
+                </div>
+              )}
+            />
           </div>
 
           {/* 底部留白 */}

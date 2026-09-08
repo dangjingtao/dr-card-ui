@@ -11,6 +11,7 @@ import {
   Wind,
 } from 'lucide-react'
 import { DEVICE_THEMES } from '../../app/fixtures/device'
+import DeviceListWithAd from '../../components/mobile/DeviceListWithAd'
 
 const DEVICE_ICONS = {
   shower: Droplets,
@@ -132,61 +133,69 @@ export default function DeviceListSimplePage() {
         </div>
       </div>
 
-      {/* 设备列表 */}
+      {/* 设备列表（T041：按数量插入广告位） */}
       {devices.length > 0 ? (
-        <div className="flex-1 space-y-3 p-4">
-          {devices.map((device) => (
-            <div
-              key={device.id}
-              className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm"
-            >
-              {/* 设备图标 */}
-              <DeviceIcon type={device.type} />
+        <div className="flex-1 p-4">
+          <DeviceListWithAd
+            items={devices}
+            getKey={(device) => device.id}
+            className="space-y-3"
+            adProps={{
+              title: isFavorite ? '收藏设备专享福利' : '常用设备专享福利',
+              subtitle: '高频设备优先领券，限时 7 天',
+              ctaText: '去看看',
+              slotId: `device-list-${type}`,
+            }}
+            renderItem={(device) => (
+              <div className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm">
+                {/* 设备图标 */}
+                <DeviceIcon type={device.type} />
 
-              {/* 设备信息 */}
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="truncate text-sm font-semibold text-text-primary">
-                    {device.name}
-                  </h3>
-                  <span
-                    className={`flex shrink-0 items-center gap-0.5 rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                      isFavorite
-                        ? 'bg-amber-100 text-amber-700'
-                        : 'bg-blue-100 text-blue-700'
-                    }`}
-                  >
-                    <TagIcon className="h-3 w-3" fill={isFavorite ? 'currentColor' : 'none'} />
-                    {isFavorite ? '已收藏' : '常用'}
-                  </span>
-                </div>
-                <div className="mt-1 flex items-center gap-1 text-xs text-text-tertiary">
-                  <MapPin className="h-3 w-3 flex-none" />
-                  <span className="truncate">{device.location}</span>
-                </div>
-                <div className="mt-0.5 text-[11px] text-text-tertiary/70">
-                  编号：{device.code}
-                </div>
-                {device.lastUsed && (
-                  <div className="mt-1 text-[11px] text-text-tertiary/50">
-                    最近使用：{device.lastUsed}
+                {/* 设备信息 */}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="truncate text-sm font-semibold text-text-primary">
+                      {device.name}
+                    </h3>
+                    <span
+                      className={`flex shrink-0 items-center gap-0.5 rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                        isFavorite
+                          ? 'bg-amber-100 text-amber-700'
+                          : 'bg-blue-100 text-blue-700'
+                      }`}
+                    >
+                      <TagIcon className="h-3 w-3" fill={isFavorite ? 'currentColor' : 'none'} />
+                      {isFavorite ? '已收藏' : '常用'}
+                    </span>
                   </div>
-                )}
-              </div>
+                  <div className="mt-1 flex items-center gap-1 text-xs text-text-tertiary">
+                    <MapPin className="h-3 w-3 flex-none" />
+                    <span className="truncate">{device.location}</span>
+                  </div>
+                  <div className="mt-0.5 text-[11px] text-text-tertiary/70">
+                    编号：{device.code}
+                  </div>
+                  {device.lastUsed && (
+                    <div className="mt-1 text-[11px] text-text-tertiary/50">
+                      最近使用：{device.lastUsed}
+                    </div>
+                  )}
+                </div>
 
-              {/* 右侧星星 */}
-              <button
-                type="button"
-                className="flex h-8 w-8 flex-none items-center justify-center text-amber-400"
-              >
-                <Star
-                  className="h-5 w-5"
-                  fill={isFavorite ? 'currentColor' : 'none'}
-                  strokeWidth={1.5}
-                />
-              </button>
-            </div>
-          ))}
+                {/* 右侧星星 */}
+                <button
+                  type="button"
+                  className="flex h-8 w-8 flex-none items-center justify-center text-amber-400"
+                >
+                  <Star
+                    className="h-5 w-5"
+                    fill={isFavorite ? 'currentColor' : 'none'}
+                    strokeWidth={1.5}
+                  />
+                </button>
+              </div>
+            )}
+          />
         </div>
       ) : (
         <div className="flex flex-1 flex-col items-center justify-center py-16 text-text-tertiary">
