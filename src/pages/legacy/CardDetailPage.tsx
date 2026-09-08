@@ -216,13 +216,8 @@ export default function CardDetailPage() {
         </div>
         <span className="mx-2 h-4 w-px shrink-0 bg-divider" />
         <div className="flex justify-center">
-          <button
-            type="button"
-            onClick={() => navigate(`/legacy-profile/my-cards/${id}/topup`)}
-            className="text-sm text-[#B8893D] active:opacity-70"
-          >
-            设置消费卡
-          </button>
+          {/* T031 2026-09-08：设置消费卡暂不可点（业务规则未拍板） */}
+          <span className="cursor-not-allowed text-sm text-text-tertiary">设置消费卡</span>
         </div>
       </div>
 
