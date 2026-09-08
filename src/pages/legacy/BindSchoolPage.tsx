@@ -3,13 +3,18 @@ import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, Loader2, Search, X } from 'lucide-react'
 import { useUserInfo, userInfoActions } from './userInfoStore'
 
-/* T037：登录后引导绑定学校/专业/学号（卡博士淡金色风格）
+/* T037R10：绑定学校信息（卡博士淡金色风格）
  * -------------------------------------------------------------
- * 关键改动（2026-09-08）：
- *   - 学校改为「关键字弹出相应选择项」形式：用户输入关键字（如"广州"），
- *     下方实时出现匹配的子集，用户点选即填入，不再下拉找一大轮。
- *   - 学院、学号输入框保留常规输入。
- *   - 三项（学校/学院/学号）均为必填，全部填写完成才能点击「确认绑定」。
+ * 背景：与运营负责人沟通后确认，绑定学校的初衷是统计数据，
+ *   只需收集「学校 + 身份（老师/学生） + 年级（仅学生）」，
+ *   去掉学院、学号。
+ *
+ * 表单字段：
+ *   1. 学校（必填）：关键字搜索 + 候选弹出，点选即填入
+ *   2. 身份（必填）：老师 / 学生，二选一单选
+ *   3. 年级（学生必填，老师不显示）：大一 ~ 大五 / 研一 ~ 研三 / 博士
+ *
+ * 「确认绑定」：三项填完才可点击；提交后写入 userInfoStore，回「我的」。
  */
 
 const SCHOOL_OPTIONS = [
@@ -41,22 +46,36 @@ const SCHOOL_OPTIONS = [
   '武汉大学',
 ]
 
+const GRADE_OPTIONS = [
+  '大一',
+  '大二',
+  '大三',
+  '大四',
+  '大五',
+  '研一',
+  '研二',
+  '研三',
+  '博士',
+]
+
 export default function BindSchoolPage() {
   const navigate = useNavigate()
   const current = useUserInfo()
 
-  /* 学校：使用 input 受控 + 关键字过滤的下拉候选 */
+  /* 1. 学校：关键字搜索 + 候选弹出 */
   const [school, setSchool] = useState(current.school || '')
   const [schoolQuery, setSchoolQuery] = useState(current.school || '')
   const [showSchoolOptions, setShowSchoolOptions] = useState(false)
   const schoolWrapRef = useRef<HTMLDivElement>(null)
 
-  const [academy, setAcademy] = useState(current.academy || '')
-  const [studentId, setStudentId] = useState(current.studentId || '')
+  /* 2. 身份：老师 / 学生 */
+  const [role, setRole] = useState<'teacher' | 'student'>(current.role || 'student')
+
+  /* 3. 年级：仅学生显示 */
+  const [grade, setGrade] = useState(current.grade || '')
 
   const [schoolErr, setSchoolErr] = useState('')
-  const [academyErr, setAcademyErr] = useState('')
-  const [studentIdErr, setStudentIdErr] = useState('')
+  const [gradeErr, setGradeErr] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   /* 关键字过滤：空关键字时显示前 8 项作为热门候选，
@@ -67,8 +86,12 @@ export default function BindSchoolPage() {
     return SCHOOL_OPTIONS.filter((s) => s.includes(q))
   }, [schoolQuery])
 
-  const canSubmit =
-    school.trim().length > 0 && academy.trim().length > 0 && /^\d{8,20}$/.test(studentId.trim())
+  /* 提交门槛：学校必选；学生还需选年级 */
+  const canSubmit = useMemo(() => {
+    if (!school.trim()) return false
+    if (role === 'student' && !grade) return false
+    return true
+  }, [school, role, grade])
 
   const handleSchoolPick = (opt: string) => {
     setSchool(opt)
@@ -79,8 +102,7 @@ export default function BindSchoolPage() {
 
   const handleSubmit = async () => {
     setSchoolErr('')
-    setAcademyErr('')
-    setStudentIdErr('')
+    setGradeErr('')
     let ok = true
     if (!school.trim()) {
       setSchoolErr('请输入并选择学校')
@@ -89,12 +111,8 @@ export default function BindSchoolPage() {
       setSchoolErr('请从候选列表中选择一所学校')
       ok = false
     }
-    if (!academy.trim()) {
-      setAcademyErr('请输入学院')
-      ok = false
-    }
-    if (!/^\d{8,20}$/.test(studentId.trim())) {
-      setStudentIdErr('请输入 8-20 位数字学号')
+    if (role === 'student' && !grade) {
+      setGradeErr('请选择年级')
       ok = false
     }
     if (!ok) return
@@ -104,8 +122,8 @@ export default function BindSchoolPage() {
     await new Promise((resolve) => setTimeout(resolve, 800))
     userInfoActions.update({
       school: school.trim(),
-      academy: academy.trim(),
-      studentId: studentId.trim(),
+      role,
+      grade: role === 'student' ? grade : '',
       isRegistered: true,
     })
     setSubmitting(false)
@@ -140,12 +158,12 @@ export default function BindSchoolPage() {
       {/* 提示区 */}
       <div className="px-6 pt-4 pb-2">
         <div className="rounded-xl bg-[#FFF3D9] px-4 py-3 text-sm text-[#A3691F]">
-          完善学校、专业和学号信息，便于享受校园卡权益与专属服务。
+          完善学校与身份信息，便于享受校园卡权益与专属服务。
         </div>
       </div>
 
       {/* 表单 */}
-      <div className="space-y-4 px-6 pt-2">
+      <div className="space-y-5 px-6 pt-2">
         {/* 学校：关键字搜索 + 候选列表 */}
         <div className="space-y-1.5" ref={schoolWrapRef}>
           <label className="text-sm font-medium text-text-primary">
@@ -223,51 +241,66 @@ export default function BindSchoolPage() {
           )}
         </div>
 
-        {/* 学院 */}
-        <div className="space-y-1.5">
+        {/* 身份：老师 / 学生 二选一 */}
+        <div className="space-y-2">
           <label className="text-sm font-medium text-text-primary">
-            学院<span className="ml-0.5 text-danger-text">*</span>
+            身份<span className="ml-0.5 text-danger-text">*</span>
           </label>
-          <input
-            value={academy}
-            onChange={(e) => setAcademy(e.target.value)}
-            placeholder="请输入学院，如：计算机科学与网络工程学院"
-            className={`h-12 w-full rounded-xl border bg-white px-4 text-base outline-none transition placeholder:text-[#B8893D] focus:border-[#D4A853] ${
-              academyErr ? 'border-danger' : 'border-[#E8D9B8]'
-            }`}
-          />
-          {academyErr && <span className="text-xs text-danger-text">{academyErr}</span>}
+          <div className="grid grid-cols-2 gap-3">
+            {(['teacher', 'student'] as const).map((r) => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => setRole(r)}
+                className={`flex h-12 items-center justify-center rounded-xl border text-base font-medium transition ${
+                  role === r
+                    ? 'border-[#D4A853] bg-[#FFF3D9] text-[#A3691F] shadow-sm'
+                    : 'border-[#E8D9B8] bg-white text-text-primary active:bg-[#FFF3D9]'
+                }`}
+              >
+                {r === 'teacher' ? '老师' : '学生'}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* 学号 */}
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-text-primary">
-            学号<span className="ml-0.5 text-danger-text">*</span>
-          </label>
-          <input
-            value={studentId}
-            onChange={(e) => setStudentId(e.target.value.replace(/\D/g, '').slice(0, 20))}
-            placeholder="请输入学号"
-            inputMode="numeric"
-            className={`h-12 w-full rounded-xl border bg-white px-4 text-base outline-none transition placeholder:text-[#B8893D] focus:border-[#D4A853] ${
-              studentIdErr ? 'border-danger' : 'border-[#E8D9B8]'
-            }`}
-          />
-          {studentIdErr && <span className="text-xs text-danger-text">{studentIdErr}</span>}
-        </div>
+        {/* 年级：仅学生身份显示 */}
+        {role === 'student' && (
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-text-primary">
+              年级<span className="ml-0.5 text-danger-text">*</span>
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {GRADE_OPTIONS.map((g) => (
+                <button
+                  key={g}
+                  type="button"
+                  onClick={() => {
+                    setGrade(g)
+                    setGradeErr('')
+                  }}
+                  className={`flex h-10 items-center justify-center rounded-xl border text-sm font-medium transition ${
+                    grade === g
+                      ? 'border-[#D4A853] bg-[#FFF3D9] text-[#A3691F] shadow-sm'
+                      : 'border-[#E8D9B8] bg-white text-text-primary active:bg-[#FFF3D9]'
+                  }`}
+                >
+                  {g}
+                </button>
+              ))}
+            </div>
+            {gradeErr && <span className="text-xs text-danger-text">{gradeErr}</span>}
+          </div>
+        )}
       </div>
 
-      {/* 主操作：三项全部填完才可点击 */}
+      {/* 主操作：全部填完才可点击 */}
       <div className="mt-8 px-6">
         <button
           type="button"
           onClick={handleSubmit}
           disabled={submitting || !canSubmit}
-          className={`flex h-12 w-full items-center justify-center gap-2 rounded-full text-base font-semibold text-white shadow-md transition active:opacity-90 disabled:opacity-50 ${
-            canSubmit
-              ? 'bg-gradient-to-r from-[#D4A853] to-[#E8C97A]'
-              : 'bg-gradient-to-r from-[#D4A853] to-[#E8C97A]'
-          }`}
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#D4A853] to-[#E8C97A] text-base font-semibold text-white shadow-md transition active:opacity-90 disabled:opacity-50"
         >
           {submitting && <Loader2 className="h-5 w-5 animate-spin" />}
           {submitting ? '绑定中' : '确认绑定'}

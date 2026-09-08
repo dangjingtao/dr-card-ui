@@ -198,7 +198,39 @@
 - 路由与状态更新：`src/app/router/index.tsx` 新增 `ForgotPasswordPage` 的 import 与 `'/legacy-profile/forgot-password': <ForgotPasswordPage />` 路由项；`src/app/router/routes.ts` 新增对应 `RouteMeta`，task=T037、owner 描述同步更新。
 - 任务编号：
   - **T037R1-T037R5** 在 `6ad026d` commit 中；
-  - **T037R6-T037R8** 在 `（待提交）` 提交号对应的 commit 中。
+  - **T037R6-T037R8** 在 `ff8df46` commit 中。
+
+## 迭代（T037R9｜2026-09-08 登录页账号输入改为「请输入手机号」）
+
+- **T037R9**：登录页「账号」输入框 placeholder 由 `请输入账号` 改为 `请输入手机号`；`onChange` 收紧为 `replace(/\D/g, '').slice(0, 11)`（只允许数字、最长 11 位）；新增 `inputMode="numeric"`（移动端键盘弹数字键）；`handleLogin` 空账号报错文案同步改为 `请输入手机号`。
+- 提交号：`4edd8a4`
+- 工程门：`npm run typecheck` ✅ 通过；`npm run build` ✅ 通过（1.79s）。
+
+## 迭代（T037R10｜2026-09-08 绑定学校简化为 学校+身份+年级）
+
+- 背景：与运营负责人再次聚焦绑定学校功能，确认初衷是为了统计数据，只需收集学校 + 身份 + 年级，去掉学院、学号。
+- **T037R10** 改动：
+  - `src/pages/legacy/userInfoStore.ts`：
+    - `UserInfo` 新增 `role: 'teacher' | 'student'` 与 `grade: string` 字段。
+    - `academy`、`studentId` 标为 `@deprecated`（保留字段兼容旧数据，不再使用）。
+    - `INITIAL_USER_INFO` 默认 `role: 'student'`、`grade: ''`、`school: ''`、`academy: ''`、`studentId: ''`。
+  - `src/pages/legacy/BindSchoolPage.tsx`（重写）：
+    - 字段从 3 项（学校/学院/学号）改为 **3 项（学校/身份/年级）**，但含义不同：
+      1. **学校**（必填）：关键字搜索 + 候选弹出（继承 T037R6）。
+      2. **身份**（必填）：老师 / 学生 二选一单选（2 列网格按钮）。
+      3. **年级**（学生必填，老师身份不显示）：大一 / 大二 / 大三 / 大四 / 大五 / 研一 / 研二 / 研三 / 博士（共 9 个，3 列网格按钮）。
+    - 「确认绑定」按钮：学校 + 身份必填；学生身份还需年级 — 全部填完才可点击。
+    - 提交后写入 `userInfoActions.update({ school, role, grade })`，跳回 `/legacy-profile`。
+  - `src/pages/legacy/ProfileHome.tsx`：
+    - 用户信息区学校摘要由「学校+学院+学号 两行」改为**一行：学校 + 年级（学生身份时）**。
+    - 老师身份只展示学校 pill；学生身份展示学校 pill + 年级 pill。
+    - 点击仍跳 `/legacy-profile/info`（绑定学校页入口）。
+- 提交号：待提交
+- 工程门：`npm run typecheck` ✅ 通过；`npm run build` ✅ 通过（1.50s）。
+- 影响范围：
+  - 绑定学校页（`/legacy-profile/bind-school`）整体重构。
+  - 「我的」页（`/legacy-profile`）学校信息展示简化。
+  - 用户信息 store 字段扩展（向后兼容，旧字段保留）。
 
 ## PRD 验收（2026-09-07）
 

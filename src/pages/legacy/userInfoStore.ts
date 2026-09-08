@@ -7,6 +7,8 @@
  */
 import { create } from './createSimpleStore'
 
+export type UserRole = 'teacher' | 'student'
+
 export interface UserInfo {
   avatar: string
   username: string
@@ -15,9 +17,15 @@ export interface UserInfo {
   phone: string
   email: string
   account: string
+  /** @deprecated T037R10 后不再收集学号，仅保留字段兼容旧数据 */
   studentId: string
   school: string
+  /** @deprecated T037R10 后不再收集学院，仅保留字段兼容旧数据 */
   academy: string
+  /** T037R10：身份（老师 / 学生） */
+  role: UserRole
+  /** T037R10：年级（仅学生身份），如：大一 / 大二 / ... / 博士 */
+  grade: string
   /** 充值账户余额（T028 退款原路返回到此账户） */
   balance: number
   /**
@@ -43,9 +51,11 @@ const INITIAL_USER_INFO: UserInfo = {
   phone: '15047757139',
   email: '',
   account: 'K011079469',
-  studentId: '20221145141215',
-  school: '广州大学',
-  academy: '计算机科学与网络工程学院',
+  studentId: '',
+  school: '',
+  academy: '',
+  role: 'student',
+  grade: '',
   balance: 100.0,
   isRegistered: false,
   pin: '000000',

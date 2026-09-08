@@ -104,31 +104,19 @@ export default function ProfileHome() {
           </div>
         </div>
 
-        {/* T037：学校 / 学院 / 学号摘要
-         * 拆两行展示避免一行过挤：
-         *  - 第一行：学校 · 学院
-         *  - 第二行：学号
-         * 各项空值时只隐藏对应行/项，不出现孤立分隔符 */}
-        {(userInfo.school || userInfo.academy || userInfo.studentId) && (
+        {/* T037R10：学校 + 年级（学生身份时）摘要
+         * - 老师：只展示学校
+         * - 学生：展示学校 + 年级
+         * 点击进入绑定学校页（修改） */}
+        {userInfo.school && (
           <button
             type="button"
             onClick={() => navigate('/legacy-profile/info')}
-            className="mt-3 flex w-full flex-col items-start gap-1 text-left text-sm text-white/85 active:opacity-80"
+            className="mt-3 flex w-full flex-wrap items-center gap-1.5 text-left text-sm text-white/85 active:opacity-80"
           >
-            {(userInfo.school || userInfo.academy) && (
-              <span className="flex w-full flex-wrap items-center gap-1.5">
-                {userInfo.school && (
-                  <span className="shrink-0 rounded-full bg-white/20 px-2 py-0.5">{userInfo.school}</span>
-                )}
-                {userInfo.academy && (
-                  <span className="min-w-0 max-w-full shrink truncate rounded-full bg-white/20 px-2 py-0.5">
-                    {userInfo.academy}
-                  </span>
-                )}
-              </span>
-            )}
-            {userInfo.studentId && (
-              <span className="shrink-0 rounded-full bg-white/20 px-2 py-0.5">学号 {userInfo.studentId}</span>
+            <span className="shrink-0 rounded-full bg-white/20 px-2 py-0.5">{userInfo.school}</span>
+            {userInfo.role === 'student' && userInfo.grade && (
+              <span className="shrink-0 rounded-full bg-white/20 px-2 py-0.5">{userInfo.grade}</span>
             )}
           </button>
         )}
