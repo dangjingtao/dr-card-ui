@@ -90,7 +90,8 @@ export default function MobileLayout() {
 
   return (
     <div className="app-background flex h-dvh flex-col overflow-hidden pt-[env(safe-area-inset-top)] text-text-primary">
-      <div className="shrink-0">
+      {/* T013R7：min-w-0 防止 TitleBar 第三列 action 被撑大撑出页面右侧 */}
+      <div className="min-w-0 shrink-0">
         <StatusBar />
         {titleBarMode !== 'hidden' && (
           <TitleBar

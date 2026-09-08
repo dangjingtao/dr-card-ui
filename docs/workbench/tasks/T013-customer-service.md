@@ -202,6 +202,30 @@
 - 工程门：`npm run typecheck` ✅ 通过；`npm run build` ✅ 通过（1.52s）。
 - 任务编号：**T013R6**（T013 的 6 号增量任务卡）。
 - 状态影响：T013 原 `Accepted` 状态不变；本次为 TitleBar 槽位微调，对所有使用 `actionWide` 的页面生效，但仅放宽（不会引入回归）。
+
+## 迭代（T013R7｜2026-09-08 TitleBar actionWide 槽位改为 96px 对称，pill 不溢出右侧）
+
+- 背景：用户 2026-09-08 反馈 T013R6 方案中「企微客服」pill 右侧超出页面（截图显示 TitleBar 被 pill 撑出容器）。根因：`grid-cols-[72px_minmax(0,1fr)_minmax(96px,auto)]` 第三列 `auto` 允许列宽随内容自由增长，在窄屏下会撑破 grid 容器，导致 pill 溢出页面右侧。
+- 改动：
+  - `src/components/mobile/TitleBar.tsx`：
+    - `actionWide` 三列由 `grid-cols-[72px_minmax(0,1fr)_minmax(96px,auto)]` 改为 `grid-cols-[96px_minmax(0,1fr)_96px]`。
+    - 左右槽位**统一 96px**：刚好容纳"图标 + 4 字文本"（如「企微客服」pill），文字自然横向、不被换行或裁剪；左右对称保证标题**严格居中**；固定宽度彻底避免列内容撑破 grid。
+    - 返回按钮由直接 `button` 改为包一层 `flex justify-start`，在 96px 左列中靠左对齐，视觉不漂移。
+    - action 容器由 `min-w-0 max-w-full overflow-hidden` 简化回 `flex h-9 items-center justify-end`（因为列宽固定 96px，不再需要 overflow 兜底）。
+  - `src/layouts/MobileLayout.tsx`：
+    - StatusBar + TitleBar 外层 `shrink-0` 追加 `min-w-0`（防御性，避免被内部撑大）。
+- 对通知页的影响：
+  - 通知页 `isNotificationsPage` 也使用 `actionWide`，"一键已读 / 全部已读"按钮在 96px 槽位中靠右对齐，文字足够放（72px 时也能放）。
+  - 左列由 72px 变为 96px，返回按钮（通知页是"返回"还是"一键已读"在右）—— 通知页 back=true 且 actionWide=true，所以左列是返回按钮 96px、右列是"一键已读"96px，标题在中间严格居中。
+- 与前序 R 的演进：
+  - **T013R3**：壳层 TitleBar 接管 pill（actionWide 72px 槽位，文字被挤）。
+  - **T013R4**：pill 撤回到页内。
+  - **T013R5**：pill 重新加回 TitleBar 右侧（仍 72px 槽位）。
+  - **T013R6**：放宽槽位至 `minmax(96px, auto)`，pill 可横向，但 auto 导致溢出。
+  - **T013R7（本次）**：槽位固定 96px 对称，pill 文字横向 + 不溢出 + 标题居中。
+- 工程门：`npm run typecheck` ✅ 通过；`npm run build` ✅ 通过（1.48s）。
+- 任务编号：**T013R7**（T013 的 7 号增量任务卡）。
+- 状态影响：T013 原 `Accepted` 状态不变；本次修复 T013R6 引入的溢出问题，最终形态为 96px 对称槽位。
 - 外部能力失败有明确回退。
 
 ## 必交证据

@@ -29,11 +29,12 @@ export default function TitleBar({
   className = '',
 }: TitleBarProps) {
   const navigate = useNavigate()
-  /* T013R6：actionWide 槽位改为自适应 —— 最小 96px 容纳"图标 + 4 字文本"
-    *（如「企微客服」pill），内容多时可自动增长，避免文本被裁剪；
-    * 仍由 action 容器内的 justify-end 控制贴右对齐，标题保持居中。 */
+  /* T013R7：actionWide 左右槽位统一 96px ——
+    * 96px 刚好容纳"图标 + 4 字文本"（如「企微客服」pill），
+    * 文字可自然横向、不被换行或裁剪；左右对称保证标题严格居中；
+    * 固定宽度彻底避免第三列内容撑破 grid 导致 pill 溢出页面右侧。 */
   const gridColumns = actionWide
-    ? 'grid-cols-[72px_minmax(0,1fr)_minmax(96px,auto)]'
+    ? 'grid-cols-[96px_minmax(0,1fr)_96px]'
     : 'grid-cols-[36px_minmax(0,1fr)_36px]'
 
   if (!back && !action) {
@@ -48,19 +49,21 @@ export default function TitleBar({
 
   return (
     <header
-      className={`w-full bg-transparent ${className}`}
+      className={`w-full min-w-0 overflow-hidden bg-transparent ${className}`}
       data-title-bar={back ? 'back' : 'action'}
     >
-      <div className={`mx-auto grid h-11 w-full max-w-[480px] items-center px-3 ${gridColumns}`}>
+      <div className={`mx-auto grid h-11 w-full min-w-0 max-w-[480px] items-center px-3 ${gridColumns}`}>
         {back ? (
-          <button
-            type="button"
-            aria-label={backLabel}
-            onClick={onBack ?? (() => navigate(-1))}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-text-primary transition active:bg-[rgba(89,55,15,0.06)]"
-          >
-            <ChevronLeft className="h-[22px] w-[22px] stroke-[2.2]" />
-          </button>
+          <div className="flex h-9 items-center justify-start">
+            <button
+              type="button"
+              aria-label={backLabel}
+              onClick={onBack ?? (() => navigate(-1))}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full text-text-primary transition active:bg-[rgba(89,55,15,0.06)]"
+            >
+              <ChevronLeft className="h-[22px] w-[22px] stroke-[2.2]" />
+            </button>
+          </div>
         ) : (
           <span aria-hidden="true" />
         )}
@@ -69,7 +72,15 @@ export default function TitleBar({
           {title}
         </h1>
 
-        <div className={actionWide ? 'flex h-9 w-full items-center justify-end' : 'flex h-9 w-9 items-center justify-center'}>
+        {/* T013R7：actionWide 容器加 min-w-0 max-w-full + justify-end，
+            让 action 内容（如 pill）自然贴右但不撑出容器；超出由 header overflow-hidden 截断。 */}
+        <div
+          className={
+            actionWide
+              ? 'flex h-9 min-w-0 max-w-full items-center justify-end overflow-hidden'
+              : 'flex h-9 w-9 items-center justify-center'
+          }
+        >
           {action}
         </div>
       </div>
