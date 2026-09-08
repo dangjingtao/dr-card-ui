@@ -1,21 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
 import { Headset, MessageSquare, Send } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import PageContainer from '../components/mobile/PageContainer'
 import ChatMessageList from '../components/mobile/ChatMessageList'
 import DebugPanel from '../components/mobile/DebugPanel'
-import WecomQrPlaceholder from '../components/mobile/WecomQrPlaceholder'
-import { BottomSheet, Button } from '../components/ui'
 import { findRouteByPathname } from '../app/router/routes'
-import { useFixtureState, useOverlay } from '../app/fixtures/useFixture'
+import { useFixtureState } from '../app/fixtures/useFixture'
 import {
   CHAT_BOT,
   CHAT_BOT_FALLBACK_REPLY,
   CHAT_CONVERSATION_MESSAGES,
   CHAT_FAILED_MESSAGES,
-  CHAT_HUMAN_PROMPT,
   CHAT_SEND_LATENCY_MS,
   CHAT_WELCOME_MESSAGES,
-  WELFARE_OFFICER,
   isChatHumanRequest,
   resolveChatSendStatus,
   type ChatMessage,
@@ -29,12 +26,15 @@ const STATE_MESSAGES: Record<string, ChatMessage[]> = {
 export default function ServiceChat() {
   const route = findRouteByPathname('/service/chat')
   const { state } = useFixtureState(route)
-  const { overlay, open, close } = useOverlay()
+  const navigate = useNavigate()
 
   const [messages, setMessages] = useState<ChatMessage[]>(CHAT_WELCOME_MESSAGES)
   const [draft, setDraft] = useState('')
   const timers = useRef<number[]>([])
   const seq = useRef(0)
+
+  /** T013R1+R2：「人工」入口与顶部「企微客服」pill 统一跳 /service/chat/human */
+  const gotoHuman = () => navigate('/service/chat/human')
 
   /** `?state=` 直达：欢迎 / 有对话 / 发送失败 */
   useEffect(() => {
@@ -71,9 +71,9 @@ export default function ServiceChat() {
     if (!text) return
     setDraft('')
 
-    /** 原型 §9：输入「人工客服」等同于点击页内入口，直接进入请求人工客服流程 */
+    /** T013R1+R2：输入「人工客服」等同于点击页内入口，直接跳转排队/对话页 */
     if (isChatHumanRequest(text)) {
-      open('request-human')
+      gotoHuman()
       return
     }
 
@@ -92,29 +92,37 @@ export default function ServiceChat() {
 
   return (
     <PageContainer className="flex min-h-full flex-col pb-0" inset={false}>
-      <div className="flex items-center justify-between gap-3 px-4 pt-3">
-        <div className="flex min-w-0 items-center gap-2">
-          <span
-            className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-reward-subtle text-xs font-semibold text-reward-text"
-            aria-hidden
-          >
-            {CHAT_BOT.glyph}
-          </span>
-          <p className="truncate text-sm font-medium text-text-primary">
-            {CHAT_BOT.role} · {CHAT_BOT.name}
-          </p>
-        </div>
+      {/* T013R2：顶部区重组 —— 第一行：诗字头像 + 「智能客服」标题 + 「企微客服」pill（同右侧）；
+        * 第二行小字：AI 客服 小诗 为您服务 */}
+      <div className="px-4 pt-3">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <span
+              className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-reward-subtle text-xs font-semibold text-reward-text"
+              aria-hidden
+            >
+              {CHAT_BOT.glyph}
+            </span>
+            <h2 className="truncate text-base font-semibold text-text-primary">
+              智能客服
+            </h2>
+          </div>
 
-        {/* 壳层 TitleBar 不支持自定义右上角动作，故「企微客服」入口渲染在页面体内 */}
-        <button
-          type="button"
-          data-chat-wecom-entry
-          onClick={() => open('request-human')}
-          className="inline-flex min-h-8 flex-none items-center gap-1 rounded-pill bg-surface px-3 text-xs font-medium text-text-brand shadow-sm active:bg-surface-selected"
-        >
-          <MessageSquare className="h-3.5 w-3.5" aria-hidden />
-          {CHAT_BOT.wecomEntry}
-        </button>
+          {/* 「企微客服」pill 移到顶部标题右侧（T013R2）；
+            * 点击行为与底部「人工」一致，跳 /service/chat/human。 */}
+          <button
+            type="button"
+            data-chat-wecom-entry
+            onClick={gotoHuman}
+            className="inline-flex min-h-8 flex-none items-center gap-1 rounded-pill bg-surface px-3 text-xs font-medium text-text-brand shadow-sm active:bg-surface-selected"
+          >
+            <MessageSquare className="h-3.5 w-3.5" aria-hidden />
+            {CHAT_BOT.wecomEntry}
+          </button>
+        </div>
+        <p className="mt-1 text-xs text-text-tertiary">
+          AI 客服 {CHAT_BOT.name} 为您服务
+        </p>
       </div>
 
       <div className="flex-1 px-4 pb-4 pt-4">
@@ -126,7 +134,7 @@ export default function ServiceChat() {
           <button
             type="button"
             data-chat-human-entry
-            onClick={() => open('request-human')}
+            onClick={gotoHuman}
             className="flex h-11 w-11 flex-none flex-col items-center justify-center rounded-container bg-surface text-[10px] font-medium text-text-brand shadow-sm active:bg-surface-selected"
           >
             <Headset className="h-4 w-4" aria-hidden />
@@ -165,8 +173,9 @@ export default function ServiceChat() {
         </div>
       </div>
 
-      {/* T013R1：原 #71 企微二维码 BottomSheet 已下线；
-        * 「人工」入口与「人工客服」关键词均直接跳 /service/chat/human（排队 → 接入对话）。
+      {/* T013R1+R2：原 #71 企微二维码 BottomSheet 已下线；
+        * 「人工」入口、顶部「企微客服」pill、输入「人工客服」关键词均直接跳
+        * /service/chat/human（排队 → 接入对话）。
         * `?overlay=request-human` 路由项仍保留以兼容回归脚本，但不渲染。 */}
 
       <DebugPanel route={route} />

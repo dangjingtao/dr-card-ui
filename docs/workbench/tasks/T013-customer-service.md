@@ -73,6 +73,26 @@
 - 工程门：`npm run typecheck` ✅ 通过；`npm run build` ✅ 通过（1.50s）。
 - 任务编号：**T013R1**（T013 的 1 号增量任务卡）。
 - 状态影响：T013 原 `Accepted` 状态不变；本次把 #71 入口行为从「企微引导」改为「APP 内排队/对话」，#71 在新行为下不再被页面渲染（`request-human` 路由项保留兼容）；#70 排队/对话态继续作为新增入口落点。
+
+## 迭代（T013R2｜2026-09-08 智能客服顶部区重组 + 「人工」跳转稳定化）
+
+- 背景：用户 2026-09-08 反馈两项：
+  1. 点击底部「人工」按钮没有反应 —— 实际上是 `useOverlay + open('request-human')` 走 BottomSheet 弹层，视觉反馈与预期跳转不符。
+  2. 顶部展示形态需要重构：原本 "诗字 + AI 客服 · 小诗" 标签占整行且文案偏泛化；用户要求把右上角「企微客服」pill 移到顶部「智能客服」标题右边（同一行），并把原标签改成一行小字「AI 客服 小诗 为您服务」。
+- 改动（`src/pages/ServiceChat.tsx`）：
+  - **「人工」跳转稳定化**：底部 `data-chat-human-entry` 按钮与「人工客服」等关键词触发的 `send()` 均改为 `navigate('/service/chat/human')`，统一走排队 → 接入对话页，与 R1 一致且不再依赖 overlay URL 状态。
+  - **顶部区重组**：
+    - 第一行：`诗字` 圆形头像 + 「智能客服」`<h2>` 标题 + 「企微客服」pill（`data-chat-wecom-entry`，仍在右侧）。
+    - 第二行小字：`AI 客服 小诗 为您服务`（`text-xs text-text-tertiary`）。
+    - 顶部 `data-chat-wecom-entry` pill 的 `onClick` 同步改为 `gotoHuman`，与底部「人工」行为一致。
+  - 删除原「诗字 + AI 客服 · 小诗」一行整宽的 `<div>` 容器（用户选中的那个 div 就是这行）。
+  - `useOverlay` / `<WecomQrPlaceholder />` / `BottomSheet` 等依赖全部从 import 移除；页面不再消费 `overlay === 'request-human'`。
+- 不动的部分：
+  - `/service/chat/human`（`ServiceHuman.tsx`）：`?state=queuing` / `?state=connected` 两态保持原样，作为跳转目标。
+  - 路由表 `?overlay=request-human` 路由项保留以兼容回归脚本与证据矩阵。
+- 工程门：`npm run typecheck` ✅ 通过；`npm run build` ✅ 通过（1.53s）。
+- 任务编号：**T013R2**（T013 的 2 号增量任务卡）。
+- 状态影响：T013 原 `Accepted` 状态不变；T013R1 中关于「人工」入口的描述被本次 R2 强化（明确 `navigate` 跳转、行为与 R1 一致），R1 文档保留为历史描述。
 - 外部能力失败有明确回退。
 
 ## 必交证据
