@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { Bell, Settings } from 'lucide-react'
+import { Bell, MessageSquare, Settings } from 'lucide-react'
 import BottomNav from '../components/mobile/BottomNav'
 import StatusBar from '../components/mobile/StatusBar'
 import TitleBar from '../components/mobile/TitleBar'
@@ -70,7 +70,21 @@ export default function MobileLayout() {
             <Bell className="h-[22px] w-[22px]" />
           </button>
         )
-        : undefined
+        : location.pathname === '/service/chat'
+          ? (
+            /* T013R3：「企微客服」pill 移到壳层 TitleBar 右侧，与「返回 + 智能客服」同右侧；
+              * 点击行为与 ServiceChat 内的 gotoHuman 一致，跳 /service/chat/human。 */
+            <button
+              type="button"
+              data-chat-wecom-entry
+              onClick={() => navigate('/service/chat/human')}
+              className="inline-flex min-h-9 items-center gap-1 rounded-pill bg-surface px-3 text-[13px] font-medium text-text-brand shadow-sm active:bg-surface-selected"
+            >
+              <MessageSquare className="h-3.5 w-3.5" aria-hidden />
+              企微客服
+            </button>
+          )
+          : undefined
 
   return (
     <div className="app-background flex h-dvh flex-col overflow-hidden pt-[env(safe-area-inset-top)] text-text-primary">

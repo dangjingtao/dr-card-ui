@@ -93,6 +93,29 @@
 - 工程门：`npm run typecheck` ✅ 通过；`npm run build` ✅ 通过（1.53s）。
 - 任务编号：**T013R2**（T013 的 2 号增量任务卡）。
 - 状态影响：T013 原 `Accepted` 状态不变；T013R1 中关于「人工」入口的描述被本次 R2 强化（明确 `navigate` 跳转、行为与 R1 一致），R1 文档保留为历史描述。
+
+## 迭代（T013R3｜2026-09-08 智能客服顶部壳层接管 + 居中小字）
+
+- 背景：用户 2026-09-08 反馈三项微调：
+  1. `data-chat-wecom-entry` 「企微客服」pill 移到**壳层 TitleBar 右侧**，与「返回 + 智能客服」同一行（不是页内单独一行）。
+  2. 删除页内顶部 `<div class="flex min-w-0 items-center gap-2">`（诗字头像 + 「智能客服」`<h2>` + 企微客服 pill 的整块容器）。
+  3. `AI 客服 小诗 为您服务` 小字改为 `text-center` 居中显示。
+- 改动：
+  - `src/app/router/routes.ts`：给 `/service/chat` 显式设 `titleBar: 'back'`，让壳层 TitleBar 接管「返回 + 智能客服」标题（之前虽然默认 `back`，显式声明避免后续误改）。
+  - `src/layouts/MobileLayout.tsx`：
+    - import 新增 `MessageSquare`。
+    - `titleAction` 增加分支：`location.pathname === '/service/chat'` 时返回「企微客服」pill（`MessageSquare` 图标 + `bg-surface` + `text-text-brand`），点击 `navigate('/service/chat/human')`，与 R1/R2 一致。
+    - `TitleBar actionWide` 增加 `|| location.pathname === '/service/chat'`，让该 pill 占 72px 宽槽位，标题仍居中。
+  - `src/pages/ServiceChat.tsx`：
+    - 删除页内顶部 `<div>` 诗字 + 标题 + pill 整块容器；移除 `MessageSquare` import。
+    - 顶部区只保留一行居中小字 `<p class="text-center text-xs text-text-tertiary">AI 客服 小诗 为您服务</p>`。
+    - 「人工」按钮 + 「人工客服」关键词跳转逻辑保持不变（沿用 R1+R2 的 `gotoHuman`）。
+- 不动的部分：
+  - `/service/chat/human`（`ServiceHuman.tsx`）两态保持原样。
+  - `routes.ts` 中 `?overlay=request-human` 路由项保留以兼容回归脚本。
+- 工程门：`npm run typecheck` ✅ 通过；`npm run build` ✅ 通过（1.54s）。
+- 任务编号：**T013R3**（T013 的 3 号增量任务卡）。
+- 状态影响：T013 原 `Accepted` 状态不变；本次为顶部布局微调与壳层接管，与 R1+R2 一脉相承。
 - 外部能力失败有明确回退。
 
 ## 必交证据

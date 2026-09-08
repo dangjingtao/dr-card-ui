@@ -92,35 +92,10 @@ export default function ServiceChat() {
 
   return (
     <PageContainer className="flex min-h-full flex-col pb-0" inset={false}>
-      {/* T013R2：顶部区重组 —— 第一行：诗字头像 + 「智能客服」标题 + 「企微客服」pill（同右侧）；
-        * 第二行小字：AI 客服 小诗 为您服务 */}
+      {/* T013R3：「返回 + 智能客服」标题与右上「企微客服」pill 由壳层 TitleBar 统一接管（见 MobileLayout）。
+        * 页内顶部区只留居中小字：AI 客服 小诗 为您服务。 */}
       <div className="px-4 pt-3">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex min-w-0 items-center gap-2">
-            <span
-              className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-reward-subtle text-xs font-semibold text-reward-text"
-              aria-hidden
-            >
-              {CHAT_BOT.glyph}
-            </span>
-            <h2 className="truncate text-base font-semibold text-text-primary">
-              智能客服
-            </h2>
-          </div>
-
-          {/* 「企微客服」pill 移到顶部标题右侧（T013R2）；
-            * 点击行为与底部「人工」一致，跳 /service/chat/human。 */}
-          <button
-            type="button"
-            data-chat-wecom-entry
-            onClick={gotoHuman}
-            className="inline-flex min-h-8 flex-none items-center gap-1 rounded-pill bg-surface px-3 text-xs font-medium text-text-brand shadow-sm active:bg-surface-selected"
-          >
-            <MessageSquare className="h-3.5 w-3.5" aria-hidden />
-            {CHAT_BOT.wecomEntry}
-          </button>
-        </div>
-        <p className="mt-1 text-xs text-text-tertiary">
+        <p className="text-center text-xs text-text-tertiary">
           AI 客服 {CHAT_BOT.name} 为您服务
         </p>
       </div>

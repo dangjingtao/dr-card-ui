@@ -1060,6 +1060,8 @@ export const ROUTES: RouteMeta[] = [
   {
     path: '/service/chat',
     title: '智能客服',
+    /* T013R3：壳层 TitleBar 接管「返回 + 智能客服」标题 + 右上「企微客服」pill */
+    titleBar: 'back',
     nodes: [58, 71],
     task: 'T013',
     entry: '我的-客服中心',
