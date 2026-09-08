@@ -153,6 +153,33 @@
 - 工程门：`npm run typecheck` ✅ 通过；`npm run build` ✅ 通过（1.36s）。
 - 任务编号：**T013R4**（T013 的 4 号增量任务卡）。
 - 状态影响：T013 原 `Accepted` 状态不变；本次为入口语义的关键回归修正，与 R1+R2+R3 形成完整演进链。
+
+## 迭代（T013R5｜2026-09-08 「企微客服」pill 移回 TitleBar 右侧 + 取消按钮居中）
+
+- 背景：用户 2026-09-08 反馈三项视觉调整：
+  1. 弹层 `span`（"取消"）：**居中显示**。
+  2. 页内 `button`（"企微客服" pill）：**删除**。
+  3. 另一个 `button`（"企微客服"）：**移到右上角，与返回按钮同一行**——即壳层 TitleBar 右侧。
+- 改动：
+  - `src/pages/ServiceChat.tsx`：
+    - 删除页内顶部"企微客服" pill（`<button data-chat-wecom-entry>` 整体移除）；`MessageSquare` import 同步移除。
+    - `BottomSheet` 的 actions 由 `<Button variant="ghost">` 改为包一层 `<div className="flex justify-center">`，让"取消"按钮视觉居中。
+    - 增加 `useLocation()` 监听 `location.hash`：`#wecom` 触发 `setWecomOpen(true)`；`closeWecom` 关闭时同步 `history.replaceState` 清掉 hash，避免下次进页时旧 hash 触发重弹。
+  - `src/layouts/MobileLayout.tsx`：
+    - `titleAction` 增加 `pathname === '/service/chat'` 分支：渲染 `data-chat-wecom-entry` pill（MessageSquare + "企微客服"），点击 `navigate('/service/chat#wecom')`（不再跳 `/service/chat/human`）。
+    - `TitleBar actionWide` 增加 `|| location.pathname === '/service/chat'`，pill 占 72px 宽槽位，标题仍居中。
+    - import 同步加回 `MessageSquare`。
+- 通讯机制：
+  - 壳层 `MobileLayout` 的 pill 与页面 `ServiceChat` 的 BottomSheet 之间通过 **URL hash 联动**：`/service/chat#wecom` → `ServiceChat` 监听 `location.hash` → 弹二维码。这样不需要新增全局 store，组件解耦，且 URL 可直达演示（与既有 `?state=` 模式一致）。
+- 与前序 R 的演进：
+  - **T013R1**：人工入口改 APP 内。
+  - **T013R2**：人工跳转稳定化。
+  - **T013R3**：壳层 TitleBar 接管 + 居中小字。
+  - **T013R4**：人工页内状态机 + 企微弹窗回归 + 企微 pill 移到页内第二行。
+  - **T013R5（本次）**：企微 pill 改回壳层 TitleBar 右侧（R3 位置），通过 hash 与 ServiceChat 弹层联动；取消按钮居中。
+- 工程门：`npm run typecheck` ✅ 通过；`npm run build` ✅ 通过（1.49s）。
+- 任务编号：**T013R5**（T013 的 5 号增量任务卡）。
+- 状态影响：T013 原 `Accepted` 状态不变；本次为 TitleBar 与 BottomSheet 的视觉微调，与 R3+R4 的演进路径一致。
 - 外部能力失败有明确回退。
 
 ## 必交证据

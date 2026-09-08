@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { Headset, MessageSquare, Send } from 'lucide-react'
+import { useLocation } from 'react-router-dom'
+import { Headset, Send } from 'lucide-react'
 import PageContainer from '../components/mobile/PageContainer'
 import ChatMessageList from '../components/mobile/ChatMessageList'
 import DebugPanel from '../components/mobile/DebugPanel'
@@ -45,7 +46,6 @@ export default function ServiceChat() {
 
   /** 企微二维码弹层控制 */
   const [wecomOpen, setWecomOpen] = useState(false)
-  const openWecom = () => setWecomOpen(true)
   const closeWecom = () => setWecomOpen(false)
 
   /** `?state=` 直达：欢迎 / 有对话 / 发送失败 */
@@ -149,22 +149,11 @@ export default function ServiceChat() {
 
   return (
     <PageContainer className="flex min-h-full flex-col pb-0" inset={false}>
-      {/* T013R4：顶部区 —— 居中小字 + 横向「企微客服」pill（点击弹二维码，R1 前的行为回归） */}
+      {/* T013R5：「企微客服」pill 移回壳层 TitleBar 右侧，页内顶部区只保留居中小字。 */}
       <div className="px-4 pt-3">
         <p className="text-center text-xs text-text-tertiary">
           AI 客服 {CHAT_BOT.name} 为您服务
         </p>
-        <div className="mt-2 flex justify-center">
-          <button
-            type="button"
-            data-chat-wecom-entry
-            onClick={openWecom}
-            className="inline-flex items-center gap-1.5 rounded-pill bg-surface px-4 py-1.5 text-xs font-medium text-text-brand active:bg-surface-selected"
-          >
-            <MessageSquare className="h-3.5 w-3.5" aria-hidden />
-            {CHAT_BOT.wecomEntry}
-          </button>
-        </div>
       </div>
 
       <div className="flex-1 px-4 pb-4 pt-4" data-human-stage={humanStage}>
@@ -218,16 +207,19 @@ export default function ServiceChat() {
       </div>
 
       {/* T013R4：企微二维码弹层恢复（R1+R2 撤掉的 #71 重新启用，但仅承担"企微客服"入口）。
-        * 触发：点击顶部「企微客服」pill（data-chat-wecom-entry）。
-        * 行为：仅展示福利官二维码 + 「取消」按钮，不承担"转人工"职责 ——「人工」走 requestHuman。 */}
+        * 触发：点击壳层 TitleBar 右侧「企微客服」pill（data-chat-wecom-entry）。
+        * 行为：仅展示福利官二维码 + 「取消」按钮，不承担"转人工"职责 ——「人工」走 requestHuman。
+        * T013R5：「取消」按钮居中（外层 flex justify-center）。 */}
       <BottomSheet
         open={wecomOpen}
         title={CHAT_HUMAN_PROMPT.title}
         onClose={closeWecom}
         actions={
-          <Button variant="ghost" onClick={closeWecom}>
-            {CHAT_HUMAN_PROMPT.cancelLabel}
-          </Button>
+          <div className="flex justify-center">
+            <Button variant="ghost" onClick={closeWecom}>
+              {CHAT_HUMAN_PROMPT.cancelLabel}
+            </Button>
+          </div>
         }
       >
         <div className="flex flex-col items-center pb-1 text-center" data-chat-human-sheet>
