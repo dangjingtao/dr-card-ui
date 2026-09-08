@@ -9,10 +9,10 @@ import {
   Receipt,
   Phone,
   Heart,
-  Wrench,
   Wallet,
   Tag,
   KeyRound,
+  QrCode,
 } from 'lucide-react'
 import { useUserInfo } from './userInfoStore'
 
@@ -47,7 +47,9 @@ const QUICK_ENTRIES: Array<{
   { key: 'favorite', label: '收藏设备', icon: Heart, bg: 'from-[#FB7185] to-[#FDA4AF]', to: '/legacy-profile/devices/favorite' },
   /* T039：「我的」宫格新增消费密码入口（紧跟收藏设备之后） */
   { key: 'pin', label: '消费密码', icon: KeyRound, bg: 'from-[#FBBF24] to-[#D97706]', to: '/legacy-profile/machine-pin' },
-  { key: 'repair', label: '报修', icon: Wrench, bg: 'from-[#FB923C] to-[#FDBA74]', to: '/legacy-service/repair/projects' },
+  /* T041：第 8 项由「报修」改为「领款机充值」，理由是「服务」页已自带报修入口，
+   * 重复；新入口承载反扫码充值能力（卡博士APP缺失及新增功能.xlsx 第 16–17 行） */
+  { key: 'pickup', label: '领款机充值', icon: QrCode, bg: 'from-[#FB923C] to-[#FDBA74]', to: '/legacy-profile/pickup-machine' },
 ]
 
 export default function ProfileHome() {

@@ -75,6 +75,7 @@ import CardTopupFailPage from '../../pages/legacy/CardTopupFailPage'
 import CardTopupRecordsPage from '../../pages/legacy/CardTopupRecordsPage'
 import CardRefundRecordsPage from '../../pages/legacy/CardRefundRecordsPage'
 import ScanBindCardPage from '../../pages/legacy/ScanBindCardPage'
+import PickupMachineRechargePage from '../../pages/legacy/PickupMachineRechargePage'
 import CustomerServicePage from '../../pages/legacy/CustomerServicePage'
 import SchoolAccountListPage from '../../pages/legacy/SchoolAccountListPage'
 import RechargePage from '../../pages/legacy/RechargePage'
@@ -186,6 +187,9 @@ const customPages: Record<string, ReactElement> = {
   '/legacy-profile/my-cards/:id/topup-records': <CardTopupRecordsPage />,
   '/legacy-profile/my-cards/:id/refund-records': <CardRefundRecordsPage />,
   '/legacy-profile/my-cards/scan-bind': <ScanBindCardPage />,
+
+  /* T041：领款机反扫码充值 */
+  '/legacy-profile/pickup-machine': <PickupMachineRechargePage />,
 
   /* T028：客服中心与学校账户退款 */
   '/legacy-profile/customer-service': <CustomerServicePage />,
