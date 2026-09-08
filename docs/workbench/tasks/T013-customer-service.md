@@ -180,6 +180,28 @@
 - 工程门：`npm run typecheck` ✅ 通过；`npm run build` ✅ 通过（1.49s）。
 - 任务编号：**T013R5**（T013 的 5 号增量任务卡）。
 - 状态影响：T013 原 `Accepted` 状态不变；本次为 TitleBar 与 BottomSheet 的视觉微调，与 R3+R4 的演进路径一致。
+
+## 迭代（T013R6｜2026-09-08 TitleBar actionWide 槽位自适应 + pill 不限宽）
+
+- 背景：用户 2026-09-08 反馈——壳层 TitleBar 右侧「企微客服」pill文字"不能是横向的吗"，即文字不应被 TitleBar `actionWide` 写死的 72px 槽位挤压、裁剪或换行；期望 pill 自然横向铺开。
+- 改动：
+  - `src/components/mobile/TitleBar.tsx`：
+    - `actionWide` 槽位 grid 由 `grid-cols-[72px_minmax(0,1fr)_72px]` 改为 `grid-cols-[72px_minmax(0,1fr)_minmax(96px,auto)]`。
+    - 第三列 `minmax(96px, auto)`：最小 96px 容纳"图标 + 4 字文本"（如「企微客服」pill），内容可自动增长；仍由 action 容器 `flex justify-end` 控制贴右对齐，标题保持居中。
+    - `actionWide = false` 路径（图标按钮）保持 `36px_minmax(0,1fr)_36px` 不变。
+  - `src/layouts/MobileLayout.tsx`：
+    - 「企微客服」pill className 追加 `whitespace-nowrap`，避免窄屏或标题变长时被自动换行；不限制 pill 宽度，让 TitleBar 槽位自适应包裹。
+- 兼容性：
+  - 通知页 `isNotificationsPage` 的"一键已读 / 全部已读"按钮继续使用 `actionWide` —— 因为它是单行 ghost 按钮，仍由容器 `flex justify-end` 贴右，文字长度可控；本次槽位由 72px 变为 `minmax(96px, auto)`，通知按钮会更紧凑（96px 起、不被压扁）。
+  - 图标动作路径（如「设置」「通知」按钮，36px 槽位）未受影响。
+- 与前序 R 的演进：
+  - **T013R3**：壳层 TitleBar 接管 pill（actionWide 启用、72px 槽位）。
+  - **T013R4**：pill 撤回到页内。
+  - **T013R5**：pill 重新加回 TitleBar 右侧（仍用 72px 槽位）。
+  - **T013R6（本次）**：放宽槽位至 `minmax(96px, auto)`，pill 文字自然横向。
+- 工程门：`npm run typecheck` ✅ 通过；`npm run build` ✅ 通过（1.52s）。
+- 任务编号：**T013R6**（T013 的 6 号增量任务卡）。
+- 状态影响：T013 原 `Accepted` 状态不变；本次为 TitleBar 槽位微调，对所有使用 `actionWide` 的页面生效，但仅放宽（不会引入回归）。
 - 外部能力失败有明确回退。
 
 ## 必交证据

@@ -72,14 +72,15 @@ export default function MobileLayout() {
         )
         : location.pathname === '/service/chat'
           ? (
-            /* T013R5：「企微客服」pill 回到壳层 TitleBar 右侧（与「< 智能客服」同右侧）；
+            /* T013R5+R6：「企微客服」pill 回到壳层 TitleBar 右侧（与「< 智能客服」同右侧）；
               * 点击通过 location.hash = '#wecom' 通知 ServiceChat 弹企微二维码，
-              * 不需要新增全局 store。 */
+              * 不需要新增全局 store。T013R6：pill 不限制宽度、whitespace-nowrap
+              * 保证「企微客服」四个字自然横向不被换行或裁剪。 */
             <button
               type="button"
               data-chat-wecom-entry
               onClick={() => navigate('/service/chat#wecom')}
-              className="inline-flex min-h-9 items-center gap-1 rounded-pill bg-surface px-3 text-[13px] font-medium text-text-brand shadow-sm active:bg-surface-selected"
+              className="inline-flex min-h-9 items-center gap-1 whitespace-nowrap rounded-pill bg-surface px-3 text-[13px] font-medium text-text-brand shadow-sm active:bg-surface-selected"
             >
               <MessageSquare className="h-3.5 w-3.5" aria-hidden />
               企微客服

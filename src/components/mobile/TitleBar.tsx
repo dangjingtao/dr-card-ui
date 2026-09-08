@@ -29,8 +29,11 @@ export default function TitleBar({
   className = '',
 }: TitleBarProps) {
   const navigate = useNavigate()
+  /* T013R6：actionWide 槽位改为自适应 —— 最小 96px 容纳"图标 + 4 字文本"
+    *（如「企微客服」pill），内容多时可自动增长，避免文本被裁剪；
+    * 仍由 action 容器内的 justify-end 控制贴右对齐，标题保持居中。 */
   const gridColumns = actionWide
-    ? 'grid-cols-[72px_minmax(0,1fr)_72px]'
+    ? 'grid-cols-[72px_minmax(0,1fr)_minmax(96px,auto)]'
     : 'grid-cols-[36px_minmax(0,1fr)_36px]'
 
   if (!back && !action) {
