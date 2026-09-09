@@ -861,9 +861,14 @@ export default function MallHome() {
 
         {/* ─── Search ─── */}
         <div
-          className="mx-4 mb-1 h-10 rounded-full"
+          className="mx-4 mb-1 h-10 rounded-full flex items-center justify-end pr-3"
           style={{ background: 'var(--search-bg)' }}
-        />
+        >
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--muted)' }}>
+            <circle cx="11" cy="11" r="7" />
+            <path d="m20 20-3.5-3.5" />
+          </svg>
+        </div>
 
         {/* ─── Categories ─── */}
         <section className="px-4 pt-3 pb-2 grid grid-cols-4 gap-y-3 gap-x-1" style={{ background: 'var(--bg)' }}>
