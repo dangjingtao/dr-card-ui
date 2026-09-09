@@ -81,6 +81,22 @@ export default function LegacyScan() {
             </p>
           </div>
         )}
+
+        {/* T042 演示态：首页通用扫码入口增加「模拟购买洗发水」按钮 */}
+        {!fromScratchCard && (
+          <div className="relative z-10 mt-10 w-full px-4 pb-4">
+            <button
+              type="button"
+              onClick={() => navigate('/vending/buy?id=vending-001')}
+              className="w-full rounded-full bg-gradient-to-r from-[#FF8A65] to-[#E64A19] py-3.5 text-sm font-semibold text-white shadow-md active:opacity-90"
+            >
+              模拟购买洗发水
+            </button>
+            <p className="mt-2 text-center text-xs text-white/40">
+              仅供设计演示：点击进入自助售货机购买页
+            </p>
+          </div>
+        )}
       </main>
     </div>
   )

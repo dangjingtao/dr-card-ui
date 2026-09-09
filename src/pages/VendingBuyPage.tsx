@@ -1,46 +1,60 @@
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { MapPin, Minus, Plus, Package, Check, Wallet, ShoppingBag } from 'lucide-react'
+import { MapPin, Minus, Plus, Ticket, ChevronRight, Sparkles } from 'lucide-react'
 import {
   DEVICE_LISTS,
   DEVICE_THEMES,
 } from '../app/fixtures/device'
-import { useUserInfo, userInfoActions } from './legacy/userInfoStore'
-import { Button } from '../components/ui/button'
-import { Dialog } from '../components/ui/dialog'
 
 /**
  * 扫码购买页（T042）
  * - 扫码自助售货机后进入
- * - 展示商品（洗发水体验包）+ 数量选择
- * - 使用账户余额支付
- * - 购买成功弹窗
+ * - 3 款洗发水体验包：去屑 / 控油 / 虫草修复（统一 ¥1/包）
+ * - 每款可独立选数量
+ * - 优惠券自动抵扣（1 张洗发水体验装抵扣券 = 免 1 包 = 减 ¥1，强制使用）
+ * - 底部：应付金额 + 「去结算」pill → 跳订单确认页
  */
 
-interface Product {
+export interface VendingProduct {
   id: string
   name: string
   desc: string
   price: number
-  originalPrice?: number
+  /** 顶部渐变背景色 */
+  gradient: string
+  /** 图标 emoji / 文字占位 */
+  iconText: string
 }
 
-const PRODUCTS: Product[] = [
+const PRODUCTS: VendingProduct[] = [
   {
-    id: 'shampoo-trial',
-    name: '洗发水体验包',
-    desc: '卡博士定制 · 氨基酸配方 · 10ml',
-    price: 2.99,
-    originalPrice: 5.9,
+    id: 'anti-dandruff',
+    name: '去屑洗发水',
+    desc: '净爽去屑 · 控油平衡',
+    price: 1,
+    gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    iconText: '去屑',
   },
   {
-    id: 'shampoo-trial-3',
-    name: '洗发水体验包 ×3',
-    desc: '卡博士定制 · 3 连包更划算',
-    price: 7.99,
-    originalPrice: 17.7,
+    id: 'oil-control',
+    name: '控油洗发水',
+    desc: '深层清洁 · 持久蓬松',
+    price: 1,
+    gradient: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
+    iconText: '控油',
+  },
+  {
+    id: 'cordyceps-repair',
+    name: '虫草修复洗发水',
+    desc: '滋养修护 · 柔顺亮泽',
+    price: 1,
+    gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+    iconText: '虫草',
   },
 ]
+
+/** 可用优惠券张数（mock：用户有 1 张体验装抵扣券） */
+const AVAILABLE_COUPON_COUNT = 1
 
 export default function VendingBuyPage() {
   const navigate = useNavigate()
@@ -52,47 +66,57 @@ export default function VendingBuyPage() {
     ?? null
 
   const theme = DEVICE_THEMES.vending
-  const userInfo = useUserInfo()
-  const balance = userInfo.balance
 
-  const [selectedProductId, setSelectedProductId] = useState(PRODUCTS[0].id)
-  const [quantity, setQuantity] = useState(1)
-  const [paying, setPaying] = useState(false)
-  const [showSuccess, setShowSuccess] = useState(false)
+  /* 各商品数量，默认第 1 款 1 件，其余 0 */
+  const [quantities, setQuantities] = useState<Record<string, number>>({
+    [PRODUCTS[0].id]: 1,
+    [PRODUCTS[1].id]: 0,
+    [PRODUCTS[2].id]: 0,
+  })
 
-  const selectedProduct = PRODUCTS.find((p) => p.id === selectedProductId) ?? PRODUCTS[0]
-  const totalPrice = +(selectedProduct.price * quantity).toFixed(2)
-  const canPay = balance >= totalPrice && quantity > 0 && !paying
+  const totalCount = Object.values(quantities).reduce((sum, q) => sum + q, 0)
+  const subtotal = PRODUCTS.reduce(
+    (sum, p) => sum + p.price * (quantities[p.id] ?? 0),
+    0,
+  )
 
-  function handleQuantityDelta(delta: number) {
-    setQuantity((q) => Math.max(1, Math.min(99, q + delta)))
+  /* 优惠券抵扣：1 张券抵 1 包 = 减 ¥1，有多少张券就减多少包，但不超过总数量 */
+  const couponDeductCount = Math.min(AVAILABLE_COUPON_COUNT, totalCount)
+  const couponDeductAmount = couponDeductCount * 1 // 每包 ¥1
+  const totalPay = Math.max(0, subtotal - couponDeductAmount)
+
+  const canCheckout = totalCount > 0
+
+  function handleQtyDelta(productId: string, delta: number) {
+    setQuantities((prev) => {
+      const next = Math.max(0, Math.min(99, (prev[productId] ?? 0) + delta))
+      return { ...prev, [productId]: next }
+    })
   }
 
-  function handlePay() {
-    if (!canPay) return
-    setPaying(true)
-    // 模拟支付流程
-    setTimeout(() => {
-      userInfoActions.update({ balance: +(balance - totalPrice).toFixed(2) })
-      setPaying(false)
-      setShowSuccess(true)
-    }, 1200)
-  }
-
-  function handleCloseSuccess() {
-    setShowSuccess(false)
-    navigate(-1)
+  function handleCheckout() {
+    if (!canCheckout) return
+    const params = new URLSearchParams()
+    params.set('id', deviceId)
+    // 把各商品数量传过去
+    PRODUCTS.forEach((p) => {
+      if ((quantities[p.id] ?? 0) > 0) {
+        params.set(p.id, String(quantities[p.id]))
+      }
+    })
+    params.set('coupon', String(couponDeductCount))
+    navigate(`/vending/order?${params.toString()}`)
   }
 
   return (
     <div className="flex h-full w-full flex-col bg-bg-page" data-vending-buy-page>
-      {/* 商品头部区 */}
+      {/* 顶部渐变区 */}
       <div
-        className="relative overflow-hidden px-4 pb-6 pt-4"
+        className="relative overflow-hidden px-4 pb-4 pt-4"
         style={{ background: 'linear-gradient(180deg, #FFF3E6 0%, #FFFFFF 100%)' }}
       >
         {/* 设备信息 */}
-        <div className="mb-4 flex items-center gap-2 text-xs text-text-secondary">
+        <div className="mb-3 flex items-center gap-2 text-xs text-text-secondary">
           <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
           <span className="truncate">{device?.name ?? '自助售货机'}</span>
           <span className="flex-none rounded-full bg-surface px-2 py-0.5 text-[10px] text-text-tertiary">
@@ -100,166 +124,139 @@ export default function VendingBuyPage() {
           </span>
         </div>
 
-        {/* 商品主图占位（渐变 + 图标） */}
-        <div className="relative mx-auto mb-4 flex h-48 w-48 items-center justify-center rounded-3xl bg-white shadow-lg">
-          <div
-            className="absolute inset-4 rounded-2xl opacity-20"
-            style={{ background: theme.iconBg }}
-          />
-          <div className="relative flex flex-col items-center gap-2">
-            <ShoppingBag className="h-16 w-16" style={{ color: '#E64A19' }} aria-hidden="true" />
-            <span className="text-xs text-text-tertiary">商品示意图</span>
-          </div>
-        </div>
-
-        {/* 商品名 + 价格 */}
-        <div className="space-y-1">
-          <h1 className="text-xl font-bold text-text-primary">{selectedProduct.name}</h1>
-          <p className="text-xs text-text-tertiary">{selectedProduct.desc}</p>
-          <div className="flex items-baseline gap-2 pt-1">
-            <span className="text-2xl font-bold" style={{ color: '#E64A19' }}>
-              ¥ {selectedProduct.price.toFixed(2)}
-            </span>
-            {selectedProduct.originalPrice && (
-              <span className="text-xs text-text-tertiary line-through">
-                ¥ {selectedProduct.originalPrice.toFixed(2)}
-              </span>
-            )}
-          </div>
-        </div>
+        {/* 标题 */}
+        <h1 className="text-xl font-bold text-text-primary">洗发水体验装</h1>
+        <p className="mt-1 text-xs text-text-tertiary">
+          任选搭配 · ¥1/包 · 体验装 10ml
+        </p>
       </div>
 
-      {/* 商品选择列表 */}
-      <div className="flex-1 px-4 py-4">
-        <h3 className="mb-3 text-sm font-semibold text-text-primary">选择规格</h3>
-        <div className="space-y-2">
-          {PRODUCTS.map((p) => {
-            const active = p.id === selectedProductId
-            return (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => {
-                  setSelectedProductId(p.id)
-                  setQuantity(1)
-                }}
-                className={`flex w-full items-center justify-between rounded-container bg-surface p-3 text-left transition ${
-                  active ? 'ring-2 ring-[#FF8A65]' : ''
-                }`}
+      {/* 商品列表 */}
+      <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+        {PRODUCTS.map((p) => {
+          const qty = quantities[p.id] ?? 0
+          return (
+            <div
+              key={p.id}
+              className="flex items-center gap-3 rounded-container bg-surface p-3"
+            >
+              {/* 商品图 */}
+              <div
+                className="flex h-16 w-16 flex-none items-center justify-center rounded-xl text-xs font-bold text-white shadow-sm"
+                style={{ background: p.gradient }}
               >
-                <div className="flex items-center gap-3">
-                  <div
-                    className="flex h-12 w-12 flex-none items-center justify-center rounded-xl bg-[#FFF3E6]"
-                  >
-                    <Package className="h-6 w-6 text-[#E64A19]" aria-hidden="true" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-text-primary">{p.name}</p>
-                    <p className="truncate text-xs text-text-tertiary">{p.desc}</p>
-                  </div>
-                </div>
-                <div className="flex flex-none items-center gap-2">
-                  <span className="text-base font-semibold text-[#E64A19]">
-                    ¥ {p.price.toFixed(2)}
-                  </span>
-                  {active && (
-                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#FF8A65]">
-                      <Check className="h-3 w-3 text-white" aria-hidden="true" />
-                    </div>
-                  )}
-                </div>
-              </button>
-            )
-          })}
-        </div>
+                {p.iconText}
+              </div>
+              {/* 商品信息 */}
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-text-primary">{p.name}</p>
+                <p className="mt-0.5 truncate text-xs text-text-tertiary">{p.desc}</p>
+                <p className="mt-1 text-base font-bold text-[#E64A19]">
+                  ¥ {p.price.toFixed(2)}
+                  <span className="ml-1 text-[10px] font-normal text-text-tertiary">/包</span>
+                </p>
+              </div>
+              {/* 数量选择 */}
+              <div className="flex flex-none items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleQtyDelta(p.id, -1)}
+                  disabled={qty <= 0}
+                  className={`flex h-7 w-7 items-center justify-center rounded-full transition ${
+                    qty <= 0
+                      ? 'bg-bg-disabled text-text-disabled'
+                      : 'bg-bg-page text-text-secondary active:bg-surface-selected'
+                  }`}
+                  aria-label={`减少${p.name}数量`}
+                >
+                  <Minus className="h-3.5 w-3.5" aria-hidden="true" />
+                </button>
+                <span className="w-6 text-center text-sm font-semibold text-text-primary">
+                  {qty}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleQtyDelta(p.id, 1)}
+                  className="flex h-7 w-7 items-center justify-center rounded-full bg-[#FF8A65] text-white active:bg-[#E64A19]"
+                  aria-label={`增加${p.name}数量`}
+                >
+                  <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+          )
+        })}
 
-        {/* 数量选择 */}
-        <div className="mt-6 flex items-center justify-between rounded-container bg-surface p-4">
-          <span className="text-sm font-medium text-text-primary">购买数量</span>
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => handleQuantityDelta(-1)}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-bg-page text-text-secondary active:bg-surface-selected"
-              aria-label="减少数量"
-            >
-              <Minus className="h-4 w-4" aria-hidden="true" />
-            </button>
-            <span className="w-8 text-center text-base font-semibold text-text-primary">
-              {quantity}
-            </span>
-            <button
-              type="button"
-              onClick={() => handleQuantityDelta(1)}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-[#FF8A65] text-white active:bg-[#E64A19]"
-              aria-label="增加数量"
-            >
-              <Plus className="h-4 w-4" aria-hidden="true" />
-            </button>
+        {/* 优惠券区 */}
+        <div className="mt-4 rounded-container bg-surface p-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Ticket className="h-4 w-4 text-[#E64A19]" aria-hidden="true" />
+              <span className="text-sm font-medium text-text-primary">优惠券</span>
+              {AVAILABLE_COUPON_COUNT > 0 && (
+                <span className="rounded-full bg-[#FFE4D6] px-2 py-0.5 text-[10px] font-medium text-[#E64A19]">
+                  {AVAILABLE_COUPON_COUNT} 张可用
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-1 text-xs">
+              {couponDeductCount > 0 ? (
+                <span className="text-[#E64A19]">
+                  已抵扣 {couponDeductCount} 包
+                </span>
+              ) : (
+                <span className="text-text-tertiary">暂不可用</span>
+              )}
+              <ChevronRight className="h-3.5 w-3.5 text-text-tertiary" aria-hidden="true" />
+            </div>
           </div>
+          {AVAILABLE_COUPON_COUNT > 0 && (
+            <div className="mt-2 flex items-center gap-2 rounded-lg bg-[#FFF3E6] px-3 py-2">
+              <Sparkles className="h-3.5 w-3.5 text-[#E64A19]" aria-hidden="true" />
+              <p className="flex-1 text-xs text-text-secondary">
+                洗发水体验装抵扣券 · 可抵 1 包
+              </p>
+              <span className="text-xs font-semibold text-[#E64A19]">-¥{couponDeductAmount.toFixed(2)}</span>
+            </div>
+          )}
         </div>
       </div>
 
       {/* 底部结算栏 */}
       <div className="flex-none border-t border-border-subtle bg-surface px-4 pb-[calc(16px+env(safe-area-inset-bottom))] pt-3">
-        <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-xs text-text-secondary">
-            <Wallet className="h-4 w-4" aria-hidden="true" />
-            <span>余额：¥ {balance.toFixed(2)}</span>
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-baseline gap-1">
+              <span className="text-xs text-text-secondary">合计：</span>
+              <span className="text-xl font-bold text-[#E64A19]">¥ {totalPay.toFixed(2)}</span>
+            </div>
+            {couponDeductCount > 0 && (
+              <p className="mt-0.5 text-[10px] text-text-tertiary">
+                已优惠 ¥{couponDeductAmount.toFixed(2)}（共 {totalCount} 件）
+              </p>
+            )}
           </div>
-          <div className="text-right">
-            <span className="text-xs text-text-secondary">合计：</span>
-            <span className="text-xl font-bold text-[#E64A19]">¥ {totalPrice.toFixed(2)}</span>
-          </div>
-        </div>
-        <Button
-          size="large"
-          className="w-full"
-          style={{ background: 'linear-gradient(135deg, #FF8A65 0%, #E64A19 100%)' }}
-          onClick={handlePay}
-          disabled={!canPay}
-        >
-          {paying ? '支付中...' : balance < totalPrice ? '余额不足，请先充值' : '立即购买'}
-        </Button>
-      </div>
-
-      {/* 购买成功弹窗 */}
-      <Dialog
-        open={showSuccess}
-        title="购买成功"
-        onClose={handleCloseSuccess}
-        size="compact"
-        actions={
-          <Button
-            className="w-full"
-            style={{ background: 'linear-gradient(135deg, #FF8A65 0%, #E64A19 100%)' }}
-            onClick={handleCloseSuccess}
+          <button
+            type="button"
+            onClick={handleCheckout}
+            disabled={!canCheckout}
+            className={`flex h-10 items-center gap-1.5 rounded-full px-5 text-sm font-semibold text-white transition ${
+              canCheckout
+                ? 'shadow-md active:opacity-90'
+                : 'cursor-not-allowed opacity-50'
+            }`}
+            style={{
+              background: canCheckout
+                ? 'linear-gradient(135deg, #FF8A65 0%, #E64A19 100%)'
+                : undefined,
+              backgroundColor: canCheckout ? undefined : '#ccc',
+            }}
           >
-            完成
-          </Button>
-        }
-      >
-        <div className="flex flex-col items-center py-2">
-          <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
-            <Check className="h-7 w-7 text-green-600" aria-hidden="true" />
-          </div>
-          <p className="text-sm text-text-secondary">商品已从售货机送出，请在取物口领取</p>
-          <div className="mt-4 w-full rounded-xl bg-bg-page p-3 text-left">
-            <div className="flex justify-between text-sm">
-              <span className="text-text-secondary">商品</span>
-              <span className="text-text-primary">{selectedProduct.name}</span>
-            </div>
-            <div className="mt-1 flex justify-between text-sm">
-              <span className="text-text-secondary">数量</span>
-              <span className="text-text-primary">× {quantity}</span>
-            </div>
-            <div className="mt-1 flex justify-between text-sm">
-              <span className="text-text-secondary">实付</span>
-              <span className="font-semibold text-[#E64A19]">¥ {totalPrice.toFixed(2)}</span>
-            </div>
-          </div>
+            去结算
+            <ChevronRight className="h-4 w-4" aria-hidden="true" />
+          </button>
         </div>
-      </Dialog>
+      </div>
     </div>
   )
 }

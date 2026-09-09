@@ -46,6 +46,7 @@ import DeviceListPage from '../../pages/DeviceListPage'
 import DeviceDetailPage from '../../pages/DeviceDetailPage'
 /* T042：自助售货机扫码购买页 */
 import VendingBuyPage from '../../pages/VendingBuyPage'
+import VendingOrderPage from '../../pages/VendingOrderPage'
 import LegacyService from '../../pages/LegacyService'
 import RepairProjects from '../../pages/RepairProjects'
 import RepairForm from '../../pages/RepairForm'
@@ -147,6 +148,7 @@ const customPages: Record<string, ReactElement> = {
   '/device/success': <DeviceDetailPage />,
   /* T042：自助售货机扫码购买页 */
   '/vending/buy': <VendingBuyPage />,
+  '/vending/order': <VendingOrderPage />,
 
   /* T034：卡博士服务中心 */
   '/legacy-service': <LegacyService />,
