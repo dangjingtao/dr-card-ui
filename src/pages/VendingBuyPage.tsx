@@ -148,16 +148,6 @@ export default function VendingBuyPage() {
         className="relative overflow-hidden px-4 pb-4 pt-4"
         style={{ background: 'linear-gradient(180deg, #FFF3E6 0%, #FFFFFF 100%)' }}
       >
-        {/* 返回按钮 */}
-        <button
-          type="button"
-          aria-label="返回首页"
-          onClick={() => navigate('/legacy-home')}
-          className="mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/80 text-text-primary shadow-sm active:opacity-80"
-        >
-          <ChevronLeft className="h-5 w-5" />
-        </button>
-
         {/* 设备信息 */}
         <div className="mb-3 flex items-center gap-2 text-xs text-text-secondary">
           <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
@@ -167,11 +157,24 @@ export default function VendingBuyPage() {
           </span>
         </div>
 
-        {/* 标题 */}
-        <h1 className="text-xl font-bold text-text-primary">洗发水体验装</h1>
-        <p className="mt-1 text-xs text-text-tertiary">
-          任选搭配 · ¥1/包 · 体验装 10ml
-        </p>
+        {/* 标题 + 返回按钮 */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            aria-label="返回首页"
+            onClick={() => navigate('/legacy-home')}
+            className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-white/80 text-text-primary shadow-sm active:opacity-80"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate text-xl font-bold text-text-primary">洗发水体验装</h1>
+            <p className="mt-0.5 truncate text-xs text-text-tertiary">
+              任选搭配 · ¥1/包 · 体验装 10ml
+            </p>
+          </div>
+          <span className="h-8 w-8 flex-none" aria-hidden />
+        </div>
       </div>
 
       {/* 商品列表 + 优惠券 + 支付方式（可滚动） */}
