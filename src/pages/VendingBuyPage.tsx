@@ -10,6 +10,7 @@ import {
   PackageCheck,
   Loader2,
   Sparkles,
+  ChevronLeft,
 } from 'lucide-react'
 import {
   DEVICE_LISTS,
@@ -147,6 +148,16 @@ export default function VendingBuyPage() {
         className="relative overflow-hidden px-4 pb-4 pt-4"
         style={{ background: 'linear-gradient(180deg, #FFF3E6 0%, #FFFFFF 100%)' }}
       >
+        {/* 返回按钮 */}
+        <button
+          type="button"
+          aria-label="返回首页"
+          onClick={() => navigate('/legacy-home')}
+          className="mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/80 text-text-primary shadow-sm active:opacity-80"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </button>
+
         {/* 设备信息 */}
         <div className="mb-3 flex items-center gap-2 text-xs text-text-secondary">
           <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
