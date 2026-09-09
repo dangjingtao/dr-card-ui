@@ -61,8 +61,8 @@ export default function LegacyScan() {
   }
 
   return (
-    <div className="h-full bg-black text-white">
-      <main className="relative flex h-full flex-col items-center px-5">
+    <div className="flex h-full w-full justify-center bg-black text-white">
+      <main className="relative flex h-full w-full max-w-[430px] flex-col items-center px-5">
         {/* 背景光晕 */}
         <div
           className="absolute left-0 right-0 top-1/3 h-72 -translate-y-1/2 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.12)_0%,transparent_70%)]"
