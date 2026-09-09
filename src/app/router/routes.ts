@@ -68,6 +68,8 @@ export interface RouteMeta {
   entry?: string
   /** 返回目标 */
   returnTo?: string
+  /** 返回按钮跳转路径（不传则走 history.back） */
+  backTo?: string
   /** 确定性 fixture 状态（`?state=`） */
   states?: RouteState[]
   /** 可复现弹层（`?overlay=`） */
@@ -171,11 +173,12 @@ export const ROUTES: RouteMeta[] = [
   {
     path: '/vending/buy',
     title: '扫码购买',
-    titleBar: 'default',
+    titleBar: 'back',
+    backTo: '/legacy-home',
     nodes: [],
     task: 'T042',
     entry: '扫码自助售货机 / 设备列表 → 扫码购买 / 首页扫一扫 → 模拟购买洗发水',
-    returnTo: '设备列表 / 首页',
+    returnTo: '卡博士APP首页',
     owner: '自助售货机购买页（T042；3款洗发水 + 数量 + 优惠券自动抵扣 + 去结算）',
   },
   {

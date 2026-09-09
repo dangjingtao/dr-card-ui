@@ -97,6 +97,7 @@ export default function MobileLayout() {
           <TitleBar
             title={title}
             back={titleBarMode === 'back'}
+            onBack={route?.backTo ? () => navigate(route.backTo) : undefined}
             action={titleAction}
             actionWide={isNotificationsPage || location.pathname === '/service/chat'}
           />

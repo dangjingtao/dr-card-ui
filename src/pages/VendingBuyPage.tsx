@@ -10,7 +10,6 @@ import {
   PackageCheck,
   Loader2,
   Sparkles,
-  ChevronLeft,
 } from 'lucide-react'
 import {
   DEVICE_LISTS,
@@ -157,24 +156,11 @@ export default function VendingBuyPage() {
           </span>
         </div>
 
-        {/* 标题 + 返回按钮 */}
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            aria-label="返回首页"
-            onClick={() => navigate('/legacy-home')}
-            className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-white/80 text-text-primary shadow-sm active:opacity-80"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-          <div className="min-w-0 flex-1">
-            <h1 className="truncate text-xl font-bold text-text-primary">洗发水体验装</h1>
-            <p className="mt-0.5 truncate text-xs text-text-tertiary">
-              任选搭配 · ¥1/包 · 体验装 10ml
-            </p>
-          </div>
-          <span className="h-8 w-8 flex-none" aria-hidden />
-        </div>
+        {/* 标题 */}
+        <h1 className="text-xl font-bold text-text-primary">洗发水体验装</h1>
+        <p className="mt-1 text-xs text-text-tertiary">
+          任选搭配 · ¥1/包 · 体验装 10ml
+        </p>
       </div>
 
       {/* 商品列表 + 优惠券 + 支付方式（可滚动） */}
