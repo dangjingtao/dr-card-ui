@@ -22,6 +22,8 @@ T001–T015 基于 2026-08-21 的仓库与 Mockplus 实际盘点建立，并已�
 
 2026-09-08 新增 T041：设备列表页广告位插入策略调整。原方案「<3 不展示」改为「<3 末尾展示」；淋浴扩到 4 个设备用于中间插入；常用/收藏设备区域同步接入。
 
+2026-09-09 新增 T042–T052：诗得丽品牌专栏施工批次。覆盖卡券弹窗用户区分（T043）、体验券核销说明文案（T044）、签到补签看广告（T045）、专栏头像跳转会员中心（T046）、首张轮播图品牌名替换为"卡博士.极地种子"（T047）、累计打卡天数决策盯死卡（T048，`Needs Decision`）、洗头搭子双方泡泡值决策盯死卡（T049，`Needs Decision`）、生日字段 3 个月修改限制（T050）、「我的」改名「会员中心」（T051）。其中 T043 用户身份识别来源（关爱机 vs 存量）依赖 B-043；T048/T049 等丁总确认后回填并联动实施；T046 与 T051 强联动，统一使用 `/dearseed/membership` 路由。
+
 ## 卡片索引
 
 | 卡片 | 名称 | 当前状态 |
@@ -61,6 +63,15 @@ T001–T015 基于 2026-08-21 的仓库与 Mockplus 实际盘点建立，并已�
 | [T038](./T038-scratch-card-recharge.md) | 刮刮充值卡补全（卡博士淡金色风格） | PASS |
 | [T039](./T039-machine-pin-consume.md) | 设置消费密码（双状态 + 修改/删除） | PASS |
 | [T040](./T040-device-quick-recharge.md) | 设备列表扫码启动 + 设备详情快速充值 | PASS |
+| [T043](./T043-dearseed-column-coupon-popup.md) | 诗得丽专栏入口卡券弹窗：用户区分与占位券 | Ready |
+| [T044](./T044-shampoo-coupon-verification-copy.md) | 洗发水体验券核销方式说明文案调整 | Ready |
+| [T045](./T045-dearseed-checkin-miss-remedy.md) | 诗得丽专栏签到：未签"X"标记 + 补签看广告 | Ready |
+| [T046](./T046-dearseed-home-avatar-to-membership.md) | 诗得丽专栏首页右上角头像：跳转专栏「我的」 | Ready |
+| [T047](./T047-dearseed-banner-rebrand-to-polarseed.md) | 诗得丽专栏首张轮播图品牌名替换：卡博士.极地种子 | Ready |
+| [T048](./T048-dearseed-checkin-streak-duration-decision.md) | 累计打卡活动天数：决策待定盯死卡 | Needs Decision |
+| [T049](./T049-dearseed-buddy-invite-bubble-points-decision.md) | 邀请成为洗头搭子：双方泡泡值奖励决策 | Needs Decision |
+| [T050](./T050-dearseed-membership-birthday-3-month.md) | 诗得丽专栏会员中心：生日字段 3 个月修改限制 | Ready |
+| [T051](./T051-dearseed-my-page-rename-membership-center.md) | 诗得丽专栏「我的」页改名「会员中心」 | Ready |
 
 ## 依赖顺序
 
@@ -99,6 +110,13 @@ T037 为登录页补全：
 - 基于 T026 已实现的微信登录框架，补齐手机验证码登录与学号登录
 - 视觉复用 T026 金色渐变风格，验证码 6 格输入参考消费密码核销样式
 - 与 T026 (注册登录/个人信息) 共享 userInfoStore 与登录后状态
+
+T043–T051 为诗得丽品牌专栏施工批次（2026-09-09）：
+- T043 (专栏卡券弹窗用户区分) 与 B-043（关爱机用户身份识别来源）耦合，需先确认后端字段
+- T046 (专栏首页头像跳转) 与 T051 (「我的」改名「会员中心」) 强联动，统一路由 `/dearseed/membership`；建议 T051 先落地、T046 再指向新路由
+- T048 (累计打卡天数) 与 T049 (洗头搭子泡泡值) 为 `Needs Decision` 盯死卡，等丁总确认后回填，并联动 T045 / T007 等相关施工卡
+- T050 (生日 3 个月限制) 复用 T026 已落地的 userInfoStore，需在 store 中扩展 `lastModifiedAt`
+- 旧卡 T041 / T042 不在本批索引范围
 ```
 
 ## 全局验收契约
