@@ -460,24 +460,6 @@ const scenarioList = [
 
 // ─── Icon SVGs (inline, stroke-based) ────────────────────────────────────────
 
-function IconSearch() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="11" cy="11" r="7" />
-      <path d="m20 20-3.5-3.5" />
-    </svg>
-  )
-}
-
-function IconVoice() {
-  return (
-    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="9" y="3" width="6" height="12" rx="3" />
-      <path d="M5 11a7 7 0 0 0 14 0M12 18v3M8 21h8" />
-    </svg>
-  )
-}
-
 function IconCatWater() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
@@ -879,19 +861,9 @@ export default function MallHome() {
 
         {/* ─── Search ─── */}
         <div
-          className="mx-4 mb-1 h-10 px-3.5 pl-3.5 flex items-center gap-2 rounded-full"
-          style={{ background: 'var(--search-bg)', color: 'var(--muted)', fontSize: 'var(--fs-base)' }}
-        >
-          <IconSearch />
-          <span className="flex-1" style={{ color: 'var(--muted)' }}>搜索商品、品牌或分类</span>
-          <button
-            className="w-7 h-7 grid place-items-center rounded-full"
-            style={{ color: 'var(--accent)' }}
-            aria-label="语音搜索"
-          >
-            <IconVoice />
-          </button>
-        </div>
+          className="mx-4 mb-1 h-10 rounded-full"
+          style={{ background: 'var(--search-bg)' }}
+        />
 
         {/* ─── Categories ─── */}
         <section className="px-4 pt-3 pb-2 grid grid-cols-4 gap-y-3 gap-x-1" style={{ background: 'var(--bg)' }}>
