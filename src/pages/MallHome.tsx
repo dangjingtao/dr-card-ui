@@ -460,39 +460,6 @@ const scenarioList = [
 
 // ─── Icon SVGs (inline, stroke-based) ────────────────────────────────────────
 
-function IconPin() {
-  return (
-    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 22s7-7.5 7-13a7 7 0 1 0-14 0c0 5.5 7 13 7 13z" />
-      <circle cx="12" cy="9" r="2.5" />
-    </svg>
-  )
-}
-
-function IconScan() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M3 12h18" />
-    </svg>
-  )
-}
-
-function IconMessage() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z" />
-    </svg>
-  )
-}
-
-function IconSwitch() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 9h13a4 4 0 0 1 0 8H9M3 9l4-4M3 9l4 4M21 15H8a4 4 0 0 1 0-8h7" />
-    </svg>
-  )
-}
-
 function IconSearch() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
@@ -858,53 +825,54 @@ export default function MallHome() {
 
       <div className="w-full pb-24" style={{ background: 'var(--bg)', maxWidth: '100%', margin: '0 auto' }}>
         {/* ─── Store header ─── */}
-        <section className="px-4 pt-2 pb-3.5 flex items-center justify-between gap-3" style={{ background: 'var(--bg)' }}>
+        <section className="px-4 py-3 flex items-center justify-between gap-2" style={{ background: 'var(--bg)' }}>
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5 font-semibold" style={{ fontSize: 'var(--fs-lg)' }}>
-              <span className="flex-shrink-0" style={{ color: 'var(--accent)' }}><IconPin /></span>
+            <div className="flex items-center gap-1 font-semibold" style={{ fontSize: 16 }}>
+              <span className="flex-shrink-0" style={{ color: 'var(--accent)' }}>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s7-7.5 7-13a7 7 0 1 0-14 0c0 5.5 7 13 7 13z"/><circle cx="12" cy="9" r="2.5"/></svg>
+              </span>
               <span className="truncate">朝阳合生汇店</span>
-              <span className="text-xs" style={{ color: 'var(--muted)' }}>▾</span>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--muted)', flexShrink: 0 }}><path d="m6 9 6 6 6-6"/></svg>
             </div>
-            <div className="mt-1 flex items-center gap-1.5 text-xs whitespace-nowrap" style={{ color: 'var(--muted)', fontSize: 'var(--fs-sm)' }}>
-              <span className="w-1.5 h-1.5 rounded-full status-dot" style={{ background: 'var(--success)' }} />
+            <div className="mt-0.5 flex items-center gap-1.5 whitespace-nowrap" style={{ color: 'var(--muted)', fontSize: 11 }}>
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--success)' }} />
               <span>营业中 · 24h</span>
               <span style={{ color: 'var(--border)' }}>|</span>
-              <span>距您 320m</span>
+              <span>320m</span>
               <span style={{ color: 'var(--border)' }}>|</span>
-              <span>约 28 分钟达</span>
+              <span>28 分钟达</span>
             </div>
           </div>
-          <div className="flex gap-1 flex-shrink-0">
+          <div className="flex items-center gap-1 flex-shrink-0">
             <button
-              className="relative w-11 h-11 grid place-items-center rounded-full"
+              className="w-9 h-9 grid place-items-center rounded-full"
               style={{ color: 'var(--fg-2)' }}
               aria-label="扫一扫"
             >
-              <IconScan />
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M3 12h18"/></svg>
             </button>
             <button
-              className="relative w-11 h-11 grid place-items-center rounded-full"
+              className="relative w-9 h-9 grid place-items-center rounded-full"
               style={{ color: 'var(--fg-2)' }}
               aria-label="消息"
             >
-              <IconMessage />
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z"/></svg>
               <span
-                className="absolute min-w-4 h-4 px-1 rounded-full text-[10px] font-semibold grid place-items-center"
+                className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full text-[10px] font-semibold flex items-center justify-center"
                 style={{
-                  transform: 'translate(8px, -8px)',
                   background: 'var(--accent)',
                   color: 'var(--accent-on)',
-                  fontFamily: 'var(--font-mono)',
+                  lineHeight: 1,
                   border: '1.5px solid var(--bg)',
                 }}
               >3</span>
             </button>
             <button
-              className="relative w-11 h-11 grid place-items-center rounded-full"
+              className="w-9 h-9 grid place-items-center rounded-full"
               style={{ color: 'var(--fg-2)' }}
               aria-label="切换门店"
             >
-              <IconSwitch />
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9h13a4 4 0 0 1 0 8H9M3 9l4-4M3 9l4 4M21 15H8a4 4 0 0 1 0-8h7"/></svg>
             </button>
           </div>
         </section>
