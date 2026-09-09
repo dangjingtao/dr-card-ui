@@ -162,4 +162,5 @@ export const DEVICE_PAGE_TITLES: Record<DeviceType, string> = {
   laundry: '自助洗烘',
   water: '直饮水',
   hairdryer: '吹风机',
+  vending: '自助售货机',
 }

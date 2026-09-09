@@ -15,8 +15,8 @@ import {
   DEVICE_LISTS,
   DEVICE_THEMES,
 } from '../app/fixtures/device'
-import { Button } from '../components/ui/button'
-import { Dialog } from '../components/ui/dialog'
+import { Button } from '../components/ui/Button'
+import { Dialog } from '../components/ui/Dialog'
 
 /**
  * 扫码购买页（T042）

@@ -184,7 +184,7 @@ export const ROUTES: RouteMeta[] = [
   {
     path: '/vending/order',
     title: '确认订单',
-    titleBar: 'default',
+    titleBar: 'back',
     nodes: [],
     task: 'T042',
     entry: '购买页 → 去结算',

@@ -8,8 +8,8 @@ import {
   Loader2,
   ChevronRight,
 } from 'lucide-react'
-import { Button } from '../components/ui/button'
-import { Dialog } from '../components/ui/dialog'
+import { Button } from '../components/ui/Button'
+import { Dialog } from '../components/ui/Dialog'
 
 /**
  * 售货机订单确认页（T042）
