@@ -79,7 +79,6 @@ const designTokensCss = `
   --fg-2:         #44474d;
   --border-soft:  #f1f2f4;
   --surface-warm: #fff1ea;
-  --stage:        #e6e8ee;
 
   /* ── accent system ── */
   --accent-on:    #ffffff;
@@ -93,10 +92,6 @@ const designTokensCss = `
   --success:      #16a34a;
   --warn:         #f59e0b;
   --danger:       #dc2626;
-
-  /* ── phone frame ── */
-  --frame-outer:  #1c1d22;
-  --frame-inner:  #2a2c33;
 
   /* ── search ── */
   --search-bg:        #eceef2;
@@ -190,7 +185,6 @@ const designTokensCss = `
   --font-body:    'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', system-ui, -apple-system, 'Helvetica Neue', sans-serif;
   --font-mono:    ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, monospace;
 
-  --phone-w: 390px;
   --gutter:  16px;
 }
 
@@ -255,21 +249,6 @@ const designTokensCss = `
 
 /* floating cart gradient */
 .mall-home .float-cart-bg { background: linear-gradient(135deg, var(--cart-bg-a), var(--cart-bg-b)); }
-
-/* bottom nav blur */
-.mall-home .bottom-nav-bg {
-  background: rgba(255,255,255,0.96);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-}
-
-/* phone frame shadow */
-.mall-home .phone-frame {
-  box-shadow:
-    0 0 0 10px var(--frame-outer),
-    0 0 0 11px var(--frame-inner),
-    0 30px 60px rgba(31,32,36,0.28);
-}
 
 /* coupon notches */
 .mall-home .coupon-card::before,
@@ -408,7 +387,7 @@ function FlashBottleSvg({ label }: { label: string }) {
     <svg viewBox="0 0 60 90" fill="none">
       <path d="M22 4h16l-2 6h-12z" className="ill-fill-accent" opacity=".85" />
       <path d="M20 10h20l-3 70a4 4 0 0 1-4 4H27a4 4 0 0 1-4-4z" className="ill-fill-meal-tr ill-stroke-meal" strokeWidth="1.4" />
-      <text x="30" y="50" textAnchor="middle" fontFamily="PingFang SC" fontWeight="700" fontSize="6" className="ill-fill-accent">{label}</text>
+      <text x="30" y="50" textAnchor="middle" fontFamily="PingFang SC, system-ui" fontWeight="700" fontSize="6" className="ill-fill-accent">{label}</text>
     </svg>
   )
 }
@@ -477,14 +456,6 @@ const scenarioList = [
   { id: 'vip',     tone: 't-gold' as const, title: '会员特价', desc: '会员专享价' },
   { id: 'night',   tone: 't-teal' as const, title: '夜宵专场', desc: '深夜也送达' },
   { id: 'morning', tone: 't-blue' as const, title: '早餐预定', desc: '明早准时取' },
-]
-
-const navList = [
-  { id: 'home',   label: '首页',     active: true  },
-  { id: 'cat',    label: '分类',     active: false },
-  { id: 'cart',   label: '购物车',   active: false, badge: true },
-  { id: 'orders', label: '订单',     active: false },
-  { id: 'me',     label: '我的',     active: false },
 ]
 
 // ─── Icon SVGs (inline, stroke-based) ────────────────────────────────────────
@@ -704,42 +675,6 @@ function IconCart() {
   )
 }
 
-function IconNavHome() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z" />
-    </svg>
-  )
-}
-
-function IconNavCat() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="3" width="7" height="7" rx="1.2" />
-      <rect x="14" y="3" width="7" height="7" rx="1.2" />
-      <rect x="3" y="14" width="7" height="7" rx="1.2" />
-      <rect x="14" y="14" width="7" height="7" rx="1.2" />
-    </svg>
-  )
-}
-
-function IconNavOrders() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M4 6h16M4 12h16M4 18h10" />
-    </svg>
-  )
-}
-
-function IconNavMe() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="8" r="4" />
-      <path d="M4 21a8 8 0 0 1 16 0" />
-    </svg>
-  )
-}
-
 function IconTrash() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -918,632 +853,558 @@ export default function MallHome() {
 
   // ── Render ──
   return (
-    <div className="mall-home min-h-screen flex justify-center py-8 px-4 pb-20" style={{ background: 'var(--stage)', fontFamily: 'var(--font-body)', color: 'var(--fg)', fontSize: 'var(--fs-base)', lineHeight: 1.5 }}>
+    <div className="mall-home min-h-screen w-full" style={{ background: 'var(--bg)', fontFamily: 'var(--font-body)', color: 'var(--fg)', fontSize: 'var(--fs-base)', lineHeight: 1.5 }}>
       <style dangerouslySetInnerHTML={{ __html: designTokensCss }} />
 
-      {/* Phone frame */}
-      <div
-        className="phone-frame relative rounded-[44px] overflow-hidden"
-        style={{ width: 'var(--phone-w)', maxWidth: '100%', background: 'var(--bg)', paddingBottom: 92 }}
-      >
-        {/* Dynamic island */}
-        <div
-          className="absolute top-[11px] left-1/2 -translate-x-1/2 w-[110px] h-8 rounded-[18px] z-50 pointer-events-none"
-          style={{ background: 'var(--frame-outer)' }}
-          aria-hidden="true"
-        />
-
-        {/* Status bar */}
-        <div
-          className="h-[47px] px-7 flex items-center justify-between font-semibold tracking-tight"
-          style={{ fontFamily: 'var(--font-mono)', fontSize: 15, color: 'var(--fg)' }}
-          aria-hidden="true"
-        >
-          <span>9:41</span>
-          <div className="flex items-center gap-1.5">
-            <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor"><path d="M2 17h2v3H2zm5-3h2v6H7zm5-3h2v9h-2zm5-3h2v12h-2z"/></svg>
-            <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor"><path d="M12 4C7 4 2.7 6.2 0 9.5l2 2C4.1 9 7.9 7.2 12 7.2s7.9 1.8 10 4.3l2-2C21.3 6.2 17 4 12 4zm0 6c-3.1 0-6 1.4-8 3.5l2 2c1.5-1.5 3.7-2.5 6-2.5s4.5 1 6 2.5l2-2c-2-2.1-4.9-3.5-8-3.5zm0 6c-1.5 0-2.9.6-4 1.7L12 22l4-4.3c-1.1-1.1-2.5-1.7-4-1.7z"/></svg>
-            <svg viewBox="0 0 26 14" className="w-[18px] h-3.5" fill="none">
-              <rect x="0.5" y="0.5" width="22" height="13" rx="3.5" stroke="currentColor" opacity=".5" />
-              <rect x="2" y="2" width="19" height="10" rx="2" fill="currentColor" />
-              <rect x="23.5" y="4" width="2" height="6" rx="1" fill="currentColor" opacity=".5" />
-            </svg>
+      <div className="w-full pb-24" style={{ background: 'var(--bg)', maxWidth: '100%', margin: '0 auto' }}>
+        {/* ─── Store header ─── */}
+        <section className="px-4 pt-2 pb-3.5 flex items-center justify-between gap-3" style={{ background: 'var(--bg)' }}>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 font-semibold" style={{ fontSize: 'var(--fs-lg)' }}>
+              <span className="flex-shrink-0" style={{ color: 'var(--accent)' }}><IconPin /></span>
+              <span className="truncate">朝阳合生汇店</span>
+              <span className="text-xs" style={{ color: 'var(--muted)' }}>▾</span>
+            </div>
+            <div className="mt-1 flex items-center gap-1.5 text-xs whitespace-nowrap" style={{ color: 'var(--muted)', fontSize: 'var(--fs-sm)' }}>
+              <span className="w-1.5 h-1.5 rounded-full status-dot" style={{ background: 'var(--success)' }} />
+              <span>营业中 · 24h</span>
+              <span style={{ color: 'var(--border)' }}>|</span>
+              <span>距您 320m</span>
+              <span style={{ color: 'var(--border)' }}>|</span>
+              <span>约 28 分钟达</span>
+            </div>
           </div>
-        </div>
-
-        <div className="w-full" style={{ background: 'var(--bg)' }}>
-          {/* ─── Store header ─── */}
-          <section className="px-4 pt-2 pb-3.5 flex items-center justify-between gap-3" style={{ background: 'var(--bg)' }}>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5 font-semibold" style={{ fontSize: 'var(--fs-lg)' }}>
-                <span className="flex-shrink-0" style={{ color: 'var(--accent)' }}><IconPin /></span>
-                <span className="truncate">朝阳合生汇店</span>
-                <span className="text-xs" style={{ color: 'var(--muted)' }}>▾</span>
-              </div>
-              <div className="mt-1 flex items-center gap-1.5 text-xs whitespace-nowrap" style={{ color: 'var(--muted)', fontSize: 'var(--fs-sm)' }}>
-                <span className="w-1.5 h-1.5 rounded-full status-dot" style={{ background: 'var(--success)' }} />
-                <span>营业中 · 24h</span>
-                <span style={{ color: 'var(--border)' }}>|</span>
-                <span>距您 320m</span>
-                <span style={{ color: 'var(--border)' }}>|</span>
-                <span>约 28 分钟达</span>
-              </div>
-            </div>
-            <div className="flex gap-1 flex-shrink-0">
-              <button
-                className="relative w-11 h-11 grid place-items-center rounded-full transition-colors duration-150 hover:text-[var(--accent)]"
-                style={{ color: 'var(--fg-2)' }}
-                onMouseEnter={e => e.currentTarget.style.background = 'var(--accent-tint)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                aria-label="扫一扫"
-              >
-                <IconScan />
-              </button>
-              <button
-                className="relative w-11 h-11 grid place-items-center rounded-full transition-colors duration-150"
-                style={{ color: 'var(--fg-2)' }}
-                onMouseEnter={e => e.currentTarget.style.background = 'var(--accent-tint)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                aria-label="消息"
-              >
-                <IconMessage />
-                <span
-                  className="absolute min-w-4 h-4 px-1 rounded-full text-[10px] font-semibold grid place-items-center"
-                  style={{
-                    transform: 'translate(8px, -8px)',
-                    background: 'var(--accent)',
-                    color: 'var(--accent-on)',
-                    fontFamily: 'var(--font-mono)',
-                    border: '1.5px solid var(--bg)',
-                  }}
-                >3</span>
-              </button>
-              <button
-                className="relative w-11 h-11 grid place-items-center rounded-full transition-colors duration-150"
-                style={{ color: 'var(--fg-2)' }}
-                onMouseEnter={e => e.currentTarget.style.background = 'var(--accent-tint)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                aria-label="切换门店"
-              >
-                <IconSwitch />
-              </button>
-            </div>
-          </section>
-
-          {/* ─── Search ─── */}
-          <div
-            className="mx-4 mb-1 h-10 px-3.5 pl-3.5 flex items-center gap-2 rounded-full transition-colors duration-150"
-            style={{ background: 'var(--search-bg)', color: 'var(--muted)', fontSize: 'var(--fs-base)' }}
-          >
-            <IconSearch />
-            <span className="flex-1" style={{ color: 'var(--muted)' }}>搜索商品、品牌或分类</span>
+          <div className="flex gap-1 flex-shrink-0">
             <button
-              className="w-7 h-7 grid place-items-center rounded-full transition-colors duration-150"
-              style={{ color: 'var(--accent)' }}
-              onMouseEnter={e => e.currentTarget.style.background = 'var(--accent-tint)'}
-              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-              aria-label="语音搜索"
+              className="relative w-11 h-11 grid place-items-center rounded-full"
+              style={{ color: 'var(--fg-2)' }}
+              aria-label="扫一扫"
             >
-              <IconVoice />
+              <IconScan />
+            </button>
+            <button
+              className="relative w-11 h-11 grid place-items-center rounded-full"
+              style={{ color: 'var(--fg-2)' }}
+              aria-label="消息"
+            >
+              <IconMessage />
+              <span
+                className="absolute min-w-4 h-4 px-1 rounded-full text-[10px] font-semibold grid place-items-center"
+                style={{
+                  transform: 'translate(8px, -8px)',
+                  background: 'var(--accent)',
+                  color: 'var(--accent-on)',
+                  fontFamily: 'var(--font-mono)',
+                  border: '1.5px solid var(--bg)',
+                }}
+              >3</span>
+            </button>
+            <button
+              className="relative w-11 h-11 grid place-items-center rounded-full"
+              style={{ color: 'var(--fg-2)' }}
+              aria-label="切换门店"
+            >
+              <IconSwitch />
             </button>
           </div>
+        </section>
 
-          {/* ─── Categories ─── */}
-          <section className="px-4 pt-3 pb-2 grid grid-cols-4 gap-y-3 gap-x-1" style={{ background: 'var(--bg)' }}>
-            {categoryList.map(cat => (
-              <button
-                key={cat.id}
-                className="flex flex-col items-center gap-1.5 py-1 active:scale-96 transition-transform duration-150"
-              >
-                <span
-                  className="w-11 h-11 rounded-[14px] grid place-items-center flex-shrink-0"
-                  style={{ background: catBgVar[cat.tone], color: catFgVar[cat.tone] }}
-                >
-                  {getCategoryIcon(cat.id)}
-                </span>
-                <span className="text-center leading-tight" style={{ fontSize: 'var(--fs-sm)', color: 'var(--fg)' }}>{cat.label}</span>
-              </button>
-            ))}
-          </section>
-
-          {/* ─── Promo banner ─── */}
-          <section className="mt-3 mx-4">
-            <div className="promo-banner relative rounded-[14px] p-4.5 px-5 text-white grid grid-cols-[1fr_auto] gap-3 items-center min-h-[116px] overflow-hidden">
-              <div className="relative z-10">
-                <p className="opacity-90 mb-1.5" style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase' }}>限时 · 今日</p>
-                <h2 className="font-bold tracking-tight leading-tight mb-1" style={{ fontFamily: 'var(--font-display)', fontSize: 22 }}>冰柜清仓 买二送一</h2>
-                <p className="text-sm opacity-92 mb-3">指定饮料 / 冰品 · 整单立享</p>
-                <button
-                  className="inline-flex items-center gap-1 font-semibold px-3.5 py-[7px] rounded-full transition-transform duration-100 active:scale-96"
-                  style={{ background: 'var(--surface)', color: 'var(--accent)', fontSize: 'var(--fs-sm)' }}
-                  onClick={openDrawer}
-                >立即抢购 →</button>
-              </div>
-              <div className="relative z-10 w-22 h-22 grid place-items-center flex-shrink-0" style={{ width: 88, height: 88 }} aria-hidden="true">
-                <IceCreamSvg />
-              </div>
-            </div>
-            <div className="flex justify-center gap-1 mt-2.5" aria-hidden="true">
-              <span className="w-3.5 h-1.25 rounded-full" style={{ background: 'var(--accent)' }} />
-              <span className="w-1.25 h-1.25 rounded-full" style={{ background: 'var(--border)' }} />
-              <span className="w-1.25 h-1.25 rounded-full" style={{ background: 'var(--border)' }} />
-              <span className="w-1.25 h-1.25 rounded-full" style={{ background: 'var(--border)' }} />
-            </div>
-          </section>
-
-          {/* ─── Coupons ─── */}
-          <section className="mt-3.5 pt-3.5 pb-1">
-            <div className="flex gap-2.5 px-4 pb-3.5 overflow-x-auto scroll-smooth" style={{ scrollbarWidth: 'none' }}>
-              {coupons.map(coupon => {
-                const claimed = claimedCoupons.has(coupon.id)
-                return (
-                  <div
-                    key={coupon.id}
-                    className="coupon-card flex-0-0-[156px] bg-white border rounded-[10px] p-3 px-3.5 flex flex-col justify-between gap-2 min-h-[88px] relative transition-colors duration-150"
-                    style={{ flex: '0 0 156px', borderColor: 'var(--border)', background: 'var(--surface)' }}
-                  >
-                    <div>
-                      <div className="font-bold tracking-tight leading-none" style={{ fontFamily: 'var(--font-display)', fontSize: 26, color: 'var(--accent)' }}>
-                        <span className="text-sm mr-0.5" style={{ fontSize: 14 }}>¥</span>{coupon.amount}
-                      </div>
-                      <div className="text-[11px] mt-0.5" style={{ color: 'var(--muted)' }}>
-                        {coupon.desc}
-                      </div>
-                    </div>
-                    <button
-                      className={`self-start text-[11px] font-semibold px-2.5 py-1 rounded-full border transition-colors duration-150 ${claimed ? '' : 'hover:bg-[var(--accent-tint)]'}`}
-                      style={{
-                        borderColor: claimed ? 'var(--border)' : 'var(--accent)',
-                        color: claimed ? 'var(--muted)' : 'var(--accent)',
-                        background: 'transparent',
-                        cursor: claimed ? 'default' : 'pointer',
-                      }}
-                      onClick={() => claimCoupon(coupon.id)}
-                      disabled={claimed}
-                    >
-                      {claimed ? '已领取' : '领取'}
-                    </button>
-                  </div>
-                )
-              })}
-            </div>
-          </section>
-
-          {/* ─── Scenarios ─── */}
-          <section className="mt-4.5 px-4">
-            <div
-              className="rounded-[14px] p-1 grid grid-cols-2 elev-card"
-              style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-            >
-              {scenarioList.map((sce, i) => (
-                <button
-                  key={sce.id}
-                  className="p-3.5 flex gap-3 items-center rounded-[10px] transition-colors duration-150 hover:bg-[var(--accent-tint)] min-h-[76px]"
-                  style={{
-                    borderTop: i >= 2 ? '1px solid var(--border-soft)' : 'none',
-                    borderRight: i % 2 === 0 ? '1px solid var(--border-soft)' : 'none',
-                  }}
-                >
-                  <span className={`sce-${sce.tone} w-10 h-10 rounded-[12px] grid place-items-center flex-shrink-0`} style={{ color: 'var(--surface)' }}>
-                    {getScenarioIcon(sce.id)}
-                  </span>
-                  <span className="min-w-0 text-left">
-                    <h4 className="font-semibold mb-0.5" style={{ fontSize: 'var(--fs-md)' }}>{sce.title}</h4>
-                    <p className="text-[11px]" style={{ color: 'var(--muted)' }}>{sce.desc}</p>
-                  </span>
-                </button>
-              ))}
-            </div>
-          </section>
-
-          {/* ─── Product recommendation ─── */}
-          <section className="px-4 pt-5">
-            <div className="flex items-baseline justify-between mb-3">
-              <h2 className="font-bold tracking-tight" style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--fs-xl)' }}>猜你喜欢</h2>
-              <a href="#" className="inline-flex items-center gap-0.5 transition-colors duration-150 hover:text-[var(--accent)]" style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)' }}>
-                查看全部 →
-              </a>
-            </div>
-            <div className="flex gap-[18px] overflow-x-auto pb-3 mb-3" style={{ scrollbarWidth: 'none', borderBottom: '1px solid var(--border)' }}>
-              {tabList.map((tab, i) => (
-                <button
-                  key={tab}
-                  className="flex-shrink-0 py-2 relative transition-colors duration-150"
-                  style={{
-                    fontSize: 'var(--fs-md)',
-                    color: activeTab === i ? 'var(--accent)' : 'var(--muted)',
-                    fontWeight: activeTab === i ? 600 : 400,
-                  }}
-                  onClick={() => setActiveTab(i)}
-                >
-                  {tab}
-                  {activeTab === i && (
-                    <span
-                      className="absolute left-1/2 -translate-x-1/2 -bottom-px w-[18px] h-0.5 rounded-sm"
-                      style={{ background: 'var(--accent)' }}
-                    />
-                  )}
-                </button>
-              ))}
-            </div>
-
-            {/* Product grid */}
-            <div className="grid grid-cols-2 gap-2.5">
-              {products.map(product => {
-                const qty = cart.get(product.id)?.n ?? 0
-                return (
-                  <article
-                    key={product.id}
-                    className="rounded-[14px] overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-0.5"
-                    style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-                  >
-                    <div
-                      className="relative aspect-square grid place-items-center overflow-hidden"
-                      style={{ background: coverBgVar[product.tone] ?? 'var(--accent-tint)' }}
-                    >
-                      {product.tag && (
-                        <span
-                          className={`absolute top-2 left-2 font-semibold px-1.5 py-0.5 rounded" ${product.tag === '新品' ? '' : product.tag === '直降' ? 'tag-gold' : ''}`}
-                          style={{
-                            fontFamily: 'var(--font-mono)',
-                            fontSize: 10,
-                            letterSpacing: '0.04em',
-                            background: product.tag === '新品'
-                              ? 'rgba(31,32,36,0.55)'
-                              : product.tag === '直降'
-                                ? undefined
-                                : 'var(--accent)',
-                            color: 'var(--accent-on)',
-                            borderRadius: 4,
-                            padding: '2px 6px',
-                          }}
-                        >
-                          {product.tag}
-                        </span>
-                      )}
-                      <div className="w-[64%] h-[64%]">
-                        <ProductCoverSvg svgKey={product.svgKey} name={product.name} />
-                      </div>
-                    </div>
-                    <div className="p-2.5 pb-3 flex flex-col gap-1.5 flex-1">
-                      <div
-                        className="font-medium leading-tight line-clamp-2"
-                        style={{ fontSize: 'var(--fs-base)', color: 'var(--fg)', minHeight: 36 }}
-                      >
-                        {product.name}
-                      </div>
-                      <div className="text-[11px]" style={{ color: 'var(--muted)' }}>{product.spec}</div>
-                      <div className="mt-auto flex items-end justify-between gap-1.5">
-                        <div className="flex flex-col gap-0.25">
-                          <div className="font-bold tracking-tight leading-none" style={{ fontFamily: 'var(--font-display)', fontSize: 19, color: 'var(--accent)' }}>
-                            <span className="font-semibold" style={{ fontSize: 12, marginRight: 1 }}>¥</span>{product.price.toFixed(1)}
-                          </div>
-                          <div className="text-[11px] line-through" style={{ color: 'var(--muted)' }}>¥{product.priceOld.toFixed(1)}</div>
-                        </div>
-                        {qty === 0 ? (
-                          <button
-                            className="relative w-6.5 h-6.5 rounded-full grid place-items-center flex-shrink-0 transition-all duration-150 active:scale-90"
-                            style={{ width: 26, height: 26, background: 'var(--accent)', color: 'var(--accent-on)' }}
-                            onClick={() => handleAddClick(product)}
-                            aria-label="加入购物车"
-                          >
-                            <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2">
-                              <path d="M12 5v14M5 12h14" />
-                            </svg>
-                          </button>
-                        ) : (
-                          <button
-                            className="inline-flex items-center gap-1 h-6.5 px-1 rounded-full transition-transform duration-100 active:scale-95"
-                            style={{ height: 26, background: 'var(--accent)', color: 'var(--accent-on)', borderRadius: 13 }}
-                            onClick={handleQtyClick}
-                            aria-label="调整数量"
-                          >
-                            <span
-                              className="w-5 h-5 rounded-full grid place-items-center"
-                              style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
-                              onClick={e => { e.stopPropagation(); handleQtyMinus(product.id) }}
-                            >
-                              <svg viewBox="0 0 24 24" className="w-3 h-3" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="2.2">
-                                <path d="M5 12h14" />
-                              </svg>
-                            </span>
-                            <span className="font-bold text-center" style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-base)', minWidth: 16 }}>{qty}</span>
-                            <span
-                              className="w-5 h-5 rounded-full grid place-items-center"
-                              style={{ background: 'var(--surface)', color: 'var(--accent)' }}
-                              onClick={e => { e.stopPropagation(); handleQtyPlus(product) }}
-                            >
-                              <svg viewBox="0 0 24 24" className="w-3 h-3" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="2.2">
-                                <path d="M12 5v14M5 12h14" />
-                              </svg>
-                            </span>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </article>
-                )
-              })}
-            </div>
-          </section>
-
-          {/* ─── Flash sale ─── */}
-          <section className="px-4 pt-5">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <svg className="w-5.5 h-5.5" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'var(--accent)', width: 22, height: 22 }}>
-                  <path d="M13 2 4 14h6l-1 8 9-12h-6z" />
-                </svg>
-                <h2 className="font-bold" style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--fs-xl)' }}>限时秒杀</h2>
-              </div>
-              <div className="inline-flex items-center gap-1" style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-sm)', color: 'var(--fg-2)' }}>
-                <span className="mr-1" style={{ color: 'var(--muted)' }}>距结束</span>
-                <span className="font-semibold px-1.25 py-0.5 rounded-sm text-center" style={{ background: 'var(--countdown-bg)', color: 'var(--surface)', minWidth: 22 }}>02</span>
-                <span style={{ color: 'var(--muted)' }}>:</span>
-                <span className="font-semibold px-1.25 py-0.5 rounded-sm text-center" style={{ background: 'var(--countdown-bg)', color: 'var(--surface)', minWidth: 22 }}>14</span>
-                <span style={{ color: 'var(--muted)' }}>:</span>
-                <span className="font-semibold px-1.25 py-0.5 rounded-sm text-center" style={{ background: 'var(--countdown-bg)', color: 'var(--surface)', minWidth: 22 }}>36</span>
-              </div>
-            </div>
-            <div className="flex gap-2.5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-              {flashItems.map(f => {
-                const cartQty = cart.get(f.id)?.n ?? 0
-                return (
-                  <article
-                    key={f.id}
-                    className="flex-0-0-[138px] rounded-[10px] overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-0.5"
-                    style={{ flex: '0 0 138px', background: 'var(--surface)', border: '1px solid var(--border)' }}
-                  >
-                    <div className="relative aspect-square grid place-items-center" style={{ background: 'var(--accent-tint)' }}>
-                      <span
-                        className="absolute top-1.5 left-1.5 font-bold px-1.25 py-0.5 rounded-sm"
-                        style={{ fontFamily: 'var(--font-mono)', fontSize: 10, background: 'var(--accent)', color: 'var(--accent-on)' }}
-                      >直降</span>
-                      <div className="w-[60%] h-[60%]">
-                        <FlashBottleSvg label={f.name.split(' ')[0]} />
-                      </div>
-                    </div>
-                    <div className="p-2 pb-2.5 flex flex-col gap-1">
-                      <div
-                        className="font-medium leading-tight line-clamp-2"
-                        style={{ fontSize: 'var(--fs-sm)', color: 'var(--fg)', minHeight: 32 }}
-                      >
-                        {f.name}
-                      </div>
-                      <div className="flex items-baseline gap-1.5">
-                        <span className="font-bold" style={{ fontFamily: 'var(--font-display)', fontSize: 17, color: 'var(--accent)' }}>
-                          <span style={{ fontSize: 11, marginRight: 1 }}>¥</span>{f.now.toFixed(1)}
-                        </span>
-                        <span className="text-[11px] line-through" style={{ color: 'var(--muted)' }}>¥{f.old.toFixed(1)}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="flex-1 h-1.25 rounded-full overflow-hidden" style={{ background: 'var(--progress-track)' }}>
-                          <i className="block h-full progress-bar rounded-full" style={{ width: `${f.pct}%` }} />
-                        </span>
-                        <span className="text-[10px] flex-shrink-0" style={{ fontFamily: 'var(--font-mono)', color: 'var(--muted)' }}>剩 {f.pct}%</span>
-                      </div>
-                      <button
-                        className="relative mt-1.5 h-6.5 flash-buy-btn text-white text-[11px] font-semibold rounded-[13px] grid place-items-center tracking-wide transition-all duration-150 active:scale-[0.97]"
-                        style={{ height: 26, color: 'var(--accent-on)', fontSize: 'var(--fs-xs)', letterSpacing: '0.02em' }}
-                        onClick={() => addFlashToCart(f)}
-                      >
-                        {cartQty > 0 ? `已抢 ${cartQty} 件` : '立即抢购'}
-                      </button>
-                    </div>
-                  </article>
-                )
-              })}
-            </div>
-          </section>
-
-          {/* ─── Footer note ─── */}
-          <section className="px-4 pt-5 pb-2 text-center">
-            <p style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)', padding: '12px 0 4px' }}>
-              已展示部分商品 · 向下滚动查看更多
-            </p>
-          </section>
+        {/* ─── Search ─── */}
+        <div
+          className="mx-4 mb-1 h-10 px-3.5 pl-3.5 flex items-center gap-2 rounded-full"
+          style={{ background: 'var(--search-bg)', color: 'var(--muted)', fontSize: 'var(--fs-base)' }}
+        >
+          <IconSearch />
+          <span className="flex-1" style={{ color: 'var(--muted)' }}>搜索商品、品牌或分类</span>
+          <button
+            className="w-7 h-7 grid place-items-center rounded-full"
+            style={{ color: 'var(--accent)' }}
+            aria-label="语音搜索"
+          >
+            <IconVoice />
+          </button>
         </div>
 
-        {/* ─── Floating cart ─── */}
-        <button
-          key={cartBounceKey}
-          className={`float-cart-bg absolute right-4 bottom-[110px] h-12 px-4 pl-3.5 rounded-[24px] inline-flex items-center gap-2.5 elev-float z-35 transition-transform duration-150 hover:-translate-y-0.5 bounce-anim`}
-          style={{ color: 'var(--surface)' }}
-          onClick={openDrawer}
-          aria-label="打开购物车"
-        >
-          <span className="relative w-7.5 h-7.5 rounded-full grid place-items-center flex-shrink-0" style={{ width: 30, height: 30, background: 'var(--accent)' }}>
-            <IconCart />
-            {totals.count > 0 && (
+        {/* ─── Categories ─── */}
+        <section className="px-4 pt-3 pb-2 grid grid-cols-4 gap-y-3 gap-x-1" style={{ background: 'var(--bg)' }}>
+          {categoryList.map(cat => (
+            <button
+              key={cat.id}
+              className="flex flex-col items-center gap-1.5 py-1 active:scale-96"
+            >
               <span
-                className="absolute -top-0.75 -right-1 min-w-[18px] h-[18px] px-1.25 rounded-[9px] font-bold text-[11px] grid place-items-center"
+                className="w-11 h-11 rounded-[14px] grid place-items-center flex-shrink-0"
+                style={{ background: catBgVar[cat.tone], color: catFgVar[cat.tone] }}
+              >
+                {getCategoryIcon(cat.id)}
+              </span>
+              <span className="text-center leading-tight" style={{ fontSize: 'var(--fs-sm)', color: 'var(--fg)' }}>{cat.label}</span>
+            </button>
+          ))}
+        </section>
+
+        {/* ─── Promo banner ─── */}
+        <section className="mt-3 mx-4">
+          <div className="promo-banner relative rounded-[14px] p-4.5 px-5 text-white grid grid-cols-[1fr_auto] gap-3 items-center min-h-[116px] overflow-hidden">
+            <div className="relative z-10">
+              <p className="opacity-90 mb-1.5" style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase' }}>限时 · 今日</p>
+              <h2 className="font-bold tracking-tight leading-tight mb-1" style={{ fontFamily: 'var(--font-display)', fontSize: 22 }}>冰柜清仓 买二送一</h2>
+              <p className="text-sm opacity-92 mb-3">指定饮料 / 冰品 · 整单立享</p>
+              <button
+                className="inline-flex items-center gap-1 font-semibold px-3.5 py-[7px] rounded-full active:scale-96"
+                style={{ background: 'var(--surface)', color: 'var(--accent)', fontSize: 'var(--fs-sm)' }}
+                onClick={openDrawer}
+              >立即抢购 →</button>
+            </div>
+            <div className="relative z-10 w-22 h-22 grid place-items-center flex-shrink-0" style={{ width: 88, height: 88 }} aria-hidden="true">
+              <IceCreamSvg />
+            </div>
+          </div>
+          <div className="flex justify-center gap-1 mt-2.5" aria-hidden="true">
+            <span className="w-3.5 h-1.25 rounded-full" style={{ background: 'var(--accent)' }} />
+            <span className="w-1.25 h-1.25 rounded-full" style={{ background: 'var(--border)' }} />
+            <span className="w-1.25 h-1.25 rounded-full" style={{ background: 'var(--border)' }} />
+            <span className="w-1.25 h-1.25 rounded-full" style={{ background: 'var(--border)' }} />
+          </div>
+        </section>
+
+        {/* ─── Coupons ─── */}
+        <section className="mt-3.5 pt-3.5 pb-1">
+          <div className="flex gap-2.5 px-4 pb-3.5 overflow-x-auto scroll-smooth" style={{ scrollbarWidth: 'none' }}>
+            {coupons.map(coupon => {
+              const claimed = claimedCoupons.has(coupon.id)
+              return (
+                <div
+                  key={coupon.id}
+                  className="coupon-card flex-0-0-[156px] bg-white border rounded-[10px] p-3 px-3.5 flex flex-col justify-between gap-2 min-h-[88px] relative"
+                  style={{ flex: '0 0 156px', borderColor: 'var(--border)', background: 'var(--surface)' }}
+                >
+                  <div>
+                    <div className="font-bold tracking-tight leading-none" style={{ fontFamily: 'var(--font-display)', fontSize: 26, color: 'var(--accent)' }}>
+                      <span className="text-sm mr-0.5" style={{ fontSize: 14 }}>¥</span>{coupon.amount}
+                    </div>
+                    <div className="text-[11px] mt-0.5" style={{ color: 'var(--muted)' }}>
+                      {coupon.desc}
+                    </div>
+                  </div>
+                  <button
+                    className="self-start text-[11px] font-semibold px-2.5 py-1 rounded-full border"
+                    style={{
+                      borderColor: claimed ? 'var(--border)' : 'var(--accent)',
+                      color: claimed ? 'var(--muted)' : 'var(--accent)',
+                      background: 'transparent',
+                      cursor: claimed ? 'default' : 'pointer',
+                    }}
+                    onClick={() => claimCoupon(coupon.id)}
+                    disabled={claimed}
+                  >
+                    {claimed ? '已领取' : '领取'}
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+
+        {/* ─── Scenarios ─── */}
+        <section className="mt-4.5 px-4">
+          <div
+            className="rounded-[14px] p-1 grid grid-cols-2 elev-card"
+            style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+          >
+            {scenarioList.map((sce, i) => (
+              <button
+                key={sce.id}
+                className="p-3.5 flex gap-3 items-center rounded-[10px] min-h-[76px]"
                 style={{
-                  top: -3, right: -4,
-                  background: 'var(--cart-badge-bg)',
-                  color: 'var(--accent)',
-                  fontFamily: 'var(--font-mono)',
-                  border: '2px solid var(--frame-outer)',
+                  borderTop: i >= 2 ? '1px solid var(--border-soft)' : 'none',
+                  borderRight: i % 2 === 0 ? '1px solid var(--border-soft)' : 'none',
                 }}
               >
-                {totals.count}
-              </span>
-            )}
-          </span>
-          <span className="flex flex-col leading-tight">
-            <span className="text-[9px] opacity-65 uppercase" style={{ letterSpacing: '0.05em' }}>共 {totals.count} 件</span>
-            <span className="font-bold tracking-tight" style={{ fontFamily: 'var(--font-display)', fontSize: 16 }}>¥ {totals.total.toFixed(2)}</span>
-          </span>
-        </button>
+                <span className={`sce-${sce.tone} w-10 h-10 rounded-[12px] grid place-items-center flex-shrink-0`} style={{ color: 'var(--surface)' }}>
+                  {getScenarioIcon(sce.id)}
+                </span>
+                <span className="min-w-0 text-left">
+                  <h4 className="font-semibold mb-0.5" style={{ fontSize: 'var(--fs-md)' }}>{sce.title}</h4>
+                  <p className="text-[11px]" style={{ color: 'var(--muted)' }}>{sce.desc}</p>
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
 
-        {/* ─── Bottom nav ─── */}
-        <nav
-          className="absolute left-0 right-0 bottom-0 bottom-nav-bg border-t z-40 grid grid-cols-5"
-          style={{ padding: '6px 0 22px', borderColor: 'var(--border)' }}
-          aria-label="主导航"
-        >
-          {navList.map(item => (
-            <a
-              key={item.id}
-              href="#"
-              className="flex flex-col items-center gap-0.5 py-1.5 text-[10px] relative transition-colors duration-150 hover:text-[var(--fg)]"
-              style={{ color: item.active ? 'var(--accent)' : 'var(--muted)' }}
-            >
-              {item.id === 'home'   && <IconNavHome />}
-              {item.id === 'cat'    && <IconNavCat />}
-              {item.id === 'cart'   && <IconCart />}
-              {item.id === 'orders' && <IconNavOrders />}
-              {item.id === 'me'     && <IconNavMe />}
-              {item.badge && totals.count > 0 && (
-                <span
-                  className="absolute top-0.5 min-w-4 h-4 px-1 rounded-full text-[10px] font-semibold grid place-items-center"
-                  style={{
-                    transform: 'translateX(14px)',
-                    background: 'var(--accent)',
-                    color: 'var(--accent-on)',
-                    fontFamily: 'var(--font-mono)',
-                    border: '1.5px solid var(--surface)',
-                  }}
-                >{totals.count}</span>
-              )}
-              <span>{item.label}</span>
+        {/* ─── Flash sale ─── */}
+        <section className="px-4 pt-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <svg className="w-5.5 h-5.5" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'var(--accent)', width: 22, height: 22 }}>
+                <path d="M13 2 4 14h6l-1 8 9-12h-6z" />
+              </svg>
+              <h2 className="font-bold" style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--fs-xl)' }}>限时秒杀</h2>
+            </div>
+            <div className="inline-flex items-center gap-1" style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-sm)', color: 'var(--fg-2)' }}>
+              <span className="mr-1" style={{ color: 'var(--muted)' }}>距结束</span>
+              <span className="font-semibold px-1.25 py-0.5 rounded-sm text-center" style={{ background: 'var(--countdown-bg)', color: 'var(--surface)', minWidth: 22 }}>02</span>
+              <span style={{ color: 'var(--muted)' }}>:</span>
+              <span className="font-semibold px-1.25 py-0.5 rounded-sm text-center" style={{ background: 'var(--countdown-bg)', color: 'var(--surface)', minWidth: 22 }}>14</span>
+              <span style={{ color: 'var(--muted)' }}>:</span>
+              <span className="font-semibold px-1.25 py-0.5 rounded-sm text-center" style={{ background: 'var(--countdown-bg)', color: 'var(--surface)', minWidth: 22 }}>36</span>
+            </div>
+          </div>
+          <div className="flex gap-2.5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+            {flashItems.map(f => {
+              const cartQty = cart.get(f.id)?.n ?? 0
+              return (
+                <article
+                  key={f.id}
+                  className="flex-0-0-[138px] rounded-[10px] overflow-hidden flex flex-col"
+                  style={{ flex: '0 0 138px', background: 'var(--surface)', border: '1px solid var(--border)' }}
+                >
+                  <div className="relative aspect-square grid place-items-center" style={{ background: 'var(--accent-tint)' }}>
+                    <span
+                      className="absolute top-1.5 left-1.5 font-bold px-1.25 py-0.5 rounded-sm"
+                      style={{ fontFamily: 'var(--font-mono)', fontSize: 10, background: 'var(--accent)', color: 'var(--accent-on)' }}
+                    >直降</span>
+                    <div className="w-[60%] h-[60%]">
+                      <FlashBottleSvg label={f.name.split(' ')[0]} />
+                    </div>
+                  </div>
+                  <div className="p-2 pb-2.5 flex flex-col gap-1">
+                    <div
+                      className="font-medium leading-tight line-clamp-2"
+                      style={{ fontSize: 'var(--fs-sm)', color: 'var(--fg)', minHeight: 32 }}
+                    >
+                      {f.name}
+                    </div>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="font-bold" style={{ fontFamily: 'var(--font-display)', fontSize: 17, color: 'var(--accent)' }}>
+                        <span style={{ fontSize: 11, marginRight: 1 }}>¥</span>{f.now.toFixed(1)}
+                      </span>
+                      <span className="text-[11px] line-through" style={{ color: 'var(--muted)' }}>¥{f.old.toFixed(1)}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="flex-1 h-1.25 rounded-full overflow-hidden" style={{ background: 'var(--progress-track)' }}>
+                        <i className="block h-full progress-bar rounded-full" style={{ width: `${f.pct}%` }} />
+                      </span>
+                      <span className="text-[10px] flex-shrink-0" style={{ fontFamily: 'var(--font-mono)', color: 'var(--muted)' }}>剩 {f.pct}%</span>
+                    </div>
+                    <button
+                      className="relative mt-1.5 h-6.5 flash-buy-btn text-white text-[11px] font-semibold rounded-[13px] grid place-items-center tracking-wide active:scale-[0.97]"
+                      style={{ height: 26, color: 'var(--accent-on)', fontSize: 'var(--fs-xs)', letterSpacing: '0.02em' }}
+                      onClick={() => addFlashToCart(f)}
+                    >
+                      {cartQty > 0 ? `已抢 ${cartQty} 件` : '立即抢购'}
+                    </button>
+                  </div>
+                </article>
+              )
+            })}
+          </div>
+        </section>
+
+        {/* ─── Product recommendation ─── */}
+        <section className="px-4 pt-5">
+          <div className="flex items-baseline justify-between mb-3">
+            <h2 className="font-bold tracking-tight" style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--fs-xl)' }}>猜你喜欢</h2>
+            <a href="#" className="inline-flex items-center gap-0.5" style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)' }}>
+              查看全部 →
             </a>
-          ))}
-        </nav>
-
-        {/* ─── Cart drawer mask ─── */}
-        <div
-          className={`drawer-mask absolute inset-0 z-60 ${drawerOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}
-          style={{ background: 'var(--mask)', backdropFilter: 'blur(2px)' }}
-          onClick={closeDrawer}
-        />
-
-        {/* ─── Cart drawer ─── */}
-        <aside
-          className={`drawer-panel absolute left-0 right-0 bottom-0 rounded-t-[20px] elev-sheet z-70 max-h-[78%] flex flex-col ${drawerOpen ? 'translate-y-0' : 'translate-y-full'}`}
-          style={{ background: 'var(--surface)' }}
-          aria-label="购物车"
-        >
-          <span className="w-9 h-1 mx-auto my-2 rounded-sm" style={{ background: 'var(--border)' }} aria-hidden="true" />
-          <div className="px-[18px] pb-3 flex items-center justify-between" style={{ borderBottom: '1px solid var(--border-soft)' }}>
-            <h3 className="font-bold" style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--fs-lg)' }}>
-              购物车 · {totals.count} 件
-            </h3>
-            <button
-              className="inline-flex items-center gap-1 px-2 py-1 rounded-full transition-colors duration-150 hover:bg-[var(--accent-tint)] hover:text-[var(--accent)]"
-              style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)' }}
-              onClick={clearCart}
-              aria-label="清空购物车"
-            >
-              <IconTrash />
-              清空
-            </button>
+          </div>
+          <div className="flex gap-[18px] overflow-x-auto pb-3 mb-3" style={{ scrollbarWidth: 'none', borderBottom: '1px solid var(--border)' }}>
+            {tabList.map((tab, i) => (
+              <button
+                key={tab}
+                className="flex-shrink-0 py-2 relative"
+                style={{
+                  fontSize: 'var(--fs-md)',
+                  color: activeTab === i ? 'var(--accent)' : 'var(--muted)',
+                  fontWeight: activeTab === i ? 600 : 400,
+                }}
+                onClick={() => setActiveTab(i)}
+              >
+                {tab}
+                {activeTab === i && (
+                  <span
+                    className="absolute left-1/2 -translate-x-1/2 -bottom-px w-[18px] h-0.5 rounded-sm"
+                    style={{ background: 'var(--accent)' }}
+                  />
+                )}
+              </button>
+            ))}
           </div>
 
-          <div className="py-1 pb-2 overflow-y-auto flex-1">
-            {totals.count === 0 ? (
-              <div className="py-9 px-[18px] pb-6 text-center" style={{ color: 'var(--muted)', fontSize: 'var(--fs-sm)' }}>
-                <span className="block font-medium mb-1" style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--fs-md)', color: 'var(--fg-2)' }}>
-                  购物车空空如也
-                </span>
-                挑几件喜欢的商品加入吧
-              </div>
-            ) : (
-              Array.from(cart.values()).map(item => (
-                <div
-                  key={item.id}
-                  className="grid grid-cols-[56px_1fr_auto] gap-3 px-[18px] py-3 items-center"
-                  style={{ borderTop: '1px solid var(--border-soft)' }}
+          {/* Product grid */}
+          <div className="grid grid-cols-2 gap-2.5">
+            {products.map(product => {
+              const qty = cart.get(product.id)?.n ?? 0
+              return (
+                <article
+                  key={product.id}
+                  className="rounded-[14px] overflow-hidden flex flex-col"
+                  style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
                 >
                   <div
-                    className="w-14 h-14 rounded-[10px] grid place-items-center"
-                    style={{ background: coverBgVar[item.tone] ?? 'var(--accent-tint)' }}
+                    className="relative aspect-square grid place-items-center overflow-hidden"
+                    style={{ background: coverBgVar[product.tone] ?? 'var(--accent-tint)' }}
                   >
-                    <div className="w-[60%] h-[60%]">
-                      {item.isFlash ? (
-                        <FlashBottleSvg label={item.flashLabel ?? ''} />
+                    {product.tag && (
+                      <span
+                        className={`absolute top-2 left-2 font-semibold px-1.5 py-0.5 rounded" ${product.tag === '新品' ? '' : product.tag === '直降' ? 'tag-gold' : ''}`}
+                        style={{
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: 10,
+                          letterSpacing: '0.04em',
+                          background: product.tag === '新品'
+                            ? 'rgba(31,32,36,0.55)'
+                            : product.tag === '直降'
+                              ? undefined
+                              : 'var(--accent)',
+                          color: 'var(--accent-on)',
+                          borderRadius: 4,
+                          padding: '2px 6px',
+                        }}
+                      >
+                        {product.tag}
+                      </span>
+                    )}
+                    <div className="w-[64%] h-[64%]">
+                      <ProductCoverSvg svgKey={product.svgKey} name={product.name} />
+                    </div>
+                  </div>
+                  <div className="p-2.5 pb-3 flex flex-col gap-1.5 flex-1">
+                    <div
+                      className="font-medium leading-tight line-clamp-2"
+                      style={{ fontSize: 'var(--fs-base)', color: 'var(--fg)', minHeight: 36 }}
+                    >
+                      {product.name}
+                    </div>
+                    <div className="text-[11px]" style={{ color: 'var(--muted)' }}>{product.spec}</div>
+                    <div className="mt-auto flex items-end justify-between gap-1.5">
+                      <div className="flex flex-col gap-0.25">
+                        <div className="font-bold tracking-tight leading-none" style={{ fontFamily: 'var(--font-display)', fontSize: 19, color: 'var(--accent)' }}>
+                          <span className="font-semibold" style={{ fontSize: 12, marginRight: 1 }}>¥</span>{product.price.toFixed(1)}
+                        </div>
+                        <div className="text-[11px] line-through" style={{ color: 'var(--muted)' }}>¥{product.priceOld.toFixed(1)}</div>
+                      </div>
+                      {qty === 0 ? (
+                        <button
+                          className="relative w-6.5 h-6.5 rounded-full grid place-items-center flex-shrink-0 active:scale-90"
+                          style={{ width: 26, height: 26, background: 'var(--accent)', color: 'var(--accent-on)' }}
+                          onClick={() => handleAddClick(product)}
+                          aria-label="加入购物车"
+                        >
+                          <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2">
+                            <path d="M12 5v14M5 12h14" />
+                          </svg>
+                        </button>
                       ) : (
-                        <ProductCoverSvg svgKey={item.svgKey} name={item.name} />
+                        <button
+                          className="inline-flex items-center gap-1 h-6.5 px-1 rounded-full active:scale-95"
+                          style={{ height: 26, background: 'var(--accent)', color: 'var(--accent-on)', borderRadius: 13 }}
+                          onClick={handleQtyClick}
+                          aria-label="调整数量"
+                        >
+                          <span
+                            className="w-5 h-5 rounded-full grid place-items-center"
+                            style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
+                            onClick={e => { e.stopPropagation(); handleQtyMinus(product.id) }}
+                          >
+                            <svg viewBox="0 0 24 24" className="w-3 h-3" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="2.2">
+                              <path d="M5 12h14" />
+                            </svg>
+                          </span>
+                          <span className="font-bold text-center" style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-base)', minWidth: 16 }}>{qty}</span>
+                          <span
+                            className="w-5 h-5 rounded-full grid place-items-center"
+                            style={{ background: 'var(--surface)', color: 'var(--accent)' }}
+                            onClick={e => { e.stopPropagation(); handleQtyPlus(product) }}
+                          >
+                            <svg viewBox="0 0 24 24" className="w-3 h-3" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="2.2">
+                              <path d="M12 5v14M5 12h14" />
+                            </svg>
+                          </span>
+                        </button>
                       )}
                     </div>
                   </div>
-                  <div className="min-w-0">
-                    <div
-                      className="font-medium leading-tight truncate"
-                      style={{ fontSize: 'var(--fs-base)' }}
-                    >
-                      {item.name}
-                    </div>
-                    <div className="text-[11px] mt-0.5" style={{ color: 'var(--muted)' }}>{item.spec}</div>
-                    <div className="font-bold mt-1" style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--fs-md)', color: 'var(--accent)' }}>
-                      <span style={{ fontSize: 11, marginRight: 1 }}>¥</span>{item.price.toFixed(1)}
-                    </div>
-                  </div>
-                  <div className="inline-flex items-center border rounded-full p-0.5" style={{ borderColor: 'var(--border)' }}>
-                    <button
-                      className="w-5.5 h-5.5 rounded-full grid place-items-center transition-all duration-150 hover:brightness-95"
-                      style={{ width: 22, height: 22, background: 'var(--accent-tint)', color: 'var(--accent)' }}
-                      onClick={() => removeFromCart(item.id)}
-                      aria-label="减少"
-                    >
-                      <svg viewBox="0 0 24 24" className="w-3 h-3" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="2.4">
-                        <path d="M5 12h14" />
-                      </svg>
-                    </button>
-                    <span className="font-semibold text-center" style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-sm)', minWidth: 18 }}>{item.n}</span>
-                    <button
-                      className="w-5.5 h-5.5 rounded-full grid place-items-center transition-all duration-150 hover:brightness-95"
-                      style={{ width: 22, height: 22, background: 'var(--accent)', color: 'var(--accent-on)' }}
-                      onClick={() => {
-                        // Add via product lookup or flash item
-                        const prod = products.find(p => p.id === item.id)
-                        if (prod) addToCart(prod)
-                        else {
-                          const flash = flashItems.find(f => f.id === item.id)
-                          if (flash) addFlashToCart(flash)
-                        }
-                      }}
-                      aria-label="增加"
-                    >
-                      <svg viewBox="0 0 24 24" className="w-3 h-3" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="2.4">
-                        <path d="M12 5v14M5 12h14" />
-                      </svg>
-                    </button>
+                </article>
+              )
+            })}
+          </div>
+        </section>
+
+        {/* ─── Footer note ─── */}
+        <section className="px-4 pt-5 pb-2 text-center">
+          <p style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)', padding: '12px 0 4px' }}>
+            已展示部分商品 · 向下滚动查看更多
+          </p>
+        </section>
+      </div>
+
+      {/* ─── Floating cart ─── */}
+      <button
+        key={cartBounceKey}
+        className={`float-cart-bg fixed right-4 bottom-[86px] h-12 px-4 pl-3.5 rounded-[24px] inline-flex items-center gap-2.5 elev-float z-30 bounce-anim`}
+        style={{ color: 'var(--surface)' }}
+        onClick={openDrawer}
+        aria-label="打开购物车"
+      >
+        <span className="relative w-7.5 h-7.5 rounded-full grid place-items-center flex-shrink-0" style={{ width: 30, height: 30, background: 'var(--accent)' }}>
+          <IconCart />
+          {totals.count > 0 && (
+            <span
+              className="absolute -top-0.75 -right-1 min-w-[18px] h-[18px] px-1.25 rounded-[9px] font-bold text-[11px] grid place-items-center"
+              style={{
+                top: -3, right: -4,
+                background: 'var(--cart-badge-bg)',
+                color: 'var(--accent)',
+                fontFamily: 'var(--font-mono)',
+                border: '2px solid var(--cart-bg-a)',
+              }}
+            >
+              {totals.count}
+            </span>
+          )}
+        </span>
+        <span className="flex flex-col leading-tight">
+          <span className="text-[9px] opacity-65 uppercase" style={{ letterSpacing: '0.05em' }}>共 {totals.count} 件</span>
+          <span className="font-bold tracking-tight" style={{ fontFamily: 'var(--font-display)', fontSize: 16 }}>¥ {totals.total.toFixed(2)}</span>
+        </span>
+      </button>
+
+      {/* ─── Cart drawer mask ─── */}
+      <div
+        className={`drawer-mask fixed inset-0 z-50 ${drawerOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}
+        style={{ background: 'var(--mask)', backdropFilter: 'blur(2px)' }}
+        onClick={closeDrawer}
+      />
+
+      {/* ─── Cart drawer ─── */}
+      <aside
+        className={`drawer-panel fixed left-0 right-0 bottom-0 rounded-t-[20px] elev-sheet z-[60] max-h-[78%] flex flex-col ${drawerOpen ? 'translate-y-0' : 'translate-y-full'}`}
+        style={{ background: 'var(--surface)' }}
+        aria-label="购物车"
+      >
+        <span className="w-9 h-1 mx-auto my-2 rounded-sm" style={{ background: 'var(--border)' }} aria-hidden="true" />
+        <div className="px-[18px] pb-3 flex items-center justify-between" style={{ borderBottom: '1px solid var(--border-soft)' }}>
+          <h3 className="font-bold" style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--fs-lg)' }}>
+            购物车 · {totals.count} 件
+          </h3>
+          <button
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-full"
+            style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)' }}
+            onClick={clearCart}
+            aria-label="清空购物车"
+          >
+            <IconTrash />
+            清空
+          </button>
+        </div>
+
+        <div className="py-1 pb-2 overflow-y-auto flex-1">
+          {totals.count === 0 ? (
+            <div className="py-9 px-[18px] pb-6 text-center" style={{ color: 'var(--muted)', fontSize: 'var(--fs-sm)' }}>
+              <span className="block font-medium mb-1" style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--fs-md)', color: 'var(--fg-2)' }}>
+                购物车空空如也
+              </span>
+              挑几件喜欢的商品加入吧
+            </div>
+          ) : (
+            Array.from(cart.values()).map(item => (
+              <div
+                key={item.id}
+                className="grid grid-cols-[56px_1fr_auto] gap-3 px-[18px] py-3 items-center"
+                style={{ borderTop: '1px solid var(--border-soft)' }}
+              >
+                <div
+                  className="w-14 h-14 rounded-[10px] grid place-items-center"
+                  style={{ background: coverBgVar[item.tone] ?? 'var(--accent-tint)' }}
+                >
+                  <div className="w-[60%] h-[60%]">
+                    {item.isFlash ? (
+                      <FlashBottleSvg label={item.flashLabel ?? ''} />
+                    ) : (
+                      <ProductCoverSvg svgKey={item.svgKey} name={item.name} />
+                    )}
                   </div>
                 </div>
-              ))
-            )}
-          </div>
+                <div className="min-w-0">
+                  <div
+                    className="font-medium leading-tight truncate"
+                    style={{ fontSize: 'var(--fs-base)' }}
+                  >
+                    {item.name}
+                  </div>
+                  <div className="text-[11px] mt-0.5" style={{ color: 'var(--muted)' }}>{item.spec}</div>
+                  <div className="font-bold mt-1" style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--fs-md)', color: 'var(--accent)' }}>
+                    <span style={{ fontSize: 11, marginRight: 1 }}>¥</span>{item.price.toFixed(1)}
+                  </div>
+                </div>
+                <div className="inline-flex items-center border rounded-full p-0.5" style={{ borderColor: 'var(--border)' }}>
+                  <button
+                    className="w-5.5 h-5.5 rounded-full grid place-items-center"
+                    style={{ width: 22, height: 22, background: 'var(--accent-tint)', color: 'var(--accent)' }}
+                    onClick={() => removeFromCart(item.id)}
+                    aria-label="减少"
+                  >
+                    <svg viewBox="0 0 24 24" className="w-3 h-3" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="2.4">
+                      <path d="M5 12h14" />
+                    </svg>
+                  </button>
+                  <span className="font-semibold text-center" style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-sm)', minWidth: 18 }}>{item.n}</span>
+                  <button
+                    className="w-5.5 h-5.5 rounded-full grid place-items-center"
+                    style={{ width: 22, height: 22, background: 'var(--accent)', color: 'var(--accent-on)' }}
+                    onClick={() => {
+                      // Add via product lookup or flash item
+                      const prod = products.find(p => p.id === item.id)
+                      if (prod) addToCart(prod)
+                      else {
+                        const flash = flashItems.find(f => f.id === item.id)
+                        if (flash) addFlashToCart(flash)
+                      }
+                    }}
+                    aria-label="增加"
+                  >
+                    <svg viewBox="0 0 24 24" className="w-3 h-3" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="2.4">
+                      <path d="M12 5v14M5 12h14" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
 
-          <div
-            className="px-[18px] pb-6 pt-3"
-            style={{
-              borderTop: '1px solid var(--border-soft)',
-              background: 'linear-gradient(180deg, transparent, var(--accent-soft))',
-            }}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm" style={{ color: 'var(--muted)', fontSize: 'var(--fs-sm)' }}>
-                合计 · 已优惠 <strong style={{ color: 'var(--accent)', fontWeight: 600 }}>¥{totals.saved.toFixed(0)}</strong>
-              </span>
-              <span className="font-bold" style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--fs-2xl)', color: 'var(--accent)' }}>
-                <span style={{ fontSize: 14, marginRight: 2 }}>¥</span>{totals.total.toFixed(2)}
-              </span>
-            </div>
-            <button
-              className="h-12 w-full rounded-full font-semibold inline-flex items-center justify-center gap-1.5 transition-all duration-150 active:scale-[0.985] disabled:cursor-not-allowed disabled:scale-100"
-              style={{
-                background: totals.count === 0 ? 'color-mix(in oklab, var(--accent) 55%, var(--border))' : 'var(--accent)',
-                color: 'var(--accent-on)',
-                fontSize: 'var(--fs-md)',
-                letterSpacing: '0.02em',
-              }}
-              disabled={totals.count === 0}
-            >
-              去结算
-            </button>
+        <div
+          className="px-[18px] pb-6 pt-3"
+          style={{
+            borderTop: '1px solid var(--border-soft)',
+            background: 'linear-gradient(180deg, transparent, var(--accent-soft))',
+          }}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm" style={{ color: 'var(--muted)', fontSize: 'var(--fs-sm)' }}>
+              合计 · 已优惠 <strong style={{ color: 'var(--accent)', fontWeight: 600 }}>¥{totals.saved.toFixed(0)}</strong>
+            </span>
+            <span className="font-bold" style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--fs-2xl)', color: 'var(--accent)' }}>
+              <span style={{ fontSize: 14, marginRight: 2 }}>¥</span>{totals.total.toFixed(2)}
+            </span>
           </div>
-        </aside>
-      </div>
+          <button
+            className="h-12 w-full rounded-full font-semibold inline-flex items-center justify-center gap-1.5 active:scale-[0.985] disabled:cursor-not-allowed disabled:scale-100"
+            style={{
+              background: totals.count === 0 ? 'color-mix(in oklab, var(--accent) 55%, var(--border))' : 'var(--accent)',
+              color: 'var(--accent-on)',
+              fontSize: 'var(--fs-md)',
+              letterSpacing: '0.02em',
+            }}
+            disabled={totals.count === 0}
+          >
+            去结算
+          </button>
+        </div>
+      </aside>
     </div>
   )
 }
