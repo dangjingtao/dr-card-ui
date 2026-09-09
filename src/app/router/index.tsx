@@ -44,6 +44,8 @@ import NodeStub from '../../pages/NodeStub'
 import WebViewBoundary from '../../pages/WebViewBoundary'
 import DeviceListPage from '../../pages/DeviceListPage'
 import DeviceDetailPage from '../../pages/DeviceDetailPage'
+/* T042：自助售货机扫码购买页 */
+import VendingBuyPage from '../../pages/VendingBuyPage'
 import LegacyService from '../../pages/LegacyService'
 import RepairProjects from '../../pages/RepairProjects'
 import RepairForm from '../../pages/RepairForm'
@@ -143,6 +145,8 @@ const customPages: Record<string, ReactElement> = {
   '/device/:type': <DeviceListPage />,
   '/device/connecting': <DeviceDetailPage />,
   '/device/success': <DeviceDetailPage />,
+  /* T042：自助售货机扫码购买页 */
+  '/vending/buy': <VendingBuyPage />,
 
   /* T034：卡博士服务中心 */
   '/legacy-service': <LegacyService />,

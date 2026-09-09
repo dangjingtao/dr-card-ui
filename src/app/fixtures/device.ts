@@ -1,4 +1,4 @@
-export type DeviceType = 'shower' | 'laundry' | 'water' | 'hairdryer'
+export type DeviceType = 'shower' | 'laundry' | 'water' | 'hairdryer' | 'vending'
 
 export interface DeviceInfo {
   id: string
@@ -60,6 +60,16 @@ export const DEVICE_THEMES: Record<DeviceType, DeviceThemeConfig> = {
     pageTitle: '吹风机',
     /* T040：设备列表按钮回滚到"扫码启动"语义 */
     buttonText: '扫码启动',
+    scanButtonText: '立即扫码',
+  },
+  /* T042：自助售货机 - 扫码购买洗发水体验包 */
+  vending: {
+    type: 'vending',
+    label: '售货',
+    iconBg: 'linear-gradient(135deg, #FF8A65 0%, #E64A19 100%)',
+    themeAttr: 'vending',
+    pageTitle: '自助售货机',
+    buttonText: '扫码购买',
     scanButtonText: '立即扫码',
   },
 }
@@ -124,6 +134,23 @@ export const DEVICE_LISTS: Record<DeviceType, DeviceInfo[]> = {
       name: 'A栋1楼吹风机',
       location: 'A栋1楼淋浴区',
       code: 'B42000095K',
+      status: 'idle',
+    },
+  ],
+  /* T042：自助售货机 - 2 台用于演示 */
+  vending: [
+    {
+      id: 'vending-001',
+      name: 'A栋1楼售货机',
+      location: 'A栋1楼大厅',
+      code: 'V42000101A',
+      status: 'idle',
+    },
+    {
+      id: 'vending-002',
+      name: 'B栋2楼售货机',
+      location: 'B栋2楼走廊',
+      code: 'V42000102B',
       status: 'idle',
     },
   ],

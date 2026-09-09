@@ -48,6 +48,11 @@ export default function DeviceListPage() {
     if (!scanTarget) return
     const target = scanTarget
     setScanTarget(null)
+    /* T042：售货机扫码后跳购买页，不走设备详情/启动流程 */
+    if (deviceType === 'vending') {
+      navigate(`/vending/buy?id=${target.id}`)
+      return
+    }
     navigate(`/device/connecting?type=${deviceType}&id=${target.id}`)
   }
 
