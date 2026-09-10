@@ -77,28 +77,35 @@
 
 ## T051v2 升级（已回滚）｜APP 主壳底部 Tab「我的」改为「会员中心」
 
-用户 2026-09-10 在浏览器选中底部 Tab「我的」的 label span，**仅要求把 Tab label 文字改为「会员中心」**，未要求改路由 / 跳转。
+用户 2026-09-10 在浏览器选中底部 Tab「我的」的 label span，明确反馈"我只是说该文字，没有说把页面逻辑都改了"——本次（Tab label + TitleBar h1 + 宫格标题）所有文字改动都属于 T051 任务卡范围，**不动路由 / 跳转 / Settings / 页面结构**。
 
-初版 v2（commit `89f9506`）误解用户意图，改了路由 + Settings 跳转，用户当场反馈"我只是说该文字，没有说把页面逻辑都改了"，已回滚。
+初版 v2（commit `89f9506`）误解用户意图，改了路由 + Settings 跳转，已在 `5e8f6ff` 回滚。
 
-**当前生效的最小改动**（v2-rollback + v3）：
+**当前生效的文字改动汇总**（T051 全部累积改动）：
 
-| # | 改动 | 文件 |
-| --- | --- | --- |
-| 1 | `/profile` 路由条目的 `label` 由 `'我的'` 改为 `'会员中心'` | `src/app/router/routes.ts` |
-| 2 | `/profile` 路由条目的 `title` 由 `'我的'` 改为 `'会员中心'`（TitleBar h1 同步） | `src/app/router/routes.ts` |
-| 3 | `/membership` 路由条目移除 v2 新增的 `tab / tabOrder / label / icon` 字段 | `src/app/router/routes.ts` |
-| 4 | Settings 两处 `navigate('/profile')` 保持原状（v2 改的跳 /membership 已还原） | `src/pages/Settings.tsx` |
+| # | commit | 改动 | 文件 |
+| --- | --- | --- | --- |
+| 1 | `5e8f6ff` | `/profile` 路由条目 `label` 由 `'我的'` 改为 `'会员中心'`（底部 Tab 文字） | `src/app/router/routes.ts` |
+| 2 | `5e8f6ff` | `/membership` 路由条目移除误加的 `tab / tabOrder / label / icon` 字段 | `src/app/router/routes.ts` |
+| 3 | `5e8f6ff` | Settings 两处 `navigate('/profile')` 还原（误改路由后回滚） | `src/pages/Settings.tsx` |
+| 4 | `03db8be` | `/profile` 路由条目 `title` 由 `'我的'` 改为 `'会员中心'`（TitleBar h1） | `src/app/router/routes.ts` |
+| 5 | 本 commit | 8 项功能宫格第 2 项 `name` 由 `'会员中心'` 改为 `'会员权益'`（避免与 Tab label 同名造成认知冲突） | `src/pages/Profile.tsx` |
+
+未触动：
+
+- `/profile` 路由 path / tab / tabOrder / icon
+- `/membership` 路由条目保持 v2 之前的原状（不再是底部 Tab）
+- Settings 保存/放弃编辑后的回退目标
+- `/profile` 页面 8 项宫格整体布局、卡包/泡泡值统计、热门兑换推荐
 
 影响：
 
-- 底部 Tab 第 5 位 label 现在显示「会员中心」
-- 点击 Tab 进入的 `/profile` 页面 TitleBar 顶部居中文字也显示「会员中心」（h1）
-- 但页面**内部主体仍是 T011 时代 8 项功能宫格 + 卡包/泡泡值统计 + 热门兑换**——这是用户当前接受的折中状态
-- `/membership` 不再是底部 Tab；既有的「我的 → 快捷服务 → 会员中心」入口路径保持不变
-- `/dearseed/membership`（专栏内会员中心）保持不变
+- 底部 Tab 第 5 位 label「会员中心」
+- Tab 点击进入 `/profile`，页面 TitleBar 顶部居中 h1「会员中心」
+- 8 项宫格第 2 项（原「会员中心」）改为「会员权益」——跳转目标仍为 `/membership`（会员卡 + 等级 + 福利）
+- 既有的「我的 → 快捷服务 → 会员中心」入口路径：现在实际变成"会员中心 Tab → 会员权益宫格 → /membership"
 
-后续如果用户希望页面主体也改名，需要新增 v4 任务卡（与 T011「我的」页是否保留独立决策相关）。
+后续如果用户希望页面主体也改名（8 项宫格布局、卡包/泡泡值统计、热门兑换），属于 v4 范围，与 T011「我的」页是否保留独立决策相关——需另开任务卡。
 
 
 
