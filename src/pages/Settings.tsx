@@ -238,7 +238,7 @@ export default function Settings() {
 
               {sheet === 'birthday' && (
                 <>
-                  <p className="text-sm text-text-tertiary">生日将用于会员权益与生日礼遇</p>
+                  <p className="text-sm text-text-tertiary">生日将用于会员权益与生日礼遇，三个月内仅可修改一次</p>
                   {/* T050｜锁定态：禁用日期选择 + 显示下一次可编辑时间；非锁定态保持原 date input */}
                   {birthdayGate.allowed ? (
                     <>
