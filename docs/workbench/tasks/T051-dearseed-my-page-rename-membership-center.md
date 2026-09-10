@@ -75,28 +75,28 @@
 | 专栏首页快捷入口 | 「会员空间」 | `/dearseed/membership` | ✅ T046 已完成 |
 | 通知 fixture 文案 | 「我的 · 客服中心」 | 「会员中心 · 客服中心」 | ✅ 本任务 commit 完成 |
 
-## T051v2 升级｜APP 主壳底部 Tab「我的」改为「会员中心」
+## T051v2 升级（已回滚）｜APP 主壳底部 Tab「我的」改为「会员中心」
 
-用户 2026-09-10 在浏览器选中底部 Tab「我的」的 label span，明确反馈：
+用户 2026-09-10 在浏览器选中底部 Tab「我的」的 label span，**仅要求把 Tab label 文字改为「会员中心」**，未要求改路由 / 跳转。
 
-- 底部 Tab 文字「我的」→「会员中心」
-- Tab 跳转页面也叫「会员中心」（不是原 `/profile` 的"我的"页）
+初版 v2（commit `89f9506`）误解用户意图，改了路由 + Settings 跳转，用户当场反馈"我只是说该文字，没有说把页面逻辑都改了"，已回滚。
 
-实施（commit v2）：
+**当前生效的最小改动**（v2-rollback）：
 
 | # | 改动 | 文件 |
 | --- | --- | --- |
-| 1 | `/membership` 路由条目新增 `tab: true / tabOrder: 5 / label: '会员中心' / icon: UserRound`，升级为底部 Tab 5 | `src/app/router/routes.ts` |
-| 2 | `/profile` 路由条目去掉 `tab / tabOrder / label / icon`，保留 path 与 title（兜底可达，暂保留 Profile.tsx 注册） | `src/app/router/routes.ts` |
-| 3 | Settings 保存/放弃编辑后回退目标由 `/profile` 改为 `/membership`（两处 `navigate('/profile')`） | `src/pages/Settings.tsx` |
+| 1 | `/profile` 路由条目的 `label` 由 `'我的'` 改为 `'会员中心'` | `src/app/router/routes.ts` |
+| 2 | `/membership` 路由条目移除 v2 新增的 `tab / tabOrder / label / icon` 字段 | `src/app/router/routes.ts` |
+| 3 | Settings 两处 `navigate('/profile')` 保持原状（v2 改的跳 /membership 已还原） | `src/pages/Settings.tsx` |
 
 影响：
 
-- 底部 Tab 第 5 位由「我的」(/profile) 改为「会员中心」(/membership)，复用既有 Membership 组件
-- `Profile.tsx`（"我的"页：8 项功能宫格 + 卡包/泡泡值统计 + 热门兑换）失去底部 Tab 入口，仅地址栏直访可达；用户从功能入口（如"设置"）的兜底路径也已迁到 `/membership`
-- `/dearseed/membership`（专栏内会员中心）保持不变，与 APP 主壳 `/membership` 共用 Membership 组件
+- 底部 Tab 第 5 位 label 现在显示「会员中心」，但点击仍跳 `/profile`（即原"我的"页：8 项功能宫格 + 卡包/泡泡值统计 + 热门兑换）
+- Tab 文字与点击后的页面标题（TitleBar 显示「我的」）不一致——这是用户当前接受的折中状态
+- `/membership` 不再是底部 Tab；既有的「我的 → 快捷服务 → 会员中心」入口路径保持不变
+- `/dearseed/membership`（专栏内会员中心）保持不变
 
-不删除 Profile.tsx：本轮仅最小化 IA 改造；如果后续需要彻底废弃 Profile 页（清理 7 项宫格的入口），单独立任务卡处理。
+后续如果用户希望 Tab 跳的页面也改名，需要新增 v3 任务卡（与 T011「我的」页是否保留独立决策相关）。
 
 
 

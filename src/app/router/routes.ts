@@ -617,17 +617,21 @@ export const ROUTES: RouteMeta[] = [
     owner: '洗护体验券专区（T008 施工；语义已从「兑换码页」纠正）',
   },
   {
-    /* T051v2｜底部 Tab「我的」改名为「会员中心」，跳转从 /profile 改为既有 /membership（会员卡 + 等级 + 福利）。
-     * 保留 path / title 等元数据，Settings 保存/放弃编辑后仍可 navigate 过去（v2 后 Settings 已改跳 /membership，见下方注释）。 */
+    /* T051v2-rollback｜用户 2026-09-10 仅要求把 Tab label「我的」改为「会员中心」文字，未要求改路由 / 跳转。
+     * 因此仅 label 字段改字，tab / tabOrder / icon / path 保持原状，Settings 不动。 */
     path: '/profile',
+    tab: true,
+    tabOrder: 5,
+    label: '会员中心',
+    icon: UserRound,
     title: '我的',
     titleBarAction: 'notifications',
     nodes: [19, 20],
     task: 'T011',
-    entry: '设置页保存/放弃编辑后回退（v2 后 Settings 不再跳此处）',
-    returnTo: '会员中心',
+    entry: '底部 Tab「会员中心」（v2 仅改 label）；首页-个人区',
+    returnTo: '底部 Tab；首页',
     overlays: [{ key: 'app-prompt', node: 20, label: 'APP 弹窗（能力引导）', type: 'dialog' }],
-    owner: '我的（T011 已施工；v2 后失去底部 Tab 入口，仅 Settings 兜底可达）',
+    owner: '我的（T011 已施工；T051v2-rollback 仅改 Tab label 文案，不改路由）',
   },
 
   /* ────────────────────────── T005 专栏首页与新人流程 ────────────────────────── */
@@ -722,20 +726,15 @@ export const ROUTES: RouteMeta[] = [
     owner: '泡泡值纯流水明细（T022 施工；仅 Tab + 列表 + 空态）',
   },
   {
-    /* T051v2｜底部 Tab「我的」改为「会员中心」后，Tab 5 入口挂到此 path。
-     * 复用既有 Membership 组件（/membership），原 Tab 5 的 /profile 失去 Tab 入口。 */
+    /* T051v2-rollback｜v2 升格为底部 Tab 5 的改动已回滚；本页保持既有入口，不参与 Tab 5。 */
     path: '/membership',
-    tab: true,
-    tabOrder: 5,
-    label: '会员中心',
-    icon: UserRound,
     title: '会员中心',
     titleBarTitle: '会员中心',
     nodes: [6],
     task: 'T006',
-    entry: '底部 Tab「会员中心」（v2；原「我的」）；我的-快捷服务「会员中心」',
-    returnTo: '首页',
-    owner: '会员中心（既有 T006 页面；2026-08-28 恢复入口；T051v2 升格为底部 Tab 5）',
+    entry: '我的-快捷服务「会员中心」',
+    returnTo: '我的',
+    owner: '会员中心（既有 T006 页面；2026-08-28 恢复入口，不新增页面）',
   },
   /* T046｜诗得丽专栏内会员中心入口：复用既有 Membership 组件，保持 T051 联动路由 slug */
   {

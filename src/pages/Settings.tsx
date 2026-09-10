@@ -69,8 +69,7 @@ export default function Settings() {
     bypassGuard.current = true
     flashToast()
     close()
-    /* T051v2｜原回「我的」(/profile)，底部 Tab 改名「会员中心」后改为跳 /membership */
-    window.setTimeout(() => navigate('/membership'), 600)
+    window.setTimeout(() => navigate('/profile'), 600)
   }
 
   const keepEditing = () => {
@@ -85,8 +84,7 @@ export default function Settings() {
       return
     }
     if (overlay === 'discard') closeOverlay()
-    /* T051v2｜原回「我的」(/profile)，底部 Tab 改名「会员中心」后改为跳 /membership */
-    navigate('/membership')
+    navigate('/profile')
   }
 
   return (
