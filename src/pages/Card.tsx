@@ -13,6 +13,7 @@ import {
   resolveCardCoupon,
   type CardCouponFixture,
   type CardCouponStatus,
+  COUPON_USE_GUIDE,
 } from '../app/fixtures'
 
 export default function Card() {
@@ -232,7 +233,7 @@ export default function Card() {
             <div className="flex items-start justify-between gap-3 px-4 pb-2 pt-1">
               <div>
                 <h2 className="text-lg font-semibold text-text-primary">使用体验券</h2>
-                <p className="text-sm text-text-tertiary">请选择核销方式</p>
+                <p className="text-sm text-text-tertiary">{COUPON_USE_GUIDE.subtitle}</p>
               </div>
               <button type="button" aria-label="关闭" onClick={close} className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-surface-subtle text-text-secondary">
                 <X className="h-5 w-5" />
@@ -260,42 +261,46 @@ export default function Card() {
                 <ChevronRight className="h-4 w-4 flex-none text-text-tertiary" aria-hidden />
               </button>
 
-              <p className="mb-2 mt-5 text-sm font-medium text-text-primary">选择核销方式</p>
               <div className="space-y-1">
+                {/* T044｜移除 radio 圆圈与二选一控件，改为两行并列的使用指引。
+                 *  扫码核销：系统会优先抵扣体验券
+                 *  消费密码核销：在设备上输入手机号和 6 位消费密码，点击确认即可领取
+                 */}
                 <button
                   type="button"
                   onClick={() => navigate('/card/verify')}
-                  className="flex w-full items-center gap-3 rounded-xl p-2.5 text-left active:bg-surface-subtle"
+                  className="flex w-full items-start gap-3 rounded-xl p-2.5 text-left active:bg-surface-subtle"
                 >
                   <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-surface-subtle text-text-secondary">
                     <QrCode className="h-5 w-5" />
                   </span>
-                  <span className="min-w-0 flex-1 text-sm font-medium text-text-primary">扫码核销</span>
-                  <span className="flex h-5 w-5 flex-none items-center justify-center rounded-full border border-border">
-                    <span className="h-2.5 w-2.5 rounded-full bg-transparent" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-medium text-text-primary">扫码核销</span>
+                    <span className="mt-1 block text-xs leading-4 text-text-tertiary">
+                      {COUPON_USE_GUIDE.scanHint}
+                    </span>
                   </span>
                 </button>
                 <button
                   type="button"
                   onClick={() => navigate('/card/verify/password')}
-                  className="flex w-full items-center gap-3 rounded-xl p-2.5 text-left active:bg-surface-subtle"
+                  className="flex w-full items-start gap-3 rounded-xl p-2.5 text-left active:bg-surface-subtle"
                 >
                   <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-surface-subtle text-text-secondary">
                     <KeyRound className="h-5 w-5" />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-medium text-text-primary">消费密码核销</span>
-                    <span className="block text-xs text-text-tertiary">输入 6 位消费密码，由店员确认核销</span>
-                  </span>
-                  <span className="flex h-5 w-5 flex-none items-center justify-center rounded-full border border-border">
-                    <span className="h-2.5 w-2.5 rounded-full bg-transparent" />
+                    <span className="mt-1 block text-xs leading-4 text-text-tertiary">
+                      {COUPON_USE_GUIDE.passwordHint}
+                    </span>
                   </span>
                 </button>
               </div>
 
               <div className="mt-3 flex items-start gap-2 rounded-lg bg-surface-subtle p-3">
                 <Info className="mt-0.5 h-4 w-4 flex-none text-text-tertiary" />
-                <p className="text-xs text-text-secondary">同一张体验券仅可选择一种核销方式，确认后不可更改</p>
+                <p className="text-xs text-text-secondary">{COUPON_USE_GUIDE.footnote}</p>
               </div>
             </div>
           </div>
