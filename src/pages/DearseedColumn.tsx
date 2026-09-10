@@ -7,6 +7,8 @@ import FixtureOverlay from '../components/mobile/FixtureOverlay'
 import NewcomerDialog from '../components/mobile/NewcomerDialog'
 import PageContainer from '../components/mobile/PageContainer'
 import PromptOverlay from '../components/mobile/PromptOverlay'
+import NewcomerCouponDialog from '../components/mobile/NewcomerCouponDialog'
+import PlaceholderCouponSheet from '../components/coupon/PlaceholderCouponSheet'
 import { Button, ProgressIndicator } from '../components/ui'
 import { findRouteByPathname } from '../app/router/routes'
 import { useFixtureState, useOverlay } from '../app/fixtures/useFixture'
@@ -17,8 +19,13 @@ import {
   CHECKIN_REMINDER,
   DEARSEED_PICKS,
   MEMBER_PROFILE,
+  NEWCOMER_COUPON_DIALOG,
+  NEWCOMER_COUPON_SUCCESS,
   NEWCOMER_FIXTURE,
+  NEWCOMER_COUPON_VARIANTS,
+  PLACEHOLDER_COUPON,
 } from '../app/fixtures'
+import { useUserInfo } from './legacy/userInfoStore'
 import columnBanner from '../assets/brand/home/home-banner-carousel.webp'
 import avatar from '../assets/brand/home/home-avatar.webp'
 import campaignThumb from '../assets/brand/member/checkin-dearseed-kit.webp'
@@ -47,6 +54,22 @@ export default function DearseedColumn() {
   const { state } = useFixtureState(route)
   const { overlay, open, close } = useOverlay()
   const [downloadHint, setDownloadHint] = useState<string | undefined>(undefined)
+  /* T043｜专栏入口弹窗身份分支状态。
+   * - `couponOpen`：是否展示体验券/占位券弹窗
+   * - `couponSuccessOpen`：领取成功反馈
+   * 触发源：点击专栏顶部轮播图（按钮 onClick）
+   * 身份来源：userInfoStore.isDearseedCare
+   *   - true  → NewcomerCouponDialog（洗发水体验券，沿用现有逻辑）
+   *   - false → PlaceholderCouponSheet（占位券演示态，新增）
+   */
+  const [couponOpen, setCouponOpen] = useState(false)
+  const [couponSuccessOpen, setCouponSuccessOpen] = useState(false)
+  /* 关爱机项目用户：true；卡博士存量用户：false（T043 mock 默认 false） */
+  const userInfo = useUserInfo()
+  const isDearseedCare = userInfo.isDearseedCare
+  /* 关爱机用户弹窗用 NEWCOMER_COUPON_VARIANTS，本期 mock 固定 coupon-1（1 张洗发水体验券） */
+  const dearseedCoupons = NEWCOMER_COUPON_VARIANTS['coupon-1']
+
   const campaign = CAMPAIGN_FIXTURE
   const claimed = state?.key === 'claimed'
   const ownedOverlay = overlay === 'reminder' || overlay === 'newcomer' || overlay === 'app-guide'
@@ -56,12 +79,45 @@ export default function DearseedColumn() {
     close()
   }
 
+  /* T043｜点击轮播图：根据身份触发对应弹窗 */
+  const handleBannerClick = () => {
+    if (isDearseedCare) {
+      setCouponOpen(true)
+    } else {
+      setCouponOpen(true) // 占位券共用 couponOpen 状态，组件分支在渲染时判断
+    }
+  }
+
+  /* T043｜体验券（关爱机分支）确认 → 出领取成功反馈 */
+  const handleCouponConfirm = () => {
+    setCouponOpen(false)
+    setCouponSuccessOpen(true)
+  }
+
+  /* T043｜占位券（存量分支）确认 → 跳 PLACEHOLDER_COUPON.actionTo */
+  const handlePlaceholderConfirm = () => {
+    setCouponOpen(false)
+    navigate(PLACEHOLDER_COUPON.actionTo)
+  }
+
+  /* T043｜任意弹窗关闭 */
+  const handleCouponDismiss = () => {
+    setCouponOpen(false)
+    setCouponSuccessOpen(false)
+  }
+
+  /* T043｜领取成功反馈点「查看体验券」 → 跳 NEWCOMER_COUPON_SUCCESS.actionTo */
+  const handleCouponSuccessAction = () => {
+    setCouponSuccessOpen(false)
+    navigate(NEWCOMER_COUPON_SUCCESS.actionTo)
+  }
+
   return (
     <PageContainer inset={false} className="overflow-hidden pb-[calc(2rem+env(safe-area-inset-bottom))]">
       <button
         type="button"
         aria-label="诗得丽产品与活动推荐"
-        onClick={() => open('newcomer')}
+        onClick={handleBannerClick}
         className="relative block w-full overflow-hidden text-left"
       >
         <img src={columnBanner} alt="诗得丽产品与活动推荐" className="aspect-[375/210] w-full object-cover" />
@@ -217,6 +273,28 @@ export default function DearseedColumn() {
 
       <NewcomerDialog open={overlay === 'newcomer'} onComplete={() => navigate(NEWCOMER_FIXTURE.ctaTo)} onBody={() => open(NEWCOMER_FIXTURE.bodyToOverlay)} onDismiss={close} />
       <AppPromptDialog open={overlay === 'app-guide'} variant="guide" message={APP_GUIDE_FIXTURE.message} onAcknowledge={closeAppGuide} onDownload={() => setDownloadHint(APP_GUIDE_FIXTURE.downloadHint)} downloadHint={downloadHint} />
+
+      {/* T043｜专栏入口弹窗身份分支：
+       *  - isDearseedCare  → NewcomerCouponDialog（洗发水体验券，沿用 Home 弹窗）
+       *  - !isDearseedCare → PlaceholderCouponSheet（占位券演示态，新增）
+       *  同一时刻只展示其中一个。
+       */}
+      {isDearseedCare ? (
+        <NewcomerCouponDialog
+          open={couponOpen}
+          successOpen={couponSuccessOpen}
+          coupons={dearseedCoupons}
+          onConfirm={handleCouponConfirm}
+          onDismiss={handleCouponDismiss}
+          onSuccessAction={handleCouponSuccessAction}
+        />
+      ) : (
+        <PlaceholderCouponSheet
+          open={couponOpen}
+          onConfirm={handlePlaceholderConfirm}
+          onDismiss={handleCouponDismiss}
+        />
+      )}
 
       <DebugPanel route={route} />
     </PageContainer>

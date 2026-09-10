@@ -41,6 +41,14 @@ export interface UserInfo {
    * mock 默认 000000。
    */
   pin: string
+  /**
+   * T043｜诗得丽关爱机项目用户标记。
+   * - true：用户属于诗得丽关爱机项目，进入专栏时弹出洗发水体验券（现有弹窗）。
+   * - false：卡博士存量用户，进入专栏时弹出占位券演示态弹窗。
+   * 等后端字段到位后由接口覆写；mock 默认 false（演示"存量用户"分支）。
+   * 后端字段来源待定（B-043）。
+   */
+  isDearseedCare: boolean
 }
 
 const INITIAL_USER_INFO: UserInfo = {
@@ -59,6 +67,7 @@ const INITIAL_USER_INFO: UserInfo = {
   balance: 100.0,
   isRegistered: false,
   pin: '000000',
+  isDearseedCare: false,
 }
 
 /* 全局单例：所有引用都指向同一份 USER_INFO，确保换绑后个人信息同步刷新 */
