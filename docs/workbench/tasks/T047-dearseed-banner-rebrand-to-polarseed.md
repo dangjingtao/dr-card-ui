@@ -9,37 +9,42 @@
 
 ## 当前事实与差距
 
-- 首页（`/`）第一张轮播图（`HOME_BANNER_CAROUSEL.slides[0].key = 'checkin'`，资源 `home-banner-checkin.webp`）原图烫印：
+- 诗得丽专栏首页（`/dearseed`）首张轮播图（`DearseedColumn` hero，资源 `home-banner-carousel.webp`）原图烫印：
   - 大标题文案："卡博士诗得丽"
-  - 副文案："每日打卡·洗护好礼"
-- 首页底部「公益板块与品牌故事」列表中的「卡博士品牌故事」卡片（`COLUMN_HOME_SECTIONS` 第二项）原标题：
+  - 引导文案："卡博士品牌故事"
+- 首页（`/`）底部「公益板块与品牌故事」列表中的「卡博士品牌故事」卡片（`COLUMN_HOME_SECTIONS` 第二项）原标题：
   - 大标题文案："卡博士品牌故事"
   - 描述文案："了解品牌起源与匠心洗护"
 - 期望替换：
-  - 首张轮播图烫字 → 大标题"卡博士.极地种子" + 副文案保留"每日打卡·洗护好礼"
-  - 首张轮播图引导 → "极地种子品牌故事"
-  - 底部卡片 → 大标题"极地种子品牌故事" + 描述"了解极地种子品牌起源与匠心洗护"
+  - 专栏 hero 大标题 → "卡博士.极地种子"
+  - 专栏 hero 引导文案 → "极地种子品牌故事"
+  - 首页底部卡片 → 大标题"极地种子品牌故事" + 描述"了解极地种子品牌起源与匠心洗护"
 
 ## 目标
 
-1. 替换首页第一张轮播图的两处品牌文案（含 alt + 文字层）。
+1. 替换诗得丽专栏 hero（`/dearseed`）的两处品牌文案：保留背景图 + 叠加文字层覆盖原图烫字。
 2. 同步替换首页底部"卡博士品牌故事"卡片的 title / desc。
 3. 与品牌素材（若有 logo/IP）保持视觉一致性；如素材尚未到位，先仅替换文字。
-4. 不修改其他轮播图。
+4. 不修改其他位置。
 
 ## 原型范围
 
-- 需求来源：2026-09-09 用户现场反馈（最初 PRD 写的是专栏首页首张轮播图，但用户在浏览器两次截图实际都指向首页 `/`，故范围扩到首页两处）。
+- 需求来源：2026-09-09 用户现场反馈。
 - 节点：
-  - 首页 `/` → 顶部 Banner 1（`HOME_BANNER_CAROUSEL.slides[0]`）
+  - 专栏 `/dearseed` → 顶部 Hero（`DearseedColumn` 第 137-155 行）
   - 首页 `/` → 底部「公益板块与品牌故事」列表第 2 项（`COLUMN_HOME_SECTIONS[1]`）
+
+## 实施回退记录
+
+- 044a675 曾在 `HOME_BANNER_CAROUSEL.slides[0]` 加 eyebrow/title/description 字段走 `BannerCarousel` 内置文字层，与原图烫字同时出现，视觉严重冲突（金色 eyebrow + 大白字 title 与烫印的"卡博士诗得丽"叠加）。
+- 用户 2026-09-09 现场反馈回退首页 Banner 1 改动，恢复 `HOME_BANNER_CAROUSEL.slides[0]` 原状（alt 回到"卡博士·诗得丽 每日打卡 洗护好礼"，不加 eyebrow/title/description）。本任务仅保留专栏 hero + 首页底部卡片两处。
 
 ## 不在范围
 
-- 不修改其他轮播图（`HOME_BANNER_CAROUSEL.slides[1].key = 'wash-care'`）。
 - 不替换"卡博士"主品牌在 App 其他位置的 logo / 顶部导航等。
 - 不涉及与"极地种子"相关的 IP 素材开发（素材到位后再接入）。
-- 不替换跳转目标（首张轮播图仍跳 `/checkin`，底部卡片仍跳 `/brand-culture`）。
+- 不替换跳转目标（专栏 hero 仍走 `open('newcomer')`，底部卡片仍跳 `/brand-culture`）。
+- 不动首页 Banner 1（`HOME_BANNER_CAROUSEL.slides[0]`）——等美术回灌新图（B-049）后再评估。
 
 ## 依赖与阻塞决策
 
