@@ -142,14 +142,15 @@ export default function DearseedColumn() {
         <img src={columnBanner} alt="诗得丽产品与活动推荐" className="aspect-[375/210] w-full object-cover" />
         <span aria-hidden className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-background to-transparent" />
         {/* T047｜首张轮播图品牌名替换：在保留 `columnBanner.webp` 原图（B-049 等待美术新图）的前提下，
-         * 叠加一层绝对定位文字覆盖原图内嵌的「卡博士诗得丽」标题与「卡博士品牌故事」引导文案。
-         * 文字层仅做覆盖，不绑定新跳转（点击仍走 `open('newcomer')` 身份选择弹窗，T043 验收已通过）。
-         * 美术新图就位后可移除此 div 并回退到原纯图片方案。 */}
-        <span aria-hidden className="pointer-events-none absolute inset-0 flex flex-col justify-center pl-6 pr-8">
-          <span className="block text-[26px] font-bold leading-[1.15] text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.55)]">
+         * 叠加半透黑蒙版 + 强投影文字，确保新文案压过原图烫印的旧品牌字。
+         * 文字层 pointer-events-none 不抢点击，banner 仍走 `open('newcomer')` 身份选择弹窗（T043 验收通过）。
+         * 美术新图就位后可移除本块并回退到原纯图片方案。 */}
+        <span aria-hidden className="pointer-events-none absolute inset-0 bg-black/35" />
+        <span aria-hidden className="pointer-events-none absolute inset-0 flex flex-col items-start justify-center px-6">
+          <span className="block text-[28px] font-extrabold leading-[1.1] text-white [text-shadow:0_2px_8px_rgba(0,0,0,0.85),0_0_2px_rgba(0,0,0,0.9)]">
             {DEARSEED_BANNER_TEXT.title}
           </span>
-          <span className="mt-2 block text-[13px] font-medium leading-[1.3] text-white/95 drop-shadow-[0_1px_4px_rgba(0,0,0,0.5)]">
+          <span className="mt-2.5 inline-block rounded-pill bg-black/55 px-3 py-1 text-[13px] font-semibold leading-[1.3] text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.7)]">
             {DEARSEED_BANNER_TEXT.subtitle}
           </span>
         </span>
