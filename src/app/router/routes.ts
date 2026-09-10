@@ -754,8 +754,10 @@ export const ROUTES: RouteMeta[] = [
     overlays: [
       { key: 'reminder', node: 4, label: '打卡提示弹窗', type: 'dialog' },
       { key: 'make-up-success', node: 22, label: '补打卡成功弹窗', type: 'dialog' },
+      /* T045｜演示广告弹窗：补签流程中播放，5 秒倒计时后自动收起并触发补签成功页 */
+      { key: 'demo-ad', node: 22, label: '补签演示广告弹窗', type: 'dialog' },
     ],
-    owner: '月度签到/补签（T006 施工）',
+    owner: '月度签到/补签（T006 施工；T045 新增看广告补签）',
   },
   {
     path: '/luck',

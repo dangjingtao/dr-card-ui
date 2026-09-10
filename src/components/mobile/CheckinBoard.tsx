@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowUpRight, CalendarDays, Check, CheckCircle2, ChevronRight, Gift, ListTodo, Sparkles } from 'lucide-react'
+import { ArrowUpRight, CalendarDays, Check, CheckCircle2, ChevronRight, Gift, ListTodo, Sparkles, X } from 'lucide-react'
 import { BottomSheet, Button, ProgressIndicator } from '../ui'
 import {
   CHECKIN_CALENDAR,
@@ -64,6 +64,8 @@ export interface CheckinBoardProps {
  */
 export default function CheckinBoard({ mode = 'home', isSuccess = false, onMakeup, debug = false }: CheckinBoardProps) {
   const navigate = useNavigate()
+  // T045｜calendarOpen state 暂时保留，但首页 7 天卡片已不再触发此 BottomSheet。
+  //  如需恢复抽屉弹窗跳转，把 onClick 改回 setCalendarOpen(true) 即可。
   const [calendarOpen, setCalendarOpen] = useState(false)
   const cycleDays = getCheckinCycleDays()
   const completedDays = cycleDays.filter((item) => item.state === 'done' || item.state === 'today').length
@@ -109,9 +111,11 @@ export default function CheckinBoard({ mode = 'home', isSuccess = false, onMakeu
 
       {mode === 'home' ? (
         <>
+          {/* T045｜点击首页 7 天日历卡片：直接跳「每日打卡」完整页（不再弹 BottomSheet）。
+           *  BottomSheet 代码块保留在此分支内（注释说明），方便日后恢复抽屉弹窗跳转。 */}
           <button
             type="button"
-            onClick={() => setCalendarOpen(true)}
+            onClick={() => navigate('/checkin')}
             aria-label={`查看 7 天签到日历，当前 ${completedDays} / ${CHECKIN_CYCLE_TARGET}`}
             className="mx-4 block w-[calc(100%-2rem)] rounded-[18px] bg-surface px-4 pb-3.5 pt-3 text-left shadow-bubble transition active:scale-[0.995] active:bg-surface-pressed"
           >
@@ -133,6 +137,7 @@ export default function CheckinBoard({ mode = 'home', isSuccess = false, onMakeu
                 return (
                   <span key={item.day} className="flex min-w-0 flex-col items-center gap-1">
                     <span className="text-[9px] leading-none text-text-tertiary">{CHECKIN_CYCLE_WEEK_LABELS[index]}</span>
+                    {/* T045｜未签日视觉：半透明圆 + 居中 X，替代原「灰色椭圆 + 数字」 */}
                     <span
                       className={`flex h-6 w-6 items-center justify-center rounded-full text-[9px] font-semibold ${
                         item.state === 'today'
@@ -141,10 +146,10 @@ export default function CheckinBoard({ mode = 'home', isSuccess = false, onMakeu
                             ? 'bg-reward-subtle text-reward-strong'
                             : item.state === 'makeup'
                               ? 'border border-primary/55 bg-surface text-text-brand'
-                              : 'bg-surface-subtle text-text-tertiary'
+                              : 'bg-surface-subtle/50 text-text-tertiary/70'
                       }`}
                     >
-                      {completed ? <Check className="h-3 w-3" strokeWidth={3} /> : item.day}
+                      {completed ? <Check className="h-3 w-3" strokeWidth={3} /> : item.state === 'makeup' ? null : <X className="h-3 w-3" strokeWidth={2.8} />}
                     </span>
                   </span>
                 )
@@ -412,11 +417,12 @@ function CalendarCell({ item, onMakeup }: { item: CheckinDay; onMakeup: () => vo
   }
 
   return (
+    // T045｜未签日视觉：半透明圆 + 居中 X，替代原「灰色椭圆 + 数字」
     <div
       aria-label={`${item.day} 日未到`}
-      className="flex aspect-square w-full items-center justify-center rounded-lg bg-surface-subtle text-[11px] text-text-tertiary"
+      className="flex aspect-square w-full items-center justify-center rounded-full bg-surface-subtle/50 text-text-tertiary/70"
     >
-      {item.day}
+      <X className="h-3.5 w-3.5" strokeWidth={2.6} aria-hidden />
     </div>
   )
 }
