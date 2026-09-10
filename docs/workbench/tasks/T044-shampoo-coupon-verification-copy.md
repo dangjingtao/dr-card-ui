@@ -2,7 +2,7 @@
 
 ## 状态与类型
 
-- 状态：`Ready → Agent Review`（实施完成，等用户验收）
+- 状态：`Ready → Agent Review → User Review`（智能体自检通过，请用户验收；按全局契约只有用户可以标 Accepted）
 - 类型：Copy / Interaction Adjust（核销弹窗文案与控件）
 - 优先级：P0（学生核心使用动线）
 - 所属阶段：诗得丽品牌专栏施工（2026-09-09 批次）
