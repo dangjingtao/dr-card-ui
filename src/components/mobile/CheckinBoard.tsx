@@ -146,21 +146,24 @@ export default function CheckinBoard({ mode = 'home', isSuccess = false, onMakeu
                     <span
                       className={`flex h-6 w-6 items-center justify-center text-[9px] font-semibold ${
                         item.state === 'today'
-                          ? 'rounded-md bg-[#3A2E1F] text-white shadow-sm'
+                          ? 'flex-col rounded-md bg-[#3A2E1F] text-white shadow-sm'
                           : completed
-                            ? 'rounded-full bg-reward-subtle text-reward-strong'
+                            ? 'flex-col rounded-full bg-reward-subtle text-reward-strong'
                             : item.state === 'makeup'
                               ? 'rounded-md bg-primary/10 text-text-brand'
                               : 'rounded-full text-text-tertiary/70'
                       }`}
                     >
                       {item.state === 'today' ? (
-                        <span className="flex items-baseline gap-0.5 leading-none">
-                          <X className="h-3 w-3" strokeWidth={2.8} />
-                          <span className="text-[8px] font-semibold">{item.day}</span>
-                        </span>
+                        <>
+                          <X className="h-2.5 w-2.5" strokeWidth={3} />
+                          <span className="mt-0.5 text-[8px] leading-none">{item.day}</span>
+                        </>
                       ) : completed ? (
-                        <Check className="h-3 w-3" strokeWidth={3} />
+                        <>
+                          <Check className="h-2.5 w-2.5" strokeWidth={3} />
+                          <span className="mt-0.5 text-[8px] leading-none">{item.day}</span>
+                        </>
                       ) : item.state === 'makeup' ? (
                         <span className="text-[10px] font-semibold leading-none">补签</span>
                       ) : (
@@ -410,15 +413,13 @@ function CalendarCell({ item, onMakeup }: { item: CheckinDay; onMakeup: () => vo
 
   if (item.state === 'today') {
     return (
-      // T045｜今天未签：矩形 + X + 日期
+      // T045｜今天未签：矩形 + X + 日期（X 上 + 日期下，与 done 单元格保持 flex-col 一致）
       <div
         aria-label={`${item.day} 日 ${CHECKIN_STATUS_TEXT}`}
-        className="flex aspect-square w-full items-center justify-center rounded-md bg-[#3A2E1F] text-white shadow-sm"
+        className="flex aspect-square w-full flex-col items-center justify-center rounded-md bg-[#3A2E1F] text-white shadow-sm"
       >
-        <span className="flex items-baseline gap-0.5 leading-none">
-          <X className="h-4 w-4" strokeWidth={2.8} aria-hidden />
-          <span className="text-[11px] font-semibold">{item.day}</span>
-        </span>
+        <X className="h-3.5 w-3.5" strokeWidth={3} aria-hidden />
+        <span className="mt-0.5 text-[10px] font-semibold leading-none">{item.day}</span>
       </div>
     )
   }
