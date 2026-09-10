@@ -66,12 +66,12 @@ T001–T015 基于 2026-08-21 的仓库与 Mockplus 实际盘点建立，并已�
 | [T043](./T043-dearseed-column-coupon-popup.md) | 诗得丽专栏入口：身份选择 Demo + 新人礼包占位 | Agent Review |
 | [T044](./T044-shampoo-coupon-verification-copy.md) | 洗发水体验券核销方式说明文案调整（使用指引 + 去 radio） | User Review |
 | [T045](./T045-dearseed-checkin-miss-remedy.md) | 诗得丽专栏签到：未签 X 标记 + 补签看广告 | User Review |
-| [T046](./T046-dearseed-home-avatar-to-membership.md) | 诗得丽专栏首页右上角头像：跳转专栏「我的」 | Ready |
-| [T047](./T047-dearseed-banner-rebrand-to-polarseed.md) | 诗得丽专栏首张轮播图品牌名替换：卡博士.极地种子 | Ready |
+| [T046](./T046-dearseed-home-avatar-to-membership.md) | 诗得丽专栏首页右上角头像：跳转专栏「我的」 | User Review |
+| [T047](./T047-dearseed-banner-rebrand-to-polarseed.md) | 诗得丽专栏首张轮播图品牌名替换：卡博士.极地种子 | Agent Review |
 | [T048](./T048-dearseed-checkin-streak-duration-decision.md) | 累计打卡活动天数：决策待定盯死卡 | Needs Decision |
 | [T049](./T049-dearseed-buddy-invite-bubble-points-decision.md) | 邀请成为洗头搭子：双方泡泡值奖励决策 | Needs Decision |
 | [T050](./T050-dearseed-membership-birthday-3-month.md) | 诗得丽专栏会员中心：生日字段 3 个月修改限制 | Ready |
-| [T051](./T051-dearseed-my-page-rename-membership-center.md) | 诗得丽专栏「我的」页改名「会员中心」 | User Review |
+| [T051](./T051-dearseed-my-page-rename-membership-center.md) | 诗得丽专栏「我的」页改名「会员中心」 | Agent Review |
 | [T052](./T052-coupon-movie-ticket-style.md) | 卡包卡券列表：电影票样式 | Done |
 
 ## 依赖顺序
