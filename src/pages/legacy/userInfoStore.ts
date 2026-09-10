@@ -41,6 +41,14 @@ export interface UserInfo {
    * mock 默认 000000。
    */
   pin: string
+  /* T050｜会员中心生日字段 3 个月修改限制。
+   * - birthday：用户设置的生日（ISO yyyy-mm-dd），空串表示未设置。
+   * - birthdayLastModifiedAt：上次成功保存生日的时间戳（ms）。
+   *   mock 默认回溯 100 天前（B-051：历史用户进入即视为"早已可编辑"，
+   *   避免新装用户一进来就被锁）。
+   * 真实场景下应由后端持久化，前端只展示与限制 UI。 */
+  birthday: string
+  birthdayLastModifiedAt: number
 }
 
 const INITIAL_USER_INFO: UserInfo = {
@@ -59,6 +67,9 @@ const INITIAL_USER_INFO: UserInfo = {
   balance: 100.0,
   isRegistered: false,
   pin: '000000',
+  /* T050：生日 mock 默认值；lastModifiedAt 回溯 100 天 → 首次进入即可编辑 */
+  birthday: '2003-08-15',
+  birthdayLastModifiedAt: Date.now() - 100 * 24 * 60 * 60 * 1000,
 }
 
 /* 全局单例：所有引用都指向同一份 USER_INFO，确保换绑后个人信息同步刷新 */

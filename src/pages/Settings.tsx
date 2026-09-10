@@ -1,17 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
 import { useBlocker, useNavigate } from 'react-router-dom'
-import { Camera, CheckCircle2, ChevronRight, Eye, EyeOff, Image, X } from 'lucide-react'
+import { Camera, CheckCircle2, ChevronRight, Eye, EyeOff, Image, Lock, X } from 'lucide-react'
 import PageContainer from '../components/mobile/PageContainer'
 import PromptOverlay from '../components/mobile/PromptOverlay'
 import { Button, IconButton } from '../components/ui'
 import { useOverlay } from '../app/fixtures/useFixture'
 import avatar from '../assets/brand/home/home-avatar.webp'
+import { userInfoActions, useUserInfo } from './legacy/userInfoStore'
+import { canEditBirthday, formatNextEditableDate } from '../utils/birthdayGate'
 
 type SheetKey = 'avatar' | 'nickname' | 'birthday' | 'password' | null
 
 const initialProfile = {
   nickname: '会员小福',
-  birthday: '2003-08-15',
   year: '',
   passwordSet: false,
 }
@@ -24,9 +25,12 @@ const yearGroups: Array<{ group: string; items: string[] }> = [
 export default function Settings() {
   const navigate = useNavigate()
   const { overlay, close: closeOverlay } = useOverlay()
+  /* T050｜生日字段从 userInfoStore 读取，保证与「会员中心」展示一致 */
+  const userInfo = useUserInfo()
+  const birthdayGate = canEditBirthday(userInfo.birthdayLastModifiedAt)
   const [sheet, setSheet] = useState<SheetKey>(null)
   const [nickname, setNickname] = useState(initialProfile.nickname)
-  const [birthday, setBirthday] = useState(initialProfile.birthday)
+  const [birthdayDraft, setBirthdayDraft] = useState(userInfo.birthday)
   const [year, setYear] = useState(initialProfile.year)
   const [passwordSet, setPasswordSet] = useState(initialProfile.passwordSet)
   const [pw1, setPw1] = useState('')
@@ -38,7 +42,7 @@ export default function Settings() {
 
   const dirty =
     nickname !== initialProfile.nickname ||
-    birthday !== initialProfile.birthday ||
+    birthdayDraft !== userInfo.birthday ||
     year !== initialProfile.year ||
     passwordSet !== initialProfile.passwordSet
 
@@ -110,10 +114,21 @@ export default function Settings() {
         </div>
         <div className="flex items-center gap-3 border-b border-border-subtle px-4 py-3">
           <span className="w-12 shrink-0 text-sm text-text-tertiary">生日</span>
-          <span className="min-w-0 flex-1 text-right text-sm text-text-primary">{birthday}</span>
-          <button type="button" onClick={() => setSheet('birthday')} aria-label="修改生日" className="shrink-0 text-text-tertiary">
-            <ChevronRight className="h-5 w-5" />
-          </button>
+          <span className="min-w-0 flex-1 text-right text-sm text-text-primary">{userInfo.birthday || '未设置'}</span>
+          {/* T050｜锁定态显示锁图标 + 灰色（不可点击）；非锁定态维持原 ChevronRight */}
+          {birthdayGate.allowed ? (
+            <button type="button" onClick={() => setSheet('birthday')} aria-label="修改生日" className="shrink-0 text-text-tertiary">
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          ) : (
+            <span
+              aria-label={`生日 ${formatNextEditableDate(birthdayGate.nextEditableAt)}`}
+              title={formatNextEditableDate(birthdayGate.nextEditableAt)}
+              className="shrink-0 text-text-disabled"
+            >
+              <Lock className="h-4 w-4" />
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-3 px-4 py-3">
           <span className="w-12 shrink-0 text-sm text-text-tertiary">消费密码</span>
@@ -224,16 +239,50 @@ export default function Settings() {
               {sheet === 'birthday' && (
                 <>
                   <p className="text-sm text-text-tertiary">生日将用于会员权益与生日礼遇</p>
-                  <input
-                    type="date"
-                    value={birthday}
-                    onChange={(e) => setBirthday(e.target.value)}
-                    className="mt-4 block h-11 w-full rounded-control border border-border bg-surface px-3 text-base outline-none focus:border-primary"
-                    aria-label="选择生日"
-                  />
-                  <button type="button" onClick={save} className="mt-5 h-11 w-full rounded-control bg-primary text-sm font-medium text-text-inverse active:bg-primary-pressed">
-                    保存
-                  </button>
+                  {/* T050｜锁定态：禁用日期选择 + 显示下一次可编辑时间；非锁定态保持原 date input */}
+                  {birthdayGate.allowed ? (
+                    <>
+                      <input
+                        type="date"
+                        value={birthdayDraft}
+                        onChange={(e) => setBirthdayDraft(e.target.value)}
+                        className="mt-4 block h-11 w-full rounded-control border border-border bg-surface px-3 text-base outline-none focus:border-primary"
+                        aria-label="选择生日"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          /* T050｜写入新生日 + 当前时间戳作为 lastModifiedAt，
+                           * 由 userInfoStore update action 统一维护（避免多处写）。 */
+                          userInfoActions.update({
+                            birthday: birthdayDraft,
+                            birthdayLastModifiedAt: Date.now(),
+                          })
+                          save()
+                        }}
+                        className="mt-5 h-11 w-full rounded-control bg-primary text-sm font-medium text-text-inverse active:bg-primary-pressed"
+                      >
+                        保存
+                      </button>
+                    </>
+                  ) : (
+                    <div className="mt-4 flex flex-col items-center gap-2 rounded-control border border-border-subtle bg-surface-subtle px-4 py-6">
+                      <Lock className="h-5 w-5 text-text-tertiary" aria-hidden />
+                      <p className="text-sm font-medium text-text-secondary">
+                        {formatNextEditableDate(birthdayGate.nextEditableAt)}
+                      </p>
+                      <p className="text-xs text-text-tertiary">
+                        生日每 3 个月仅可修改一次，修改后即时锁定
+                      </p>
+                      <button
+                        type="button"
+                        onClick={close}
+                        className="mt-2 h-10 w-full rounded-control border border-border bg-surface text-sm font-medium text-text-primary active:bg-surface-pressed"
+                      >
+                        我知道了
+                      </button>
+                    </div>
+                  )}
                 </>
               )}
 
