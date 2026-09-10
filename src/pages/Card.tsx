@@ -41,8 +41,6 @@ interface MovieTicketProps {
 const NOTCH_SIZE = 14 // 两端半圆缺口直径（px）
 
 function MovieTicket({ coupon, expired, used, onUse, onShare }: MovieTicketProps) {
-  /** 券号展示：取 coupon.id 末 4 位 + 固定前缀，模拟真实票号 */
-  const ticketNo = `DS${coupon.id.toUpperCase().padStart(4, '0')}-${Math.abs(hash(coupon.id)) % 9000 + 1000}`
   const isInactive = expired || used
   /** 左半色块：金 vs 灰 */
   const leftBg = isInactive
@@ -89,7 +87,7 @@ function MovieTicket({ coupon, expired, used, onUse, onShare }: MovieTicketProps
             ) : (
               <Ticket className="h-7 w-7 text-white" strokeWidth={1.8} />
             )}
-            <span className="mt-2 text-[11px] font-medium tracking-widest text-white/85 uppercase">COUPON</span>
+            <span className="mt-2 text-[11px] font-medium tracking-widest text-white/85">卡券</span>
           </div>
 
           {/* 中间虚线撕齿分隔 */}
@@ -130,13 +128,16 @@ function MovieTicket({ coupon, expired, used, onUse, onShare }: MovieTicketProps
               </div>
             )}
 
-            {/* 操作按钮：已过期不显示，已使用只显示转赠（演示态）；可用时显示使用+转赠 */}
+            {/* 操作按钮：等宽并列、无主辅关系。
+             *  使用：橙色实心 pill；转赠：白底描边 pill。
+             *  两个按钮 flex-1 平分宽度，视觉权重一致。
+             *  已过期：两按钮都禁用；已使用：使用按钮隐藏（演示态）。 */}
             <div className="mt-3 flex items-center gap-2">
-              {!expired && !used && (
+              {!used && !expired && (
                 <button
                   type="button"
                   onClick={onUse}
-                  className="h-7 rounded-full bg-primary px-4 text-[12px] font-semibold text-text-inverse shadow-primary-button active:bg-primary-pressed"
+                  className="h-8 flex-1 rounded-full bg-primary text-[12px] font-semibold text-text-inverse shadow-primary-button active:bg-primary-pressed"
                 >
                   使用
                 </button>
@@ -145,7 +146,7 @@ function MovieTicket({ coupon, expired, used, onUse, onShare }: MovieTicketProps
                 type="button"
                 onClick={onShare}
                 disabled={!canAction}
-                className={`h-7 rounded-full border px-4 text-[12px] font-semibold ${
+                className={`h-8 flex-1 rounded-full border text-[12px] font-semibold ${
                   canAction
                     ? 'border-border-strong bg-transparent text-text-secondary active:bg-surface-subtle'
                     : 'border-border bg-transparent text-text-inactive-muted'
@@ -156,25 +157,9 @@ function MovieTicket({ coupon, expired, used, onUse, onShare }: MovieTicketProps
             </div>
           </div>
         </div>
-
-        {/* 底部票根：券号 */}
-        <div className={`flex items-center justify-between border-t border-dashed px-4 py-1.5 text-[10px] tracking-widest ${isInactive ? 'border-coupon-inactive-bar text-text-inactive-muted' : 'border-reward-soft text-text-tertiary'}`}>
-          <span>NO. {ticketNo}</span>
-          <span>DEAR SEED · 卡博士</span>
-        </div>
       </div>
     </article>
   )
-}
-
-/** 简单字符串 hash，用于把 coupon.id 转换为 4 位数字券号后缀 */
-function hash(str: string): number {
-  let h = 0
-  for (let i = 0; i < str.length; i += 1) {
-    h = (h << 5) - h + str.charCodeAt(i)
-    h |= 0
-  }
-  return h
 }
 
 export default function Card() {
