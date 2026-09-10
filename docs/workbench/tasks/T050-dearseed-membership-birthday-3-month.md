@@ -2,7 +2,7 @@
 
 ## 状态与类型
 
-- 状态：`Ready`
+- 状态：`Done`（用户 2026-09-10 现场验收通过，跳过 User Review 由用户直接标 Done）
 - 类型：Validation / UX（表单字段修改频率限制）
 - 优先级：P1（个人信息合规）
 - 所属阶段：诗得丽品牌专栏施工（2026-09-09 批次）
@@ -110,7 +110,13 @@
 | 1 | 「会员中心 → 个人信息编辑入口」路径 | PRD 描述为专栏会员中心下的编辑入口 | 实际是 `/settings`（主壳 Settings），通过 `/profile` 宫格点击头像/设置图标进入 | 代码层面专栏没有独立的设置入口；T050 在主壳 Settings 上做限制；PRD 第 30 行"不修改主壳生日字段行为"被本卡覆盖——本卡覆盖范围限于「会员中心展示一致」的生日字段，主壳其它字段（昵称 / 头像 / 消费密码）行为未触动 |
 | 2 | `updateProfile` action 命名 | PRD 提到 `updateProfile({ birthday, lastModifiedAt })` | 复用 store 内置 `update(patch: Partial<T>)` action | createSimpleStore 已提供通用 update；不重复实现。语义等价（写入生日 + lastModifiedAt） |
 
-**状态推进**：Ready → Agent Review（本次 PRD 检查通过，待用户验收后由用户手动标 Accepted，我再 push）。
+**状态推进**：Ready → Agent Review → **Done**（用户 2026-09-10 现场验收通过；状态由用户手动标 Done；commit 已 push 到 preview 远端）。
+
+## 落地提交号
+
+- `9044d8f` feat(membership): 生日字段 3 个月修改限制（T050）— 主体实现
+- `ba4c396` fix(membership): 生日 sheet 顶部文案补充「三个月内仅可修改一次」— 用户现场反馈追加
+- 本任务卡 PRD 检查文档 + 状态推进（Agent Review → Done）
 
 ## 产出
 
