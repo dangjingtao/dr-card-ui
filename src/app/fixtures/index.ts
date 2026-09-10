@@ -798,8 +798,8 @@ export const CHECKIN_WEEK_LABELS = ['日', '一', '二', '三', '四', '五', '�
  */
 export type CheckinDayState = 'done' | 'today' | 'makeup' | 'upcoming'
 
-/** 已签到日（含今天）；6、7 日漏签用于演示「补签」 */
-const CHECKIN_DONE_DAYS = [1, 2, 3, 4, 5, 8, 9, 10, 11, 12]
+/** 已签到日（不含今天 12 号，方便演示「今天未签 X」视觉）；6、7 日漏签用于演示「补签」 */
+const CHECKIN_DONE_DAYS = [1, 2, 3, 4, 5, 8, 9, 10, 11]
 
 export interface CheckinDay {
   day: number
@@ -839,8 +839,8 @@ export const CHECKIN_REWARDS: CheckinReward[] = [
   { days: 10 },
 ]
 
-/** 原型 §5 / §6 顶部状态文案 */
-export const CHECKIN_STATUS_TEXT = '今日已签到'
+/** 原型 §5 / §6 顶部状态文案：今天 12 号未签时显示「今日未签到」 */
+export const CHECKIN_STATUS_TEXT = '今日未签到'
 
 /**
  * 用户 2026-08-24 确认打卡页需要体现「任务」。

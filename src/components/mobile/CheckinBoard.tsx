@@ -97,7 +97,8 @@ export default function CheckinBoard({ mode = 'home', isSuccess = false, onMakeu
               DAILY CHECK-IN
             </p>
             <p className="mt-2.5 flex items-center gap-1.5 text-2xl font-bold leading-8 text-bubble-on-gold">
-              <CheckCircle2 className="h-6 w-6" strokeWidth={2.4} aria-hidden />
+              {/* T045｜今天未签：Hero 状态图标从 ✓ 改为 X，保持「未签到」语义统一 */}
+              <X className="h-6 w-6" strokeWidth={2.6} aria-hidden />
               {CHECKIN_STATUS_TEXT}
             </p>
             <p className="mt-1 text-[11px] font-medium text-bubble-on-gold-muted">7 天签到挑战</p>
@@ -133,28 +134,35 @@ export default function CheckinBoard({ mode = 'home', isSuccess = false, onMakeu
 
             <div className="mt-2.5 grid grid-cols-7 gap-2" aria-hidden>
               {cycleDays.map((item, index) => {
-                const completed = item.state === 'done' || item.state === 'today'
+                const completed = item.state === 'done'
                 return (
                   <span key={item.day} className="flex min-w-0 flex-col items-center gap-1">
                     <span className="text-[9px] leading-none text-text-tertiary">{CHECKIN_CYCLE_WEEK_LABELS[index]}</span>
-                    {/* T045｜漏签日（makeup）显示 X；今天/未来/已签保持原视觉 */}
+                    {/* T045｜签到视觉规则：
+                     *  today（今天未签）→ 深色圆 + X
+                     *  done（已签）→ ✓ 暖色
+                     *  makeup（过往漏签）→ 描边 + 日期 + 「补签」小字
+                     *  upcoming（未来）→ 透明背景 + 灰色数字（去掉灰色原型底） */}
                     <span
                       className={`flex h-6 w-6 items-center justify-center text-[9px] font-semibold ${
                         item.state === 'today'
-                          ? 'rounded-full bg-primary text-text-inverse shadow-primary-button'
+                          ? 'rounded-full bg-[#3A2E1F] text-white shadow-sm'
                           : completed
                             ? 'rounded-full bg-reward-subtle text-reward-strong'
                             : item.state === 'makeup'
-                              ? 'rounded-full bg-surface-subtle/50 text-text-tertiary/70'
-                              : 'rounded-full bg-surface-subtle text-text-tertiary'
+                              ? 'rounded-lg border border-primary/55 bg-surface text-text-brand'
+                              : 'rounded-full text-text-tertiary/70'
                       }`}
                     >
                       {item.state === 'today' ? (
-                        <Check className="h-3 w-3" strokeWidth={3} />
+                        <X className="h-3 w-3" strokeWidth={2.8} />
                       ) : completed ? (
                         <Check className="h-3 w-3" strokeWidth={3} />
                       ) : item.state === 'makeup' ? (
-                        <X className="h-3 w-3" strokeWidth={2.8} />
+                        <>
+                          <span className="text-[10px] leading-none">{item.day}</span>
+                          <span className="text-[7px] leading-none">补签</span>
+                        </>
                       ) : (
                         item.day
                       )}
@@ -402,12 +410,12 @@ function CalendarCell({ item, onMakeup }: { item: CheckinDay; onMakeup: () => vo
 
   if (item.state === 'today') {
     return (
+      // T045｜今天未签：深色圆 + X
       <div
         aria-label={`${item.day} 日 ${CHECKIN_STATUS_TEXT}`}
-        className="flex aspect-square w-full flex-col items-center justify-center rounded-lg bg-primary text-text-inverse shadow-primary-button"
+        className="flex aspect-square w-full items-center justify-center rounded-full bg-[#3A2E1F] text-white shadow-sm"
       >
-        <Check className="h-3.5 w-3.5" strokeWidth={3} />
-        <span className="mt-0.5 text-[10px] leading-none">今天</span>
+        <X className="h-4 w-4" strokeWidth={2.8} aria-hidden />
       </div>
     )
   }
@@ -424,11 +432,11 @@ function CalendarCell({ item, onMakeup }: { item: CheckinDay; onMakeup: () => vo
     )
   }
 
-  // T045｜未来日期（upcoming）保持显示数字（原行为）
+  // T045｜未来日期（upcoming）去掉灰色原型底，透明背景 + 灰色数字
   return (
     <div
       aria-label={`${item.day} 日未到`}
-      className="flex aspect-square w-full items-center justify-center rounded-full bg-surface-subtle text-[11px] text-text-tertiary"
+      className="flex aspect-square w-full items-center justify-center text-[11px] text-text-tertiary/70"
     >
       {item.day}
     </div>
