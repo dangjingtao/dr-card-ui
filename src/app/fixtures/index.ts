@@ -151,7 +151,12 @@ export const HOME_BANNER_CAROUSEL = {
     {
       key: 'checkin',
       asset: 'checkin',
-      alt: '卡博士·诗得丽 每日打卡 洗护好礼',
+      alt: '卡博士.极地种子 极地种子品牌故事',
+      // T047｜第一张轮播图（B-049 等待美术新图）叠加文字层覆盖原图烫印的旧品牌字，
+      // eyebrow/title/description 经由 BannerCarousel 内置文字层渲染。
+      eyebrow: '极地种子品牌故事',
+      title: '卡博士.极地种子',
+      description: '每日打卡·洗护好礼',
       to: '/checkin',
     },
     {
@@ -2120,8 +2125,8 @@ export const COLUMN_HOME_SECTIONS = [
   },
   {
     key: 'brand-story',
-    title: '卡博士品牌故事',
-    desc: '了解品牌起源与匠心洗护',
+    title: '极地种子品牌故事',
+    desc: '了解极地种子品牌起源与匠心洗护',
     action: '查看品牌故事',
     to: '/brand-culture',
   },
