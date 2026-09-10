@@ -2126,3 +2126,17 @@ export const COLUMN_HOME_SECTIONS = [
     to: '/brand-culture',
   },
 ] as const
+
+/**
+ * 诗得丽专栏首张轮播图（banner）文字层覆盖文案（T047）。
+ * B-049：原 banner 背景 `home-banner-carousel.webp` 内嵌旧品牌名「卡博士诗得丽」，
+ * 等后端 / 美术回灌新素材前不动图片本身；这里仅以文字层叠加覆盖，
+ * 由 `DearseedColumn` hero section 读取，渲染在大字标题 + 下方小字引导文案。
+ * 后续拿到新图后可整体替换为图片自带文字，本 fixture 即废弃。
+ */
+export const DEARSEED_BANNER_TEXT = {
+  /** 主标题：品牌名 */
+  title: '卡博士.极地种子',
+  /** 副标题 / 引导文案 */
+  subtitle: '极地种子品牌故事',
+} as const

@@ -18,6 +18,7 @@ import {
   BUBBLE_BALANCE,
   CAMPAIGN_FIXTURE,
   CHECKIN_REMINDER,
+  DEARSEED_BANNER_TEXT,
   DEARSEED_PICKS,
   GIFT_FOR_NEW_USERS,
   MEMBER_PROFILE,
@@ -140,6 +141,18 @@ export default function DearseedColumn() {
       >
         <img src={columnBanner} alt="诗得丽产品与活动推荐" className="aspect-[375/210] w-full object-cover" />
         <span aria-hidden className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-background to-transparent" />
+        {/* T047｜首张轮播图品牌名替换：在保留 `columnBanner.webp` 原图（B-049 等待美术新图）的前提下，
+         * 叠加一层绝对定位文字覆盖原图内嵌的「卡博士诗得丽」标题与「卡博士品牌故事」引导文案。
+         * 文字层仅做覆盖，不绑定新跳转（点击仍走 `open('newcomer')` 身份选择弹窗，T043 验收已通过）。
+         * 美术新图就位后可移除此 div 并回退到原纯图片方案。 */}
+        <span aria-hidden className="pointer-events-none absolute inset-0 flex flex-col justify-center pl-6 pr-8">
+          <span className="block text-[26px] font-bold leading-[1.15] text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.55)]">
+            {DEARSEED_BANNER_TEXT.title}
+          </span>
+          <span className="mt-2 block text-[13px] font-medium leading-[1.3] text-white/95 drop-shadow-[0_1px_4px_rgba(0,0,0,0.5)]">
+            {DEARSEED_BANNER_TEXT.subtitle}
+          </span>
+        </span>
       </button>
 
       <section
