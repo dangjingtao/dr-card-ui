@@ -70,19 +70,18 @@ export default function DearseedColumn() {
   /* 关爱机用户弹窗用 NEWCOMER_COUPON_VARIANTS，本期 mock 固定 coupon-1（1 张洗发水体验券） */
   const dearseedCoupons = NEWCOMER_COUPON_VARIANTS['coupon-1']
 
-  /* T043｜进入专栏页面自动弹身份选择器。
-   * - 仅在本次会话首次进入时触发（sessionStorage.dearseedPickerShown 标记）
-   * - URL 带 `?picker=off` 时跳过（演示态可关闭）
+  /* T043R2｜进入专栏页面自动弹身份选择器。
+   * - 用户 2026-09-10 现场反馈：从卡博士 APP 首页「诗得丽品牌专栏」卡片跳转进专栏后必须弹出
+   * - 取消原 T043 实现的 sessionStorage 会话级抑制：每次 mount 都弹
+   * - URL 带 `?picker=off` 时跳过（演示态可关闭、自动化脚本可抑制）
    * - 已带其他 overlay 的入口（如 ?overlay=reminder）也跳过，避免覆盖其他演示态
+   * - 路由切换时 pickerOpen 状态自然清空，组件重新 mount 会再次触发（符合"每次跳转进入都弹"语义）
    */
   useEffect(() => {
     if (typeof window === 'undefined') return
     const params = new URLSearchParams(window.location.search)
     if (params.get('picker') === 'off') return
     if (params.has('overlay')) return
-    const FLAG = 'dearseed_picker_shown'
-    if (window.sessionStorage.getItem(FLAG) === '1') return
-    window.sessionStorage.setItem(FLAG, '1')
     setPickerOpen(true)
   }, [])
 

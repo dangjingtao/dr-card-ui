@@ -134,7 +134,7 @@ export default function LegacyHome() {
       {/* 诗得丽品牌专栏（大卡片） */}
       <button
         type="button"
-        onClick={() => navigate('/')}
+        onClick={() => navigate('/dearseed')}
         className="relative flex w-full items-center overflow-hidden rounded-2xl bg-gradient-to-r from-[#F7E9D4] to-[#EED9B8] shadow-sm active:opacity-90"
         style={{ aspectRatio: '3 / 1' }}
       >
