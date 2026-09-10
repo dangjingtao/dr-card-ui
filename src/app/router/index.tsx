@@ -101,6 +101,8 @@ const customPages: Record<string, ReactElement> = {
   '/checkin': <Checkin />,
   /* 2026-08-28：恢复既有会员中心，由「我的 → 快捷服务」进入，不新建页面。 */
   '/membership': <Membership />,
+  /* T046｜诗得丽专栏内会员中心入口：复用 Membership 组件 */
+  '/dearseed/membership': <Membership />,
   '/profile': <Profile />,
   '/luck': <Luck />,
   '/luck/result': <DrawSuccess />,

@@ -733,6 +733,17 @@ export const ROUTES: RouteMeta[] = [
     returnTo: '我的',
     owner: '会员中心（既有 T006 页面；2026-08-28 恢复入口，不新增页面）',
   },
+  /* T046｜诗得丽专栏内会员中心入口：复用既有 Membership 组件，保持 T051 联动路由 slug */
+  {
+    path: '/dearseed/membership',
+    title: '会员中心',
+    titleBarTitle: '会员中心',
+    nodes: [6],
+    task: 'T046',
+    entry: '诗得丽专栏首页-右上角头像；中部会员卡；快捷入口「会员空间」',
+    returnTo: '诗得丽专栏首页',
+    owner: '诗得丽专栏内会员中心（复用 /membership 既有页面，T046 路线入口）',
+  },
   {
     path: '/membership/levels',
     title: '会员等级',

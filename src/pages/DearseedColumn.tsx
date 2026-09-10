@@ -38,7 +38,8 @@ const pickAssets = {
 
 const columnEntries = [
   { label: '品牌文化', icon: Sparkles, to: '/brand-culture' },
-  { label: '会员空间', icon: Crown, to: '/mall' },
+  // T046｜「会员空间」改为跳专栏内会员中心（不再是商城）
+  { label: '会员空间', icon: Crown, to: '/dearseed/membership' },
   { label: '洗护兑换', icon: ShoppingBag, to: '/exchange' },
 ]
 
@@ -148,14 +149,17 @@ export default function DearseedColumn() {
         <span aria-hidden className="absolute -right-12 -top-16 h-40 w-40 rounded-full border border-member-accent/15" />
         <span aria-hidden className="absolute -right-5 -top-8 h-24 w-24 rounded-full bg-member-accent/10 blur-2xl" />
         <div className="relative flex items-center gap-3">
+          {/* T046｜右上角头像改为跳专栏内会员中心（PRD B-048 路由 slug） */}
           <button
             type="button"
-            onClick={() => navigate('/profile')}
+            data-dearseed-avatar
+            onClick={() => navigate('/dearseed/membership')}
             className="h-12 w-12 flex-none overflow-hidden rounded-full border-2 border-member-accent/70 shadow-sm"
           >
             <img src={avatar} alt="用户头像" className="h-full w-full object-cover" />
           </button>
-          <button type="button" onClick={() => navigate('/mall')} className="min-w-0 flex-1 text-left">
+          {/* T046｜中部「DEARSEED MEMBER / 昵称 / 等级」卡也跳会员中心，与头像入口语义一致 */}
+          <button type="button" onClick={() => navigate('/dearseed/membership')} className="min-w-0 flex-1 text-left">
             <span className="block text-[10px] tracking-[0.18em] text-member-accent">DEARSEED MEMBER</span>
             <span className="mt-1 block truncate text-[17px] font-semibold text-member-text">{MEMBER_PROFILE.nickname}</span>
             <span className="mt-1 block text-[11px] text-member-muted">{MEMBER_PROFILE.levelLabel} · {MEMBER_PROFILE.levelName}</span>
