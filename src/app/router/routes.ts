@@ -617,21 +617,21 @@ export const ROUTES: RouteMeta[] = [
     owner: '洗护体验券专区（T008 施工；语义已从「兑换码页」纠正）',
   },
   {
-    /* T051v2-rollback｜用户 2026-09-10 仅要求把 Tab label「我的」改为「会员中心」文字，未要求改路由 / 跳转。
-     * 因此仅 label 字段改字，tab / tabOrder / icon / path 保持原状，Settings 不动。 */
+    /* T051v2-rollback + v3｜用户 2026-09-10 仅要求把文字改为「会员中心」（Tab label + 页面 TitleBar），
+     * 不改路由 / 跳转 / Settings。tab / tabOrder / icon / path / Settings 全部保持原状。 */
     path: '/profile',
     tab: true,
     tabOrder: 5,
     label: '会员中心',
     icon: UserRound,
-    title: '我的',
+    title: '会员中心',
     titleBarAction: 'notifications',
     nodes: [19, 20],
     task: 'T011',
-    entry: '底部 Tab「会员中心」（v2 仅改 label）；首页-个人区',
+    entry: '底部 Tab「会员中心」+ TitleBar「会员中心」；首页-个人区',
     returnTo: '底部 Tab；首页',
     overlays: [{ key: 'app-prompt', node: 20, label: 'APP 弹窗（能力引导）', type: 'dialog' }],
-    owner: '我的（T011 已施工；T051v2-rollback 仅改 Tab label 文案，不改路由）',
+    owner: '我的（T011 已施工；T051v2-rollback+v3 改 Tab label + TitleBar 文案，不改路由 / 跳转）',
   },
 
   /* ────────────────────────── T005 专栏首页与新人流程 ────────────────────────── */

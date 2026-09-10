@@ -81,22 +81,24 @@
 
 初版 v2（commit `89f9506`）误解用户意图，改了路由 + Settings 跳转，用户当场反馈"我只是说该文字，没有说把页面逻辑都改了"，已回滚。
 
-**当前生效的最小改动**（v2-rollback）：
+**当前生效的最小改动**（v2-rollback + v3）：
 
 | # | 改动 | 文件 |
 | --- | --- | --- |
 | 1 | `/profile` 路由条目的 `label` 由 `'我的'` 改为 `'会员中心'` | `src/app/router/routes.ts` |
-| 2 | `/membership` 路由条目移除 v2 新增的 `tab / tabOrder / label / icon` 字段 | `src/app/router/routes.ts` |
-| 3 | Settings 两处 `navigate('/profile')` 保持原状（v2 改的跳 /membership 已还原） | `src/pages/Settings.tsx` |
+| 2 | `/profile` 路由条目的 `title` 由 `'我的'` 改为 `'会员中心'`（TitleBar h1 同步） | `src/app/router/routes.ts` |
+| 3 | `/membership` 路由条目移除 v2 新增的 `tab / tabOrder / label / icon` 字段 | `src/app/router/routes.ts` |
+| 4 | Settings 两处 `navigate('/profile')` 保持原状（v2 改的跳 /membership 已还原） | `src/pages/Settings.tsx` |
 
 影响：
 
-- 底部 Tab 第 5 位 label 现在显示「会员中心」，但点击仍跳 `/profile`（即原"我的"页：8 项功能宫格 + 卡包/泡泡值统计 + 热门兑换）
-- Tab 文字与点击后的页面标题（TitleBar 显示「我的」）不一致——这是用户当前接受的折中状态
+- 底部 Tab 第 5 位 label 现在显示「会员中心」
+- 点击 Tab 进入的 `/profile` 页面 TitleBar 顶部居中文字也显示「会员中心」（h1）
+- 但页面**内部主体仍是 T011 时代 8 项功能宫格 + 卡包/泡泡值统计 + 热门兑换**——这是用户当前接受的折中状态
 - `/membership` 不再是底部 Tab；既有的「我的 → 快捷服务 → 会员中心」入口路径保持不变
 - `/dearseed/membership`（专栏内会员中心）保持不变
 
-后续如果用户希望 Tab 跳的页面也改名，需要新增 v3 任务卡（与 T011「我的」页是否保留独立决策相关）。
+后续如果用户希望页面主体也改名，需要新增 v4 任务卡（与 T011「我的」页是否保留独立决策相关）。
 
 
 
