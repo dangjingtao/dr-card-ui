@@ -16,6 +16,167 @@ import {
   COUPON_USE_GUIDE,
 } from '../app/fixtures'
 
+/**
+ * 电影票样式卡券（自营页面专用 - 第一版）
+ * -------------------------------------------------------------
+ * 视觉特征：
+ *  - 横向票，左右两端各一个半圆缺口（撕齿效果）
+ *  - 中间用虚线分隔线把票分成两半：
+ *    左半：金色渐变色块（active）/ 灰色（used/expired），大金额 + 副券名
+ *    右半：白底，标题 + 到期 + 状态 + 使用须知 + 操作按钮
+ *  - 底部细灰色券号（票根感）
+ * - 把所有样式 inline 写在本组件里，方便后续整体替换为更精细的版本。
+ * - 不引入 CSS 变量，固定值先用 Tailwind class 表达；金色渐变通过 inline style 注入。
+ */
+interface MovieTicketProps {
+  coupon: CardCouponFixture
+  /** 是否已过期（叠加全卡 opacity） */
+  expired?: boolean
+  /** 是否已使用（左右色块灰化，但保留布局） */
+  used?: boolean
+  onUse: () => void
+  onShare: () => void
+}
+
+const NOTCH_SIZE = 14 // 两端半圆缺口直径（px）
+
+function MovieTicket({ coupon, expired, used, onUse, onShare }: MovieTicketProps) {
+  /** 券号展示：取 coupon.id 末 4 位 + 固定前缀，模拟真实票号 */
+  const ticketNo = `DS${coupon.id.toUpperCase().padStart(4, '0')}-${Math.abs(hash(coupon.id)) % 9000 + 1000}`
+  const isInactive = expired || used
+  /** 左半色块：金 vs 灰 */
+  const leftBg = isInactive
+    ? 'linear-gradient(135deg, #bdbdbd 0%, #9e9e9e 100%)'
+    : 'linear-gradient(135deg, var(--color-reward) 0%, var(--color-reward-strong) 100%)'
+  /** 操作按钮可用性 */
+  const canAction = !isInactive
+  return (
+    <article
+      className="relative"
+      aria-label={`${coupon.name}${coupon.amountLabel ?? ''} - ${isInactive ? (expired ? '已过期' : '已使用') : '可用'}`}
+    >
+      {/* 外层卡片 + 圆角 + 阴影；overflow-hidden 负责裁掉左右两个 notch 的内圈 */}
+      <div className={`relative overflow-hidden rounded-[16px] bg-surface shadow-sm ${expired ? 'opacity-90' : ''}`}>
+        {/* 左端半圆缺口（撕齿）：用绝对定位的圆形 + 与背景同色覆盖实现 */}
+        <span
+          aria-hidden
+          className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-surface-inactive"
+          style={{ width: NOTCH_SIZE, height: NOTCH_SIZE }}
+        />
+        <span
+          aria-hidden
+          className="absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 rounded-full bg-surface-inactive"
+          style={{ width: NOTCH_SIZE, height: NOTCH_SIZE }}
+        />
+
+        {/* 主体：flex 左右两栏 */}
+        <div className="flex">
+          {/* 左半：色块区 */}
+          <div
+            className="flex flex-col items-center justify-center px-4 py-4 text-center"
+            style={{
+              background: leftBg,
+              minWidth: 120,
+              flex: '0 0 auto',
+            }}
+            aria-hidden
+          >
+            {coupon.amountLabel ? (
+              <div className="flex items-baseline gap-0.5 leading-none text-white">
+                <span className="text-lg font-semibold">¥</span>
+                <span className="text-[34px] font-bold tracking-tight">{coupon.amountLabel.replace('¥', '')}</span>
+              </div>
+            ) : (
+              <Ticket className="h-7 w-7 text-white" strokeWidth={1.8} />
+            )}
+            <span className="mt-2 text-[11px] font-medium tracking-widest text-white/85 uppercase">COUPON</span>
+          </div>
+
+          {/* 中间虚线撕齿分隔 */}
+          <div
+            aria-hidden
+            className="my-3 border-l border-dashed"
+            style={{ borderColor: isInactive ? '#cfcfcf' : 'var(--color-reward-soft)' }}
+          />
+
+          {/* 右半：内容区 */}
+          <div className="flex-1 px-4 py-3">
+            <div className="flex items-start justify-between gap-2">
+              <h3 className={`min-w-0 truncate text-[15px] font-semibold ${isInactive ? 'text-coupon-used' : 'text-text-primary'}`}>
+                {coupon.name}
+              </h3>
+              <span
+                className={`inline-flex h-5 flex-none items-center gap-1 rounded-full px-2 text-[10px] font-semibold ${
+                  expired
+                    ? 'bg-surface-inactive text-text-inactive-muted'
+                    : used
+                      ? 'bg-coupon-used-bg text-coupon-used'
+                      : 'bg-reward-subtle text-reward-text'
+                }`}
+              >
+                {expired ? <Clock className="h-3 w-3" /> : used ? <ReceiptText className="h-3 w-3" /> : <Check className="h-3 w-3" />}
+                {expired ? '已过期' : used ? '已使用' : '可用'}
+              </span>
+            </div>
+
+            <div className={`mt-1.5 flex items-center gap-1 text-[11px] ${isInactive ? 'text-text-inactive-muted' : 'text-text-tertiary'}`}>
+              <CalendarDays className="h-3 w-3" />
+              {coupon.expireAt} 到期
+            </div>
+
+            {coupon.limitNote && (
+              <div className={`mt-1 text-[11px] ${isInactive ? 'text-text-inactive-muted' : 'text-text-tertiary'}`}>
+                {coupon.limitNote}
+              </div>
+            )}
+
+            {/* 操作按钮：已过期不显示，已使用只显示转赠（演示态）；可用时显示使用+转赠 */}
+            <div className="mt-3 flex items-center gap-2">
+              {!expired && !used && (
+                <button
+                  type="button"
+                  onClick={onUse}
+                  className="h-7 rounded-full bg-primary px-4 text-[12px] font-semibold text-text-inverse shadow-primary-button active:bg-primary-pressed"
+                >
+                  使用
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={onShare}
+                disabled={!canAction}
+                className={`h-7 rounded-full border px-4 text-[12px] font-semibold ${
+                  canAction
+                    ? 'border-border-strong bg-transparent text-text-secondary active:bg-surface-subtle'
+                    : 'border-border bg-transparent text-text-inactive-muted'
+                }`}
+              >
+                转赠
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* 底部票根：券号 */}
+        <div className={`flex items-center justify-between border-t border-dashed px-4 py-1.5 text-[10px] tracking-widest ${isInactive ? 'border-coupon-inactive-bar text-text-inactive-muted' : 'border-reward-soft text-text-tertiary'}`}>
+          <span>NO. {ticketNo}</span>
+          <span>DEAR SEED · 卡博士</span>
+        </div>
+      </div>
+    </article>
+  )
+}
+
+/** 简单字符串 hash，用于把 coupon.id 转换为 4 位数字券号后缀 */
+function hash(str: string): number {
+  let h = 0
+  for (let i = 0; i < str.length; i += 1) {
+    h = (h << 5) - h + str.charCodeAt(i)
+    h |= 0
+  }
+  return h
+}
+
 export default function Card() {
   const navigate = useNavigate()
   const route = findRouteByPathname('/card')
@@ -93,45 +254,12 @@ export default function Card() {
       <div className="mt-4 space-y-4" aria-live="polite">
         {tab === 'available' &&
           list.map((coupon) => (
-            <article key={coupon.id} className="overflow-hidden rounded-[16px] bg-surface shadow-sm">
-              <div className="h-[5px] bg-[linear-gradient(90deg,var(--color-reward),var(--color-reward-strong))]" />
-              <div className="px-4 pb-4 pt-3.5">
-                <div className="flex items-center justify-between gap-2.5">
-                  {coupon.amountLabel ? (
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="text-2xl font-bold leading-none text-reward-text">{coupon.amountLabel}</span>
-                      <span className="text-base font-semibold text-text-primary">{coupon.name}</span>
-                    </div>
-                  ) : (
-                    <h3 className="text-base font-semibold text-text-primary">{coupon.name}</h3>
-                  )}
-                  <span className="inline-flex h-6 items-center gap-1 rounded-full bg-reward-subtle px-2.5 text-xs font-semibold text-reward-text">
-                    <Check className="h-3.5 w-3.5" />
-                    可用
-                  </span>
-                </div>
-                <div className="mt-2.5 flex items-center gap-1 text-xs text-text-tertiary">
-                  <CalendarDays className="h-3.5 w-3.5" />
-                  {coupon.expireAt} 到期
-                </div>
-                <div className="mt-3.5 flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => openUseSheet(coupon)}
-                    className="h-9 rounded-full bg-primary px-[22px] text-sm font-semibold text-text-inverse shadow-primary-button active:bg-primary-pressed"
-                  >
-                    使用
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/card/share?coupon=${coupon.id}`)}
-                    className="h-9 rounded-full border border-border-strong bg-transparent px-[22px] text-sm font-semibold text-text-secondary"
-                  >
-                    转赠
-                  </button>
-                </div>
-              </div>
-            </article>
+            <MovieTicket
+              key={coupon.id}
+              coupon={coupon}
+              onUse={() => openUseSheet(coupon)}
+              onShare={() => navigate(`/card/share?coupon=${coupon.id}`)}
+            />
           ))}
 
         {tab === 'used' && list.length === 0 && (
@@ -146,56 +274,24 @@ export default function Card() {
 
         {tab === 'used' &&
           list.map((coupon) => (
-            <article key={coupon.id} className="overflow-hidden rounded-[16px] bg-surface shadow-sm">
-              <div className="h-[5px] bg-coupon-inactive-bar" />
-              <div className="px-4 pb-4 pt-3.5">
-                <div className="flex items-center justify-between gap-2.5">
-                  {coupon.amountLabel ? (
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="text-2xl font-bold leading-none text-coupon-used">{coupon.amountLabel}</span>
-                      <span className="text-base font-semibold text-coupon-used">{coupon.name}</span>
-                    </div>
-                  ) : (
-                    <h3 className="text-base font-semibold text-coupon-used">{coupon.name}</h3>
-                  )}
-                  <span className="inline-flex h-6 items-center gap-1 rounded-full bg-coupon-used-bg px-2.5 text-xs font-semibold text-coupon-used">
-                    <ReceiptText className="h-3.5 w-3.5" />
-                    已使用
-                  </span>
-                </div>
-                <div className="mt-2.5 flex items-center gap-1 text-xs text-text-inactive-muted">
-                  <CalendarDays className="h-3.5 w-3.5" />
-                  {coupon.expireAt} 到期
-                </div>
-              </div>
-            </article>
+            <MovieTicket
+              key={coupon.id}
+              coupon={coupon}
+              used
+              onUse={() => openUseSheet(coupon)}
+              onShare={() => navigate(`/card/share?coupon=${coupon.id}`)}
+            />
           ))}
 
         {tab === 'expired' &&
           list.map((coupon) => (
-            <article key={coupon.id} className="overflow-hidden rounded-[16px] bg-surface opacity-90 shadow-sm">
-              <div className="h-[5px] bg-coupon-inactive-bar" />
-              <div className="px-4 pb-4 pt-3.5">
-                <div className="flex items-center justify-between gap-2.5">
-                  {coupon.amountLabel ? (
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="text-2xl font-bold leading-none text-text-inactive">{coupon.amountLabel}</span>
-                      <span className="text-base font-semibold text-text-inactive">{coupon.name}</span>
-                    </div>
-                  ) : (
-                    <h3 className="text-base font-semibold text-text-inactive">{coupon.name}</h3>
-                  )}
-                  <span className="inline-flex h-6 items-center gap-1 rounded-full bg-surface-inactive px-2.5 text-xs font-semibold text-text-inactive-muted">
-                    <Clock className="h-3.5 w-3.5" />
-                    已过期
-                  </span>
-                </div>
-                <div className="mt-2.5 flex items-center gap-1 text-xs text-text-inactive-muted">
-                  <CalendarDays className="h-3.5 w-3.5" />
-                  {coupon.expireAt} 到期
-                </div>
-              </div>
-            </article>
+            <MovieTicket
+              key={coupon.id}
+              coupon={coupon}
+              expired
+              onUse={() => openUseSheet(coupon)}
+              onShare={() => navigate(`/card/share?coupon=${coupon.id}`)}
+            />
           ))}
 
         {tab === 'expired' && list.length === 0 && (
