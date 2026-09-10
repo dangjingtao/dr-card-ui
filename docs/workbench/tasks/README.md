@@ -63,7 +63,7 @@ T001–T015 基于 2026-08-21 的仓库与 Mockplus 实际盘点建立，并已�
 | [T038](./T038-scratch-card-recharge.md) | 刮刮充值卡补全（卡博士淡金色风格） | PASS |
 | [T039](./T039-machine-pin-consume.md) | 设置消费密码（双状态 + 修改/删除） | PASS |
 | [T040](./T040-device-quick-recharge.md) | 设备列表扫码启动 + 设备详情快速充值 | PASS |
-| [T043](./T043-dearseed-column-coupon-popup.md) | 诗得丽专栏入口卡券弹窗：用户区分与占位券 | Ready |
+| [T043](./T043-dearseed-column-coupon-popup.md) | 诗得丽专栏入口：身份选择 Demo + 新人礼包占位 | Agent Review |
 | [T044](./T044-shampoo-coupon-verification-copy.md) | 洗发水体验券核销方式说明文案调整 | Ready |
 | [T045](./T045-dearseed-checkin-miss-remedy.md) | 诗得丽专栏签到：未签"X"标记 + 补签看广告 | Ready |
 | [T046](./T046-dearseed-home-avatar-to-membership.md) | 诗得丽专栏首页右上角头像：跳转专栏「我的」 | Ready |
