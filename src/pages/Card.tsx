@@ -242,8 +242,9 @@ export default function Card() {
 
             <div className="px-4 py-3">
               {/* T044｜原「查看商城体验券商品」按钮改为纯展示块，去掉 onClick/aria-label/ChevronRight。
-               *  改为 pill 胶囊样式 + 白底圆形图标，与下方扫码/密码核销 pill 风格保持一致。 */}
-              <div className="-m-2.5 flex items-center gap-3 rounded-pill bg-surface-subtle p-3">
+               *  不加 pill 背景，仅保留图标 + 文案，作为下方核销 pill 的「标题/上下文」。
+               *  mt-4 仍保留，与下方核销 pill 间距加大。 */}
+              <div className="-m-2.5 flex items-center gap-3 rounded-xl p-2.5">
                 <span className="flex h-10 w-10 flex-none items-center justify-center self-center rounded-full bg-surface text-reward-strong shadow-sm">
                   <Ticket className="h-5 w-5" aria-hidden />
                 </span>
