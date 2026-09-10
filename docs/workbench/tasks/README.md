@@ -71,7 +71,7 @@ T001–T015 基于 2026-08-21 的仓库与 Mockplus 实际盘点建立，并已�
 | [T048](./T048-dearseed-checkin-streak-duration-decision.md) | 累计打卡活动天数：决策待定盯死卡 | Needs Decision |
 | [T049](./T049-dearseed-buddy-invite-bubble-points-decision.md) | 邀请成为洗头搭子：双方泡泡值奖励决策 | Needs Decision |
 | [T050](./T050-dearseed-membership-birthday-3-month.md) | 诗得丽专栏会员中心：生日字段 3 个月修改限制 | Ready |
-| [T051](./T051-dearseed-my-page-rename-membership-center.md) | 诗得丽专栏「我的」页改名「会员中心」 | Ready |
+| [T051](./T051-dearseed-my-page-rename-membership-center.md) | 诗得丽专栏「我的」页改名「会员中心」 | User Review |
 | [T052](./T052-coupon-movie-ticket-style.md) | 卡包卡券列表：电影票样式 | Done |
 
 ## 依赖顺序

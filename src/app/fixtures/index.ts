@@ -448,7 +448,7 @@ export const NOTIFICATION_FIXTURES: NotificationFixture[] = [
     unread: true,
     paragraphs: [
       '您的到店核销码 8821 已于 14:32 在「上海·徐汇店」完成核销,本次消耗 280 泡泡值。',
-      '如有任何问题,可在「我的 · 客服中心」联系我们,工作日 9:00 - 21:00 在线为您服务。',
+      '如有任何问题,可在「会员中心 · 客服中心」联系我们,工作日 9:00 - 21:00 在线为您服务。',
     ],
     note: SYSTEM_NOTE,
   },
@@ -549,7 +549,7 @@ export const NOTIFICATION_FIXTURES: NotificationFixture[] = [
     time: '昨天 15:30',
     unread: false,
     paragraphs: ['您的报修单「淋浴设备-A栋1楼」已派单给维修员,预计 30 分钟内上门。'],
-    note: '本通知为服务进度通知,可在「我的 · 客服中心」查看详情。',
+    note: '本通知为服务进度通知,可在「会员中心 · 客服中心」查看详情。',
   },
 ]
 
