@@ -1989,6 +1989,77 @@ export const NEWCOMER_COUPON_SUCCESS = {
 } as const
 
 /**
+ * T043｜诗得丽专栏入口 - 身份选择弹窗。
+ *
+ * 触发条件：用户点击诗得丽专栏顶部轮播图。Demo 模式下不接入后端身份识别，
+ * 直接让用户在弹窗里手动选择身份，再分支进入对应的二级弹窗。
+ * - 「诗得丽新增用户」 → NewcomerCouponDialog（洗发水体验券，沿用 Home 弹窗）
+ * - 「卡博士存量用户」 → NewcomerGiftSheet（新人礼包演示态）
+ */
+export const IDENTITY_PICKER = {
+  /** 弹窗眉标（沿用 DEAR SEED 体系） */
+  eyebrow: 'DEAR SEED',
+  /** 弹窗标题 */
+  title: '请选择身份',
+  /** 弹窗副标题 */
+  desc: 'Demo 演示用，请选择你希望模拟的用户身份。',
+  /** 关闭按钮 aria-label */
+  dismissLabel: '关闭身份选择',
+
+  /** 选项一：卡博士存量用户（已有账户 → 弹新人礼包） */
+  existing: {
+    /** 选项 ID，便于程序分支 */
+    id: 'existing' as const,
+    /** 选项标题 */
+    title: '卡博士存量用户',
+    /** 选项副标题 */
+    desc: '已有卡博士账户，享受新人礼包',
+    /** 选项徽标颜色：橙色 */
+    accentClass: 'text-reward-strong',
+    /** 选项背景：暖色 */
+    bgClass: 'bg-reward-subtle',
+    /** CTA 文案（用于 a11y 提示） */
+    cta: '查看新人礼包',
+  },
+
+  /** 选项二：诗得丽新增用户（关爱机项目 → 弹洗发水体验券） */
+  new: {
+    id: 'new' as const,
+    title: '诗得丽新增用户',
+    desc: '诗得丽关爱机项目用户，享受洗发水体验券',
+    /** 选项徽标颜色：金渐变 */
+    accentClass: 'text-member-accent',
+    /** 选项背景：会员卡色 */
+    bgClass: 'bg-member-surface',
+    cta: '查看洗发水体验券',
+  },
+} as const
+
+/**
+ * T043｜诗得丽专栏入口 - 卡博士存量用户新人礼包演示态。
+ *
+ * 触发条件：用户在身份选择弹窗选了「卡博士存量用户」。
+ * 占位券具体券种未定（B-044），本期先以「新人礼包」演示位呈现，等丁总指定
+ * 券种后只需替换 fixture 文案/图标，组件无需改动。
+ */
+export const GIFT_FOR_NEW_USERS = {
+  /** 顶部 tag：演示态标识 */
+  demoTag: '演示位 · 后续接入',
+  /** 弹窗眉标 */
+  eyebrow: 'DEAR SEED',
+  /** 标题 */
+  title: '新人礼包（占位）',
+  /** 副标题 */
+  desc: '卡博士存量用户新人礼包，正式券种由丁总确认后接入。',
+  /** 主按钮文案 */
+  action: '了解卡博士新人礼包',
+  /** 主按钮跳转目标：当前指向 /mall（H5 商城），券种确认后可切换为占位详情页 */
+  actionTo: '/mall',
+  /** 关闭按钮 aria-label */
+  dismissLabel: '关闭新人礼包演示',
+} as const
+
+/**
  * 新人体验券链路中「原型未给出规则」的部分，统一在此登记并隔离。
  * 页面只读这里的说明，不自行补写判定逻辑。
  */
