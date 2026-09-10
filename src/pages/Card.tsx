@@ -262,16 +262,18 @@ export default function Card() {
                *  扫码核销：系统会优先抵扣体验券
                *  消费密码核销：在设备上输入手机号和 6 位消费密码，点击确认即可领取
                *  mt-4：券卡与下方核销 pill 之间加大间距（PRD 要求）。 */}
-              <div className="mt-4 space-y-1">
+              <div className="mt-4 space-y-2">
+                {/* T044｜两个 pill 高度统一 h-20，icon + 文字 self-center 上下居中。
+                 *  扫码/密码两行文案长度不同，靠固定高度 + flex 居中让两个 pill 视觉一致。 */}
                 <button
                   type="button"
                   onClick={() => navigate('/card/verify')}
-                  className="flex w-full items-start gap-3 rounded-pill bg-surface-subtle p-3 text-left active:bg-surface-selected"
+                  className="flex h-20 w-full items-center gap-3 rounded-pill bg-surface-subtle p-3 text-left active:bg-surface-selected"
                 >
-                  <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-surface text-reward-strong shadow-sm">
+                  <span className="flex h-10 w-10 flex-none items-center justify-center self-center rounded-full bg-surface text-reward-strong shadow-sm">
                     <QrCode className="h-5 w-5" />
                   </span>
-                  <span className="min-w-0 flex-1">
+                  <span className="min-w-0 flex-1 self-center">
                     <span className="block text-sm font-medium text-text-primary">扫码核销</span>
                     <span className="mt-1 block text-xs leading-4 text-text-tertiary">
                       {COUPON_USE_GUIDE.scanHint}
@@ -281,12 +283,12 @@ export default function Card() {
                 <button
                   type="button"
                   onClick={() => navigate('/card/verify/password')}
-                  className="flex w-full items-start gap-3 rounded-pill bg-surface-subtle p-3 text-left active:bg-surface-selected"
+                  className="flex h-20 w-full items-center gap-3 rounded-pill bg-surface-subtle p-3 text-left active:bg-surface-selected"
                 >
-                  <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-surface text-reward-strong shadow-sm">
+                  <span className="flex h-10 w-10 flex-none items-center justify-center self-center rounded-full bg-surface text-reward-strong shadow-sm">
                     <KeyRound className="h-5 w-5" />
                   </span>
-                  <span className="min-w-0 flex-1">
+                  <span className="min-w-0 flex-1 self-center">
                     <span className="block text-sm font-medium text-text-primary">消费密码核销</span>
                     <span className="mt-1 block text-xs leading-4 text-text-tertiary">
                       {COUPON_USE_GUIDE.passwordHint}
