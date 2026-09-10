@@ -121,7 +121,7 @@ export default function DearseedColumn() {
       <button
         type="button"
         aria-label="诗得丽产品与活动推荐"
-        onClick={() => open('newcomer')}
+        onClick={handleBannerClick}
         className="relative block w-full overflow-hidden text-left"
       >
         <img src={columnBanner} alt="诗得丽产品与活动推荐" className="aspect-[375/210] w-full object-cover" />
