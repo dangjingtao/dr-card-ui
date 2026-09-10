@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowUpRight, ChevronRight, Crown, Droplets, ShoppingBag, Sparkles, X } from 'lucide-react'
 import AppPromptDialog from '../components/mobile/AppPromptDialog'
@@ -54,10 +54,12 @@ export default function DearseedColumn() {
   const { overlay, open, close } = useOverlay()
   const [downloadHint, setDownloadHint] = useState<string | undefined>(undefined)
   /* T043｜专栏入口三级弹窗状态。
-   * 流程：点轮播图 → pickerOpen 弹身份选择 → 选择身份
+   * 流程：进入 /dearseed 页面 → pickerOpen 弹身份选择 → 选择身份
    *   - 'new'（诗得丽新增用户）→ couponOpen 弹 NewcomerCouponDialog（洗发水体验券）
    *   - 'existing'（卡博士存量用户）→ giftOpen 弹 NewcomerGiftSheet（新人礼包演示态）
    * Demo 演示用，关闭选择器不需要后端身份识别（B-043）。
+   * 触发时机：useEffect 挂载时弹一次；本会话内不重复弹（sessionStorage 标记）。
+   * URL `?picker=off` 抑制本次触发（演示态可关闭）。
    */
   const [pickerOpen, setPickerOpen] = useState(false)
   const [couponOpen, setCouponOpen] = useState(false)
@@ -66,6 +68,22 @@ export default function DearseedColumn() {
   /* 关爱机用户弹窗用 NEWCOMER_COUPON_VARIANTS，本期 mock 固定 coupon-1（1 张洗发水体验券） */
   const dearseedCoupons = NEWCOMER_COUPON_VARIANTS['coupon-1']
 
+  /* T043｜进入专栏页面自动弹身份选择器。
+   * - 仅在本次会话首次进入时触发（sessionStorage.dearseedPickerShown 标记）
+   * - URL 带 `?picker=off` 时跳过（演示态可关闭）
+   * - 已带其他 overlay 的入口（如 ?overlay=reminder）也跳过，避免覆盖其他演示态
+   */
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('picker') === 'off') return
+    if (params.has('overlay')) return
+    const FLAG = 'dearseed_picker_shown'
+    if (window.sessionStorage.getItem(FLAG) === '1') return
+    window.sessionStorage.setItem(FLAG, '1')
+    setPickerOpen(true)
+  }, [])
+
   const campaign = CAMPAIGN_FIXTURE
   const claimed = state?.key === 'claimed'
   const ownedOverlay = overlay === 'reminder' || overlay === 'newcomer' || overlay === 'app-guide'
@@ -73,11 +91,6 @@ export default function DearseedColumn() {
   const closeAppGuide = () => {
     setDownloadHint(undefined)
     close()
-  }
-
-  /* T043｜点击轮播图：先弹身份选择 */
-  const handleBannerClick = () => {
-    setPickerOpen(true)
   }
 
   /* T043｜身份选择回调：关闭选择器，按身份打开对应二级弹窗 */
@@ -121,7 +134,7 @@ export default function DearseedColumn() {
       <button
         type="button"
         aria-label="诗得丽产品与活动推荐"
-        onClick={handleBannerClick}
+        onClick={() => open('newcomer')}
         className="relative block w-full overflow-hidden text-left"
       >
         <img src={columnBanner} alt="诗得丽产品与活动推荐" className="aspect-[375/210] w-full object-cover" />
