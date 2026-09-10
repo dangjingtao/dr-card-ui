@@ -241,10 +241,10 @@ export default function Card() {
             </div>
 
             <div className="px-4 py-3">
-              {/* T044｜原「查看商城体验券商品」按钮改为纯展示块：去掉 onClick/aria-label/ChevronRight。
-               *  文案（券名 + 到期 + 限到店核销）保留，方便学生在弹窗内确认是哪一张券。 */}
-              <div className="-m-2.5 flex items-center gap-3 rounded-xl p-2.5">
-                <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-reward-subtle text-reward-text">
+              {/* T044｜原「查看商城体验券商品」按钮改为纯展示块，去掉 onClick/aria-label/ChevronRight。
+               *  改为 pill 胶囊样式 + 白底圆形图标，与下方扫码/密码核销 pill 风格保持一致。 */}
+              <div className="-m-2.5 flex items-center gap-3 rounded-pill bg-surface-subtle p-3">
+                <span className="flex h-10 w-10 flex-none items-center justify-center self-center rounded-full bg-surface text-reward-strong shadow-sm">
                   <Ticket className="h-5 w-5" aria-hidden />
                 </span>
                 <span className="min-w-0 flex-1">
@@ -257,11 +257,11 @@ export default function Card() {
                 </span>
               </div>
 
-              <div className="space-y-1">
-                {/* T044｜移除 radio 圆圈与二选一控件，改为两行并列的使用指引。
-                 *  扫码核销：系统会优先抵扣体验券
-                 *  消费密码核销：在设备上输入手机号和 6 位消费密码，点击确认即可领取
-                 */}
+              {/* T044｜移除 radio 圆圈与二选一控件，改为两行并列的使用指引。
+               *  扫码核销：系统会优先抵扣体验券
+               *  消费密码核销：在设备上输入手机号和 6 位消费密码，点击确认即可领取
+               *  mt-4：券卡与下方核销 pill 之间加大间距（PRD 要求）。 */}
+              <div className="mt-4 space-y-1">
                 <button
                   type="button"
                   onClick={() => navigate('/card/verify')}
