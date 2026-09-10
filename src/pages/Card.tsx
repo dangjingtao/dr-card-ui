@@ -241,14 +241,11 @@ export default function Card() {
             </div>
 
             <div className="px-4 py-3">
-              <button
-                type="button"
-                onClick={() => navigate('/mall')}
-                aria-label="查看商城体验券商品"
-                className="-m-2.5 flex w-full items-center gap-3 rounded-xl p-2.5 text-left active:bg-surface-subtle"
-              >
+              {/* T044｜原「查看商城体验券商品」按钮改为纯展示块：去掉 onClick/aria-label/ChevronRight。
+               *  文案（券名 + 到期 + 限到店核销）保留，方便学生在弹窗内确认是哪一张券。 */}
+              <div className="-m-2.5 flex items-center gap-3 rounded-xl p-2.5">
                 <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-reward-subtle text-reward-text">
-                  <Ticket className="h-5 w-5" />
+                  <Ticket className="h-5 w-5" aria-hidden />
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-medium text-text-primary">
@@ -258,8 +255,7 @@ export default function Card() {
                     {activeCoupon.expireAt} 到期 · {activeCoupon.limitNote}
                   </span>
                 </span>
-                <ChevronRight className="h-4 w-4 flex-none text-text-tertiary" aria-hidden />
-              </button>
+              </div>
 
               <div className="space-y-1">
                 {/* T044｜移除 radio 圆圈与二选一控件，改为两行并列的使用指引。
