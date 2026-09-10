@@ -265,9 +265,9 @@ export default function Card() {
                 <button
                   type="button"
                   onClick={() => navigate('/card/verify')}
-                  className="flex w-full items-start gap-3 rounded-xl p-2.5 text-left active:bg-surface-subtle"
+                  className="flex w-full items-start gap-3 rounded-pill bg-surface-subtle p-3 text-left active:bg-surface-selected"
                 >
-                  <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-surface-subtle text-text-secondary">
+                  <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-surface text-reward-strong shadow-sm">
                     <QrCode className="h-5 w-5" />
                   </span>
                   <span className="min-w-0 flex-1">
@@ -280,9 +280,9 @@ export default function Card() {
                 <button
                   type="button"
                   onClick={() => navigate('/card/verify/password')}
-                  className="flex w-full items-start gap-3 rounded-xl p-2.5 text-left active:bg-surface-subtle"
+                  className="flex w-full items-start gap-3 rounded-pill bg-surface-subtle p-3 text-left active:bg-surface-selected"
                 >
-                  <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-surface-subtle text-text-secondary">
+                  <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-surface text-reward-strong shadow-sm">
                     <KeyRound className="h-5 w-5" />
                   </span>
                   <span className="min-w-0 flex-1">
