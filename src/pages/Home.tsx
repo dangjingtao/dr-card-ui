@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { BookOpen, ChevronLeft, ChevronRight, Gift, Heart, Search } from 'lucide-react'
 import BannerCarousel from '../components/mobile/BannerCarousel'
@@ -7,6 +7,8 @@ import CheckinMakeupSuccessOverlay from '../components/mobile/CheckinMakeupSucce
 import DebugPanel from '../components/mobile/DebugPanel'
 import NewcomerCouponDialog from '../components/mobile/NewcomerCouponDialog'
 import PageContainer from '../components/mobile/PageContainer'
+import IdentityPickerSheet, { type PickerIdentity } from '../components/coupon/IdentityPickerSheet'
+import NewcomerGiftSheet from '../components/coupon/NewcomerGiftSheet'
 import { useFixtureState, useOverlay } from '../app/fixtures/useFixture'
 import { findRouteByPathname } from '../app/router/routes'
 import {
@@ -29,32 +31,43 @@ const sectionIcons = {
   'brand-story': BookOpen,
 } as const
 
-type CouponVariantKey = keyof typeof NEWCOMER_COUPON_VARIANTS
-
 /**
  * 诗得丽品牌专栏首页（原 APP 首页，T021 改造）
  * -------------------------------------------------------------
  * 2026-08-28 追加确认：签到业务在首页仅保留紧凑 7 日入口，不再展示金色签到 Hero；
  * 完整金色签到卡、30 天日历与补签入口统一收回 `/checkin` 内页。
+ *
+ * T043R3｜2026-09-10 用户现场反馈：从卡博士 APP 首页「诗得丽品牌专栏」卡片进入此页面后，
+ * 必须弹出身份选择弹窗（IdentityPickerSheet），不再走 T021 的「自动弹新人体验券」单弹逻辑。
+ * - 选「诗得丽新增用户」 → 洗发水体验券弹窗（NewcomerCouponDialog）
+ * - 选「卡博士存量用户」 → 新人礼包占位弹窗（NewcomerGiftSheet）
+ * - 所有弹窗关闭后留在当前 / 页面，不跳走
+ * - 抑制参数：`?picker=off` 跳过身份选择；`?overlay=xxx` 跳过避免覆盖其他演示态
  */
 export default function Home() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const route = findRouteByPathname('/')
-  const { state } = useFixtureState(route)
+  /* T043R3｜useFixtureState 仍调用以保持夹具注册与 DebugPanel 工作，但 state 不再被读取 */
+  useFixtureState(route)
   const { overlay, open, close } = useOverlay()
 
   const debug = searchParams.get('debug') === '1'
 
-  const [autoNewcomer, setAutoNewcomer] = useState(
-    () => searchParams.get('newcomer') !== 'off' && !searchParams.get('overlay'),
-  )
+  /* T043R3｜身份选择弹窗三级流程（与 DearseedColumn.tsx 同语义） */
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [couponOpen, setCouponOpen] = useState(false)
+  const [couponSuccessOpen, setCouponSuccessOpen] = useState(false)
+  const [giftOpen, setGiftOpen] = useState(false)
+  const dearseedCoupons = NEWCOMER_COUPON_VARIANTS['coupon-1']
 
-  const [randomVariant] = useState<CouponVariantKey>(() =>
-    Math.random() < 0.5 ? 'coupon-1' : 'coupon-2',
-  )
-  const variantKey: CouponVariantKey =
-    state?.key === 'coupon-1' || state?.key === 'coupon-2' ? state.key : randomVariant
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('picker') === 'off') return
+    if (params.has('overlay')) return
+    setPickerOpen(true)
+  }, [])
 
   return (
     <PageContainer className="pb-24 pt-4" inset={false}>
@@ -169,20 +182,39 @@ export default function Home() {
         <span className="mt-0.5 text-[10px] leading-none">福袋</span>
       </button>
 
+      {/* T043R3｜身份选择 → 二级弹窗三级流程（替代原 T021 自动弹体验券） */}
+      <IdentityPickerSheet
+        open={pickerOpen}
+        onPick={(identity) => {
+          setPickerOpen(false)
+          if (identity === 'new') {
+            setCouponOpen(true)
+          } else {
+            setGiftOpen(true)
+          }
+        }}
+        onDismiss={() => setPickerOpen(false)}
+      />
       <NewcomerCouponDialog
-        open={overlay === 'newcomer-coupon' || (autoNewcomer && !overlay)}
-        successOpen={overlay === 'coupon-success'}
-        coupons={NEWCOMER_COUPON_VARIANTS[variantKey]}
+        open={couponOpen}
+        successOpen={couponSuccessOpen}
+        coupons={dearseedCoupons}
         onConfirm={() => {
-          setAutoNewcomer(false)
-          close()
-          navigate('/card')
+          setCouponOpen(false)
+          setCouponSuccessOpen(true)
         }}
         onDismiss={() => {
-          setAutoNewcomer(false)
-          close()
+          setCouponOpen(false)
+          setCouponSuccessOpen(false)
         }}
-        onSuccessAction={() => navigate('/card')}
+        onSuccessAction={() => {
+          setCouponSuccessOpen(false)
+        }}
+      />
+      <NewcomerGiftSheet
+        open={giftOpen}
+        onConfirm={() => setGiftOpen(false)}
+        onDismiss={() => setGiftOpen(false)}
       />
 
       <CheckinMakeupSuccessOverlay open={overlay === 'make-up-success'} onDismiss={close} debug={debug} />

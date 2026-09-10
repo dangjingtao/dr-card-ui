@@ -131,10 +131,12 @@ export default function LegacyHome() {
         <span className="text-sm font-medium">扫一扫</span>
       </button>
 
-      {/* 诗得丽品牌专栏（大卡片） */}
+      {/* 诗得丽品牌专栏（大卡片）
+       * 用户 2026-09-10 反馈：从此卡片进入的是根路径 /（T021 诗得丽品牌专栏首页），
+       * 不是 /dearseed（独立的旧版专栏入口）。身份选择弹窗在 Home.tsx 实现。 */}
       <button
         type="button"
-        onClick={() => navigate('/dearseed')}
+        onClick={() => navigate('/')}
         className="relative flex w-full items-center overflow-hidden rounded-2xl bg-gradient-to-r from-[#F7E9D4] to-[#EED9B8] shadow-sm active:opacity-90"
         style={{ aspectRatio: '3 / 1' }}
       >
