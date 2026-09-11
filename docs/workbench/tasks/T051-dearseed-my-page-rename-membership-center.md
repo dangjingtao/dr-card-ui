@@ -2,7 +2,7 @@
 
 ## 状态与类型
 
-- 状态：`User Review`（2026-09-11 由智能体按「补齐 375 截图 + capture-t051.mjs」推进；新增 `scripts/capture-t051.mjs` + 3 张 375 截图（`t051-01-main-tabs` / `t051-02-profile-tab-and-grid` / `t051-03-dearseed-membership`），主 5 项 Tab 第 5 位 label、TitleBar、宫格、专栏路由均验证；与既有 PRD 自检 9/9 + fixture 文案改动一致；`Accepted` 必须由用户手动标注）
+- 状态：`Done`（用户 2026-09-11 验收通过，由 `User Review` 推进至 `Done`）
 - 类型：Rename / IA（页面级文案与路由改造）
 - 优先级：P0（品牌专栏 IA 调整）
 - 所属阶段：诗得丽品牌专栏施工（2026-09-09 批次）

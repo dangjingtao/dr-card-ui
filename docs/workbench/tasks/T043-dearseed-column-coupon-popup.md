@@ -2,7 +2,7 @@
 
 ## 状态与类型
 
-- 状态：`User Review`（2026-09-11 由智能体按「补齐 375 截图 + capture-t043.mjs」推进；新增 `scripts/capture-t043.mjs` + 5 张 375 截图（`t043-01-picker` / `t043-02-gift-sheet` / `t043-03-gift-to-mall` / `t043-04-coupon-sheet` / `t043-05-coupon-success-to-exchange`）；与用户现场演示结果一致；`Accepted` 必须由用户手动标注）
+- 状态：`Done`（用户 2026-09-11 验收通过，由 `User Review` 推进至 `Done`）
 - 类型：Feature / Coupon Popup（品牌专栏卡券）
 - 优先级：P0（专栏入口核心转化路径）
 - 所属阶段：诗得丽品牌专栏施工（2026-09-09 批次）

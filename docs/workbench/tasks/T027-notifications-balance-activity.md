@@ -2,7 +2,7 @@
 
 ## 状态与类型
 
-- 状态：`User Review`（PR 检查：本地工程门通过，等待用户签字；按规则智能体不得自填 `Accepted`）
+- 状态：`Done`（用户 2026-09-11 验收通过，由 `User Review` 推进至 `Done`）
 
 - 类型：Feature / Notification
 

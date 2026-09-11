@@ -2,7 +2,7 @@
 
 ## 状态与类型
 
-- 状态：`User Review`（2026-09-07 完成签到页、积分明细页、pointsStore 与福袋入口施工，等待用户验收）
+- 状态：`Done`（用户 2026-09-11 验收通过，由 `User Review` 推进至 `Done`）
 - 类型：Feature / Business Rule
 - 优先级：P0（3-win）
 

@@ -2,7 +2,7 @@
 
 ## 状态与类型
 
-- 状态：`User Review`（2026-09-11 由智能体按 PRD 自检通过结论推进；验收标准 5/5、必交证据齐全、提交 `babe29e`（主）+ 尾随 `0a43503 / b621bb1` 已回填；`Accepted` 必须由用户手动标注）
+- 状态：`Done`（用户 2026-09-11 验收通过，由 `User Review` 推进至 `Done`）
 - 类型：UI / Flow / Change Request
 - 优先级：P0
 

@@ -2,7 +2,7 @@
 
 ## 状态与类型
 
-- 状态：`Ready → Agent Review → User Review`（智能体自检通过，请用户验收；按全局契约只有用户可以标 Accepted）
+- 状态：`Done`（用户 2026-09-11 验收通过，由 `User Review` 推进至 `Done`）
 - 类型：Feature / Check-in Adjustment（签到组件改造）
 - 优先级：P1
 - 所属阶段：诗得丽品牌专栏施工（2026-09-09 批次）

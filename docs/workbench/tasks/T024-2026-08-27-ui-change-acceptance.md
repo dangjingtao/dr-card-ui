@@ -2,7 +2,7 @@
 
 ## 状态与类型
 
-- 状态：`User Review`（2026-08-27 验收执行完毕，37/37 通过；智能体不写入 `Accepted`，等待用户确认）
+- 状态：`Done`（用户 2026-09-11 验收通过，由 `User Review` 推进至 `Done`）
 - 类型：Test / Review / Change Request
 - 优先级：P0
 
