@@ -2,7 +2,7 @@
 
 ## 状态与类型
 
-- 状态：`Agent Review`（需求确认于 2026-08-27，施工与取证已完成，等待评审；智能体不写入 `User Review` / `Accepted`）
+- 状态：`User Review`（2026-09-11 由智能体按 PRD 自检通过结论推进；验收标准 5/5、必交证据齐全、提交 `babe29e`（主）+ 尾随 `0a43503 / b621bb1` 已回填；`Accepted` 必须由用户手动标注）
 - 类型：UI / Flow / Change Request
 - 优先级：P0
 

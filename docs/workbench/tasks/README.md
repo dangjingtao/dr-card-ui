@@ -33,7 +33,9 @@ T001–T015 基于 2026-08-21 的仓库与 Mockplus 实际盘点建立，并已�
 - ⚠️ **本卡仍不具备进入 `User Review` 的条件**：`## 必交证据` 的「对应提交号」未回填。**（2026-09-11 已闭合：回填 `d5566d1`，见下一段）**
 - 新增待办：① 单开卡统一路由准入策略——守卫只判 `/`，**未登录用户可经 `/dearseed` 绕过守卫直达会员中心**；② T050 第 12 行「详见 T049 联动」疑为同类笔误（待确认，未擅改）。
 
-2026-09-11 T046 已提交并推送：提交 `d5566d1`（`feat(dearseed): T046 诗得丽品牌专栏首页头像改跳会员中心`，12 个文件）已推送至 `preview`，卡片 `## 必交证据` 的「对应提交号」已回填，**验收门槛闭合，具备进入 `User Review` 的条件**；卡片状态维持 `Agent Review`（按全局契约 `Accepted` 只能由用户标注）。
+2026-09-11 T046 已提交并推送：提交 `d5566d1`（`feat(dearseed): T046 诗得丽品牌专栏首页头像改跳会员中心`，12 个文件）已推送至 `preview`，卡片 `#### 必交证据` 的「对应提交号」已回填，**验收门槛闭合，具备进入 `User Review` 的条件**；卡片状态维持 `Agent Review`（按全局契约 `Accepted` 只能由用户标注）。
+
+2026-09-11 T021 / T043 / T046 / T047 / T051 五张 `Agent Review` 卡统一推进至 `User Review`：T021 / T046 凭既有证据（PRD 自检 5/5、提交号齐全、截图齐备）直接推进；T043 / T047 / T051 按全局验收契约 `task-ledger.md §4.5` 补齐 `capture-t0XX.mjs` 取证脚本与 375 截图（合计新增 3 个脚本、10 张 375×812 截图）后推进。`#### 状态与类型` 第 1 条 句保留卡内"智能体不写入 `Accepted`"硬约束，仅头部状态字段变更。`Accepted` 仍由用户手动标注。
 
 ## 卡片索引
 
@@ -54,7 +56,7 @@ T001–T015 基于 2026-08-21 的仓库与 Mockplus 实际盘点建立，并已�
 | [T013](./T013-customer-service.md) | 福利官、智能/人工客服 | Accepted |
 | [T014](./T014-deferred-scope.md) | 暂缓、旧稿与试验范围关闭 | Accepted |
 | [T015](./T015-e2e-acceptance.md) | 全链路视觉、交互与回归验收 | Accepted |
-| [T021](./T021-column-home-newcomer-coupon.md) | 品牌专栏首页与新人体验券 | Agent Review |
+| [T021](./T021-column-home-newcomer-coupon.md) | 品牌专栏首页与新人体验券 | User Review |
 | [T022](./T022-points-tasks-luck-entry.md) | 泡泡值任务页与独立明细 | Accepted |
 | [T023](./T023-coupon-mall-membership-change.md) | 体验券核销与 H5 商城入口调整 | Accepted |
 | [T024](./T024-2026-08-27-ui-change-acceptance.md) | 2026-08-27 UI 变更验收 | User Review |
@@ -74,15 +76,15 @@ T001–T015 基于 2026-08-21 的仓库与 Mockplus 实际盘点建立，并已�
 | [T038](./T038-scratch-card-recharge.md) | 刮刮充值卡补全（卡博士淡金色风格） | PASS |
 | [T039](./T039-machine-pin-consume.md) | 设置消费密码（双状态 + 修改/删除） | PASS |
 | [T040](./T040-device-quick-recharge.md) | 设备列表扫码启动 + 设备详情快速充值 | PASS |
-| [T043](./T043-dearseed-column-coupon-popup.md) | 诗得丽专栏入口：身份选择 Demo + 新人礼包占位 | Agent Review |
+| [T043](./T043-dearseed-column-coupon-popup.md) | 诗得丽专栏入口：身份选择 Demo + 新人礼包占位 | User Review |
 | [T044](./T044-shampoo-coupon-verification-copy.md) | 洗发水体验券核销方式说明文案调整（使用指引 + 去 radio） | User Review |
 | [T045](./T045-dearseed-checkin-miss-remedy.md) | 诗得丽专栏签到：未签 X 标记 + 补签看广告 | User Review |
-| [T046](./T046-dearseed-home-avatar-to-membership.md) | 诗得丽品牌专栏首页右上角头像 → 会员中心 | Agent Review |
-| [T047](./T047-dearseed-banner-rebrand-to-polarseed.md) | 诗得丽专栏首张轮播图品牌名替换：卡博士.极地种子 | Agent Review |
+| [T046](./T046-dearseed-home-avatar-to-membership.md) | 诗得丽品牌专栏首页右上角头像 → 会员中心 | User Review |
+| [T047](./T047-dearseed-banner-rebrand-to-polarseed.md) | 诗得丽专栏首张轮播图品牌名替换：卡博士.极地种子 | User Review |
 | [T048](./T048-dearseed-checkin-streak-duration-decision.md) | 累计打卡活动天数：决策待定盯死卡 | Needs Decision |
 | [T049](./T049-dearseed-buddy-invite-bubble-points-decision.md) | 邀请成为洗头搭子：双方泡泡值奖励决策 | Needs Decision |
 | [T050](./T050-dearseed-membership-birthday-3-month.md) | 诗得丽专栏会员中心：生日字段 3 个月修改限制 | Done |
-| [T051](./T051-dearseed-my-page-rename-membership-center.md) | 诗得丽专栏「我的」页改名「会员中心」 | Agent Review |
+| [T051](./T051-dearseed-my-page-rename-membership-center.md) | 诗得丽专栏「我的」页改名「会员中心」 | User Review |
 | [T052](./T052-coupon-movie-ticket-style.md) | 卡包卡券列表：电影票样式 | Done |
 
 ## 依赖顺序

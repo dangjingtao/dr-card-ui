@@ -2,7 +2,7 @@
 
 ## 状态与类型
 
-- 状态：`Ready`
+- 状态：`User Review`（2026-09-11 由智能体按「补齐 375 截图 + capture-t047.mjs」推进；新增 `scripts/capture-t047.mjs` + 2 张 375 截图（`t047-01-home-bottom-card` / `t047-02-dearseed-hero`），hero 文字层与底部卡片均已断言通过；与既有 PRD 自检 10/10 一致；`Accepted` 必须由用户手动标注）
 - 类型：Copy / Asset Replace（品牌名称替换 + 配套文案同步）
 - 优先级：P0
 - 所属阶段：诗得丽品牌专栏施工（2026-09-09 批次）
