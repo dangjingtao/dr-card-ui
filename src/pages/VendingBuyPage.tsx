@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   MapPin,
-  Minus,
-  Plus,
   Ticket,
   Check,
   Package,
@@ -19,10 +17,10 @@ import { Button } from '../components/ui/Button'
 import { Dialog } from '../components/ui/Dialog'
 
 /**
- * 扫码购买页（T042）
+ * 扫码购买页（T042 + R042）
  * - 扫码自助售货机后进入
  * - 3 款洗发水体验包：去屑 / 控油 / 虫草修复（统一 ¥1/包）
- * - 每款可独立选数量
+ * - R042：硬件单次仅出 1 包 → 单包单选（去掉数量加减，点选一款出货）
  * - 优惠券自动抵扣（1 张洗发水体验装抵扣券 = 免 1 包 = 减 ¥1，强制使用）
  * - 底部：微信 / 支付宝 支付方式选择 + 确认支付按钮
  * - 支付成功：出货中（3s 倒计时）→ 出货成功弹窗
@@ -79,20 +77,14 @@ export default function VendingBuyPage() {
     ?? DEVICE_LISTS.vending?.[0]
     ?? null
 
-  /* 各商品数量，默认第 1 款 1 件，其余 0 */
-  const [quantities, setQuantities] = useState<Record<string, number>>({
-    [PRODUCTS[0].id]: 1,
-    [PRODUCTS[1].id]: 0,
-    [PRODUCTS[2].id]: 0,
-  })
+  /* R042：单包单选 — 默认第 1 款；一次只出 1 包 */
+  const [selectedProductId, setSelectedProductId] = useState(PRODUCTS[0].id)
+  const selectedProduct = PRODUCTS.find((p) => p.id === selectedProductId) ?? null
 
-  const totalCount = Object.values(quantities).reduce((sum, q) => sum + q, 0)
-  const subtotal = PRODUCTS.reduce(
-    (sum, p) => sum + p.price * (quantities[p.id] ?? 0),
-    0,
-  )
+  const totalCount = selectedProduct ? 1 : 0
+  const subtotal = selectedProduct?.price ?? 0
 
-  /* 优惠券抵扣：1 张券抵 1 包 = 减 ¥1 */
+  /* 优惠券抵扣：1 张券抵 1 包 = 减 ¥1（强制优先） */
   const couponDeductCount = Math.min(AVAILABLE_COUPON_COUNT, totalCount)
   const couponDeductAmount = couponDeductCount * 1
   const totalPay = Math.max(0, subtotal - couponDeductAmount)
@@ -115,14 +107,7 @@ export default function VendingBuyPage() {
     return () => clearTimeout(timer)
   }, [shipPhase, countdown])
 
-  const canPay = totalCount > 0 && !paying
-
-  function handleQtyDelta(productId: string, delta: number) {
-    setQuantities((prev) => {
-      const next = Math.max(0, Math.min(99, (prev[productId] ?? 0) + delta))
-      return { ...prev, [productId]: next }
-    })
-  }
+  const canPay = selectedProduct != null && !paying
 
   function handlePay() {
     if (!canPay) return
@@ -159,19 +144,27 @@ export default function VendingBuyPage() {
         {/* 标题 */}
         <h1 className="text-xl font-bold text-text-primary">洗发水体验装</h1>
         <p className="mt-1 text-xs text-text-tertiary">
-          任选搭配 · ¥1/包 · 体验装 10ml
+          任选一款 · ¥1/包 · 体验装 10ml
         </p>
       </div>
 
       {/* 商品列表 + 优惠券 + 支付方式（可滚动） */}
       <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
-        {/* 商品 */}
+        {/* 商品：R042 单包单选（一次仅出 1 包） */}
         {PRODUCTS.map((p) => {
-          const qty = quantities[p.id] ?? 0
+          const isSelected = selectedProductId === p.id
           return (
-            <div
+            <button
               key={p.id}
-              className="flex items-center gap-3 rounded-container bg-surface p-3"
+              type="button"
+              onClick={() => setSelectedProductId(p.id)}
+              aria-pressed={isSelected}
+              aria-label={`选择${p.name}出货`}
+              className={`flex w-full items-center gap-3 rounded-container p-3 text-left transition ${
+                isSelected
+                  ? 'bg-[#FFF3E6] ring-2 ring-[#E64A19]'
+                  : 'bg-surface ring-1 ring-transparent'
+              }`}
             >
               <div
                 className="flex h-16 w-16 flex-none items-center justify-center rounded-xl text-xs font-bold text-white shadow-sm"
@@ -187,33 +180,16 @@ export default function VendingBuyPage() {
                   <span className="ml-1 text-[10px] font-normal text-text-tertiary">/包</span>
                 </p>
               </div>
-              <div className="flex flex-none items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleQtyDelta(p.id, -1)}
-                  disabled={qty <= 0}
-                  className={`flex h-7 w-7 items-center justify-center rounded-full transition ${
-                    qty <= 0
-                      ? 'bg-bg-disabled text-text-disabled'
-                      : 'bg-bg-page text-text-secondary active:bg-surface-selected'
-                  }`}
-                  aria-label={`减少${p.name}数量`}
-                >
-                  <Minus className="h-3.5 w-3.5" aria-hidden="true" />
-                </button>
-                <span className="w-6 text-center text-sm font-semibold text-text-primary">
-                  {qty}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => handleQtyDelta(p.id, 1)}
-                  className="flex h-7 w-7 items-center justify-center rounded-full bg-[#FF8A65] text-white active:bg-[#E64A19]"
-                  aria-label={`增加${p.name}数量`}
-                >
-                  <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-                </button>
+              <div className="flex flex-none items-center">
+                {isSelected ? (
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#E64A19]">
+                    <Check className="h-3.5 w-3.5 text-white" aria-hidden="true" />
+                  </span>
+                ) : (
+                  <span className="h-6 w-6 rounded-full border border-border-subtle" aria-hidden="true" />
+                )}
               </div>
-            </div>
+            </button>
           )
         })}
 
@@ -309,7 +285,7 @@ export default function VendingBuyPage() {
             </div>
             {couponDeductCount > 0 && (
               <p className="mt-0.5 text-[10px] text-text-tertiary">
-                已优惠 ¥{couponDeductAmount.toFixed(2)}（共 {totalCount} 件）
+                已优惠 ¥{couponDeductAmount.toFixed(2)}（{totalCount} 件）
               </p>
             )}
           </div>
@@ -370,7 +346,9 @@ export default function VendingBuyPage() {
           <div className="mt-4 w-full rounded-xl bg-bg-page p-3 text-left text-xs">
             <div className="flex justify-between">
               <span className="text-text-secondary">商品</span>
-              <span className="text-text-primary">{PRODUCTS.filter(p => (quantities[p.id] ?? 0) > 0).length} 款共 {totalCount} 包</span>
+              <span className="text-text-primary">
+                {selectedProduct ? `${selectedProduct.name} · ${totalCount} 包` : '—'}
+              </span>
             </div>
             <div className="mt-1 flex justify-between">
               <span className="text-text-secondary">实付</span>

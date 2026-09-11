@@ -39,6 +39,8 @@ T001–T015 基于 2026-08-21 的仓库与 Mockplus 实际盘点建立，并已�
 
 2026-09-11 用户验收通过，T021 / T024 / T025 / T027 / T030 / T043 / T044 / T045 / T046 / T051 十张卡由 `User Review` 统一推进至 `Done`：卡内状态字段与本索引表已同步；历史基线卡（T001–T015 等）状态保持不变。剩余 `User Review` 卡：T028 / T029 / T047。
 
+2026-09-11 新增 R 系列修复卡 [R042](./R042-vending-single-bag-dispense.md)：基于 T042，硬件方确认自助售货机一次仅能出 1 包，购买页去掉数量加减，改为单包单选一款出货；优惠券强制优先抵扣与支付链路不变。T042 保留为历史基线，数量多包条款以 R042 覆盖。
+
 ## 卡片索引
 
 | 卡片 | 名称 | 当前状态 |
@@ -78,6 +80,7 @@ T001–T015 基于 2026-08-21 的仓库与 Mockplus 实际盘点建立，并已�
 | [T038](./T038-scratch-card-recharge.md) | 刮刮充值卡补全（卡博士淡金色风格） | PASS |
 | [T039](./T039-machine-pin-consume.md) | 设置消费密码（双状态 + 修改/删除） | PASS |
 | [T040](./T040-device-quick-recharge.md) | 设备列表扫码启动 + 设备详情快速充值 | PASS |
+| [R042](./R042-vending-single-bag-dispense.md) | T042 修复：售货机单包单选（去掉数量加减） | Agent Review |
 | [T043](./T043-dearseed-column-coupon-popup.md) | 诗得丽专栏入口：身份选择 Demo + 新人礼包占位 | Done |
 | [T044](./T044-shampoo-coupon-verification-copy.md) | 洗发水体验券核销方式说明文案调整（使用指引 + 去 radio） | Done |
 | [T045](./T045-dearseed-checkin-miss-remedy.md) | 诗得丽专栏签到：未签 X 标记 + 补签看广告 | Done |
