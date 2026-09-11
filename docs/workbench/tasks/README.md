@@ -24,6 +24,15 @@ T001–T015 基于 2026-08-21 的仓库与 Mockplus 实际盘点建立，并已�
 
 2026-09-09 新增 T043–T051：诗得丽品牌专栏施工批次。覆盖卡券弹窗用户区分（T043）、体验券核销说明文案（T044）、签到补签看广告（T045）、专栏头像跳转会员中心（T046）、首张轮播图品牌名替换为"卡博士.极地种子"（T047）、累计打卡天数决策盯死卡（T048，`Needs Decision`）、洗头搭子双方泡泡值决策盯死卡（T049，`Needs Decision`）、生日字段 3 个月修改限制（T050）、「我的」改名「会员中心」（T051）。其中 T043 用户身份识别来源（关爱机 vs 存量）依赖 B-043；T048/T049 等丁总确认后回填并联动实施；T046 与 T051 强联动，统一使用 `/dearseed/membership` 路由。
 
+2026-09-11 T046 实施完成（`Agent Review`）：用户现场反馈「诗得丽品牌专栏」页右上角头像仍跳商城。定位后确认漏改的是路由 `/`（页面标题即「诗得丽品牌专栏」，由 `src/pages/Home.tsx` 渲染），而非早已改好的 `/dearseed`；改动为 `Home.tsx` 头像 `navigate('/mall')` → `navigate('/dearseed/membership')`。**注意：本卡反转了 T023「原会员中心入口统一进入商城」结论中的「首页头像」一条**，`capture-t023.mjs` 已同步移除该条断言，其余两条入口（专栏会员空间、我的-专属权益）维持 T023 结论。
+
+2026-09-11 T046 PRD 检查完成：报告 [`../t046-prd-check.md`](../t046-prd-check.md)，独立复现脚本 `scripts/verify-t046-prd.mjs`。结论——**功能项通过（验收标准 5/5），但卡片条款有 7 处需修订**，已按检查结论回填「条款修订记录」R1–R7。要点：
+- `## 状态与交互矩阵` 原第 2 行「未登录 → `/login?from=/dearseed/membership`」**不可实现**——`/` 由 T037 守卫整页重定向，无 `from` 参数，头像在未登录态不可达；第 3 行返回目标写 `/dearseed`，实测为「返回上一页」（从 `/` 进回 `/`，从 `/dearseed` 进回 `/dearseed`）。两条均已修订。
+- `## 目标` 第 3 条「主壳头像仍指向 Profile 页」与基线不符，实际是 `/membership`。
+- `## 产出` 引用 `src/pages/dearseed/DearseedHome.tsx` **路径不存在**（`src/pages/dearseed/` 目录也没有）；且把 slug 联动对象误写为 T049（应为 T051），同一笔误在 `## 不在范围` 重复出现。原文已恢复保留，改由「实现偏差说明」双轨记录。
+- ⚠️ **本卡仍不具备进入 `User Review` 的条件**：`## 必交证据` 的「对应提交号」未回填。
+- 新增待办：① 单开卡统一路由准入策略——守卫只判 `/`，**未登录用户可经 `/dearseed` 绕过守卫直达会员中心**；② T050 第 12 行「详见 T049 联动」疑为同类笔误（待确认，未擅改）。
+
 ## 卡片索引
 
 | 卡片 | 名称 | 当前状态 |
@@ -66,7 +75,7 @@ T001–T015 基于 2026-08-21 的仓库与 Mockplus 实际盘点建立，并已�
 | [T043](./T043-dearseed-column-coupon-popup.md) | 诗得丽专栏入口：身份选择 Demo + 新人礼包占位 | Agent Review |
 | [T044](./T044-shampoo-coupon-verification-copy.md) | 洗发水体验券核销方式说明文案调整（使用指引 + 去 radio） | User Review |
 | [T045](./T045-dearseed-checkin-miss-remedy.md) | 诗得丽专栏签到：未签 X 标记 + 补签看广告 | User Review |
-| [T046](./T046-dearseed-home-avatar-to-membership.md) | 诗得丽专栏首页右上角头像：跳转专栏「我的」 | User Review |
+| [T046](./T046-dearseed-home-avatar-to-membership.md) | 诗得丽品牌专栏首页右上角头像 → 会员中心 | Agent Review |
 | [T047](./T047-dearseed-banner-rebrand-to-polarseed.md) | 诗得丽专栏首张轮播图品牌名替换：卡博士.极地种子 | Agent Review |
 | [T048](./T048-dearseed-checkin-streak-duration-decision.md) | 累计打卡活动天数：决策待定盯死卡 | Needs Decision |
 | [T049](./T049-dearseed-buddy-invite-bubble-points-decision.md) | 邀请成为洗头搭子：双方泡泡值奖励决策 | Needs Decision |

@@ -65,7 +65,8 @@ record(
 const homeStructure = await page.evaluate(() => ({
   search: document.querySelectorAll('section[aria-label="搜索与用户入口"]').length,
   searchInput: document.querySelectorAll('input[aria-label="搜索商品"]').length,
-  avatar: document.querySelectorAll('button[aria-label="进入卡博士商城"]').length,
+  // T046 起首页右上角头像锚点由 aria-label="进入卡博士商城" 改为 data-dearseed-avatar
+  avatar: document.querySelectorAll('[data-dearseed-avatar]').length,
   banner: document.querySelectorAll('section[aria-label="首页活动轮播"]').length,
 }))
 const homeText = await bodyText()

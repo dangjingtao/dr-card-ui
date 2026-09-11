@@ -89,10 +89,12 @@ export default function Home() {
             className="min-w-0 flex-1 bg-transparent text-sm text-text-primary outline-none placeholder:text-text-tertiary"
           />
         </label>
+        {/* T046｜右上角头像由「跳商城」改为「跳专栏内会员中心」（B-048 路由 slug：/dearseed/membership） */}
         <button
           type="button"
-          aria-label="进入卡博士商城"
-          onClick={() => navigate('/mall')}
+          data-dearseed-avatar
+          aria-label="进入会员中心"
+          onClick={() => navigate('/dearseed/membership')}
           className="h-10 w-10 flex-none overflow-hidden rounded-full border border-border-subtle bg-surface shadow-sm"
         >
           <img src={avatar} alt="会员头像" className="h-full w-full object-cover" />
