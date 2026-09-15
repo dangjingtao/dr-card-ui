@@ -1,0 +1,74 @@
+name: OpenCode Review
+
+on:
+  pull_request:
+    branches: [dev]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: opencode-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Check OpenCode credentials
+        id: credentials
+        shell: bash
+        env:
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: |
+          if [ -n "${OPENCODE_API_KEY}${ANTHROPIC_API_KEY}${OPENAI_API_KEY}${OPENROUTER_API_KEY}" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::OpenCode review skipped: configure a supported provider secret (default: OPENCODE_API_KEY)."
+          fi
+
+      - name: Checkout repository
+        if: steps.credentials.outputs.ready == 'true'
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Review pull request with OpenCode
+        if: steps.credentials.outputs.ready == 'true'
+        uses: anomalyco/opencode/github@latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        with:
+          use_github_token: true
+          model: ${{ vars.OPENCODE_REVIEW_MODEL || 'opencode-go/kimi-k3' }}
+          prompt: |
+            Review this pull request as a read-only second reviewer.
+
+            Read and follow the repository AGENTS.md before judging the diff.
+            Focus on high-confidence, actionable defects in changed code and its immediate integration surface:
+            - correctness and regressions;
+            - route / state / environment boundary violations;
+            - security or data-safety problems;
+            - broken contracts between formal H5 and Native reference code;
+            - tests or CI logic that can produce a false pass or false failure.
+
+            Repository-specific constraints:
+            - formal H5 and Native reference / legacy are different ownership domains;
+            - do not demand refactors inside Native reference code unless the PR changes it or it leaks into formal H5;
+            - mall work is currently deferred unless the PR explicitly targets it;
+            - do not invent backend API, authentication, or JSBridge contracts;
+            - do not request broad cleanup, style-only changes, coverage-chasing, or historical UI re-acceptance;
+            - avoid duplicating an existing reviewer finding unless independently confirming it adds material evidence.
+
+            Do not modify code. Post only review findings. If there are no material findings, leave no blocking feedback.
