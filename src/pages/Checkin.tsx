@@ -5,6 +5,7 @@ import CheckinMakeupSuccessOverlay from '../components/mobile/CheckinMakeupSucce
 import DebugPanel from '../components/mobile/DebugPanel'
 import PageContainer from '../components/mobile/PageContainer'
 import PromptOverlay from '../components/mobile/PromptOverlay'
+import DemoAdPlayer from '../components/checkin/DemoAdPlayer'
 import { Button } from '../components/ui'
 import { useFixtureState, useOverlay } from '../app/fixtures/useFixture'
 import { findRouteByPathname } from '../app/router/routes'
@@ -33,9 +34,23 @@ export default function Checkin() {
   const isSuccess = state?.key === 'success'
   const debug = searchParams.get('debug') === '1'
 
+  /* T045｜补签流程：先看演示广告，看完再触发补签成功弹窗。
+   *  1. 用户在 /checkin 完整月历点击补签日 → 触发 handleMakeupWithAd
+   *  2. DemoAdPlayer 全屏弹窗 + 5 秒倒计时
+   *  3. 倒计时归零 → onAdComplete 关闭广告 → open('make-up-success') 弹成功页
+   *  本期 B-046：5 秒演示时长；后续接真实 SDK 替换 onAdComplete 触发条件
+   */
+  const handleMakeupWithAd = () => {
+    open('demo-ad')
+  }
+  const handleAdComplete = () => {
+    close()
+    open('make-up-success')
+  }
+
   return (
     <PageContainer className="pb-24 pt-2" inset={false}>
-      <CheckinBoard mode="full" isSuccess={isSuccess} onMakeup={() => open('make-up-success')} debug={debug} />
+      <CheckinBoard mode="full" isSuccess={isSuccess} onMakeup={handleMakeupWithAd} debug={debug} />
 
       <PromptOverlay open={overlay === 'reminder'} label="每日打卡提示" onDismiss={close} className="overflow-hidden rounded-feature bg-surface px-6 pb-6 pt-5 text-center shadow-modal">
         <button type="button" aria-label="关闭打卡提示" onClick={close} className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full text-text-tertiary active:bg-surface-pressed"><X className="h-5 w-5" aria-hidden /></button>
@@ -46,6 +61,13 @@ export default function Checkin() {
       </PromptOverlay>
 
       <CheckinMakeupSuccessOverlay open={overlay === 'make-up-success'} onDismiss={close} debug={debug} />
+
+      {/* T045｜演示广告弹窗：5 秒倒计时 + 不可跳过，看完触发补签成功 */}
+      <DemoAdPlayer
+        open={overlay === 'demo-ad'}
+        durationSeconds={5}
+        onComplete={handleAdComplete}
+      />
 
       <DebugPanel route={route} />
     </PageContainer>

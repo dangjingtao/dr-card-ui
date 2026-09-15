@@ -414,7 +414,7 @@ export function resolveRedeemOutcome(input: string): RedeemOutcome {
 }
 
 /** 消息分类（T012；reference/通知2.html 的 cat 字段） */
-export type NotificationCategory = 'system' | 'activity'
+export type NotificationCategory = 'system' | 'activity' | 'balance' | 'event' | 'service'
 
 /**
  * 通知消息夹具（T012）
@@ -448,7 +448,7 @@ export const NOTIFICATION_FIXTURES: NotificationFixture[] = [
     unread: true,
     paragraphs: [
       '您的到店核销码 8821 已于 14:32 在「上海·徐汇店」完成核销,本次消耗 280 泡泡值。',
-      '如有任何问题,可在「我的 · 客服中心」联系我们,工作日 9:00 - 21:00 在线为您服务。',
+      '如有任何问题,可在「会员中心 · 客服中心」联系我们,工作日 9:00 - 21:00 在线为您服务。',
     ],
     note: SYSTEM_NOTE,
   },
@@ -502,12 +502,64 @@ export const NOTIFICATION_FIXTURES: NotificationFixture[] = [
     paragraphs: ['本月新增 6 款专属兑换好物,含「丝享柔顺洗发水 500ml」与「暖橙随身杯」,先到先兑。'],
     cta: ACTIVITY_CTA,
   },
+  /* T027：余额不足通知（P0） */
+  {
+    id: 'n7',
+    cat: 'balance',
+    title: '余额不足提醒',
+    summary: '您的账户余额已低于 5.00 元,为避免影响设备扫码使用,请及时充值。',
+    time: '今天 16:42',
+    unread: true,
+    paragraphs: [
+      '您的账户余额已低于 5.00 元,为避免影响设备扫码使用,请及时充值。',
+      '点击下方按钮即可跳转充值页面,最低 1 元即可使用。',
+    ],
+    note: '本条由系统自动推送,每次低于阈值只推送一次。',
+  },
+  /* T027：校内活动通知（活动通知占位态） */
+  {
+    id: 'n8',
+    cat: 'event',
+    title: '校内活动报名提醒',
+    summary: '「校园·诗得丽洗护节」本周六 14:00 开幕,前 100 名报名可领取体验装。',
+    time: '今天 11:20',
+    unread: true,
+    paragraphs: ['「校园·诗得丽洗护节」本周六 14:00 开幕,前 100 名报名可领取体验装。'],
+    note: '本通知为校内外活动通知占位,待后台活动模块就绪后启用。',
+    cta: { label: '查看活动', to: '/dearseed' },
+  },
+  /* T027：校外活动通知 */
+  {
+    id: 'n9',
+    cat: 'event',
+    title: '校外体验门店上新',
+    summary: '「诗得丽·上海·徐汇店」已上线设备扫码 8 折优惠活动,本周内有效。',
+    time: '昨天 20:15',
+    unread: false,
+    paragraphs: ['「诗得丽·上海·徐汇店」已上线设备扫码 8 折优惠活动,本周内有效。'],
+    note: '本通知为校内外活动通知占位,待后台活动模块就绪后启用。',
+    cta: { label: '查看门店', to: '/dearseed' },
+  },
+  /* T027：服务通知（设备报修进度等） */
+  {
+    id: 'n10',
+    cat: 'service',
+    title: '报修进度更新',
+    summary: '您的报修单「淋浴设备-A栋1楼」已派单给维修员,预计 30 分钟内上门。',
+    time: '昨天 15:30',
+    unread: false,
+    paragraphs: ['您的报修单「淋浴设备-A栋1楼」已派单给维修员,预计 30 分钟内上门。'],
+    note: '本通知为服务进度通知,可在「会员中心 · 客服中心」查看详情。',
+  },
 ]
 
 /** 分类中文标签（reference catLabel） */
 export function notificationCategoryLabel(cat: NotificationCategory | string): string {
   if (cat === 'system') return '系统'
   if (cat === 'activity') return '活动'
+  if (cat === 'balance') return '余额'
+  if (cat === 'event') return '活动'
+  if (cat === 'service') return '服务'
   return '通用'
 }
 
@@ -746,8 +798,8 @@ export const CHECKIN_WEEK_LABELS = ['日', '一', '二', '三', '四', '五', '�
  */
 export type CheckinDayState = 'done' | 'today' | 'makeup' | 'upcoming'
 
-/** 已签到日（含今天）；6、7 日漏签用于演示「补签」 */
-const CHECKIN_DONE_DAYS = [1, 2, 3, 4, 5, 8, 9, 10, 11, 12]
+/** 已签到日（不含今天 12 号，方便演示「今天未签 X」视觉）；6、7 日漏签用于演示「补签」 */
+const CHECKIN_DONE_DAYS = [1, 2, 3, 4, 5, 8, 9, 10, 11]
 
 export interface CheckinDay {
   day: number
@@ -787,8 +839,8 @@ export const CHECKIN_REWARDS: CheckinReward[] = [
   { days: 10 },
 ]
 
-/** 原型 §5 / §6 顶部状态文案 */
-export const CHECKIN_STATUS_TEXT = '今日已签到'
+/** 原型 §5 / §6 顶部状态文案：今天 12 号未签时显示「今日未签到」 */
+export const CHECKIN_STATUS_TEXT = '今日未签到'
 
 /**
  * 用户 2026-08-24 确认打卡页需要体现「任务」。
@@ -1114,6 +1166,7 @@ export const CHAT_HUMAN_PROMPT = {
  * #70 人工客服排队两态。
  * 原型 §11 只给出「排队中」与「已接入」两个确定状态，
  * 历史稿 T10 的 6 秒队列递减、取消排队 Toast 与 IP 占位插画均非摹客需求，已废弃。
+ * T013R4：演示坐席名由「诗得丽-吴哥 / 吴哥」调整为「小霜」，文案一并更新。
  */
 export const CHAT_QUEUE = {
   /** 排队中：原型给出的固定前置人数，静态展示，不做递减 */
@@ -1122,10 +1175,10 @@ export const CHAT_QUEUE = {
     aheadCount: 2,
     aheadText: '前面还有 2 位',
   },
-  /** 已接入：原型示例「诗得丽-吴哥 为您服务」 */
+  /** 已接入 */
   connected: {
-    agentName: '诗得丽-吴哥',
-    title: '诗得丽-吴哥 为您服务',
+    agentName: '小霜',
+    title: '人工客服 小霜 为您服务',
   },
 } as const
 
@@ -1133,13 +1186,14 @@ export const CHAT_QUEUE = {
  * #70 已接入后的人工对话。
  * 原型 §11 明确「智能客服历史消息保留在当前页面中」，故排队页复用 CHAT_CONVERSATION_MESSAGES 作为历史，
  * 接入后仅追加一条人工客服开场语，不另起完整客服系统。
+ * T013R4：开场语同步使用「小霜」作为坐席。
  */
 export const CHAT_AGENT_GREETING: ChatMessage = {
   id: 'agent-greeting',
   role: 'bot',
-  text: '你好，我是人工客服吴哥，已经看到你的问题，请稍等我为你处理。',
+  text: '你好，我是人工客服小霜，已经看到你的问题，请稍等我为你处理。',
   status: 'sent',
-  glyph: '哥',
+  glyph: '霜',
 }
 
 /**
@@ -1935,6 +1989,96 @@ export const NEWCOMER_COUPON_SUCCESS = {
 } as const
 
 /**
+ * T043｜诗得丽专栏入口 - 身份选择弹窗。
+ *
+ * 触发条件：用户点击诗得丽专栏顶部轮播图。Demo 模式下不接入后端身份识别，
+ * 直接让用户在弹窗里手动选择身份，再分支进入对应的二级弹窗。
+ * - 「诗得丽新增用户」 → NewcomerCouponDialog（洗发水体验券，沿用 Home 弹窗）
+ * - 「卡博士存量用户」 → NewcomerGiftSheet（新人礼包演示态）
+ */
+export const IDENTITY_PICKER = {
+  /** 弹窗眉标（沿用 DEAR SEED 体系） */
+  eyebrow: 'DEAR SEED',
+  /** 弹窗标题 */
+  title: '请选择身份',
+  /** 弹窗副标题 */
+  desc: 'Demo 演示用，请选择你希望模拟的用户身份。',
+  /** 关闭按钮 aria-label */
+  dismissLabel: '关闭身份选择',
+
+  /** 选项一：卡博士存量用户（已有账户 → 弹新人礼包） */
+  existing: {
+    /** 选项 ID，便于程序分支 */
+    id: 'existing' as const,
+    /** 选项标题 */
+    title: '卡博士存量用户',
+    /** 选项副标题 */
+    desc: '已有卡博士账户，享受新人礼包',
+    /** 选项徽标颜色：橙色 */
+    accentClass: 'text-reward-strong',
+    /** 选项背景：暖色 */
+    bgClass: 'bg-reward-subtle',
+    /** CTA 文案（用于 a11y 提示） */
+    cta: '查看新人礼包',
+  },
+
+  /** 选项二：诗得丽新增用户（关爱机项目 → 弹洗发水体验券） */
+  new: {
+    id: 'new' as const,
+    title: '诗得丽新增用户',
+    desc: '诗得丽关爱机项目用户，享受洗发水体验券',
+    /** 选项徽标颜色：金渐变 */
+    accentClass: 'text-member-accent',
+    /** 选项背景：会员卡色 */
+    bgClass: 'bg-member-surface',
+    cta: '查看洗发水体验券',
+  },
+} as const
+
+/**
+ * T043｜诗得丽专栏入口 - 卡博士存量用户新人礼包演示态。
+ *
+ * 触发条件：用户在身份选择弹窗选了「卡博士存量用户」。
+ * 占位券具体券种未定（B-044），本期先以「新人礼包」演示位呈现，等丁总指定
+ * 券种后只需替换 fixture 文案/图标，组件无需改动。
+ */
+export const GIFT_FOR_NEW_USERS = {
+  /** 顶部 tag：演示态标识 */
+  demoTag: '演示位 · 后续接入',
+  /** 弹窗眉标 */
+  eyebrow: 'DEAR SEED',
+  /** 标题 */
+  title: '新人礼包（占位）',
+  /** 副标题 */
+  desc: '卡博士存量用户新人礼包，正式券种由丁总确认后接入。',
+  /** 主按钮文案 */
+  action: '了解卡博士新人礼包',
+  /** 主按钮跳转目标：当前指向 /mall（H5 商城），券种确认后可切换为占位详情页 */
+  actionTo: '/mall',
+  /** 关闭按钮 aria-label */
+  dismissLabel: '关闭新人礼包演示',
+} as const
+
+/**
+ * T044｜洗发水体验券 - 使用弹窗指引文案。
+ *
+ * 触发场景：学生在卡包点击「使用体验券」打开使用弹窗后，看到的是两条
+ * 并列的核销方式指引（不再有 radio 圆圈与二选一控件）。
+ * B-045：「同一张体验券仅可选择一种核销方式」尾部说明仍保留并降级为
+ * 细字 footnote，避免学生误以为两条路可同时走。
+ */
+export const COUPON_USE_GUIDE = {
+  /** 弹窗副标题（原「请选择核销方式」） */
+  subtitle: '使用指引',
+  /** 扫码核销行说明 */
+  scanHint: '系统会优先抵扣体验券',
+  /** 消费密码核销行说明 */
+  passwordHint: '在设备上输入手机号和 6 位消费密码，点击确认即可领取，系统将优先抵扣体验券',
+  /** 底部 footnote（B-045 保留并降级为细字） */
+  footnote: '同一张体验券仅可选择一种核销方式，确认后不可更改',
+} as const
+
+/**
  * 新人体验券链路中「原型未给出规则」的部分，统一在此登记并隔离。
  * 页面只读这里的说明，不自行补写判定逻辑。
  */
@@ -1976,9 +2120,23 @@ export const COLUMN_HOME_SECTIONS = [
   },
   {
     key: 'brand-story',
-    title: '卡博士品牌故事',
-    desc: '了解品牌起源与匠心洗护',
+    title: '极地种子品牌故事',
+    desc: '了解极地种子品牌起源与匠心洗护',
     action: '查看品牌故事',
     to: '/brand-culture',
   },
 ] as const
+
+/**
+ * 诗得丽专栏首张轮播图（banner）文字层覆盖文案（T047）。
+ * B-049：原 banner 背景 `home-banner-carousel.webp` 内嵌旧品牌名「卡博士诗得丽」，
+ * 等后端 / 美术回灌新素材前不动图片本身；这里仅以文字层叠加覆盖，
+ * 由 `DearseedColumn` hero section 读取，渲染在大字标题 + 下方小字引导文案。
+ * 后续拿到新图后可整体替换为图片自带文字，本 fixture 即废弃。
+ */
+export const DEARSEED_BANNER_TEXT = {
+  /** 主标题：品牌名 */
+  title: '卡博士.极地种子',
+  /** 副标题 / 引导文案 */
+  subtitle: '极地种子品牌故事',
+} as const

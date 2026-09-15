@@ -33,7 +33,7 @@ type Tile = {
 
 const tiles: Tile[] = [
   { icon: Ticket, name: '卡券兑换', from: '#FFF8E6', deep: '#F4DFA9', color: '#B5793B', to: '/redeem' },
-  { icon: Crown, name: '会员中心', from: '#FFF4CF', deep: '#E8C361', color: '#8A5A10', to: '/membership' },
+  { icon: Crown, name: '会员权益', from: '#FFF4CF', deep: '#E8C361', color: '#8A5A10', to: '/membership' },
   { icon: ClipboardList, name: '订单管理', from: '#FFF3EB', deep: '#FFD3C0', color: '#D63D10', to: '/orders' },
   { icon: MapPin, name: '地址管理', from: '#FFF8E6', deep: '#F3DFA9', color: '#9A6110', to: '/address' },
   { icon: UserRoundPlus, name: '绑定搭子', from: '#EFFCFE', deep: '#CDEFF5', color: '#0E9FB3', to: '/buddy' },

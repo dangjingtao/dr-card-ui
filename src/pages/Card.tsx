@@ -13,7 +13,154 @@ import {
   resolveCardCoupon,
   type CardCouponFixture,
   type CardCouponStatus,
+  COUPON_USE_GUIDE,
 } from '../app/fixtures'
+
+/**
+ * 电影票样式卡券（自营页面专用 - 第一版）
+ * -------------------------------------------------------------
+ * 视觉特征：
+ *  - 横向票，左右两端各一个半圆缺口（撕齿效果）
+ *  - 中间用虚线分隔线把票分成两半：
+ *    左半：金色渐变色块（active）/ 灰色（used/expired），大金额 + 副券名
+ *    右半：白底，标题 + 到期 + 状态 + 使用须知 + 操作按钮
+ *  - 底部细灰色券号（票根感）
+ * - 把所有样式 inline 写在本组件里，方便后续整体替换为更精细的版本。
+ * - 不引入 CSS 变量，固定值先用 Tailwind class 表达；金色渐变通过 inline style 注入。
+ */
+interface MovieTicketProps {
+  coupon: CardCouponFixture
+  /** 是否已过期（叠加全卡 opacity） */
+  expired?: boolean
+  /** 是否已使用（左右色块灰化，但保留布局） */
+  used?: boolean
+  onUse: () => void
+  onShare: () => void
+}
+
+const NOTCH_SIZE = 14 // 两端半圆缺口直径（px）
+
+function MovieTicket({ coupon, expired, used, onUse, onShare }: MovieTicketProps) {
+  const isInactive = expired || used
+  /** 左半色块：金 vs 灰 */
+  const leftBg = isInactive
+    ? 'linear-gradient(135deg, #bdbdbd 0%, #9e9e9e 100%)'
+    : 'linear-gradient(135deg, var(--color-reward) 0%, var(--color-reward-strong) 100%)'
+  /** 操作按钮可用性 */
+  const canAction = !isInactive
+  return (
+    <article
+      className="relative"
+      aria-label={`${coupon.name}${coupon.amountLabel ?? ''} - ${isInactive ? (expired ? '已过期' : '已使用') : '可用'}`}
+    >
+      {/* 外层卡片 + 圆角 + 阴影；overflow-hidden 负责裁掉左右两个 notch 的内圈 */}
+      <div className={`relative overflow-hidden rounded-[16px] bg-surface shadow-sm ${expired ? 'opacity-90' : ''}`}>
+        {/* 左端半圆缺口（撕齿）：用绝对定位的圆形 + 与背景同色覆盖实现 */}
+        <span
+          aria-hidden
+          className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-surface-inactive"
+          style={{ width: NOTCH_SIZE, height: NOTCH_SIZE }}
+        />
+        <span
+          aria-hidden
+          className="absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 rounded-full bg-surface-inactive"
+          style={{ width: NOTCH_SIZE, height: NOTCH_SIZE }}
+        />
+
+        {/* 主体：flex 左右两栏 */}
+        <div className="flex">
+          {/* 左半：色块区 */}
+          <div
+            className="flex flex-col items-center justify-center px-4 py-4 text-center"
+            style={{
+              background: leftBg,
+              minWidth: 120,
+              flex: '0 0 auto',
+            }}
+            aria-hidden
+          >
+            {coupon.amountLabel ? (
+              <div className="flex items-baseline gap-0.5 leading-none text-white">
+                <span className="text-lg font-semibold">¥</span>
+                <span className="text-[34px] font-bold tracking-tight">{coupon.amountLabel.replace('¥', '')}</span>
+              </div>
+            ) : (
+              <Ticket className="h-7 w-7 text-white" strokeWidth={1.8} />
+            )}
+            <span className="mt-2 text-[11px] font-medium tracking-widest text-white/85">卡券</span>
+          </div>
+
+          {/* 中间虚线撕齿分隔 */}
+          <div
+            aria-hidden
+            className="my-3 border-l border-dashed"
+            style={{ borderColor: isInactive ? '#cfcfcf' : 'var(--color-reward-soft)' }}
+          />
+
+          {/* 右半：内容区 */}
+          <div className="flex-1 px-4 py-3">
+            <div className="flex items-start justify-between gap-2">
+              <h3 className={`min-w-0 truncate text-[15px] font-semibold ${isInactive ? 'text-coupon-used' : 'text-text-primary'}`}>
+                {coupon.name}
+              </h3>
+              <span
+                className={`inline-flex h-5 flex-none items-center gap-1 rounded-full px-2 text-[10px] font-semibold ${
+                  expired
+                    ? 'bg-surface-inactive text-text-inactive-muted'
+                    : used
+                      ? 'bg-coupon-used-bg text-coupon-used'
+                      : 'bg-reward-subtle text-reward-text'
+                }`}
+              >
+                {expired ? <Clock className="h-3 w-3" /> : used ? <ReceiptText className="h-3 w-3" /> : <Check className="h-3 w-3" />}
+                {expired ? '已过期' : used ? '已使用' : '可用'}
+              </span>
+            </div>
+
+            <div className={`mt-1.5 flex items-center gap-1 text-[11px] ${isInactive ? 'text-text-inactive-muted' : 'text-text-tertiary'}`}>
+              <CalendarDays className="h-3 w-3" />
+              {coupon.expireAt} 到期
+            </div>
+
+            {coupon.limitNote && (
+              <div className={`mt-1 text-[11px] ${isInactive ? 'text-text-inactive-muted' : 'text-text-tertiary'}`}>
+                {coupon.limitNote}
+              </div>
+            )}
+
+            {/* 操作按钮：等宽并列、无主辅关系。
+             *  使用：橙色实心 pill；转赠：白底描边 pill。
+             *  两个按钮 flex-1 平分宽度，视觉权重一致。
+             *  已过期：两按钮都禁用；已使用：使用按钮隐藏（演示态）。 */}
+            <div className="mt-3 flex items-center gap-2">
+              {!used && !expired && (
+                <button
+                  type="button"
+                  onClick={onUse}
+                  className="h-8 flex-1 rounded-full bg-primary text-[12px] font-semibold text-text-inverse shadow-primary-button active:bg-primary-pressed"
+                >
+                  使用
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={onShare}
+                disabled={!canAction}
+                className={`h-8 flex-1 rounded-full border text-[12px] font-semibold ${
+                  canAction
+                    ? 'border-border-strong bg-transparent text-text-secondary active:bg-surface-subtle'
+                    : 'border-border bg-transparent text-text-inactive-muted'
+                }`}
+              >
+                转赠
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+  )
+}
 
 export default function Card() {
   const navigate = useNavigate()
@@ -92,45 +239,12 @@ export default function Card() {
       <div className="mt-4 space-y-4" aria-live="polite">
         {tab === 'available' &&
           list.map((coupon) => (
-            <article key={coupon.id} className="overflow-hidden rounded-[16px] bg-surface shadow-sm">
-              <div className="h-[5px] bg-[linear-gradient(90deg,var(--color-reward),var(--color-reward-strong))]" />
-              <div className="px-4 pb-4 pt-3.5">
-                <div className="flex items-center justify-between gap-2.5">
-                  {coupon.amountLabel ? (
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="text-2xl font-bold leading-none text-reward-text">{coupon.amountLabel}</span>
-                      <span className="text-base font-semibold text-text-primary">{coupon.name}</span>
-                    </div>
-                  ) : (
-                    <h3 className="text-base font-semibold text-text-primary">{coupon.name}</h3>
-                  )}
-                  <span className="inline-flex h-6 items-center gap-1 rounded-full bg-reward-subtle px-2.5 text-xs font-semibold text-reward-text">
-                    <Check className="h-3.5 w-3.5" />
-                    可用
-                  </span>
-                </div>
-                <div className="mt-2.5 flex items-center gap-1 text-xs text-text-tertiary">
-                  <CalendarDays className="h-3.5 w-3.5" />
-                  {coupon.expireAt} 到期
-                </div>
-                <div className="mt-3.5 flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => openUseSheet(coupon)}
-                    className="h-9 rounded-full bg-primary px-[22px] text-sm font-semibold text-text-inverse shadow-primary-button active:bg-primary-pressed"
-                  >
-                    使用
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/card/share?coupon=${coupon.id}`)}
-                    className="h-9 rounded-full border border-border-strong bg-transparent px-[22px] text-sm font-semibold text-text-secondary"
-                  >
-                    转赠
-                  </button>
-                </div>
-              </div>
-            </article>
+            <MovieTicket
+              key={coupon.id}
+              coupon={coupon}
+              onUse={() => openUseSheet(coupon)}
+              onShare={() => navigate(`/card/share?coupon=${coupon.id}`)}
+            />
           ))}
 
         {tab === 'used' && list.length === 0 && (
@@ -145,56 +259,24 @@ export default function Card() {
 
         {tab === 'used' &&
           list.map((coupon) => (
-            <article key={coupon.id} className="overflow-hidden rounded-[16px] bg-surface shadow-sm">
-              <div className="h-[5px] bg-coupon-inactive-bar" />
-              <div className="px-4 pb-4 pt-3.5">
-                <div className="flex items-center justify-between gap-2.5">
-                  {coupon.amountLabel ? (
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="text-2xl font-bold leading-none text-coupon-used">{coupon.amountLabel}</span>
-                      <span className="text-base font-semibold text-coupon-used">{coupon.name}</span>
-                    </div>
-                  ) : (
-                    <h3 className="text-base font-semibold text-coupon-used">{coupon.name}</h3>
-                  )}
-                  <span className="inline-flex h-6 items-center gap-1 rounded-full bg-coupon-used-bg px-2.5 text-xs font-semibold text-coupon-used">
-                    <ReceiptText className="h-3.5 w-3.5" />
-                    已使用
-                  </span>
-                </div>
-                <div className="mt-2.5 flex items-center gap-1 text-xs text-text-inactive-muted">
-                  <CalendarDays className="h-3.5 w-3.5" />
-                  {coupon.expireAt} 到期
-                </div>
-              </div>
-            </article>
+            <MovieTicket
+              key={coupon.id}
+              coupon={coupon}
+              used
+              onUse={() => openUseSheet(coupon)}
+              onShare={() => navigate(`/card/share?coupon=${coupon.id}`)}
+            />
           ))}
 
         {tab === 'expired' &&
           list.map((coupon) => (
-            <article key={coupon.id} className="overflow-hidden rounded-[16px] bg-surface opacity-90 shadow-sm">
-              <div className="h-[5px] bg-coupon-inactive-bar" />
-              <div className="px-4 pb-4 pt-3.5">
-                <div className="flex items-center justify-between gap-2.5">
-                  {coupon.amountLabel ? (
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="text-2xl font-bold leading-none text-text-inactive">{coupon.amountLabel}</span>
-                      <span className="text-base font-semibold text-text-inactive">{coupon.name}</span>
-                    </div>
-                  ) : (
-                    <h3 className="text-base font-semibold text-text-inactive">{coupon.name}</h3>
-                  )}
-                  <span className="inline-flex h-6 items-center gap-1 rounded-full bg-surface-inactive px-2.5 text-xs font-semibold text-text-inactive-muted">
-                    <Clock className="h-3.5 w-3.5" />
-                    已过期
-                  </span>
-                </div>
-                <div className="mt-2.5 flex items-center gap-1 text-xs text-text-inactive-muted">
-                  <CalendarDays className="h-3.5 w-3.5" />
-                  {coupon.expireAt} 到期
-                </div>
-              </div>
-            </article>
+            <MovieTicket
+              key={coupon.id}
+              coupon={coupon}
+              expired
+              onUse={() => openUseSheet(coupon)}
+              onShare={() => navigate(`/card/share?coupon=${coupon.id}`)}
+            />
           ))}
 
         {tab === 'expired' && list.length === 0 && (
@@ -232,7 +314,7 @@ export default function Card() {
             <div className="flex items-start justify-between gap-3 px-4 pb-2 pt-1">
               <div>
                 <h2 className="text-lg font-semibold text-text-primary">使用体验券</h2>
-                <p className="text-sm text-text-tertiary">请选择核销方式</p>
+                <p className="text-sm text-text-tertiary">{COUPON_USE_GUIDE.subtitle}</p>
               </div>
               <button type="button" aria-label="关闭" onClick={close} className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-surface-subtle text-text-secondary">
                 <X className="h-5 w-5" />
@@ -240,14 +322,12 @@ export default function Card() {
             </div>
 
             <div className="px-4 py-3">
-              <button
-                type="button"
-                onClick={() => navigate('/mall')}
-                aria-label="查看商城体验券商品"
-                className="-m-2.5 flex w-full items-center gap-3 rounded-xl p-2.5 text-left active:bg-surface-subtle"
-              >
-                <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-reward-subtle text-reward-text">
-                  <Ticket className="h-5 w-5" />
+              {/* T044｜原「查看商城体验券商品」按钮改为纯展示块，去掉 onClick/aria-label/ChevronRight。
+               *  不加 pill 背景，仅保留图标 + 文案，作为下方核销 pill 的「标题/上下文」。
+               *  mt-4 仍保留，与下方核销 pill 间距加大。 */}
+              <div className="-m-2.5 flex items-center gap-3 rounded-xl p-2.5">
+                <span className="flex h-10 w-10 flex-none items-center justify-center self-center rounded-full bg-surface text-reward-strong shadow-sm">
+                  <Ticket className="h-5 w-5" aria-hidden />
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-medium text-text-primary">
@@ -257,45 +337,50 @@ export default function Card() {
                     {activeCoupon.expireAt} 到期 · {activeCoupon.limitNote}
                   </span>
                 </span>
-                <ChevronRight className="h-4 w-4 flex-none text-text-tertiary" aria-hidden />
-              </button>
+              </div>
 
-              <p className="mb-2 mt-5 text-sm font-medium text-text-primary">选择核销方式</p>
-              <div className="space-y-1">
+              {/* T044｜移除 radio 圆圈与二选一控件，改为两行并列的使用指引。
+               *  扫码核销：系统会优先抵扣体验券
+               *  消费密码核销：在设备上输入手机号和 6 位消费密码，点击确认即可领取
+               *  mt-4：券卡与下方核销 pill 之间加大间距（PRD 要求）。 */}
+              <div className="mt-4 space-y-2">
+                {/* T044｜两个 pill 高度统一 h-20，icon + 文字 self-center 上下居中。
+                 *  扫码/密码两行文案长度不同，靠固定高度 + flex 居中让两个 pill 视觉一致。 */}
                 <button
                   type="button"
                   onClick={() => navigate('/card/verify')}
-                  className="flex w-full items-center gap-3 rounded-xl p-2.5 text-left active:bg-surface-subtle"
+                  className="flex h-20 w-full items-center gap-3 rounded-pill bg-surface-subtle p-3 text-left active:bg-surface-selected"
                 >
-                  <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-surface-subtle text-text-secondary">
+                  <span className="flex h-10 w-10 flex-none items-center justify-center self-center rounded-full bg-surface text-reward-strong shadow-sm">
                     <QrCode className="h-5 w-5" />
                   </span>
-                  <span className="min-w-0 flex-1 text-sm font-medium text-text-primary">扫码核销</span>
-                  <span className="flex h-5 w-5 flex-none items-center justify-center rounded-full border border-border">
-                    <span className="h-2.5 w-2.5 rounded-full bg-transparent" />
+                  <span className="min-w-0 flex-1 self-center">
+                    <span className="block text-sm font-medium text-text-primary">扫码核销</span>
+                    <span className="mt-1 block text-xs leading-4 text-text-tertiary">
+                      {COUPON_USE_GUIDE.scanHint}
+                    </span>
                   </span>
                 </button>
                 <button
                   type="button"
                   onClick={() => navigate('/card/verify/password')}
-                  className="flex w-full items-center gap-3 rounded-xl p-2.5 text-left active:bg-surface-subtle"
+                  className="flex h-20 w-full items-center gap-3 rounded-pill bg-surface-subtle p-3 text-left active:bg-surface-selected"
                 >
-                  <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-surface-subtle text-text-secondary">
+                  <span className="flex h-10 w-10 flex-none items-center justify-center self-center rounded-full bg-surface text-reward-strong shadow-sm">
                     <KeyRound className="h-5 w-5" />
                   </span>
-                  <span className="min-w-0 flex-1">
+                  <span className="min-w-0 flex-1 self-center">
                     <span className="block text-sm font-medium text-text-primary">消费密码核销</span>
-                    <span className="block text-xs text-text-tertiary">输入 6 位消费密码，由店员确认核销</span>
-                  </span>
-                  <span className="flex h-5 w-5 flex-none items-center justify-center rounded-full border border-border">
-                    <span className="h-2.5 w-2.5 rounded-full bg-transparent" />
+                    <span className="mt-1 block text-xs leading-4 text-text-tertiary">
+                      {COUPON_USE_GUIDE.passwordHint}
+                    </span>
                   </span>
                 </button>
               </div>
 
               <div className="mt-3 flex items-start gap-2 rounded-lg bg-surface-subtle p-3">
                 <Info className="mt-0.5 h-4 w-4 flex-none text-text-tertiary" />
-                <p className="text-xs text-text-secondary">同一张体验券仅可选择一种核销方式，确认后不可更改</p>
+                <p className="text-xs text-text-secondary">{COUPON_USE_GUIDE.footnote}</p>
               </div>
             </div>
           </div>

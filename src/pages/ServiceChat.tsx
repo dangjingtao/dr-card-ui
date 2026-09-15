@@ -1,18 +1,21 @@
 import { useEffect, useRef, useState } from 'react'
-import { Headset, MessageSquare, Send } from 'lucide-react'
+import { useLocation } from 'react-router-dom'
+import { Headset, Send } from 'lucide-react'
 import PageContainer from '../components/mobile/PageContainer'
 import ChatMessageList from '../components/mobile/ChatMessageList'
 import DebugPanel from '../components/mobile/DebugPanel'
 import WecomQrPlaceholder from '../components/mobile/WecomQrPlaceholder'
 import { BottomSheet, Button } from '../components/ui'
 import { findRouteByPathname } from '../app/router/routes'
-import { useFixtureState, useOverlay } from '../app/fixtures/useFixture'
+import { useFixtureState } from '../app/fixtures/useFixture'
 import {
+  CHAT_AGENT_GREETING,
   CHAT_BOT,
   CHAT_BOT_FALLBACK_REPLY,
   CHAT_CONVERSATION_MESSAGES,
   CHAT_FAILED_MESSAGES,
   CHAT_HUMAN_PROMPT,
+  CHAT_QUEUE,
   CHAT_SEND_LATENCY_MS,
   CHAT_WELCOME_MESSAGES,
   WELFARE_OFFICER,
@@ -26,15 +29,40 @@ const STATE_MESSAGES: Record<string, ChatMessage[]> = {
   failed: CHAT_FAILED_MESSAGES,
 }
 
+/** T013R4：人工客服进入状态机 —— 'idle' / 'queuing' / 'connected' */
+type HumanStage = 'idle' | 'queuing' | 'connected'
+
 export default function ServiceChat() {
   const route = findRouteByPathname('/service/chat')
   const { state } = useFixtureState(route)
-  const { overlay, open, close } = useOverlay()
+  const location = useLocation()
 
   const [messages, setMessages] = useState<ChatMessage[]>(CHAT_WELCOME_MESSAGES)
   const [draft, setDraft] = useState('')
   const timers = useRef<number[]>([])
   const seq = useRef(0)
+
+  /** 人工客服状态机：idle → queuing（→ mock 1.2s 后 connected） */
+  const [humanStage, setHumanStage] = useState<HumanStage>('idle')
+
+  /** T013R5：企微二维码弹层 —— 与壳层 TitleBar 联动，靠 `#wecom` hash 触发 */
+  const [wecomOpen, setWecomOpen] = useState(false)
+  const closeWecom = () => {
+    setWecomOpen(false)
+    /* 关闭时清掉 hash，避免下次进页时旧状态自动重弹 */
+    if (location.hash === '#wecom') {
+      window.history.replaceState(null, '', location.pathname + location.search)
+    }
+  }
+
+  /* T013R5+R9：监听 location.hash 变化，#wecom 时打开企微二维码弹层。
+   * 注意：必须用 useLocation() 的 location 对象，React Router 才能感知
+   * hash 变化并触发重渲染；直接读 window.location.hash 不会触发更新。 */
+  useEffect(() => {
+    if (location.hash === '#wecom') {
+      setWecomOpen(true)
+    }
+  }, [location.hash])
 
   /** `?state=` 直达：欢迎 / 有对话 / 发送失败 */
   useEffect(() => {
@@ -66,14 +94,50 @@ export default function ServiceChat() {
     }, CHAT_SEND_LATENCY_MS)
   }
 
+  /**
+   * T013R4：触发人工客服 ——不跳转路由，而是在当前对话之下插入：
+   *   1) 系统提示「正在为您接入人工客服...」
+   *   2) 排队位次「前面还有 2 位」
+   *   3) mock 1.2s 后接入，追加坐席开场语（CHAT_AGENT_GREETING，文案使用「小霜」）
+   *   4) 启用底部输入框进入 APP 内对话
+   * 同一页面已接入后再次点击「人工」按钮不重复触发。
+   */
+  const requestHuman = () => {
+    if (humanStage !== 'idle') return
+
+    /* 1) 排队提示 */
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: `human-system-${Date.now()}`,
+        role: 'bot',
+        text: CHAT_QUEUE.queuing.title,
+        status: 'sent',
+      },
+      {
+        id: `human-queue-${Date.now() + 1}`,
+        role: 'bot',
+        text: CHAT_QUEUE.queuing.aheadText,
+        status: 'sent',
+      },
+    ])
+    setHumanStage('queuing')
+
+    /* 2) mock 1.2s 后接入 */
+    track(() => {
+      setMessages((prev) => [...prev, { ...CHAT_AGENT_GREETING, id: `human-greeting-${Date.now()}` }])
+      setHumanStage('connected')
+    }, 1200)
+  }
+
   const send = () => {
     const text = draft.trim()
     if (!text) return
     setDraft('')
 
-    /** 原型 §9：输入「人工客服」等同于点击页内入口，直接进入请求人工客服流程 */
+    /** T013R4：输入「人工客服」等同于点击页内「人工」按钮，触发人工客服状态机 */
     if (isChatHumanRequest(text)) {
-      open('request-human')
+      requestHuman()
       return
     }
 
@@ -90,34 +154,25 @@ export default function ServiceChat() {
     settle(id, target.text)
   }
 
+  /** T013R4：人工坐席已接入后输入区可用；否则禁用并显示「正在接入...」 */
+  const humanActive = humanStage === 'connected'
+  const inputDisabled = !humanActive
+  const inputPlaceholder = humanActive
+    ? `与 ${CHAT_QUEUE.connected.agentName} 对话中…`
+    : humanStage === 'queuing'
+      ? '正在为您接入人工客服...'
+      : CHAT_BOT.inputPlaceholder
+
   return (
     <PageContainer className="flex min-h-full flex-col pb-0" inset={false}>
-      <div className="flex items-center justify-between gap-3 px-4 pt-3">
-        <div className="flex min-w-0 items-center gap-2">
-          <span
-            className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-reward-subtle text-xs font-semibold text-reward-text"
-            aria-hidden
-          >
-            {CHAT_BOT.glyph}
-          </span>
-          <p className="truncate text-sm font-medium text-text-primary">
-            {CHAT_BOT.role} · {CHAT_BOT.name}
-          </p>
-        </div>
-
-        {/* 壳层 TitleBar 不支持自定义右上角动作，故「企微客服」入口渲染在页面体内 */}
-        <button
-          type="button"
-          data-chat-wecom-entry
-          onClick={() => open('request-human')}
-          className="inline-flex min-h-8 flex-none items-center gap-1 rounded-pill bg-surface px-3 text-xs font-medium text-text-brand shadow-sm active:bg-surface-selected"
-        >
-          <MessageSquare className="h-3.5 w-3.5" aria-hidden />
-          {CHAT_BOT.wecomEntry}
-        </button>
+      {/* T013R5：「企微客服」pill 移回壳层 TitleBar 右侧，页内顶部区只保留居中小字。 */}
+      <div className="px-4 pt-3">
+        <p className="text-center text-xs text-text-tertiary">
+          AI 客服 {CHAT_BOT.name} 为您服务
+        </p>
       </div>
 
-      <div className="flex-1 px-4 pb-4 pt-4">
+      <div className="flex-1 px-4 pb-4 pt-4" data-human-stage={humanStage}>
         <ChatMessageList messages={messages} onRetry={retry} />
       </div>
 
@@ -126,8 +181,9 @@ export default function ServiceChat() {
           <button
             type="button"
             data-chat-human-entry
-            onClick={() => open('request-human')}
-            className="flex h-11 w-11 flex-none flex-col items-center justify-center rounded-container bg-surface text-[10px] font-medium text-text-brand shadow-sm active:bg-surface-selected"
+            onClick={requestHuman}
+            disabled={humanStage !== 'idle'}
+            className="flex h-11 w-11 flex-none flex-col items-center justify-center rounded-container bg-surface text-[10px] font-medium text-text-brand shadow-sm active:bg-surface-selected disabled:opacity-50"
           >
             <Headset className="h-4 w-4" aria-hidden />
             人工
@@ -146,9 +202,10 @@ export default function ServiceChat() {
                   send()
                 }
               }}
-              placeholder={CHAT_BOT.inputPlaceholder}
+              placeholder={inputPlaceholder}
+              disabled={inputDisabled}
               aria-label="输入你的问题"
-              className="h-11 w-full bg-transparent text-sm text-text-primary outline-none placeholder:text-text-placeholder"
+              className="h-11 w-full bg-transparent text-sm text-text-primary outline-none placeholder:text-text-placeholder disabled:cursor-not-allowed"
             />
           </div>
 
@@ -165,22 +222,27 @@ export default function ServiceChat() {
         </div>
       </div>
 
-      {/* #71 请求人工客服：原型 §10 在智能客服页上叠加企业微信引导 */}
+      {/* T013R4：企微二维码弹层恢复（R1+R2 撤掉的 #71 重新启用，但仅承担"企微客服"入口）。
+        * 触发：点击壳层 TitleBar 右侧「企微客服」pill（data-chat-wecom-entry）。
+        * 行为：仅展示福利官二维码 + 「取消」按钮，不承担"转人工"职责 ——「人工」走 requestHuman。
+        * T013R5：「取消」按钮居中（外层 flex justify-center）。 */}
       <BottomSheet
-        open={overlay === 'request-human'}
+        open={wecomOpen}
         title={CHAT_HUMAN_PROMPT.title}
-        onClose={close}
+        onClose={closeWecom}
         actions={
-          /* 原型 §10 弹层内只有「取消」；#71 → #70 的前进入口未确认，按项目硬规则不实现 */
-          <Button variant="ghost" onClick={close}>
-            {CHAT_HUMAN_PROMPT.cancelLabel}
-          </Button>
+          <div className="flex justify-center">
+            <Button variant="ghost" onClick={closeWecom}>
+              {CHAT_HUMAN_PROMPT.cancelLabel}
+            </Button>
+          </div>
         }
       >
         <div className="flex flex-col items-center pb-1 text-center" data-chat-human-sheet>
           <WecomQrPlaceholder />
           <p className="mt-3 text-sm font-medium text-text-primary">
-            {WELFARE_OFFICER.brand}{WELFARE_OFFICER.role} · {WELFARE_OFFICER.name}
+            {WELFARE_OFFICER.brand}
+            {WELFARE_OFFICER.role} · {WELFARE_OFFICER.name}
           </p>
           <p className="mt-1 text-xs text-text-tertiary">{WELFARE_OFFICER.qrHint}</p>
         </div>
