@@ -1,6 +1,5 @@
-import { RouterProvider } from 'react-router-dom'
-import { router } from './app/router'
+import JsBridgeTestPage from './pages/JsBridgeTestPage'
 
 export default function App() {
-  return <RouterProvider router={router} />
+  return <JsBridgeTestPage />
 }
