@@ -25,7 +25,7 @@
 | ID | 任务 | 状态 |
 |---|---|---|
 | H001 | 代码质量与卫生基线 | Accepted |
-| H002 | 正式 H5 / Native reference 路由边界 | Ready |
+| H002 | 正式 H5 / Native reference 路由边界 | Agent Review |
 | H003 | 切断正式 H5 对 legacy runtime 的依赖 | Ready |
 | H004 | Fixture / Debug 运行环境隔离 | Ready |
 | H005 | Fixture 巨石按域拆分 | Ready |
