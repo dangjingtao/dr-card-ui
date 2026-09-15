@@ -1,32 +1,19 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, Camera, Image as ImageIcon } from 'lucide-react'
-import { userInfoActions } from './userInfoStore'
-
-/* ---- Fixture：9 个预置头像（dicebear avataaars） ---- */
-const AVATAR_OPTIONS = [
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=weixin',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=avatar1',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=avatar2',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=avatar3',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=avatar4',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=avatar5',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=avatar6',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=avatar7',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=avatar8',
-]
+import { useUserInfo, userInfoActions } from './userInfoStore'
 
 export default function AvatarEditPage() {
   const navigate = useNavigate()
-  const [selectedPreset, setSelectedPreset] = useState(0)
-  /** 用户从相册/拍照上传的自定义头像（base64 data URL），null 表示使用预置头像 */
+  const userInfo = useUserInfo()
   const [customAvatar, setCustomAvatar] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
   const albumInputRef = useRef<HTMLInputElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
 
-  const currentAvatar = customAvatar ?? AVATAR_OPTIONS[selectedPreset]
+  /* 头像只能通过相册/拍照上传更换；未上传时沿用 store 当前头像 */
+  const currentAvatar = customAvatar ?? userInfo.avatar
 
   const handleFilePick = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -43,11 +30,6 @@ export default function AvatarEditPage() {
     reader.readAsDataURL(file)
     /* 允许重复选择同一张图 */
     e.target.value = ''
-  }
-
-  const handlePresetClick = (idx: number) => {
-    setSelectedPreset(idx)
-    setCustomAvatar(null)
   }
 
   const handleSave = () => {
@@ -102,30 +84,6 @@ export default function AvatarEditPage() {
             </div>
             <div className="mt-3 text-sm text-text-secondary">点击拍照或从相册选择</div>
           </div>
-        </div>
-      </div>
-
-      {/* 头像选择网格 */}
-      <div className="px-4 pt-4">
-        <div className="mb-2 text-sm font-medium text-text-primary">选择头像</div>
-        <div className="grid grid-cols-4 gap-3">
-          {AVATAR_OPTIONS.map((src, idx) => (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => handlePresetClick(idx)}
-              className={`relative aspect-square overflow-hidden rounded-xl border-2 transition ${
-                !customAvatar && selectedPreset === idx
-                  ? 'border-[#D4A853]'
-                  : 'border-transparent'
-              }`}
-            >
-              <img src={src} alt={`头像${idx + 1}`} className="h-full w-full object-cover" />
-              {!customAvatar && selectedPreset === idx && (
-                <div className="absolute inset-0 bg-[#D4A853]/20" />
-              )}
-            </button>
-          ))}
         </div>
       </div>
 

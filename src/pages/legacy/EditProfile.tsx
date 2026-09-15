@@ -3,24 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, Camera } from 'lucide-react'
 import { useUserInfo, userInfoActions } from './userInfoStore'
 
-/* ---- 9 个预置头像（与 AvatarEditPage 共用） ---- */
-const AVATAR_OPTIONS = [
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=weixin',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=avatar1',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=avatar2',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=avatar3',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=avatar4',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=avatar5',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=avatar6',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=avatar7',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=avatar8',
-]
-
 /**
  * T026：编辑资料页
  * -------------------------------------------------------------
  * 一站式修改 头像 / 昵称 / 真实姓名（任务卡「实施要求」第 4 条）。
- * - 头像：点击相机按钮从相册/拍照上传，或从 5×2 网格切换；
+ * - 头像：点击相机按钮从相册/拍照上传（无预设头像选择）；
  * - 昵称：必填，1-16 字；
  * - 真实姓名：必填，1-20 字；
  * - 点击「保存」一次性写回 store，再返回个人信息。
@@ -29,15 +16,7 @@ export default function EditProfile() {
   const navigate = useNavigate()
   const userInfo = useUserInfo()
 
-  /* 当前选中的预置头像 index；如果 store 里是自定义上传的（data: 开头），则 avatarIdx 取 0 但 customAvatar 有值 */
-  const isStoredCustom = userInfo.avatar.startsWith('data:')
-  const initialAvatarIdx = isStoredCustom
-    ? 0
-    : Math.max(0, AVATAR_OPTIONS.findIndex((src) => src === userInfo.avatar))
-  const [avatarIdx, setAvatarIdx] = useState(initialAvatarIdx)
-  const [customAvatar, setCustomAvatar] = useState<string | null>(
-    isStoredCustom ? userInfo.avatar : null,
-  )
+  const [customAvatar, setCustomAvatar] = useState<string | null>(null)
   const [nickname, setNickname] = useState(userInfo.nickname)
   const [realName, setRealName] = useState(userInfo.realName)
   const [saving, setSaving] = useState(false)
@@ -46,7 +25,8 @@ export default function EditProfile() {
 
   const albumInputRef = useRef<HTMLInputElement>(null)
 
-  const currentAvatar = customAvatar ?? AVATAR_OPTIONS[avatarIdx]
+  /* 头像只能通过相机图标（相册/拍照）上传更换；未上传时沿用 store 当前头像 */
+  const currentAvatar = customAvatar ?? userInfo.avatar
 
   const handleFilePick = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -62,11 +42,6 @@ export default function EditProfile() {
     }
     reader.readAsDataURL(file)
     e.target.value = ''
-  }
-
-  const handlePresetClick = (idx: number) => {
-    setAvatarIdx(idx)
-    setCustomAvatar(null)
   }
 
   const handleSave = () => {
@@ -147,26 +122,7 @@ export default function EditProfile() {
               </button>
             </div>
             <div className="mt-2 text-xs text-text-secondary">
-              点击相机图标从相册/拍照上传，或从下方选择
-            </div>
-            <div className="mt-3 grid w-full grid-cols-5 gap-2">
-              {AVATAR_OPTIONS.slice(0, 9).map((src, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => handlePresetClick(idx)}
-                  className={`relative aspect-square overflow-hidden rounded-lg border-2 transition ${
-                    !customAvatar && avatarIdx === idx
-                      ? 'border-[#D4A853]'
-                      : 'border-transparent'
-                  }`}
-                >
-                  <img src={src} alt={`头像${idx + 1}`} className="h-full w-full object-cover" />
-                  {!customAvatar && avatarIdx === idx && (
-                    <div className="absolute inset-0 bg-[#D4A853]/20" />
-                  )}
-                </button>
-              ))}
+              点击相机图标从相册/拍照上传
             </div>
           </div>
         </div>
