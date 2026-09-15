@@ -4,7 +4,8 @@ import { Bell, MessageSquare, Settings } from 'lucide-react'
 import BottomNav from '../components/mobile/BottomNav'
 import StatusBar from '../components/mobile/StatusBar'
 import TitleBar from '../components/mobile/TitleBar'
-import { findRouteByPathname, isLegacyTabPath, isTabPath } from '../app/router/routes'
+import { findRouteByPathname, isLegacyTabPath } from '../app/router/routes'
+import { isFormalH5TabPath } from '../app/router/routeScope'
 import { useNotifications } from '../app/state/notifications'
 import { useUserInfo } from '../pages/legacy/userInfoStore'
 
@@ -25,7 +26,7 @@ export default function MobileLayout() {
   const { unreadCount } = useNotifications()
   const userInfo = useUserInfo()
   const showLegacyNav = isLegacyTabPath(location.pathname)
-  const showNav = showLegacyNav || isTabPath(location.pathname)
+  const showNav = showLegacyNav || isFormalH5TabPath(location.pathname)
   const route = findRouteByPathname(location.pathname)
   const titleBarMode = route?.titleBar ?? 'back'
   const fallbackTitle = location.pathname === '/tokens' ? '品牌 Token 展示' : '页面不存在'
