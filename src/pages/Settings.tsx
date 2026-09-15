@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { useBlocker, useNavigate } from 'react-router-dom'
 import { Camera, CheckCircle2, ChevronRight, Eye, EyeOff, Image, Lock, X } from 'lucide-react'
 import PageContainer from '../components/mobile/PageContainer'
