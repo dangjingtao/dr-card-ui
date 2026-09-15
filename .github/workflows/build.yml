@@ -21,9 +21,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
 
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
 
       - name: Typecheck
         run: npm run typecheck
@@ -67,3 +68,72 @@ jobs:
           done
           cat /tmp/dr-card-vite-preview.log
           exit 1
+
+  test-gate:
+    name: Test branch gate
+    if: github.ref_name == 'test' || github.base_ref == 'test'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      VITE_APP_ENV: test
+      VITE_DATA_MODE: api
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Verify test environment policy
+        shell: bash
+        run: |
+          test "$VITE_APP_ENV" = "test"
+          test "$VITE_DATA_MODE" = "api"
+          test "$VITE_DATA_MODE" != "mock"
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Build test bundle
+        run: npm run build:test
+
+      - name: Verify test bundle has no Mock Service Worker asset
+        shell: bash
+        run: |
+          if find dist -type f -name 'mockServiceWorker.js' -print -quit | grep -q .; then
+            echo 'Mock Service Worker asset must not be present in the test bundle.'
+            exit 1
+          fi
+
+      - name: Run browser regression gate
+        shell: bash
+        run: |
+          npm run preview -- --port 4173 > /tmp/dr-card-test-preview.log 2>&1 &
+          PREVIEW_PID=$!
+          trap 'kill $PREVIEW_PID || true' EXIT
+
+          for attempt in {1..20}; do
+            if curl --fail --silent --show-error http://127.0.0.1:4173/ > /dev/null; then
+              BASE_URL=http://127.0.0.1:4173 npm run verify:t015
+              exit $?
+            fi
+            sleep 1
+          done
+
+          cat /tmp/dr-card-test-preview.log
+          exit 1
+
+      - name: Upload browser regression evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-browser-regression-${{ github.sha }}
+          path: docs/workbench/evidence/t015-results.json
+          if-no-files-found: warn
+          retention-days: 14
