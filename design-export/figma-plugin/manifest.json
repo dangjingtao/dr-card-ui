@@ -1,0 +1,11 @@
+{
+  "name": "DR Card UI → Figma",
+  "id": "dr-card-ui-ir-importer",
+  "api": "1.0.0",
+  "editorType": ["figma"],
+  "main": "code.js",
+  "ui": "ui.html",
+  "networkAccess": {
+    "allowedDomains": ["none"]
+  }
+}

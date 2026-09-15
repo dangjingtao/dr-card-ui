@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowUpRight, CalendarDays, Check, CheckCircle2, ChevronRight, Gift, ListTodo, Sparkles } from 'lucide-react'
+import { ArrowUpRight, CalendarDays, Check, CheckCircle2, ChevronRight, Gift, ListTodo, Sparkles, X } from 'lucide-react'
 import { BottomSheet, Button, ProgressIndicator } from '../ui'
 import {
   CHECKIN_CALENDAR,
@@ -64,6 +64,8 @@ export interface CheckinBoardProps {
  */
 export default function CheckinBoard({ mode = 'home', isSuccess = false, onMakeup, debug = false }: CheckinBoardProps) {
   const navigate = useNavigate()
+  // T045｜calendarOpen state 暂时保留，但首页 7 天卡片已不再触发此 BottomSheet。
+  //  如需恢复抽屉弹窗跳转，把 onClick 改回 setCalendarOpen(true) 即可。
   const [calendarOpen, setCalendarOpen] = useState(false)
   const cycleDays = getCheckinCycleDays()
   const completedDays = cycleDays.filter((item) => item.state === 'done' || item.state === 'today').length
@@ -95,7 +97,8 @@ export default function CheckinBoard({ mode = 'home', isSuccess = false, onMakeu
               DAILY CHECK-IN
             </p>
             <p className="mt-2.5 flex items-center gap-1.5 text-2xl font-bold leading-8 text-bubble-on-gold">
-              <CheckCircle2 className="h-6 w-6" strokeWidth={2.4} aria-hidden />
+              {/* T045｜今天未签：Hero 状态图标从 ✓ 改为 X，保持「未签到」语义统一 */}
+              <X className="h-6 w-6" strokeWidth={2.6} aria-hidden />
               {CHECKIN_STATUS_TEXT}
             </p>
             <p className="mt-1 text-[11px] font-medium text-bubble-on-gold-muted">7 天签到挑战</p>
@@ -109,9 +112,11 @@ export default function CheckinBoard({ mode = 'home', isSuccess = false, onMakeu
 
       {mode === 'home' ? (
         <>
+          {/* T045｜点击首页 7 天日历卡片：直接跳「每日打卡」完整页（不再弹 BottomSheet）。
+           *  BottomSheet 代码块保留在此分支内（注释说明），方便日后恢复抽屉弹窗跳转。 */}
           <button
             type="button"
-            onClick={() => setCalendarOpen(true)}
+            onClick={() => navigate('/checkin')}
             aria-label={`查看 7 天签到日历，当前 ${completedDays} / ${CHECKIN_CYCLE_TARGET}`}
             className="mx-4 block w-[calc(100%-2rem)] rounded-[18px] bg-surface px-4 pb-3.5 pt-3 text-left shadow-bubble transition active:scale-[0.995] active:bg-surface-pressed"
           >
@@ -129,22 +134,41 @@ export default function CheckinBoard({ mode = 'home', isSuccess = false, onMakeu
 
             <div className="mt-2.5 grid grid-cols-7 gap-2" aria-hidden>
               {cycleDays.map((item, index) => {
-                const completed = item.state === 'done' || item.state === 'today'
+                const completed = item.state === 'done'
                 return (
                   <span key={item.day} className="flex min-w-0 flex-col items-center gap-1">
                     <span className="text-[9px] leading-none text-text-tertiary">{CHECKIN_CYCLE_WEEK_LABELS[index]}</span>
+                    {/* T045｜签到视觉规则：
+                     *  today（今天未签）→ 矩形 + X + 日期
+                     *  done（已签）→ ✓ 暖色
+                     *  makeup（过往漏签）→ 「补签」两字
+                     *  upcoming（未来）→ 透明背景 + 灰色数字（去掉灰色原型底） */}
                     <span
-                      className={`flex h-6 w-6 items-center justify-center rounded-full text-[9px] font-semibold ${
+                      className={`flex h-6 w-6 items-center justify-center text-[9px] font-semibold ${
                         item.state === 'today'
-                          ? 'bg-primary text-text-inverse shadow-primary-button'
+                          ? 'flex-col rounded-md bg-[#3A2E1F] text-white shadow-sm'
                           : completed
-                            ? 'bg-reward-subtle text-reward-strong'
+                            ? 'flex-col rounded-full bg-reward-subtle text-reward-strong'
                             : item.state === 'makeup'
-                              ? 'border border-primary/55 bg-surface text-text-brand'
-                              : 'bg-surface-subtle text-text-tertiary'
+                              ? 'rounded-md bg-primary/10 text-text-brand'
+                              : 'rounded-full text-text-tertiary/70'
                       }`}
                     >
-                      {completed ? <Check className="h-3 w-3" strokeWidth={3} /> : item.day}
+                      {item.state === 'today' ? (
+                        <>
+                          <X className="h-2.5 w-2.5" strokeWidth={3} />
+                          <span className="mt-0.5 text-[8px] leading-none">{item.day}</span>
+                        </>
+                      ) : completed ? (
+                        <>
+                          <Check className="h-2.5 w-2.5" strokeWidth={3} />
+                          <span className="mt-0.5 text-[8px] leading-none">{item.day}</span>
+                        </>
+                      ) : item.state === 'makeup' ? (
+                        <span className="text-[10px] font-semibold leading-none">补签</span>
+                      ) : (
+                        item.day
+                      )}
                     </span>
                   </span>
                 )
@@ -374,27 +398,28 @@ export default function CheckinBoard({ mode = 'home', isSuccess = false, onMakeu
 
 function CalendarCell({ item, onMakeup }: { item: CheckinDay; onMakeup: () => void }) {
   if (item.state === 'makeup') {
+    // T045｜过往漏签：只显示「补签」两字（可点击进补签流程）
     return (
       <button
         type="button"
         onClick={onMakeup}
         aria-label={`${item.day} 日补签`}
-        className="flex aspect-square w-full flex-col items-center justify-center rounded-lg border border-primary text-[10px] font-medium text-text-brand active:bg-surface-pressed"
+        className="flex aspect-square w-full items-center justify-center rounded-md bg-primary/10 text-[11px] font-semibold text-text-brand active:bg-surface-pressed"
       >
-        <span className="text-[11px] leading-none">{item.day}</span>
-        <span className="mt-0.5 leading-none">补签</span>
+        补签
       </button>
     )
   }
 
   if (item.state === 'today') {
     return (
+      // T045｜今天未签：矩形 + X + 日期（X 上 + 日期下，与 done 单元格保持 flex-col 一致）
       <div
         aria-label={`${item.day} 日 ${CHECKIN_STATUS_TEXT}`}
-        className="flex aspect-square w-full flex-col items-center justify-center rounded-lg bg-primary text-text-inverse shadow-primary-button"
+        className="flex aspect-square w-full flex-col items-center justify-center rounded-md bg-[#3A2E1F] text-white shadow-sm"
       >
-        <Check className="h-3.5 w-3.5" strokeWidth={3} />
-        <span className="mt-0.5 text-[10px] leading-none">今天</span>
+        <X className="h-3.5 w-3.5" strokeWidth={3} aria-hidden />
+        <span className="mt-0.5 text-[10px] font-semibold leading-none">{item.day}</span>
       </div>
     )
   }
@@ -411,10 +436,11 @@ function CalendarCell({ item, onMakeup }: { item: CheckinDay; onMakeup: () => vo
     )
   }
 
+  // T045｜未来日期（upcoming）去掉灰色原型底，透明背景 + 灰色数字
   return (
     <div
       aria-label={`${item.day} 日未到`}
-      className="flex aspect-square w-full items-center justify-center rounded-lg bg-surface-subtle text-[11px] text-text-tertiary"
+      className="flex aspect-square w-full items-center justify-center text-[11px] text-text-tertiary/70"
     >
       {item.day}
     </div>

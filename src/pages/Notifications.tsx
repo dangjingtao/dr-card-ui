@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { BellOff } from 'lucide-react'
+import {
+  BellOff,
+  Wallet,
+  PartyPopper,
+  Wrench,
+  BadgeCheck,
+  Sparkles,
+} from 'lucide-react'
 import PageContainer from '../components/mobile/PageContainer'
 import { Button, Dialog, EmptyState, SegmentedControl, Toast } from '../components/ui'
 import { useFixtureState, useOverlay } from '../app/fixtures/useFixture'
@@ -8,20 +15,52 @@ import { findRouteByPathname } from '../app/router/routes'
 import { notificationCategoryLabel, notificationGroupLabel } from '../app/fixtures'
 import { markAllNotificationsRead, useNotifications, type NotificationItem } from '../app/state/notifications'
 
-type TabKey = 'all' | 'unread' | 'system' | 'activity'
+type TabKey = 'all' | 'unread' | 'system' | 'activity' | 'event'
 
 const GROUP_ORDER = ['今天', '昨天', '更早'] as const
 
-/** 分类小圆点：系统=金奖励色，活动=信息色（对齐 reference .nt-dot） */
-const DOT_CLASS: Record<NotificationItem['cat'], string> = {
-  system: 'bg-reward-strong',
-  activity: 'bg-info',
+/**
+ * 每个分类的图标与配色（T027）
+ * balance=余额不足（红）/event=校内外活动（紫）/service=服务进度（橙）
+ * /system=系统通知（金）/activity=营销活动（蓝）
+ */
+const CAT_VISUAL: Record<
+  NotificationItem['cat'],
+  { Icon: typeof BellOff; bg: string; tag: string }
+> = {
+  balance: {
+    Icon: Wallet,
+    bg: 'linear-gradient(135deg, #F87171 0%, #FCA5A5 100%)',
+    tag: 'bg-red-50 text-red-700',
+  },
+  system: {
+    Icon: BadgeCheck,
+    bg: 'linear-gradient(135deg, #FCD34D 0%, #F59E0B 100%)',
+    tag: 'bg-amber-50 text-amber-700',
+  },
+  activity: {
+    Icon: Sparkles,
+    bg: 'linear-gradient(135deg, #818CF8 0%, #A5B4FC 100%)',
+    tag: 'bg-indigo-50 text-indigo-700',
+  },
+  event: {
+    Icon: PartyPopper,
+    bg: 'linear-gradient(135deg, #C084FC 0%, #DDD6FE 100%)',
+    tag: 'bg-violet-50 text-violet-700',
+  },
+  service: {
+    Icon: Wrench,
+    bg: 'linear-gradient(135deg, #FB923C 0%, #FDBA74 100%)',
+    tag: 'bg-orange-50 text-orange-700',
+  },
 }
 
-/** 分类小标签（对齐 reference .nt-tag 的 18px/10px/radius4 规格） */
-const TAG_CLASS: Record<NotificationItem['cat'], string> = {
-  system: 'bg-reward-subtle text-reward-text',
-  activity: 'bg-info-bg text-info-text',
+/** 兼容老的 system/activity 通知 */
+function getCatVisual(item: NotificationItem) {
+  if (CAT_VISUAL[item.cat]) return CAT_VISUAL[item.cat]
+  if (item.cat === 'system')
+    return CAT_VISUAL.system
+  return CAT_VISUAL.activity
 }
 
 export default function Notifications() {
@@ -31,7 +70,6 @@ export default function Notifications() {
   const { overlay, close } = useOverlay()
   const { items, unreadCount } = useNotifications()
 
-  /** 节点 #42「通知副本（未读数量）」：夹具直接落在未读 Tab */
   const [tab, setTab] = useState<TabKey>(state?.key === 'unread' ? 'unread' : 'all')
   const [toast, setToast] = useState<string | null>(null)
 
@@ -40,12 +78,13 @@ export default function Notifications() {
       items.filter((item) => {
         if (tab === 'all') return true
         if (tab === 'unread') return item.unread
-        return item.cat === tab
+        if (tab === 'event') return item.cat === 'event' || item.cat === 'activity'
+        if (tab === 'system') return item.cat === 'system' || item.cat === 'balance' || item.cat === 'service'
+        return true
       }),
     [items, tab],
   )
 
-  /** 按 reference 的 今天 / 昨天 / 更早 三段分组，空组不渲染标题 */
   const groups = useMemo(() => {
     return GROUP_ORDER.map((label) => ({
       label,
@@ -54,19 +93,17 @@ export default function Notifications() {
   }, [list])
 
   const tabs = [
-    // reference：全部 Tab 有未读时显示未读数，否则显示总数
     { value: 'all', label: <TabLabel text="全部" count={unreadCount > 0 ? unreadCount : items.length} active={tab === 'all'} /> },
     { value: 'unread', label: <TabLabel text="未读" count={unreadCount} active={tab === 'unread'} /> },
-    { value: 'system', label: <TabLabel text="系统" active={tab === 'system'} /> },
-    { value: 'activity', label: <TabLabel text="活动" active={tab === 'activity'} /> },
+    { value: 'system', label: <TabLabel text="推送" active={tab === 'system'} /> },
+    { value: 'event', label: <TabLabel text="活动" active={tab === 'event'} /> },
   ]
 
-  /** 结果反馈：Toast 为纯展示组件，这里负责 1.6s 后收起 */
   useEffect(() => {
     if (!toast) return
     const timer = window.setTimeout(() => setToast(null), 1600)
     return () => window.clearTimeout(timer)
-  }, [toast])
+}, [toast])
 
   const confirmMarkAll = () => {
     markAllNotificationsRead()
@@ -80,54 +117,78 @@ export default function Notifications() {
 
   return (
     <PageContainer inset={false} className="pb-6">
-      {/* 2026-08-28：一键已读已移入壳层 TitleBar 右侧，页面正文从分类 Tab 直接开始。 */}
-      <div className="px-4 pb-3 pt-3">
+      {/* Tab 切换（壳层 TitleBar 已展示标题，页面内不再重复金色标题块） */}
+      <div className="shrink-0 overflow-x-auto bg-white border-b border-divider px-4 pt-3 pb-1">
         <SegmentedControl items={tabs} value={tab} onChange={(value) => setTab(value as TabKey)} />
       </div>
 
-      <div className="px-4" aria-live="polite">
+      <div className="px-4 pt-3" aria-live="polite">
         {groups.length > 0 ? (
           <div className="flex flex-col gap-2.5">
             {groups.map((group) => (
               <section key={group.label} className="flex flex-col gap-2.5">
-                <h2 className="px-1 pt-1 text-xs font-medium tracking-[0.04em] text-text-tertiary">{group.label}</h2>
-                {group.items.map((item) => (
-                  <article
-                    key={item.id}
-                    role="button"
-                    tabIndex={0}
-                    aria-label={`${item.unread ? '未读，' : ''}${item.title}`}
-                    onClick={() => openItem(item)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault()
-                        openItem(item)
-                      }
-                    }}
-                    className="relative flex cursor-pointer items-start gap-3 rounded-container bg-surface px-3.5 pb-3 pt-3.5 shadow-card transition active:scale-[0.995] active:bg-background"
-                  >
-                    <span aria-hidden className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${DOT_CLASS[item.cat]}`} />
-                    <div className="flex min-w-0 flex-1 flex-col gap-1">
-                      <div className="flex items-start gap-2">
-                        <h3
-                          className={`min-w-0 flex-1 truncate text-base leading-[22px] text-text-primary ${item.unread ? 'font-semibold' : 'font-medium'}`}
-                        >
-                          {item.title}
-                        </h3>
-                        <span
-                          className={`inline-flex h-[18px] shrink-0 items-center rounded-[4px] px-1.5 text-[10px] font-medium leading-[14px] tracking-[0.04em] ${TAG_CLASS[item.cat]}`}
-                        >
-                          {notificationCategoryLabel(item.cat)}
-                        </span>
+                <h2 className="px-1 pt-1 text-xs font-medium tracking-[0.04em] text-text-tertiary">
+                  {group.label}
+                </h2>
+                {group.items.map((item) => {
+                  const visual = getCatVisual(item)
+                  const Icon = visual.Icon
+                  return (
+                    <article
+                      key={item.id}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`${item.unread ? '未读，' : ''}${item.title}`}
+                      onClick={() => openItem(item)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault()
+                          openItem(item)
+                        }
+                      }}
+                      className="relative flex cursor-pointer items-start gap-3 rounded-2xl bg-white p-3.5 shadow-sm transition active:scale-[0.995]"
+                    >
+                      {/* 左侧大图标块 */}
+                      <div
+                        className="flex h-12 w-12 flex-none items-center justify-center rounded-xl text-white"
+                        style={{ background: visual.bg }}
+                      >
+                        <Icon className="h-6 w-6" strokeWidth={1.8} />
                       </div>
-                      <p className="line-clamp-2 break-words text-sm leading-5 text-text-secondary">{item.summary}</p>
-                      <span className="text-xs leading-4 text-text-tertiary">{item.time}</span>
-                    </div>
-                    {item.unread && (
-                      <span role="img" aria-label="未读" className="mt-[7px] h-2 w-2 shrink-0 rounded-full bg-danger" />
-                    )}
-                  </article>
-                ))}
+
+                      {/* 中部内容 */}
+                      <div className="flex min-w-0 flex-1 flex-col gap-1">
+                        <div className="flex items-start gap-2">
+                          <h3
+                            className={`min-w-0 flex-1 truncate text-sm leading-[20px] text-text-primary ${
+                              item.unread ? 'font-semibold' : 'font-medium'
+                            }`}
+                          >
+                            {item.title}
+                          </h3>
+                          <span
+                            className={`inline-flex h-[18px] items-center rounded px-1.5 text-[10px] font-medium leading-[14px] tracking-[0.04em] ${visual.tag}`}
+                          >
+                            {notificationCategoryLabel(item.cat)}
+                          </span>
+                        </div>
+                        <p className="line-clamp-2 break-words text-xs leading-[18px] text-text-secondary">
+                          {item.summary}
+                        </p>
+                        <span className="text-[11px] leading-4 text-text-tertiary">{item.time}</span>
+                      </div>
+
+                      {/* 右侧未读红点 */}
+                      {item.unread && (
+                        <span
+                          role="img"
+                          aria-label="未读"
+                          className="absolute right-3.5 top-3.5 h-2 w-2 shrink-0 rounded-full bg-[#EF4444]"
+                        />
+                      )}
+                    </article>
+                  )
+                })}
               </section>
             ))}
           </div>
@@ -135,8 +196,8 @@ export default function Notifications() {
           <EmptyState
             className="pt-12"
             visual={
-              <span className="flex h-24 w-24 items-center justify-center rounded-full bg-background">
-                <BellOff className="h-12 w-12 text-reward" strokeWidth={1.6} />
+              <span className="flex h-24 w-24 items-center justify-center rounded-full bg-[#FFF8E5]">
+                <BellOff className="h-12 w-12 text-[#D4A853]" strokeWidth={1.6} />
               </span>
             }
             title={<span className="text-[15px] leading-[22px] text-text-secondary">暂无通知</span>}
@@ -151,7 +212,6 @@ export default function Notifications() {
         </div>
       )}
 
-      {/* 节点 #43 清除消息确认弹窗；入口由 TitleBar 的「一键已读」触发 `?overlay=clear`。 */}
       <Dialog
         open={overlay === 'clear'}
         title="确认全部标为已读？"
@@ -177,8 +237,8 @@ function TabLabel({ text, count, active }: { text: string; count?: number; activ
       {text}
       {count != null && (
         <span
-          className={`inline-flex h-4 min-w-4 items-center justify-center rounded-lg px-[5px] text-[11px] font-semibold leading-[14px] ${
-            active ? 'bg-surface-subtle text-text-brand' : 'bg-danger text-text-inverse'
+          className={`inline-flex h-4 min-w-4 items-center justify-center rounded px-1 text-[11px] font-semibold leading-[14px] ${
+            active ? 'bg-amber-100 text-amber-700' : 'bg-[#EF4444] text-white'
           }`}
         >
           {count}

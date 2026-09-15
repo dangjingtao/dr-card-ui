@@ -81,7 +81,8 @@ console.log(
   `  §2.2 搜索区 bottom=${searchBox.y + searchBox.height} Banner top=${banner.y} bottom=${banner.y + banner.height} 打卡首块 top=${checkinHero.y}`,
 )
 expect(await page.locator('input[aria-label="搜索商品"]').isVisible(), '首屏缺少搜索栏')
-expect(await page.locator('button[aria-label="进入卡博士商城"]').isVisible(), '首屏缺少头像入口')
+// T046 起首页右上角头像语义由「进入卡博士商城」改为「进入会员中心」，锚点改用 data-dearseed-avatar
+expect(await page.locator('[data-dearseed-avatar]').first().isVisible(), '首屏缺少头像入口')
 expect(banner.y >= searchBox.y + searchBox.height, 'Banner 应排在搜索栏下方')
 expect(checkinHero.y >= banner.y + banner.height, '打卡内容应排在 Banner 下方')
 
