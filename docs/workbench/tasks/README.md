@@ -24,7 +24,7 @@
 
 | ID | 任务 | 状态 |
 |---|---|---|
-| H001 | 代码质量与卫生基线 | Ready |
+| H001 | 代码质量与卫生基线 | Agent Review |
 | H002 | 正式 H5 / Native reference 路由边界 | Ready |
 | H003 | 切断正式 H5 对 legacy runtime 的依赖 | Ready |
 | H004 | Fixture / Debug 运行环境隔离 | Ready |
