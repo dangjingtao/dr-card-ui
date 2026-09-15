@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { Bug, X } from 'lucide-react'
 import { Tag } from '../ui'
 import type { RouteMeta } from '../../app/router/routes'
+import { isActiveFormalH5Route } from '../../app/router/routeScope'
 import { useFixtureState, useOverlay } from '../../app/fixtures/useFixture'
 
 interface DebugPanelProps {
@@ -15,6 +16,7 @@ interface DebugPanelProps {
  * 只读 routes.ts 已登记的 `states` / `overlays`，把「确定性状态」与「可复现弹层」
  * 摆成可点的胶囊；切换仍然只改 URL（`?state=` / `?overlay=`），页面照旧从 URL 派生状态，
  * 因此面板本身不持有任何业务状态，也不会引入第二套真值来源。
+ * - 只服务当前 active formal-H5 路由；Native reference / deferred 路由不渲染调试面板；
  * - 仅在 URL 带 `?debug=1` 时渲染：正常页面（含验收截图与真实浏览）不会出现任何调试入口，
  *   避免调试胶囊遮挡底部操作区；
  * - 切换状态/弹层时从当前 search 派生新 search，`debug=1` 原样保留，保证连续切换不掉出调试态；
@@ -33,7 +35,8 @@ export default function DebugPanel({ route }: DebugPanelProps) {
   const debugEnabled = new URLSearchParams(location.search).get('debug') === '1'
 
   if (!debugEnabled) return null
-  if (!route || (states.length === 0 && overlays.length === 0)) return null
+  if (!isActiveFormalH5Route(route)) return null
+  if (states.length === 0 && overlays.length === 0) return null
 
   /** 从当前 search 派生，`debug=1` 等无关参数原样保留 */
   const apply = (patch: Array<[string, string | null]>) => {
