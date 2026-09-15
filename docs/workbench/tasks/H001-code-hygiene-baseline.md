@@ -1,6 +1,6 @@
 # H001｜代码质量与卫生基线
 
-**Status:** Agent Review  
+**Status:** Accepted  
 **Phase:** Hygiene  
 **Depends on:** —
 
@@ -46,4 +46,4 @@
 
 关键自动化结果：GitHub Actions Build run `35005628414` 成功；Static hygiene、Typecheck、开发/生产构建与 smoke checks 全部通过。
 
-当前状态为 `Agent Review`；只有用户可以把任务标记为 `Accepted`。
+2026-09-16：用户明确确认验收，状态更新为 `Accepted`。
