@@ -1,6 +1,6 @@
 # H002｜正式 H5 / Native reference 路由边界
 
-**Status:** Ready  
+**Status:** Agent Review  
 **Phase:** Hygiene  
 **Depends on:** H001
 
@@ -18,8 +18,20 @@
 ## 不做
 
 - 不重构 Native reference 页面内部实现。
-- 不处理商城。
+- 不处理商城内部实现。
 - 不改变产品信息架构。
+- 不提前处理 H003 的 formal-H5 → legacy runtime 依赖。
+- 不在本卡重写历史 `verify-t015.mjs`；正式 CI/E2E 枚举由 H018 收口。
+
+## 实现结果
+
+- 新增 `src/app/router/routeScope.ts`，按 canonical route path 精确维护 scope，不使用 `/legacy` 前缀猜测。
+- ownership 明确为 `formal-h5` / `native-reference`；engineering scope 明确为 `active` / `deferred`。
+- 当前登记 43 条 Native reference canonical route，包括不含 `legacy` 的 `/device/*` 与 `/vending/*`。
+- 商城三条路由保持 formal-H5 ownership，但按当前决定标记为 `deferred`；现有商城 Tab 不因此消失。
+- 导出 `ACTIVE_FORMAL_H5_ROUTES`，供后续 CI / E2E / 体验治理统一枚举。
+- `BottomNav` 主入口、`MobileLayout` 主 Tab 判断、`DebugPanel` 已实际消费统一 scope。
+- reference 路由注册表与页面实现未删除、未重写。
 
 ## 验收
 
@@ -29,4 +41,8 @@
 
 ## 证据
 
-记录归属规则、受影响路由清单、typecheck/build 与 commit SHA。
+详见 [`../evidence/h002-route-ownership.md`](../evidence/h002-route-ownership.md)。
+
+PR #6 首轮 GitHub Actions Build run `35033599628`：Static hygiene、Typecheck、dev/prod build、dev/preview smoke、Cloudflare SPA fallback 全部通过。
+
+当前状态为 `Agent Review`；只有用户可以把任务标记为 `Accepted`。
