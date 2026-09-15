@@ -1,0 +1,77 @@
+name: Bridge Pages CI
+
+on:
+  push:
+    branches: [jsbrigge-test]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bridge-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CF_PAGES_PROJECT: dr-card
+      CF_PAGES_BRANCH: bridge
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Build JSBridge debug page
+        run: npm run build:dev
+
+      - name: Verify Cloudflare credentials
+        shell: bash
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo "Missing CLOUDFLARE_API_TOKEN"; exit 1; }
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "Missing CLOUDFLARE_ACCOUNT_ID"; exit 1; }
+
+      - name: Ensure Cloudflare Pages project exists
+        shell: bash
+        run: |
+          PROJECTS="$(npx --yes wrangler@4 pages project list --json)"
+          if echo "$PROJECTS" | jq -e --arg name "$CF_PAGES_PROJECT" '.[] | select(.name == $name)' >/dev/null; then
+            echo "Pages project $CF_PAGES_PROJECT already exists"
+          else
+            echo "Creating Pages project $CF_PAGES_PROJECT"
+            npx --yes wrangler@4 pages project create "$CF_PAGES_PROJECT" --production-branch=main
+          fi
+
+      - name: Deploy bridge preview
+        run: >-
+          npx --yes wrangler@4 pages deploy dist
+          --project-name="$CF_PAGES_PROJECT"
+          --branch="$CF_PAGES_BRANCH"
+          --commit-hash="$GITHUB_SHA"
+
+      - name: Smoke test bridge URL
+        shell: bash
+        run: |
+          URL="https://${CF_PAGES_BRANCH}.${CF_PAGES_PROJECT}.pages.dev/?osType=android"
+          echo "Checking $URL"
+          for attempt in {1..12}; do
+            if curl --fail --silent --show-error "$URL" > /dev/null; then
+              echo "Bridge page is live: $URL"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Bridge page did not become reachable: $URL"
+          exit 1
