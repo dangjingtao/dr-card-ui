@@ -7,7 +7,7 @@ import CheckinMakeupSuccessOverlay from '../components/mobile/CheckinMakeupSucce
 import DebugPanel from '../components/mobile/DebugPanel'
 import NewcomerCouponDialog from '../components/mobile/NewcomerCouponDialog'
 import PageContainer from '../components/mobile/PageContainer'
-import IdentityPickerSheet, { type PickerIdentity } from '../components/coupon/IdentityPickerSheet'
+import IdentityPickerSheet from '../components/coupon/IdentityPickerSheet'
 import NewcomerGiftSheet from '../components/coupon/NewcomerGiftSheet'
 import { useFixtureState, useOverlay } from '../app/fixtures/useFixture'
 import { findRouteByPathname } from '../app/router/routes'
