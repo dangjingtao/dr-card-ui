@@ -1,6 +1,6 @@
 # H011｜Storage Adapter
 
-**Status:** Ready  
+**Status:** Doing  
 **Phase:** Foundation  
 **Depends on:** H006
 
@@ -28,4 +28,4 @@
 
 ## 证据
 
-记录 adapter API、基础测试/验证和 commit SHA。
+施工中。正式 H5 当前未发现直接 Web Storage 调用；H011 将建立 adapter、集中 key、异常行为验证以及防绕过检查。
