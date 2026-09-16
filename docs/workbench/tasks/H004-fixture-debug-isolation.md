@@ -1,6 +1,6 @@
 # H004｜Fixture / Debug 运行环境隔离
 
-**Status:** Ready  
+**Status:** In Progress  
 **Phase:** Hygiene  
 **Depends on:** H001, H006
 
