@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react'
 
 /**
- * Formal H5 member-profile state used only for deterministic UI behaviour that currently has
- * no confirmed backend contract.
+ * Temporary formal-H5 client state for profile fields whose real API contract is still pending.
  *
- * This is deliberately NOT an authentication source and does not model the Native App session.
- * Real profile persistence must replace this fixture state once the backend/API contract exists.
- * H010 may later migrate this lightweight store to Zustand together with other shared client state.
+ * Important:
+ * - No fixture user data is seeded here. A new runtime starts with an empty profile value.
+ * - This is deliberately NOT an authentication source and does not model the Native App session.
+ * - Updates are ephemeral client state only; they are not durable profile persistence.
+ * - Real profile reads/writes must replace this state once the backend/API contract exists.
+ * - H010 may later migrate genuinely shared client state to Zustand; it must not turn this into a
+ *   production Mock fallback.
  */
 export interface MemberProfileState {
   birthday: string
@@ -14,9 +17,8 @@ export interface MemberProfileState {
 }
 
 const INITIAL_MEMBER_PROFILE: MemberProfileState = {
-  birthday: '2003-08-15',
-  // Keep the existing prototype behaviour: historical users may edit immediately.
-  birthdayLastModifiedAt: Date.now() - 100 * 24 * 60 * 60 * 1000,
+  birthday: '',
+  birthdayLastModifiedAt: 0,
 }
 
 let state = INITIAL_MEMBER_PROFILE
