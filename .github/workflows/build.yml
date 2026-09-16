@@ -38,6 +38,9 @@ jobs:
       - name: Verify H009 runtime contracts
         run: npm run verify:h009
 
+      - name: Verify H010 Zustand state
+        run: npm run verify:h010
+
       - name: Smoke test development server
         shell: bash
         run: |
