@@ -6,7 +6,7 @@
 
 - 运行载体：卡博士 Native App 内 WebView 的 H5 前端。
 - 主施工分支：`dev`；后续按 `preview → dev → test → prod` 晋级。
-- `legacy-home*`、`legacy-service*`、`legacy-profile*` 以及按归属属于 Native reference 的 `/device/*`、`/vending/*` 默认不施工、不重构、不纳入 H5 业务验收。
+- `legacy-home*`、`legacy-service*`、`legacy-profile*` 以及按归属属于 Native reference 的 `/device/*`、`/vending/*`、`/signin*` 默认不施工、不重构、不纳入 H5 业务验收。
 - 商城当前暂不纳入本轮编码任务。
 - 历史 UI 卡、旧节点编号、旧 `PASS` 只作为证据，不作为当前产品事实源。
 
@@ -25,7 +25,7 @@
 | ID | 任务 | 状态 |
 |---|---|---|
 | H001 | 代码质量与卫生基线 | Accepted |
-| H002 | 正式 H5 / Native reference 路由边界 | Agent Review |
+| H002 | 正式 H5 / Native reference 路由边界 | Accepted |
 | H003 | 切断正式 H5 对 legacy runtime 的依赖 | Ready |
 | H004 | Fixture / Debug 运行环境隔离 | Ready |
 | H005 | Fixture 巨石按域拆分 | Ready |
