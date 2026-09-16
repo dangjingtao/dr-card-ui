@@ -51,13 +51,13 @@ sanitizer 只应用于 `isActiveFormalH5Route(route)`。Native reference / defer
 
 该发现证明历史 prototype 对 URL fixture 的依赖比预估广，但继续逐页强迁会违反 H004“最小兼容迁移”的范围，并提前吞掉 H014 的页面 fixture / 假业务网络迁移。因此最终采用 shell boundary：先消毒 URL，再渲染页面；已经迁到 helper 的搭子、签到、通知等链路保留，剩余历史写法由壳层临时兼容，后续随 H014 业务迁移清理。
 
-## 自动化证据
+## 自动化与 Review 证据
 
 PR：#10 `refactor: isolate H004 fixture and debug runtime`
 
-最终工程 head：`ac0ea74fdd5199259674107da78606c8b8538c5f`
+最终 PR head：`b28f3d2f3fd880c0b45b20a447c6deb2a1d6ea5f`
 
-GitHub Actions Build run：`35045461711`
+最终 head GitHub Actions Build run：`35045692216`
 
 结果：
 
@@ -69,7 +69,15 @@ GitHub Actions Build run：`35045461711`
 - Cloudflare SPA fallback asset: PASS
 - Production preview smoke: PASS
 
-H001 门禁日志在该 head 下仍为 0 unused / 0 architecture violation。
+H001 门禁在该 head 下仍为 0 unused / 0 architecture violation。
+
+Cloudflare Pages 已成功部署该最终 PR head 的分支预览。此项只证明部署成功；Cloudflare Dashboard 的实际 build command 与 preview mode 对齐仍留给 H006 的部署配置收口，不在 H004 中假定。
+
+Codex Review 对最终 head `b28f3d2f3f` 的结论：`Didn't find any major issues.`
+
+OpenCode workflow 已触发，但仓库尚无可用 provider secret，模型步骤仍为 skipped，因此不记作有效第二次 AI review。
+
+PR #10 已合入 `dev`，merge commit：`ca1dff0c8de83ba4800db4f28847beafd002b8e5`。
 
 ## 明确未做
 
@@ -83,4 +91,4 @@ H001 门禁日志在该 head 下仍为 0 unused / 0 architecture violation。
 
 ## 当前结论
 
-工程实现和 CI 满足 H004 进入 Agent Review 的条件；最终还需 Ready 后 AI review 复核最新 head。
+H004 工程实现、最终 head CI、Cloudflare 部署与 Codex Review 均已闭环，满足 Agent Review 条件。任务是否标记 `Accepted` 仍按台账授权规则处理。
