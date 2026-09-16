@@ -50,7 +50,7 @@ PR #9 首次 Ready 后，Codex Review 提出 P1：首版 `memberProfile.ts` 仍�
 - `birthdayGate.ts` 不再假定 `userInfoStore` 初始值；
 - 文档明确该临时状态不等于真实资料持久化。
 
-最终以修正后的最新 head CI 与 Codex re-review 作为 H003 收口依据。
+修正后的最新 PR head `d7ca3b3fca` 再次触发 Codex Review，结论为：`Didn't find any major issues.` 原 P1 thread 已在修正后标记 resolved。
 
 ## 自动化证据
 
@@ -58,7 +58,9 @@ PR：#9 `refactor: remove H003 legacy runtime dependency`
 
 首轮 Draft PR GitHub Actions Build run：`35040382153`
 
-结果：
+修正后最终 head Build run：`35041121691`
+
+两轮均通过：
 
 - Static hygiene: PASS
 - Typecheck: PASS
@@ -78,6 +80,8 @@ H5 hygiene PASS: 115 formal source files checked; 0 unused diagnostic(s) within 
 
 Cloudflare Pages 也为 `h003-remove-legacy-runtime` 最新工程提交生成成功分支预览；最终证据以源码、CI 与 PR commit 为准。
 
+PR #9 已合并到 `dev`，merge commit：`b7d6a87170dceb8b021354d29684bb0ace487a39`。
+
 ## 明确未做
 
 - 未修改 legacy 登录、个人中心、充值等 reference 页面实现；
@@ -89,4 +93,4 @@ Cloudflare Pages 也为 `h003-remove-legacy-runtime` 最新工程提交生成成
 
 ## 当前结论
 
-H003 满足 Agent Review 工程条件；Codex P1 已进入修正验证。最终 `Accepted` 仍由用户确认。
+H003 已完成代码施工、CI 与 Codex 修正复审，当前保持 `Agent Review`，最终 `Accepted` 仍由用户确认。
