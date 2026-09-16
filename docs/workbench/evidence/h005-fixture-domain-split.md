@@ -65,9 +65,11 @@ import { BUBBLE_BALANCE } from './membership'
 
 PR：#11 `refactor: split H005 fixtures by domain`
 
-首个完成巨石替换的工程 head：`bbccdfe24d6b82f8c2810db7c2701f03b721f37d`
+完成巨石替换的工程 head：`bbccdfe24d6b82f8c2810db7c2701f03b721f37d`
 
-GitHub Actions Build run：`35046955770`
+最终 review head：`15a8c6de996ab0338d6cb994fd5085973a446974`
+
+最终 GitHub Actions Build run：`35047133441`
 
 结果：
 
@@ -78,9 +80,22 @@ GitHub Actions Build run：`35046955770`
 - Production build: PASS
 - Cloudflare SPA fallback asset: PASS
 - Production preview smoke: PASS
+- Cloudflare branch preview: deployed successfully for final head
 
 Typecheck 在 barrel 替换后通过，证明当前工程使用到的 fixture export 均可通过稳定入口解析；两套 build/smoke 通过，未发现拆文件导致的运行时模块解析回归。
 
+## AI Review
+
+Codex 对最终 head `15a8c6de99` 完成 review，结论：`Didn't find any major issues.`
+
+审查重点明确包含：旧 fixture export / 常量 / resolver 是否漏搬或误改、barrel re-export 冲突、域间循环依赖与错误归域风险。没有产生待修 review thread。
+
+OpenCode workflow 在 Ready 后完成凭证检查，但实际 checkout / 模型 review step 仍为 skipped，因此不计为有效 AI review。
+
+## 合并
+
+PR #11 已合入 `dev`，merge commit：`45138a3e8f61ccb558151cfe2a4d43d6fa5bb4a1`。
+
 ## 当前结论
 
-H005 已满足进入 Agent Review 的工程条件。最终 Ready 后仍需 AI reviewer 针对最新 head 检查是否存在语义漏搬、错误归域或隐藏循环依赖。
+H005 的工程实现、CI 与 Codex review 已闭环，状态保持 `Agent Review`，等待用户决定是否标记 `Accepted`。
