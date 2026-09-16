@@ -1,4 +1,4 @@
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { X } from 'lucide-react'
 import CheckinBoard from '../components/mobile/CheckinBoard'
 import CheckinMakeupSuccessOverlay from '../components/mobile/CheckinMakeupSuccessOverlay'
@@ -7,7 +7,12 @@ import PageContainer from '../components/mobile/PageContainer'
 import PromptOverlay from '../components/mobile/PromptOverlay'
 import DemoAdPlayer from '../components/checkin/DemoAdPlayer'
 import { Button } from '../components/ui'
-import { useFixtureState, useOverlay } from '../app/fixtures/useFixture'
+import {
+  useFixtureDebug,
+  useFixtureQueryControls,
+  useFixtureState,
+  useOverlay,
+} from '../app/fixtures/useFixture'
 import { findRouteByPathname } from '../app/router/routes'
 import { CHECKIN_REMINDER } from '../app/fixtures'
 import checkinRitualHero from '../assets/brand/bubble/checkin-ritual-hero-v2.webp'
@@ -26,25 +31,24 @@ import checkinRitualHero from '../assets/brand/bubble/checkin-ritual-hero-v2.web
  */
 export default function Checkin() {
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
   const route = findRouteByPathname('/checkin')
   const { state } = useFixtureState(route)
+  const { patch: patchFixtureState } = useFixtureQueryControls()
   const { overlay, open, close } = useOverlay()
 
   const isSuccess = state?.key === 'success'
-  const debug = searchParams.get('debug') === '1'
+  const debug = useFixtureDebug()
 
   /* T045｜补签流程：先看演示广告，看完再触发补签成功弹窗。
    *  1. 用户在 /checkin 完整月历点击补签日 → 触发 handleMakeupWithAd
    *  2. DemoAdPlayer 全屏弹窗 + 5 秒倒计时
-   *  3. 倒计时归零 → onAdComplete 关闭广告 → open('make-up-success') 弹成功页
+   *  3. 倒计时归零 → 直接把当前 overlay 切换为 make-up-success
    *  本期 B-046：5 秒演示时长；后续接真实 SDK 替换 onAdComplete 触发条件
    */
   const handleMakeupWithAd = () => {
     open('demo-ad')
   }
   const handleAdComplete = () => {
-    close()
     open('make-up-success')
   }
 
@@ -53,14 +57,20 @@ export default function Checkin() {
       <CheckinBoard mode="full" isSuccess={isSuccess} onMakeup={handleMakeupWithAd} debug={debug} />
 
       <PromptOverlay open={overlay === 'reminder'} label="每日打卡提示" onDismiss={close} className="overflow-hidden rounded-feature bg-surface px-6 pb-6 pt-5 text-center shadow-modal">
-        <button type="button" aria-label="关闭打卡提示" onClick={close} className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full text-text-tertiary active:bg-surface-pressed"><X className="h-5 w-5" aria-hidden /></button>
+        <button type="button" aria-label="关闭打卡提示" onClick={() => close()} className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full text-text-tertiary active:bg-surface-pressed"><X className="h-5 w-5" aria-hidden /></button>
         <img src={checkinRitualHero} alt="" aria-hidden className="mx-auto h-32 w-32 object-contain" />
         <h2 className="mt-1 text-xl font-bold text-text-primary">{CHECKIN_REMINDER.title}</h2>
         <p className="mt-2 text-sm leading-6 text-text-secondary">TIPS：{CHECKIN_REMINDER.tips}</p>
-        <Button className="mt-5 w-full rounded-pill" size="large" onClick={() => { close(); navigate('/checkin?state=success') }}>{CHECKIN_REMINDER.action}</Button>
+        <Button
+          className="mt-5 w-full rounded-pill"
+          size="large"
+          onClick={() => patchFixtureState({ state: 'success', overlay: null })}
+        >
+          {CHECKIN_REMINDER.action}
+        </Button>
       </PromptOverlay>
 
-      <CheckinMakeupSuccessOverlay open={overlay === 'make-up-success'} onDismiss={close} debug={debug} />
+      <CheckinMakeupSuccessOverlay open={overlay === 'make-up-success'} onDismiss={() => close()} debug={debug} />
 
       {/* T045｜演示广告弹窗：5 秒倒计时 + 不可跳过，看完触发补签成功 */}
       <DemoAdPlayer
