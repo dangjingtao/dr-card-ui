@@ -1,6 +1,6 @@
 # H010｜Zustand 状态基建与旧共享状态迁移
 
-**Status:** User Review  
+**Status:** Accepted  
 **Phase:** Foundation  
 **Depends on:** H003
 
@@ -42,5 +42,6 @@
 - `npm run verify:h010` 覆盖地址新增、编辑、默认唯一、reset，以及通知单条已读、全部已读、reset。
 - 验证脚本同时检查已迁移模块不再包含手写 listener/version 订阅，也不直接访问 Web Storage。
 - PR #16 Build run `35070703238` 在实现 head `2becfa5287ab055ec13f14b50a32a4c4f8e955b3` 上完整通过 `npm ci`、静态检查、typecheck、H007/H009 回归、H010 验证、dev/Cloudflare preview/test/prod 构建与 production preview smoke。
-- Cloudflare Pages feature preview 部署成功。
+- Final evidence head `c401052353a69b341c2542f6497248552c7c90b4` 的 Build run `35070962836` 再次完整通过，Cloudflare Pages 部署成功。
 - PR #16 已记录人工自审，无剩余 blocking finding。
+- 2026-09-16：用户明确回复“接受”，H010 正式验收通过。
