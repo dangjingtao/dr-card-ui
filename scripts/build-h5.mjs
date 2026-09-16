@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { spawnSync } from 'node:child_process'
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { loadEnv } from 'vite'
 
@@ -180,6 +180,18 @@ const result = spawnSync(process.execPath, [viteBin, 'build', '--mode', target.m
 })
 
 if (result.status !== 0) process.exit(result.status ?? 1)
+
+const mockWorkerPath = resolve(root, 'dist', 'mockServiceWorker.js')
+if (dataMode === 'mock') {
+  if (!existsSync(mockWorkerPath)) {
+    fail('Mock build is missing dist/mockServiceWorker.js; MSW cannot start safely.')
+  }
+} else {
+  rmSync(mockWorkerPath, { force: true })
+  if (existsSync(mockWorkerPath)) {
+    fail('API build leaked dist/mockServiceWorker.js after cleanup.')
+  }
+}
 
 mkdirSync(resolve(root, 'dist'), { recursive: true })
 writeFileSync(resolve(root, 'dist/build-meta.json'), `${JSON.stringify(metadata, null, 2)}\n`, 'utf8')
