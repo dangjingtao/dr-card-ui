@@ -1,6 +1,6 @@
 # H005｜Fixture 巨石按域拆分
 
-**Status:** Ready  
+**Status:** In Progress  
 **Phase:** Hygiene  
 **Depends on:** H004
 
