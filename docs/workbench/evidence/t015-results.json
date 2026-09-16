@@ -1,14 +1,14 @@
 {
-  "generatedAt": "2026-08-24T09:51:30.675Z",
-  "base": "http://127.0.0.1:4173",
+  "generatedAt": "2026-08-27T10:37:56.628Z",
+  "base": "http://127.0.0.1:4174",
   "viewport": {
     "width": 375,
     "height": 812
   },
   "summary": {
     "total": 60,
-    "passed": 60,
-    "failed": 0
+    "passed": 58,
+    "failed": 2
   },
   "closedNodes": {
     "expected": [
@@ -207,7 +207,7 @@
     {
       "node": 6,
       "path": "/membership",
-      "marker": "会员中心",
+      "marker": "WebView 边界",
       "ok": true,
       "issues": [],
       "markerFound": true,
@@ -472,7 +472,7 @@
       "brokenImages": 0,
       "statusBars": 1,
       "titleBars": 1,
-      "tabbars": 0,
+      "tabbars": 1,
       "overflow": 0,
       "errors": []
     },
@@ -480,9 +480,11 @@
       "node": 18,
       "path": "/exchange",
       "marker": "洗护兑换专区",
-      "ok": true,
-      "issues": [],
-      "markerFound": true,
+      "ok": false,
+      "issues": [
+        "缺少标志文案「洗护兑换专区」"
+      ],
+      "markerFound": false,
       "placeholder": false,
       "notFound": false,
       "brokenImages": 0,
@@ -800,9 +802,11 @@
       "node": 19,
       "path": "/profile",
       "marker": "热门兑换",
-      "ok": true,
-      "issues": [],
-      "markerFound": true,
+      "ok": false,
+      "issues": [
+        "缺少标志文案「热门兑换」"
+      ],
+      "markerFound": false,
       "placeholder": false,
       "notFound": false,
       "brokenImages": 0,

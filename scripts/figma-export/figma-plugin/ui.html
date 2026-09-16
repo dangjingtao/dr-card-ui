@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<style>
+  /* 用 Figma 注入的 themeColors 变量，暗色主题下不至于白得刺眼 */
+  :root {
+    --bg: var(--figma-color-bg, #ffffff);
+    --fg: var(--figma-color-text, #1a1a1a);
+    --fg-dim: var(--figma-color-text-secondary, #767676);
+    --border: var(--figma-color-border, #e5e5e5);
+    --brand: var(--figma-color-bg-brand, #0d99ff);
+    --brand-fg: var(--figma-color-text-onbrand, #ffffff);
+    --warn: var(--figma-color-text-danger, #d93025);
+    --panel: var(--figma-color-bg-secondary, #f5f5f5);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    height: 100%;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: Inter, "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .pane {
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .title {
+    font-weight: 600;
+    font-size: 13px;
+    margin: 0 0 4px;
+  }
+
+  .hint {
+    color: var(--fg-dim);
+    margin: 0 0 10px;
+  }
+
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  input[type="file"] {
+    flex: 1;
+    min-width: 0;
+    font-size: 11px;
+    color: var(--fg);
+  }
+
+  button {
+    border: none;
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    background: var(--brand);
+    color: var(--brand-fg);
+  }
+
+  button:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+
+  .files {
+    margin-top: 8px;
+    color: var(--fg-dim);
+    word-break: break-all;
+  }
+
+  .progress-wrap {
+    margin-top: 10px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--panel);
+    overflow: hidden;
+  }
+
+  .progress-bar {
+    height: 100%;
+    width: 0;
+    background: var(--brand);
+    transition: width 0.15s linear;
+  }
+
+  .progress-text {
+    margin-top: 4px;
+    color: var(--fg-dim);
+    font-size: 11px;
+    min-height: 16px;
+  }
+
+  #log {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 12px;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    line-height: 1.6;
+    background: var(--panel);
+  }
+
+  #log .line { white-space: pre-wrap; word-break: break-all; }
+  #log .warn { color: var(--warn); }
+  #log .empty { color: var(--fg-dim); }
+</style>
+</head>
+<body>
+  <div class="pane">
+    <p class="title">DR Card UI → Figma</p>
+    <p class="hint">选择抽取器产出的 IR JSON（可多选），导入为真实可编辑图层。</p>
+
+    <div class="row">
+      <input id="picker" type="file" accept=".json,application/json" multiple />
+      <button id="run" disabled>导入</button>
+    </div>
+
+    <div class="files" id="files">未选择文件</div>
+
+    <div class="progress-wrap"><div class="progress-bar" id="bar"></div></div>
+    <div class="progress-text" id="ptext"></div>
+  </div>
+
+  <div id="log"><div class="line empty">等待导入…</div></div>
+
+<script>
+  var picker = document.getElementById('picker');
+  var runBtn = document.getElementById('run');
+  var filesEl = document.getElementById('files');
+  var logEl = document.getElementById('log');
+  var bar = document.getElementById('bar');
+  var ptext = document.getElementById('ptext');
+
+  var selected = [];
+  var logCleared = false;
+
+  function addLog(text, level) {
+    if (!logCleared) { logEl.innerHTML = ''; logCleared = true; }
+    var div = document.createElement('div');
+    div.className = 'line' + (level === 'warn' ? ' warn' : '');
+    div.textContent = text;
+    logEl.appendChild(div);
+    // 始终贴底，长导入时用户能一直看到最新进度
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  picker.addEventListener('change', function () {
+    selected = Array.prototype.slice.call(picker.files || []);
+    if (!selected.length) {
+      filesEl.textContent = '未选择文件';
+      runBtn.disabled = true;
+      return;
+    }
+    filesEl.textContent = '已选 ' + selected.length + ' 个：' +
+      selected.map(function (f) { return f.name; }).join('、');
+    runBtn.disabled = false;
+  });
+
+  /** FileReader 是回调式的，包成 Promise 才能顺序读完再一次性发给主线程。 */
+  function readAsText(file) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () { resolve(String(reader.result || '')); };
+      reader.onerror = function () { reject(reader.error || new Error('读取失败')); };
+      reader.readAsText(file, 'utf-8');
+    });
+  }
+
+  runBtn.addEventListener('click', async function () {
+    if (!selected.length) return;
+    runBtn.disabled = true;
+    picker.disabled = true;
+    bar.style.width = '0';
+    ptext.textContent = '正在读取文件…';
+
+    var payload = [];
+    for (var i = 0; i < selected.length; i++) {
+      try {
+        var text = await readAsText(selected[i]);
+        payload.push({ name: selected[i].name, json: text });
+        addLog('读取 ' + selected[i].name + '（' + text.length + ' 字符）');
+      } catch (e) {
+        addLog('读取失败：' + selected[i].name + ' — ' + (e && e.message ? e.message : e), 'warn');
+      }
+    }
+
+    if (!payload.length) {
+      ptext.textContent = '没有可用文件。';
+      runBtn.disabled = false;
+      picker.disabled = false;
+      return;
+    }
+
+    ptext.textContent = '导入中…';
+    // 文件内容可能上百兆，交给主线程后 UI 侧不再持有解析结果，减少内存占用
+    parent.postMessage({ pluginMessage: { type: 'import', files: payload } }, '*');
+  });
+
+  window.onmessage = function (event) {
+    var msg = event.data && event.data.pluginMessage;
+    if (!msg) return;
+
+    if (msg.type === 'log') {
+      addLog(msg.text, msg.level);
+      return;
+    }
+
+    if (msg.type === 'progress') {
+      var pct = msg.total ? Math.min(100, Math.round((msg.done / msg.total) * 100)) : 0;
+      bar.style.width = pct + '%';
+      ptext.textContent = (msg.label ? msg.label + ' — ' : '') + msg.done + ' / ' + msg.total + '（' + pct + '%）';
+      return;
+    }
+
+    if (msg.type === 'done') {
+      bar.style.width = '100%';
+      if (msg.ok) {
+        ptext.textContent = '完成：' + msg.frames + ' 个画板 / ' + msg.nodes + ' 个节点 / ' +
+          ((msg.warnings && msg.warnings.length) || 0) + ' 条警告';
+      } else {
+        ptext.textContent = '导入未成功，请查看日志。';
+      }
+      if (msg.warnings && msg.warnings.length) {
+        addLog('—— 警告汇总（' + msg.warnings.length + ' 条）——', 'warn');
+        for (var i = 0; i < msg.warnings.length; i++) {
+          addLog((i + 1) + '. ' + msg.warnings[i], 'warn');
+        }
+      }
+      runBtn.disabled = false;
+      picker.disabled = false;
+    }
+  };
+</script>
+</body>
+</html>

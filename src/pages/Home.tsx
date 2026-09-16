@@ -1,64 +1,85 @@
-import { useNavigate } from 'react-router-dom'
-import { BookOpen, ChevronRight, FlaskConical, Gift, Heart, HeartHandshake, Search } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { BookOpen, ChevronLeft, ChevronRight, Gift, Heart, Search } from 'lucide-react'
 import BannerCarousel from '../components/mobile/BannerCarousel'
+import CheckinBoard from '../components/mobile/CheckinBoard'
+import CheckinMakeupSuccessOverlay from '../components/mobile/CheckinMakeupSuccessOverlay'
+import DebugPanel from '../components/mobile/DebugPanel'
+import NewcomerCouponDialog from '../components/mobile/NewcomerCouponDialog'
 import PageContainer from '../components/mobile/PageContainer'
-import { HOME_BANNER_CAROUSEL } from '../app/fixtures'
+import IdentityPickerSheet from '../components/coupon/IdentityPickerSheet'
+import NewcomerGiftSheet from '../components/coupon/NewcomerGiftSheet'
+import { useFixtureState, useOverlay } from '../app/fixtures/useFixture'
+import { findRouteByPathname } from '../app/router/routes'
+import {
+  COLUMN_HOME_SECTIONS,
+  HOME_BANNER_CAROUSEL,
+  NEWCOMER_COUPON_RULE_STATUS,
+  NEWCOMER_COUPON_VARIANTS,
+} from '../app/fixtures'
 import avatar from '../assets/brand/home/home-avatar.webp'
 import bannerCheckin from '../assets/brand/home/home-banner-checkin.webp'
 import bannerWashCare from '../assets/brand/home/home-banner-wash-care.webp'
-import iconShower from '../assets/brand/home/home-icon-shower.webp'
-import iconDryer from '../assets/brand/home/home-icon-dryer.webp'
-import iconWater from '../assets/brand/home/home-icon-water.webp'
-import iconBlower from '../assets/brand/home/home-icon-blower.webp'
 
 const carouselAssets: Record<string, string> = {
   checkin: bannerCheckin,
   'wash-care': bannerWashCare,
 }
 
-const quickEntries = [
-  { label: '淋浴', icon: iconShower },
-  { label: '洗烘', icon: iconDryer },
-  { label: '饮水', icon: iconWater },
-  { label: '吹风', icon: iconBlower },
-]
-
-const listCards = [
-  {
-    icon: FlaskConical,
-    tone: 'bg-secondary text-text-brand',
-    title: '诗得丽品牌专栏',
-    sub: '会员福利 · 品牌服务 · 洗护好物',
-    to: '/dearseed?overlay=reminder',
-  },
-  {
-    icon: Heart,
-    tone: 'bg-success-bg text-success-text',
-    title: '公益板块',
-    sub: '每次打卡助力公益，传递温暖',
-    to: '/checkin',
-    trailing: HeartHandshake,
-  },
-  {
-    icon: BookOpen,
-    tone: 'bg-info-bg text-info-text',
-    title: '卡博士品牌故事',
-    sub: '了解品牌起源与匠心洗护',
-    to: '/brand-culture',
-  },
-]
+const sectionIcons = {
+  cause: Heart,
+  'brand-story': BookOpen,
+} as const
 
 /**
- * 卡博士 APP 首页。
- * 摹客把「首页」与「诗得丽专栏」定义为两个并列顶级页面；本页只承载 APP 首页内容，
- * 通过「诗得丽品牌专栏」卡片进入 `/dearseed`，专栏会员/活动/精选内容不再混入首页。
+ * 诗得丽品牌专栏首页（原 APP 首页，T021 改造）
+ * -------------------------------------------------------------
+ * 2026-08-28 追加确认：签到业务在首页仅保留紧凑 7 日入口，不再展示金色签到 Hero；
+ * 完整金色签到卡、30 天日历与补签入口统一收回 `/checkin` 内页。
+ *
+ * T043R3｜2026-09-10 用户现场反馈：从卡博士 APP 首页「诗得丽品牌专栏」卡片进入此页面后，
+ * 必须弹出身份选择弹窗（IdentityPickerSheet），不再走 T021 的「自动弹新人体验券」单弹逻辑。
+ * - 选「诗得丽新增用户」 → 洗发水体验券弹窗（NewcomerCouponDialog）
+ * - 选「卡博士存量用户」 → 新人礼包占位弹窗（NewcomerGiftSheet）
+ * - 所有弹窗关闭后留在当前 / 页面，不跳走
+ * - 抑制参数：`?picker=off` 跳过身份选择；`?overlay=xxx` 跳过避免覆盖其他演示态
  */
 export default function Home() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const route = findRouteByPathname('/')
+  /* T043R3｜useFixtureState 仍调用以保持夹具注册与 DebugPanel 工作，但 state 不再被读取 */
+  useFixtureState(route)
+  const { overlay, open, close } = useOverlay()
+
+  const debug = searchParams.get('debug') === '1'
+
+  /* T043R3｜身份选择弹窗三级流程（与 DearseedColumn.tsx 同语义） */
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [couponOpen, setCouponOpen] = useState(false)
+  const [couponSuccessOpen, setCouponSuccessOpen] = useState(false)
+  const [giftOpen, setGiftOpen] = useState(false)
+  const dearseedCoupons = NEWCOMER_COUPON_VARIANTS['coupon-1']
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('picker') === 'off') return
+    if (params.has('overlay')) return
+    setPickerOpen(true)
+  }, [])
 
   return (
-    <PageContainer className="space-y-4 pb-6 pt-4">
-      <section className="flex items-center gap-3" aria-label="搜索与用户入口">
+    <PageContainer className="pb-24 pt-4" inset={false}>
+      <section className="mx-4 flex items-center gap-2" aria-label="搜索与用户入口">
+        <button
+          type="button"
+          aria-label="返回卡博士首页"
+          onClick={() => navigate('/legacy-home')}
+          className="flex h-10 w-10 flex-none items-center justify-center rounded-full border border-border-subtle bg-surface text-text-primary active:bg-surface-secondary"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </button>
         <label className="flex h-10 flex-1 items-center gap-2 rounded-full border border-border-subtle bg-surface px-3 text-text-tertiary">
           <Search className="h-4 w-4" />
           <input
@@ -68,81 +89,139 @@ export default function Home() {
             className="min-w-0 flex-1 bg-transparent text-sm text-text-primary outline-none placeholder:text-text-tertiary"
           />
         </label>
+        {/* T046｜右上角头像由「跳商城」改为「跳专栏内会员中心」（B-048 路由 slug：/dearseed/membership） */}
         <button
           type="button"
+          data-dearseed-avatar
           aria-label="进入会员中心"
-          onClick={() => navigate('/membership')}
+          onClick={() => navigate('/dearseed/membership')}
           className="h-10 w-10 flex-none overflow-hidden rounded-full border border-border-subtle bg-surface shadow-sm"
         >
           <img src={avatar} alt="会员头像" className="h-full w-full object-cover" />
         </button>
       </section>
 
-      <BannerCarousel
-        label="首页活动轮播"
-        interval={HOME_BANNER_CAROUSEL.interval}
-        speed={HOME_BANNER_CAROUSEL.speed}
-        slides={HOME_BANNER_CAROUSEL.slides.map((slide) => ({
-          key: slide.key,
-          image: slide.asset ? carouselAssets[slide.asset] : undefined,
-          alt: slide.alt,
-          eyebrow: 'eyebrow' in slide ? slide.eyebrow : undefined,
-          title: 'title' in slide ? slide.title : undefined,
-          description: 'description' in slide ? slide.description : undefined,
-          cta: 'cta' in slide ? slide.cta : undefined,
-        }))}
-        onSelect={(_, index) => {
-          const slide = HOME_BANNER_CAROUSEL.slides[index]
-          if (!slide) return
-          if ('to' in slide) navigate(slide.to)
-          else navigate(`/dearseed?overlay=${slide.toOverlay}`)
-        }}
-      />
+      <div className="mx-4 mt-4">
+        <BannerCarousel
+          label="首页活动轮播"
+          interval={HOME_BANNER_CAROUSEL.interval}
+          speed={HOME_BANNER_CAROUSEL.speed}
+          slides={HOME_BANNER_CAROUSEL.slides.map((slide) => ({
+            key: slide.key,
+            image: slide.asset ? carouselAssets[slide.asset] : undefined,
+            alt: slide.alt,
+            eyebrow: 'eyebrow' in slide ? slide.eyebrow : undefined,
+            title: 'title' in slide ? slide.title : undefined,
+            description: 'description' in slide ? slide.description : undefined,
+            cta: 'cta' in slide ? slide.cta : undefined,
+          }))}
+          onSelect={(_, index) => {
+            const slide = HOME_BANNER_CAROUSEL.slides[index]
+            if (!slide) return
+            if ('to' in slide) navigate(slide.to)
+            else navigate(`/dearseed?overlay=${slide.toOverlay}`)
+          }}
+        />
+      </div>
 
-      <nav className="grid grid-cols-4 gap-x-1 gap-y-2" aria-label="快捷入口">
-        {quickEntries.map((item) => (
-          <button key={item.label} type="button" onClick={() => navigate('/checkin')} className="flex flex-col items-center gap-1">
-            <span className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-[20px]">
-              <img src={item.icon} alt={item.label} className="h-full w-full object-cover" />
-            </span>
-            <span className="text-xs text-text-primary">{item.label}</span>
-          </button>
-        ))}
-      </nav>
+      <div className="mt-4">
+        <CheckinBoard mode="home" onMakeup={() => open('make-up-success')} debug={debug} />
+      </div>
 
-      <section className="space-y-3" aria-label="首页业务入口">
-        {listCards.map((card) => {
-          const Trailing = card.trailing ?? ChevronRight
+      <section className="mx-4 mt-7 space-y-3" aria-label="公益板块与品牌故事">
+        {COLUMN_HOME_SECTIONS.map((item) => {
+          const Icon = sectionIcons[item.key]
+          const body = (
+            <>
+              <span className="flex h-11 w-11 flex-none items-center justify-center rounded-app-icon bg-reward-subtle text-reward-strong">
+                <Icon className="h-[22px] w-[22px]" aria-hidden />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[15px] font-bold leading-5 text-text-primary">{item.title}</span>
+                <span className="mt-1 block text-xs leading-5 text-text-tertiary">{item.desc}</span>
+              </span>
+              {item.action && (
+                <span className="flex flex-none items-center gap-0.5 text-xs text-reward-text">
+                  {item.action}
+                  <ChevronRight className="h-4 w-4" aria-hidden />
+                </span>
+              )}
+            </>
+          )
+          const shell = 'flex w-full items-center gap-3 rounded-feature bg-surface p-4 text-left shadow-bubble'
+
+          if (!item.to) {
+            return (
+              <div key={item.key} className={shell}>
+                {body}
+              </div>
+            )
+          }
+
           return (
-            <button
-              key={card.title}
-              type="button"
-              onClick={() => navigate(card.to)}
-              className="flex h-[72px] w-full items-center gap-3 rounded-xl bg-surface px-4 shadow-sm"
-            >
-              <span className={`flex h-11 w-11 flex-none items-center justify-center rounded-lg ${card.tone}`}>
-                <card.icon className="h-[22px] w-[22px]" />
-              </span>
-              <span className="min-w-0 flex-1 text-left">
-                <span className="block text-[15px] font-medium text-text-primary">{card.title}</span>
-                <span className="mt-0.5 block text-xs text-text-tertiary">{card.sub}</span>
-              </span>
-              <Trailing className="h-[18px] w-[18px] text-text-tertiary" />
+            <button key={item.key} type="button" onClick={() => navigate(item.to)} className={shell}>
+              {body}
             </button>
           )
         })}
       </section>
 
+      {debug && (
+        <p className="mx-4 mt-4 text-xs leading-5 text-text-tertiary">
+          夹具态：{NEWCOMER_COUPON_RULE_STATUS.newUserDetection.note}
+          {NEWCOMER_COUPON_RULE_STATUS.causeSection.note}
+        </p>
+      )}
+
       <button
         type="button"
         aria-label="福袋"
         onClick={() => navigate('/redeem')}
-        className="fixed bottom-[calc(59px+env(safe-area-inset-bottom)+1rem)] right-4 z-30 flex h-14 w-14 flex-col items-center justify-center rounded-full border border-border-subtle bg-reward-subtle text-reward-text shadow-sm"
+        className="absolute bottom-[calc(59px+env(safe-area-inset-bottom)+1rem)] right-4 z-30 flex h-14 w-14 flex-col items-center justify-center rounded-full border border-border-subtle bg-reward-subtle text-reward-text shadow-sm"
       >
         <span className="absolute right-2 top-2 h-2 w-2 rounded-full border-2 border-surface bg-danger" aria-hidden />
         <Gift className="h-[22px] w-[22px]" />
         <span className="mt-0.5 text-[10px] leading-none">福袋</span>
       </button>
+
+      {/* T043R3｜身份选择 → 二级弹窗三级流程（替代原 T021 自动弹体验券） */}
+      <IdentityPickerSheet
+        open={pickerOpen}
+        onPick={(identity) => {
+          setPickerOpen(false)
+          if (identity === 'new') {
+            setCouponOpen(true)
+          } else {
+            setGiftOpen(true)
+          }
+        }}
+        onDismiss={() => setPickerOpen(false)}
+      />
+      <NewcomerCouponDialog
+        open={couponOpen}
+        successOpen={couponSuccessOpen}
+        coupons={dearseedCoupons}
+        onConfirm={() => {
+          setCouponOpen(false)
+          setCouponSuccessOpen(true)
+        }}
+        onDismiss={() => {
+          setCouponOpen(false)
+          setCouponSuccessOpen(false)
+        }}
+        onSuccessAction={() => {
+          setCouponSuccessOpen(false)
+        }}
+      />
+      <NewcomerGiftSheet
+        open={giftOpen}
+        onConfirm={() => setGiftOpen(false)}
+        onDismiss={() => setGiftOpen(false)}
+      />
+
+      <CheckinMakeupSuccessOverlay open={overlay === 'make-up-success'} onDismiss={close} debug={debug} />
+
+      <DebugPanel route={route} />
     </PageContainer>
   )
 }

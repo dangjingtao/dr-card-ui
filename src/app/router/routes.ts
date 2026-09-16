@@ -13,6 +13,12 @@ import { CircleDot, Headset, Home, QrCode, UserRound } from 'lucide-react'
  *   Tab 结构为可靠参考，主入口为 APP 首页）。
  * - 根路由 `/` = APP 首页；`/dearseed` = 独立的诗得丽专栏。
  * - H5 商城（#17/#48/#49）承载为 WebView 边界页。
+ * - 2026-08-28 用户确认：底部 Tab `/mall` 文案由「服务」改为「商城」；会员中心重新作为
+ *   「我的 → 快捷服务」入口开放，`/membership` 恢复挂载既有会员中心页面，不新建页面。
+ * - T021（2026-08-27 需求变更 §2）：根路由 `/` 由「卡博士 APP 首页」改为「诗得丽品牌专栏」
+ *   首页，删除金刚区并迁入 `/checkin` 打卡内容；`/dearseed` 仍保留为已验收的独立专栏页，
+ *   不修改 T005 历史结论。`/` 新增的新人体验券状态与弹层是需求新增内容，摹客原型无对应
+ *   artboard，故 node 占位 0（未决口径见 fixtures 的 NEWCOMER_COUPON_RULE_STATUS）。
  */
 
 export type OverlayType = 'dialog' | 'sheet'
@@ -62,12 +68,16 @@ export interface RouteMeta {
   entry?: string
   /** 返回目标 */
   returnTo?: string
+  /** 返回按钮跳转路径（不传则走 history.back） */
+  backTo?: string
   /** 确定性 fixture 状态（`?state=`） */
   states?: RouteState[]
   /** 可复现弹层（`?overlay=`） */
   overlays?: RouteOverlay[]
   /** 边界类型：H5 WebView 边界页 */
   boundary?: 'webview'
+  /** 该路径不再承载自身页面，直接重定向到目标路径（`replace`） */
+  redirectTo?: string
   /** 页面归属说明 */
   owner?: string
 }
@@ -80,14 +90,500 @@ export const ROUTES: RouteMeta[] = [
     tabOrder: 1,
     label: '首页',
     icon: Home,
-    title: '卡博士',
+    /* T021：需求 §2.1–§2.2 要求根首页改为「诗得丽品牌专栏」并删除金刚区 */
+    title: '诗得丽品牌专栏',
     titleBar: 'plain',
-    titleBarTitle: '首页',
+    titleBarTitle: '诗得丽品牌专栏',
+    /* T021 为需求变更新增内容，摹客原型无对应 artboard，故节点留空、下列状态/弹层 node 占位 0 */
     nodes: [],
-    task: 'T005',
+    task: 'T021',
     entry: 'APP 主入口',
     returnTo: '—（根首页）',
-    owner: '卡博士 APP 首页（与诗得丽专栏分离）',
+    /*
+     * 用户 2026-08-27 定案「默认全是新用户」：无参数进入 `/` 即自动弹出新人体验券。
+     * `?newcomer=off` 是取证/回归专用的抑制参数，只让脚本确定性地拿到首页无遮挡形态，
+     * 不属于 fixture 状态也不属于弹层，故不进 states/overlays；产品访问不带此参数。
+     */
+    states: [
+      { key: 'coupon-1', node: 0, label: '新人券-1 张' },
+      { key: 'coupon-2', node: 0, label: '新人券-2 张' },
+    ],
+    overlays: [
+      { key: 'newcomer-coupon', node: 0, label: '新人体验券弹窗', type: 'dialog' },
+      { key: 'coupon-success', node: 0, label: '体验券领取成功', type: 'dialog' },
+      /* 打卡内容随 CheckinBoard 迁入后，补签这个主要操作也在首页自持反馈（需求 §2.3），节点沿用 /checkin 的 #22 */
+      { key: 'make-up-success', node: 22, label: '补打卡成功弹窗', type: 'dialog' },
+    ],
+    owner: '诗得丽品牌专栏首页（T021 改造；打卡内容与 /checkin 共用 CheckinBoard；默认弹出新人体验券，`?newcomer=off` 抑制）',
+  },
+  {
+    path: '/legacy-home',
+    title: '首页',
+    titleBar: 'hidden',
+    titleBarTitle: '首页',
+    nodes: [],
+    task: 'T033',
+    entry: '卡博士APP首页（四金刚区：淋浴/洗烘/饮水/吹风）',
+    returnTo: '—（独立入口）',
+    owner: '卡博士APP首页（T033；原 legacy-home 设计，四金刚区跳转设备列表）',
+  },
+  {
+    path: '/legacy-home/scan',
+    title: '扫一扫',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T033',
+    entry: '历史首页-扫一扫；设备列表-立即扫码',
+    returnTo: '历史首页 / 设备列表',
+    owner: '历史首页独立扫码页，与 /card/verify 券码核销链路不共用；T033 设备服务扫码复用此页',
+  },
+
+  /* ────────────────────────── T036 四大设备功能页面 ────────────────────────── */
+  {
+    path: '/device/:type',
+    title: '设备列表',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T036',
+    entry: '首页四金刚区 → 淋浴/洗烘/饮水/吹风 设备列表',
+    returnTo: '卡博士APP首页',
+    owner: '设备列表页（T036；四套设备共用列表组件，按 type 切换主题色与设备数据）',
+  },
+  {
+    path: '/device/connecting',
+    title: '设备详情',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T036',
+    entry: '设备列表 → 设备详情（连接中态）',
+    returnTo: '设备列表',
+    owner: '设备详情页（T036；金额选择、启动流程、结算、紧急停止、保修悬浮球）',
+  },
+  {
+    path: '/device/success',
+    title: '设备详情',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T036',
+    entry: '设备详情 → 启动成功态',
+    returnTo: '设备列表',
+    owner: '设备详情页（T036；启动成功 / 结算展示态）',
+  },
+  /* T042：自助售货机扫码购买页 */
+  {
+    path: '/vending/buy',
+    title: '扫码购买',
+    titleBar: 'back',
+    backTo: '/legacy-home',
+    nodes: [],
+    task: 'T042',
+    entry: '扫码自助售货机 / 设备列表 → 扫码购买 / 首页扫一扫 → 模拟购买洗发水',
+    returnTo: '卡博士APP首页',
+    owner: '自助售货机购买页（T042；3款洗发水 + 数量 + 优惠券自动抵扣 + 去结算）',
+  },
+  {
+    path: '/vending/order',
+    title: '确认订单',
+    titleBar: 'back',
+    nodes: [],
+    task: 'T042',
+    entry: '购买页 → 去结算',
+    returnTo: '购买页',
+    owner: '售货机订单确认页（T042；金额明细 + 微信/支付宝选择 + 出货中/成功弹窗）',
+  },
+
+  /* ────────────────────────── T034 卡博士服务中心 ────────────────────────── */
+  {
+    path: '/legacy-service',
+    title: '服务中心',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T034',
+    entry: '底部 Tab「服务」',
+    returnTo: '—（一级 Tab）',
+    owner: '卡博士服务中心首页（T034；设备报修/意见反馈/热门问题）',
+  },
+  {
+    path: '/legacy-service/repair/projects',
+    title: '设备报修项目',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T034',
+    entry: '服务中心-设备报修',
+    returnTo: '服务中心',
+    owner: '设备报修项目列表（T034）',
+  },
+  {
+    path: '/legacy-service/repair/form',
+    title: '报修',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T034',
+    entry: '报修项目-报修按钮',
+    returnTo: '报修项目列表',
+    owner: '报修表单页（T034；设备编号/位置/故障现象/详情/电话/提交）',
+  },
+  {
+    path: '/legacy-service/feedback',
+    title: '意见反馈',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T034',
+    entry: '服务中心-意见反馈',
+    returnTo: '服务中心',
+    owner: '意见反馈页（T034；文本框+提交）',
+  },
+
+  /* ────────────────────────── T035 卡博士个人中心 ────────────────────────── */
+  {
+    path: '/legacy-profile',
+    title: '我的',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T035',
+    entry: '底部 Tab「我的」',
+    returnTo: '—（一级 Tab）',
+    owner: '卡博士个人中心首页（T035；头像+订单五宫格+快捷功能四宫格）',
+  },
+  {
+    path: '/legacy-profile/info',
+    title: '个人信息',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T035',
+    entry: '个人中心-头像/昵称',
+    returnTo: '个人中心',
+    owner: '个人信息页（T035；二维码+账号+头像/用户名/昵称/姓名/手机/邮箱）',
+  },
+  {
+    path: '/legacy-profile/nickname',
+    title: '修改昵称',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T035',
+    entry: '个人信息-昵称',
+    returnTo: '个人信息',
+    owner: '修改昵称页（T035）',
+  },
+  {
+    path: '/legacy-profile/email',
+    title: '绑定邮箱',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T035',
+    entry: '个人信息-邮箱',
+    returnTo: '个人信息',
+    owner: '绑定邮箱页（T035；邮箱+验证码+获取验证码+绑定）',
+  },
+  {
+    path: '/legacy-profile/phone',
+    title: '绑定手机',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T035',
+    entry: '个人信息-手机',
+    returnTo: '个人信息',
+    owner: '绑定手机页（T035；手机号+验证码+密码+绑定）',
+  },
+  {
+    path: '/legacy-profile/settings',
+    title: '设置',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T035',
+    entry: '个人中心-设置齿轮',
+    returnTo: '个人中心',
+    owner: '设置页（T035；退款/退款记录/支付配置/修改密码/在线设备/协议/隐私/注销+退出登录）',
+  },
+  {
+    path: '/legacy-profile/orders',
+    title: '订单',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T035',
+    entry: '个人中心-我的订单',
+    returnTo: '个人中心',
+    owner: '订单列表页（T035；六 Tab 切换 + 订单卡片 + 空状态）',
+  },
+  {
+    path: '/legacy-profile/receipts',
+    title: '我的小票',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T035',
+    entry: '个人中心-我的小票',
+    returnTo: '个人中心',
+    owner: '我的小票列表（T035；年月筛选 + 小票卡片列表）',
+  },
+  {
+    path: '/legacy-profile/receipts/:id',
+    title: '小票详情',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T035',
+    entry: '我的小票-详情',
+    returnTo: '我的小票',
+    owner: '小票详情页（T035；小票头部 + 消费明细 + 支付详情）',
+  },
+  {
+    path: '/legacy-profile/devices/:type',
+    title: '设备列表',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T035',
+    entry: '个人中心-常用设备/收藏设备',
+    returnTo: '个人中心',
+    owner: '常用设备/收藏设备列表（T035；设备卡片 + 状态标签 + 收藏星标）',
+  },
+
+  /* ────────────────────────── T026 注册登录与个人信息 ────────────────────────── */
+  {
+    path: '/legacy-profile/avatar-edit',
+    title: '修改头像',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T026',
+    entry: '个人信息-头像',
+    returnTo: '个人信息',
+    owner: '修改头像页（T026；9 宫格预置头像 + 相册/拍照 + 28×28 预览 + 淡金保存）',
+  },
+  {
+    path: '/legacy-profile/phone-change',
+    title: '换绑手机号',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T026',
+    entry: '个人信息-手机',
+    returnTo: '个人信息',
+    owner: '换绑手机号流程页（T026；三步式：原号验证 → 新号验证 → 换绑成功）',
+  },
+  {
+    path: '/legacy-profile/login',
+    title: '登录',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T037',
+    entry: '个人中心-设置-退出登录 / 未登录状态',
+    returnTo: '个人中心',
+    owner: '登录页（T037；卡博士淡金色风格：账号 + 密码 + 二次确认密码 + 睁眼/闭眼切换 + 5 次错误显示图形验证码 + 微信授权 + 登录后弹窗引导绑定学校/专业/学号）',
+  },
+  {
+    path: '/legacy-profile/edit',
+    title: '编辑资料',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T026',
+    entry: '个人信息-头像 / 真实姓名',
+    returnTo: '个人信息',
+    owner: '编辑资料页（T026；合一编辑 头像 / 昵称 / 真实姓名，含 9 宫格头像选择 + 字长度校验 + 加载态 + 保存回写 store）',
+  },
+  {
+    path: '/legacy-profile/bind-school',
+    title: '绑定学校信息',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T037',
+    entry: '登录页绑定引导弹窗-去绑定',
+    returnTo: '个人中心',
+    owner: '绑定学校信息页（T037；卡博士淡金色风格：学校选择 + 学院输入 + 学号校验，保存回写 userInfoStore 后跳 /legacy-profile）',
+  },
+  {
+    path: '/legacy-profile/register',
+    title: '注册账号',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T037',
+    entry: '登录页底部「还没有账号？请注册」',
+    returnTo: '登录',
+    owner: '注册账号页（T037；卡博士淡金色风格：手机号 + 验证码 + 密码 + 二次确认密码；注册成功后 isRegistered=true 并弹窗引导绑定学校/专业/学号）',
+  },
+  {
+    path: '/legacy-profile/forgot-password',
+    title: '忘记密码',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T037',
+    entry: '登录页「忘记密码？」入口',
+    returnTo: '登录',
+    owner: '忘记密码页（T037；卡博士淡金色风格：手机号 + 短信验证码（演示固定 123456）+ 图形验证码（固定显示）+ 新密码 + 确认新密码，两个密码框均带小眼睛明密文切换；提交后弹窗"修改成功"并自动返回登录页）',
+  },
+  {
+    path: '/legacy-profile/machine-pin',
+    title: '消费密码',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T039',
+    entry: '「我的」-消费密码',
+    returnTo: '我的',
+    owner: '设置消费密码页（T039；卡博士淡金色风格：内部 phase 状态机 set/verify/menu/change/delete + 当前密码首尾掩码 + 6 格方框输入 + 修改走二步式 + 删除直清空 + 右下角原型状态切换按钮；写入 userInfoStore.pin）',
+  },
+  {
+    path: '/legacy-profile/scratch-card',
+    title: '刮刮充值卡',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T038',
+    entry: '「我的」-刮刮充值卡',
+    returnTo: '我的',
+    owner: '刮刮充值卡页（T038；卡博士淡金色风格：顶部金色渐变 + 10位充值码输入 + 扫码按钮 + 金渐变充值按钮 + 充值成功弹窗；扫码跳 /legacy-home/scan 后 2s 回弹弹窗；mock 校验 10 位数字）',
+  },
+
+  /* ────────────────────────── T031 卡券与优惠卡 ────────────────────────── */
+  {
+    path: '/legacy-profile/my-cards',
+    title: '我的卡',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T031',
+    entry: '「我的」-我的卡',
+    returnTo: '我的',
+    owner: '我的卡页（T031；「+ 绑定卡」按钮 + 列表空态，对齐原小程序）',
+  },
+  {
+    path: '/legacy-profile/coupons',
+    title: '优惠卡列表',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T031',
+    entry: '「我的」-优惠卡',
+    returnTo: '我的',
+    owner: '优惠卡列表页（T031；三 Tab：未使用 / 已使用 / 已过期，对齐原小程序）',
+  },
+
+  /* ────────────────────────── T041 领款机反扫码充值 ────────────────────────── */
+  {
+    path: '/legacy-profile/pickup-machine',
+    title: '领款机充值',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T041',
+    entry: '「我的」-领款机充值',
+    returnTo: '我的',
+    owner: '领款机反扫码充值页（T041；mock 二维码 + 当前卡信息 + 三步操作说明；「我的」宫格第 8 项由报修替换而来；二维码内容 B-050 等业务接口到位后再换签名串）',
+  },
+
+  /* ────────────────────────── T025 积分商城与泡泡值体系统一 ────────────────────────── */
+  {
+    path: '/signin',
+    title: '每日签到',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T025',
+    entry: '首页-福袋悬浮按钮',
+    returnTo: '首页',
+    owner: '每日签到/薅羊毛主页（T025；淡金+红色+北极熊IP，广告mock，积分与泡泡值打通）',
+  },
+  {
+    path: '/signin/detail',
+    title: '积分明细',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T025',
+    entry: '签到页-积分余额卡 / 积分明细入口',
+    returnTo: '签到页',
+    owner: '积分明细（卡博士版；与泡泡值共用 pointsStore，文案叫"积分"）',
+  },
+
+  /* ────────────────────────── T028 客服中心与退款 ────────────────────────── */
+  {
+    path: '/legacy-profile/customer-service',
+    title: '客服中心',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T028',
+    entry: '设置-在线客服（已跳转至诗得丽 /service/chat，本页面保留不再被业务入口使用）',
+    returnTo: '设置',
+    owner: '客服中心页（T028；当前业务入口（卡博士服务页 / 我的设置）均改跳诗得丽品牌专栏的 /service/chat；本页面作为过渡保留，地址栏直接访问仍可达）',
+  },
+  {
+    path: '/legacy-profile/school-accounts',
+    title: '我的小票',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T028',
+    entry: '「我的」-我的小票',
+    returnTo: '我的',
+    owner: '学校账户列表页（T028；顶部淡金渐变：账号 + 总余额 + 小票记录；下方项目卡片：Building2 金色头像 + 项目名 + 小票余额/可退款金额/赠送金额 + 购买金色按钮 + 退款黑色按钮）',
+  },
+  {
+    path: '/legacy-profile/recharge/:id',
+    title: '充值',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T028',
+    entry: '我的小票-项目卡-购买',
+    returnTo: '我的小票',
+    owner: '学校账户充值页（T028；金额选择 + 微信/支付宝支付，对应 RechargePage）',
+  },
+  {
+    path: '/legacy-profile/school-refund/:id',
+    title: '退款',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T028',
+    entry: '我的小票-项目卡-退款',
+    returnTo: '我的小票',
+    owner: '学校账户退款页（T028；退款金额 + 退款原因 + 提交退款，对应 SchoolRefundPage）',
+  },
+  {
+    path: '/legacy-profile/my-cards/:id',
+    title: '卡详情',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T031',
+    entry: '「我的」-我的卡-卡卡片',
+    returnTo: '我的卡',
+    owner: '卡详情页（T031 补充；卡信息列表 8 行：卡序号/卡所属项目/用户卡号/卡MAC/姓名/班级/学号/卡状态；姓名/班级/学号 可点击"修改"跳字段编辑；底部三操作：挂失/解挂 + 设置消费卡 → 充值退款页；点挂失/解挂 弹"您确定要…"确认框）',
+  },
+  {
+    path: '/legacy-profile/my-cards/:id/topup',
+    title: '充值/退款',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T029',
+    entry: '卡详情页-「设置消费卡」或底部「去购买」',
+    returnTo: '卡详情',
+    owner: '卡的充值/退款页（T031 + T029；卡详情页"去购买"/"设置消费卡"入口，金额选择 + 微信/支付宝支付）',
+  },
+  {
+    path: '/legacy-profile/my-cards/:id/topup/success',
+    title: '充值成功',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T029',
+    entry: '充值页支付成功',
+    returnTo: '卡详情',
+    owner: '充值成功反馈页（T029；绿勾 + 金额 + 支付方式 + 完成/查看充值记录）',
+  },
+  {
+    path: '/legacy-profile/my-cards/:id/topup/fail',
+    title: '充值失败',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T029',
+    entry: '充值页支付失败 / mock 失败触发器',
+    returnTo: '卡详情',
+    owner: '充值失败反馈页（T029；红叉 + 失败原因 + 重新充值/返回卡详情）',
+  },
+  {
+    path: '/legacy-profile/my-cards/:id/topup-records',
+    title: '充值记录',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T029',
+    entry: '卡详情-充值记录 / 充值成功页-查看充值记录',
+    returnTo: '卡详情',
+    owner: '充值记录列表（T029；顶部余额卡 + 流水列表：成功绿/失败红/进行中灰 + 金额 + 时间 + 支付方式）',
+  },
+  {
+    path: '/legacy-profile/my-cards/:id/refund-records',
+    title: '退款记录',
+    titleBar: 'hidden',
+    nodes: [],
+    task: 'T029',
+    entry: '卡详情-退款记录',
+    returnTo: '卡详情',
+    owner: '退款记录列表（T029；顶部余额卡 + 流水列表：红色 -¥ 退款 + 时间 + 退款渠道）',
   },
   {
     path: '/card',
@@ -121,19 +617,21 @@ export const ROUTES: RouteMeta[] = [
     owner: '洗护体验券专区（T008 施工；语义已从「兑换码页」纠正）',
   },
   {
+    /* T051v2-rollback + v3｜用户 2026-09-10 仅要求把文字改为「会员中心」（Tab label + 页面 TitleBar），
+     * 不改路由 / 跳转 / Settings。tab / tabOrder / icon / path / Settings 全部保持原状。 */
     path: '/profile',
     tab: true,
     tabOrder: 5,
-    label: '我的',
+    label: '会员中心',
     icon: UserRound,
-    title: '我的',
+    title: '会员中心',
     titleBarAction: 'notifications',
     nodes: [19, 20],
     task: 'T011',
-    entry: '底部 Tab「我的」；首页-个人区',
+    entry: '底部 Tab「会员中心」+ TitleBar「会员中心」；首页-个人区',
     returnTo: '底部 Tab；首页',
     overlays: [{ key: 'app-prompt', node: 20, label: 'APP 弹窗（能力引导）', type: 'dialog' }],
-    owner: '我的（T011 已施工；reference 标准页）',
+    owner: '我的（T011 已施工；T051v2-rollback+v3 改 Tab label + TitleBar 文案，不改路由 / 跳转）',
   },
 
   /* ────────────────────────── T005 专栏首页与新人流程 ────────────────────────── */
@@ -195,7 +693,7 @@ export const ROUTES: RouteMeta[] = [
     task: 'T005',
     entry: '诗得丽专栏-「品牌文化」',
     returnTo: '诗得丽专栏首页',
-    owner: '品牌文化长页（T005 施工；用户定案只铺原型长图、无浮动 CTA，B-001 已关闭）',
+    owner: '品牌文化长页（T005 施工；用户定案只铺原型长图、无浮动 CTA，B-001 关闭）',
   },
 
   /* ────────────────────────── T006 会员、泡泡值、打卡与澡运 ────────────────────────── */
@@ -205,38 +703,56 @@ export const ROUTES: RouteMeta[] = [
     tabOrder: 2,
     label: '泡泡',
     icon: CircleDot,
-    title: '泡泡值明细',
+    /* T022：本页改为「资产 + 泡泡福利 + 任务占位」，纯流水明细拆到 /points/detail */
+    title: '泡泡值',
     nodes: [5],
     task: 'T006',
     entry: '诗得丽专栏/我的-泡泡值余额；会员中心',
     returnTo: '诗得丽专栏首页 / 我的',
+    owner: '泡泡值资产与任务占位（T006 施工；T022 改造）',
+  },
+  {
+    path: '/points/detail',
+    title: '泡泡值明细',
+    nodes: [5],
+    task: 'T022',
+    entry: '泡泡值-资产卡「看明细」',
+    returnTo: '泡泡值',
     states: [
       { key: 'income', node: 5, label: '泡泡值明细-仅收入' },
       { key: 'expense', node: 5, label: '泡泡值明细-仅消耗' },
       { key: 'empty', node: 5, label: '泡泡值明细-无记录' },
     ],
-    owner: '泡泡值资产流水（T006 施工）',
+    owner: '泡泡值纯流水明细（T022 施工；仅 Tab + 列表 + 空态）',
   },
   {
+    /* T051v2-rollback｜v2 升格为底部 Tab 5 的改动已回滚；本页保持既有入口，不参与 Tab 5。 */
     path: '/membership',
-    tab: true,
-    tabOrder: 4,
-    label: '服务',
-    icon: Headset,
     title: '会员中心',
-    titleBarAction: 'settings',
+    titleBarTitle: '会员中心',
     nodes: [6],
     task: 'T006',
-    entry: '诗得丽专栏-「会员空间」',
+    entry: '我的-快捷服务「会员中心」',
+    returnTo: '我的',
+    owner: '会员中心（既有 T006 页面；2026-08-28 恢复入口，不新增页面）',
+  },
+  /* T046｜诗得丽专栏内会员中心入口：复用既有 Membership 组件，保持 T051 联动路由 slug */
+  {
+    path: '/dearseed/membership',
+    title: '会员中心',
+    titleBarTitle: '会员中心',
+    nodes: [6],
+    task: 'T046',
+    entry: '诗得丽专栏首页-右上角头像；中部会员卡；快捷入口「会员空间」',
     returnTo: '诗得丽专栏首页',
-    owner: '会员玩法分发（T006 施工）',
+    owner: '诗得丽专栏内会员中心（复用 /membership 既有页面，T046 路线入口）',
   },
   {
     path: '/membership/levels',
     title: '会员等级',
     nodes: [26],
     task: 'T006',
-    entry: '会员中心-等级入口',
+    entry: '会员中心-「查看等级」',
     returnTo: '会员中心',
     owner: '会员等级展示稿（T006 施工）',
   },
@@ -252,8 +768,10 @@ export const ROUTES: RouteMeta[] = [
     overlays: [
       { key: 'reminder', node: 4, label: '打卡提示弹窗', type: 'dialog' },
       { key: 'make-up-success', node: 22, label: '补打卡成功弹窗', type: 'dialog' },
+      /* T045｜演示广告弹窗：补签流程中播放，5 秒倒计时后自动收起并触发补签成功页 */
+      { key: 'demo-ad', node: 22, label: '补签演示广告弹窗', type: 'dialog' },
     ],
-    owner: '月度签到/补签（T006 施工）',
+    owner: '月度签到/补签（T006 施工；T045 新增看广告补签）',
   },
   {
     path: '/luck',
@@ -379,18 +897,18 @@ export const ROUTES: RouteMeta[] = [
   /* ────────────────────────── T008 洗护兑换与商城链路 ────────────────────────── */
   {
     path: '/mall',
-    title: '卡博士商城',
+    tab: true,
+    tabOrder: 4,
+    label: '商城',
+    icon: Headset,
+    title: '商城',
+    titleBar: 'plain',
+    titleBarTitle: '商城',
     nodes: [17],
     task: 'T008',
-    boundary: 'webview',
-    entry: '诗得丽专栏-服务区「核心商城」',
+    entry: '底部 Tab「商城」；首页头像；诗得丽专栏-「会员空间」/ 会员卡片；我的-「专属权益」；体验券使用弹窗-商品信息',
     returnTo: '诗得丽专栏首页',
-    states: [
-      { key: 'loading', node: 17, label: 'H5 加载中' },
-      { key: 'loaded', node: 17, label: 'H5 已加载' },
-      { key: 'error', node: 17, label: 'H5 失败' },
-    ],
-    owner: 'H5 商城（WebView 边界页，用户确认）',
+    owner: '闪购便利 · 即时零售首页（原生页）',
   },
   {
     path: '/mall/goods/:id',
@@ -598,6 +1116,8 @@ export const ROUTES: RouteMeta[] = [
   {
     path: '/service/chat',
     title: '智能客服',
+    /* T013R3：壳层 TitleBar 接管「返回 + 智能客服」标题 + 右上「企微客服」pill */
+    titleBar: 'back',
     nodes: [58, 71],
     task: 'T013',
     entry: '我的-客服中心',
@@ -629,8 +1149,27 @@ export const TAB_ROUTES = ROUTES.filter((route) => route.tab).sort(
 )
 
 /**
+ * 历史首页入口专用的三项底部导航：首页 / 服务 / 我的（仅首页可跳转，其余为视觉展示）。
+ * 与主入口的五项 TabBar 并存，互不影响。
+ */
+export const LEGACY_TAB_ITEMS: { key: string; label: string; icon: LucideIcon; to?: string }[] = [
+  { key: 'home', label: '首页', icon: Home, to: '/legacy-home' },
+  { key: 'service', label: '服务', icon: Headset, to: '/legacy-service' },
+  { key: 'profile', label: '我的', icon: UserRound, to: '/legacy-profile' },
+]
+
+/** 判断路径是否使用历史入口的三项底部导航（一级 Tab 自身） */
+export function isLegacyTabPath(pathname: string): boolean {
+  return (
+    pathname === '/legacy-home' ||
+    pathname === '/legacy-service' ||
+    pathname === '/legacy-profile'
+  )
+}
+
+/**
  * 判断路径是否命中一级 Tab（仅一级 Tab 自身显示底部导航）
- * 这里必须精确匹配：Tab 路由的子路径（如 /membership/levels、/card/verify/password、
+ * 这里必须精确匹配：Tab 路由的子路径（如 /mall/goods/:id、/mall/cart、/card/verify/password、
  * /card/verify/confirm）都是二级页，按壳层约定不显示底部导航。
  * 注意 BottomNav 内部的高亮判定仍用前缀匹配，两者职责不同，不要合并。
  */

@@ -3,6 +3,7 @@
 > 本文件是 T001「事实基线与验收矩阵」的唯一台账。
 > 依据：`docs/prototype/`（01–07）、Mockplus 离线包、当前仓库代码、`AGENTS.md`、15 张任务卡。
 > 评估日期：2026-08-21；owner 验收基线更新于 2026-08-24。owner 已明确确认 T001 通过，并指定当前仓库实现、路由注册表与页面状态为当前正确事实源；下文旧快照只作过程留痕，不得反向否定当前实现。
+> 2026-08-27 UI 变更批次（T021–T023）的独立验收台账见 [`t024-acceptance-report.md`](./t024-acceptance-report.md) 与 [`evidence/t024-results.json`](./evidence/t024-results.json)，本文件不重复记录该批次的逐条结果。
 
 ## 1. 实现等级定义
 
@@ -22,25 +23,25 @@ T014 范围关闭节点使用范围结论：`Exclude / Preserve Evidence / Futur
 
 | Tab | 路由 | 页面文件 | 当前语义 / 承载节点 | 实现等级 | 375×812 新截图 |
 | --- | --- | --- | --- | --- | --- |
-| 首页 | `/` | [Home.tsx](../../../src/pages/Home.tsx) | 卡博士 APP 首页；通过「诗得丽品牌专栏」卡片进入独立 `/dearseed` | `Implemented`：首页与专栏已按摹客并列页面关系拆分 | [home-column-entry-375x812.png](../design/evidence/home-column-entry-375x812.png) |
-| 泡泡 | `/points` | [Points.tsx](../../../src/pages/Points.tsx) | 泡泡值余额、收入/消耗筛选与流水明细，承接 #5 | `Implemented`：当前正确 Tab 语义为泡泡值明细；打卡页 `/checkin` 保留为二级页面 | 截图由 `scripts/capture-t001.mjs` 生成 `t001-seed-points.png` |
-| 扫码 | `/card/verify` | [ScanVerify.tsx](../../../src/pages/ScanVerify.tsx) | 扫码核销 #67；可继续进入确认核销 | `Implemented`：reference 标准扫码页，核销确认链路由 T009 继续验收 | [t001-seed-scan.png](./evidence/screenshots/t001-seed-scan.png) |
-| 服务 | `/membership` | [Membership.tsx](../../../src/pages/Membership.tsx) | 会员中心 #6 | `Implemented`：会员 hero、功能入口、连续打卡福利与权益区已落地 | [t001-seed-membership.png](./evidence/screenshots/t001-seed-membership.png) |
-| 我的 | `/profile` | [Profile.tsx](../../../src/pages/Profile.tsx) | 我的 #19/#20 | `Implemented`：会员资料、资产、常用功能与热门兑换已落地；APP 引导为 fixture | [t001-seed-profile.png](./evidence/screenshots/t001-seed-profile.png) |
+| 首页 | `/` | [Home.tsx](../../src/pages/Home.tsx) | 诗得丽品牌专栏首页（T021 改造）：搜索栏 + 头像 + Banner + 迁入的打卡内容 + 公益板块（静态、无跳转）+ 卡博士品牌故事；默认弹出新人体验券，承载领取成功态 | `Implemented`：金刚区已移除、打卡内容经 `CheckinBoard` 完整迁入且无重复页面壳；默认全是新用户（D-077），1/2 张券概率 1:1 且由夹具 `?state=` 确定性复现；取证用 `?newcomer=off` 抑制弹窗（D-078） | [t021-01-home-first-screen.png](./evidence/screenshots/t021-01-home-first-screen.png)、[t021-02-home-bottom.png](./evidence/screenshots/t021-02-home-bottom.png)、[t021-05-home-auto-newcomer.png](./evidence/screenshots/t021-05-home-auto-newcomer.png) |
+| 泡泡 | `/points` | [Points.tsx](../../src/pages/Points.tsx) | 泡泡值任务页（T022 改造）：泡泡值余额 + 任务占位区 + 三项福利入口（每日签到 / 澡运 / 体验券兑换）+ 吸底兑换按钮，承接 #5；流水明细已拆到二级页 [`/points/detail`](../../src/pages/PointsDetail.tsx)（收入/消耗筛选与空态四态） | `Implemented`：Tab 语义为任务页，`/points/detail` 为二级页（无底部导航、有返回栏）；打卡页 `/checkin` 保留为二级页面 | 截图由 `scripts/capture-t001.mjs` 生成 `t001-seed-points.png`；本轮见 [t024-06-points-detail-expense.png](./evidence/screenshots/t024-06-points-detail-expense.png)、[t024-07-points-detail-empty.png](./evidence/screenshots/t024-07-points-detail-empty.png)、[t024-08-points-benefits-tasks.png](./evidence/screenshots/t024-08-points-benefits-tasks.png) |
+| 扫码 | `/card/verify` | [ScanVerify.tsx](../../src/pages/ScanVerify.tsx) | 扫码核销 #67；可继续进入确认核销 | `Implemented`：reference 标准扫码页，核销确认链路由 T009 继续验收 | [t001-seed-scan.png](./evidence/screenshots/t001-seed-scan.png) |
+| 服务 | `/membership` | [Membership.tsx](../../src/pages/Membership.tsx) | 会员中心 #6 | `Implemented`：会员 hero、功能入口、连续打卡福利与权益区已落地 | [t001-seed-membership.png](./evidence/screenshots/t001-seed-membership.png) |
+| 我的 | `/profile` | [Profile.tsx](../../src/pages/Profile.tsx) | 我的 #19/#20 | `Implemented`：会员资料、资产、常用功能与热门兑换已落地；APP 引导为 fixture | [t001-seed-profile.png](./evidence/screenshots/t001-seed-profile.png) |
 
-路由定义见 [router/index.tsx](../../../src/app/router/index.tsx) 与 [routes.ts](../../../src/app/router/routes.ts)。五项 Tab 的单一事实源是 `TAB_ROUTES`：`/`、`/points`、`/card/verify`、`/membership`、`/profile`。
+路由定义见 [router/index.tsx](../../src/app/router/index.tsx) 与 [routes.ts](../../src/app/router/routes.ts)。五项 Tab 的单一事实源是 `TAB_ROUTES`：`/`、`/points`、`/card/verify`、`/membership`、`/profile`。
 
 ### 路由审计要点
 
-- 路由注册表已由 T004 扩展为全量 60 实施节点（见 [route-table.md](./route-table.md) 与 [routes.ts](../../../src/app/router/routes.ts)）；五个种籽页是当前主导航入口，不是全量路由数量。
+- 路由注册表已由 T004 扩展为全量 60 实施节点（见 [route-table.md](./route-table.md) 与 [routes.ts](../../src/app/router/routes.ts)）；五个种籽页是当前主导航入口，不是全量路由数量。
 - 旧快照中的 4 Tab（首页/卡包/兑换/我的）已失效：`/card` 与 `/exchange` 保留为二级可达页面；主导航现为 首页/泡泡/扫码/服务/我的。
-- `/` 根首页与 `/dearseed` 诗得丽专栏已按摹客页面树的并列关系拆分（D-054）；#12/#13 新人弹窗/引导弹窗与 #23 领取态均由 `/dearseed` 的 `?overlay=` / `?state=claimed` 承载。
+- `/` 根首页已由 T021 按需求 §2.1 改为「诗得丽品牌专栏」首页并删除金刚区，打卡内容经共享组件 `CheckinBoard` 完整迁入（D-072/D-073）；`/dearseed` 仍为独立专栏页，#12/#13 新人弹窗/引导弹窗与 #23 领取态继续由 `/dearseed` 的 `?overlay=` / `?state=claimed` 承载，D-054 中「`/` 仅承载 APP 首页」的口径已被 D-072 覆盖。
 - `/exchange` 语义已由 T004 纠正为「洗护兑换专区」（#18/#37/#38），不再是兑换码页；兑换码入口迁移至 `/redeem`（#68）。
 - `/draw-success` 旧路由已由 T004 移除并重定向至 `/luck/result`（#41）；T006 已于 2026-08-22 把三档签运降级为显式 `?state=great|good|minor` 并各带「未定稿」标识，`nextLuck()` 为确定性推进、无随机与持久化，规则本体仍待确认（B-003）。
 - 运行证据：`BASE_URL=http://127.0.0.1:5174 node scripts/verify-t001.mjs` 于本次刷新全部 PASS（5 个标签顺序、5 个直达路由及对应激活态）；截图由 `scripts/capture-t001.mjs` 同一 375×812 视口生成。
-- T007 已于 2026-08-24 落地 6 条路由承接 9 个节点：`/buddy`（#27 空态 `?state=empty` / #28 有态 `?state=list|multi`）、`/buddy/invite`（#29）、`/buddy/invite/scan`（#30 `?state=no-app|has-app`，WebView 边界页 + 唤起弹窗两态，不伪造应用商店视觉）、`/buddy/invite/phone`（#32 搜索四态与 #33 `?state=success`）、`/buddy/invite/qrcode`（#34 海报保存与 #35 链接复制，成功/失败各两态）、`/buddy/accept`（#36 含 `?state=bound|dismissed`）。失败态只由 `?state=` 驱动、页内真实操作恒成功（D-056）；分享能力统一走 [buddyShare.ts](../../../src/app/adapters/buddyShare.ts) 适配层。#31 默契值不提供任何入口（D-059），`--color-buddy-mutual` 仅预留命名、禁止搭子页引用。见 [decisions/T007-partner-invite.md](decisions/T007-partner-invite.md)。
+- T007 已于 2026-08-24 落地 6 条路由承接 9 个节点：`/buddy`（#27 空态 `?state=empty` / #28 有态 `?state=list|multi`）、`/buddy/invite`（#29）、`/buddy/invite/scan`（#30 `?state=no-app|has-app`，WebView 边界页 + 唤起弹窗两态，不伪造应用商店视觉）、`/buddy/invite/phone`（#32 搜索四态与 #33 `?state=success`）、`/buddy/invite/qrcode`（#34 海报保存与 #35 链接复制，成功/失败各两态）、`/buddy/accept`（#36 含 `?state=bound|dismissed`）。失败态只由 `?state=` 驱动、页内真实操作恒成功（D-056）；分享能力统一走 [buddyShare.ts](../../src/app/adapters/buddyShare.ts) 适配层。#31 默契值不提供任何入口（D-059），`--color-buddy-mutual` 仅预留命名、禁止搭子页引用。见 [decisions/T007-partner-invite.md](decisions/T007-partner-invite.md)。
 - T013 已于 2026-08-22 落地 4 个节点：`/service/welfare-officer`（#57 服务列表纠正为摹客 3 类）、`/service/chat`（#58 欢迎/对话/发送失败重试/企微入口，#71 二维码引导弹层由 `?overlay=request-human` 承载）、`/service/chat/human`（#70 仅 `?state=queuing|connected` 两态，无人数递减/倒计时）。见 [decisions/T013-customer-service.md](decisions/T013-customer-service.md)。
-- T005–T013 其余未施工节点由 [NodeStub.tsx](../../../src/pages/NodeStub.tsx) 明确占位（`Missing` 级，不伪装完成）。
+- T005–T013 其余未施工节点由 [NodeStub.tsx](../../src/pages/NodeStub.tsx) 明确占位（`Missing` 级，不伪装完成）。
 
 ## 3. 覆盖总览
 
@@ -126,7 +127,7 @@ owner 验收结论：
 | 4 | 打卡提示弹窗 | 02 | T006 | `/checkin?overlay=reminder` | Implemented | 按原型 §5 提示 + TIPS 两段文案实现（D-024）；「每日首次进入自动弹出」的触发与频次规则未确认，故只做 `?overlay=` 夹具直达，不写自动触发 | 未验收 |
 | 5 | 泡泡值明细 | 02 | T006 | `/points`（`?state=income\|expense\|empty`） | Implemented | 余额 + 全部/收入/消耗筛选 + 空态 + 列表尾部（D-026）；条目建模为绝对值 `amount` + `kind`，符号由 `kind` 渲染；时间锚点统一到 2026-06 仅为展示口径（D-027）。**配色仍待确认（B-002）：本轮沿用项目金橙 Token，未改条目、金额与增减类型** | 未验收 |
 | 6 | 会员中心 | 02 | T006 | `/membership` | Implemented | 四入口按原型逐字校正为 今日澡运 / 是日任务 / 优惠卡包 / 洗头搭子（D-022）；LV.4 命名统一为「溱蜜传说」（D-029）；泡泡值余额与查看等级入口实测可跳转。等级数量/命名/限定卡面沿用历史稿，待确认（B-022） | 未验收 |
-| 7 | 今日澡运 | 02 | T006 | `/luck`（`?state=drawn`） | Implemented | 默认态抽取入口 + 已抽取态结果入口（D-025）；页面显示「未定稿」标注。**签运档位、重抽与结果持久化规则未确认（B-003）**，由 `LUCK_RULE_STATUS` 隔离，不做随机与持久化 | 未验收 |
+| 7 | 今日澡运 | 02 | T006、T022 | `/luck`（`?state=drawn`） | Implemented | T022 整改后为**不可操作占位页**：无抽取 CTA、无结果页入口，主位为「敬请期待」占位块 + 「玩法筹备中」说明 + 「玩法待定」标签，两种状态口径一致（原 D-025 的抽取/结果入口已下线，文案暂存 `LUCK_DRAW` 待定稿恢复）。**签运档位、重抽与结果持久化规则未确认（B-003）**，由 `LUCK_RULE_STATUS` 隔离，不做随机与持久化 | 未验收 |
 | 8 | 打卡成功 | 02 | T006 | `/checkin?state=success` | Implemented | 独立打卡成功态由 `?state=success` 承载，复用同一月历与连续天数（`CHECKIN_STREAK` 由 `CHECKIN_DONE_DAYS` 推导，不硬编码） | 未验收 |
 | 21 | 打卡日历 | 02 | T006 | `/checkin` | Implemented | 已改为原型月历式：单月 30 格、已签到 9 / 今天 1 / 可补签 2 / 未到 18（D-023）。月份切换（B-019）、补签消耗与上限（B-020）、底部「为你精选」清单（B-018）未确认，均登记于 `CHECKIN_RULE_STATUS` 未实现 | 未验收 |
 | 22 | 补打卡成功弹窗 | 02 | T006 | `/checkin?overlay=make-up-success` | Implemented | 点日历漏签日「6 日补签」实测可打开弹窗并改写 URL（D-024）。**弹窗内广告位与 30s 关闭倒计时未确认（B-021），本轮不实现** | 未验收 |

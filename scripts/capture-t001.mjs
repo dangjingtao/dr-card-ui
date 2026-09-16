@@ -9,10 +9,11 @@ mkdirSync(outDir, { recursive: true })
 
 const base = process.env.BASE_URL ?? 'http://localhost:5173'
 const routes = [
-  ['home', '/'],
+  // 首页带 ?newcomer=off 抑制 T021 的默认新人体验券弹窗，保证截图取到无遮挡形态
+  ['home', '/?newcomer=off'],
   ['points', '/points'],
   ['scan', '/card/verify'],
-  ['membership', '/membership'],
+  ['mall', '/mall'],
   ['profile', '/profile'],
 ]
 

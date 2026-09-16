@@ -15,7 +15,8 @@ const cases = [
   [23, '/dearseed?state=claimed', '已领取'], [24, '/onboarding?state=student', '年级'],
   [25, '/onboarding/success', '领取成功'],
   [4, '/checkin?overlay=reminder', '每日打卡'], [5, '/points', '泡泡值余额'],
-  [6, '/membership', '会员中心'], [7, '/luck', '今日澡运'],
+  /* 节点 #6：T023 起 /membership 重定向到 /mall 商城占位页（需求 §6），标记词随之改为占位页标识 */
+  [6, '/membership', 'WebView 边界'], [7, '/luck', '今日澡运'],
   [8, '/checkin?state=success', '查看完整签到状态'], [21, '/checkin', '本周期签到日历'],
   [22, '/checkin?overlay=make-up-success', '补打卡成功'], [26, '/membership/levels', '会员等级参考'],
   [41, '/luck/result', '恭喜你获得'],

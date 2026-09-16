@@ -27,6 +27,7 @@ const PRESETS: Record<BuddyListPreset, BuddyFixture[]> = {
 }
 
 let buddies: BuddyFixture[] = []
+let defaultPresetInitialized = false
 /** 本次会话内已发出邀请的手机号，用于 #32 的「已邀请」重复邀请提示 */
 let invitedPhones = new Set<string>()
 let seq = 0
@@ -44,7 +45,22 @@ function nextId() {
 
 /** 按 `?state=` 档位重置列表（夹具切换时调用） */
 export function applyBuddyPreset(preset: BuddyListPreset) {
+  defaultPresetInitialized = true
   buddies = PRESETS[preset].map((item) => ({ ...item }))
+  emit()
+}
+
+/**
+ * 无 `?state=` 时只初始化一次默认展示：空态 / 单搭子各 50%。
+ * - 只在本次页面会话第一次需要默认态时抽取，不因路由往返反复闪变；
+ * - 如果接受邀请等链路已经写入搭子，则直接保留，不再用随机默认态覆盖；
+ * - `?state=empty|list|multi` 始终优先，保证截图与验收确定性。
+ */
+export function ensureBuddyDefaultPreset() {
+  if (defaultPresetInitialized) return
+  defaultPresetInitialized = true
+  if (buddies.length > 0) return
+  buddies = (Math.random() < 0.5 ? PRESETS.empty : PRESETS.single).map((item) => ({ ...item }))
   emit()
 }
 
@@ -53,6 +69,7 @@ export function applyBuddyPreset(preset: BuddyListPreset) {
  * 昵称取自邀请话术里的「小美」，不编造新人物。
  */
 export function acceptBuddyInvite(name: string): BuddyFixture {
+  defaultPresetInitialized = true
   const created: BuddyFixture = { id: nextId(), name }
   buddies = [created, ...buddies]
   emit()
@@ -80,6 +97,7 @@ export function resolveBuddyPhoneOutcome(phone: string) {
 /** 复位到夹具初始态（供夹具切换/调试使用） */
 export function resetBuddies() {
   buddies = []
+  defaultPresetInitialized = false
   invitedPhones = new Set()
   seq = 0
   emit()

@@ -17,19 +17,23 @@ import campaignThumb from '../assets/brand/member/checkin-dearseed-kit.webp'
 
 /**
  * 会员中心（#6）
+ * -------------------------------------------------------------
+ * 2026-08-28 用户确认：会员中心恢复为可访问页面，由「我的 → 快捷服务 → 会员中心」进入。
+ * 本次只恢复既有 T006 页面与入口，不新建会员页面、不新增会员规则；底部 Tab `/mall` 仍独立承载商城。
+ *
  * 事实源：docs/prototype/02-membership-and-checkin.md §1
  * - 页面内容：会员等级与状态、泡泡值余额、四入口（今日澡运 / 是日任务 / 优惠卡包 / 洗头搭子）、底部「本期活动」。
  * ⚠️ 与 reference/D-007 的差异：历史稿把四入口写成「今日幸运 / 每日任务」，与原型文案不一致，
  *    按 AGENTS §7 改回原型口径，不做「文案优化」；等级 hero 的品牌艺术表现保留（AGENTS §3）。
  * ⚠️ 历史稿的「连续打卡 7 天 · 福利加倍 / 5 / 5 已完成 / 限定洗护套装」属自行补写的活动规则，
- *    本次改为复用首页已确认的 CAMPAIGN_FIXTURE（T005 已验收口径），不再另造一套活动规则。
+ *    本页继续复用 CAMPAIGN_FIXTURE，不另造一套活动规则。
  * ⚠️ 等级命名与权益未决规则隔离在 MEMBER_RULE_STATUS（B-022 / B-023）。
  *
- * 本次按用户提供的视觉参考图重排版面：
- * - 会员页新增视觉优先消费既有 token / Tailwind 语义类与 CSS 变量（如 --gradient-bubble、
+ * 视觉口径：
+ * - 会员页优先消费既有 token / Tailwind 语义类与 CSS 变量（如 --gradient-bubble、
  *   --gradient-member），避免在页面内另起一套组件 Token。
- * - hero 卡面此前叠在 bg-member-surface 上且 opacity-60，把素材本身的绿金卡面压灰；本次改为满幅呈现。
- * - 「前往领取」继续复用全局 Button primary 语义，不让会员页另起一套按钮颜色、按压态和圆角规则。
+ * - hero 卡面满幅呈现既有绿金素材。
+ * - 「前往领取」继续复用全局 Button primary 语义，不另起按钮颜色、按压态和圆角规则。
  */
 export default function Membership() {
   const navigate = useNavigate()

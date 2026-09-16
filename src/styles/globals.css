@@ -1,5 +1,6 @@
 @import './tokens.css';
 @import './card-brand.css';
+@import './card-doctor-theme.css';
 
 @tailwind base;
 @tailwind components;

@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Loader2, Search, Send, UserRoundPlus } from 'lucide-react'
 import DebugPanel from '../components/mobile/DebugPanel'
 import PageContainer from '../components/mobile/PageContainer'
@@ -11,6 +10,11 @@ import {
   BUDDY_SEARCH_SAMPLE_PHONES,
   type BuddySearchOutcome,
 } from '../app/fixtures'
+import {
+  useFixtureDebug,
+  useFixtureNavigate,
+  useFixtureQueryControls,
+} from '../app/fixtures/useFixture'
 import { findRouteByPathname } from '../app/router/routes'
 import { SEARCH_LATENCY, sendPhoneInvite } from '../app/adapters/buddyShare'
 import { markPhoneInvited, resolveBuddyPhoneOutcome } from '../app/state/buddies'
@@ -28,9 +32,10 @@ function initialPhone(state: BuddySearchOutcome): string {
 /** 手机号搜索邀请（摹客 #32 / #33） */
 export default function BuddyPhoneInvite() {
   const route = findRouteByPathname('/buddy/invite/phone')
-  const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const raw = searchParams.get('state')
+  const fixtureNavigate = useFixtureNavigate()
+  const { get } = useFixtureQueryControls()
+  const debug = useFixtureDebug()
+  const raw = get('state')
   const directState: BuddySearchOutcome = raw && FIXTURE_STATES.has(raw as BuddySearchOutcome)
     ? (raw as BuddySearchOutcome)
     : 'idle'
@@ -38,7 +43,6 @@ export default function BuddyPhoneInvite() {
   const [outcome, setOutcome] = useState<BuddySearchOutcome>(directState)
   const [sending, setSending] = useState(false)
   const searchTimer = useRef<number | null>(null)
-  const keepDebug = searchParams.get('debug') === '1' ? '&debug=1' : ''
   const success = raw === 'success'
 
   useEffect(() => {
@@ -66,11 +70,17 @@ export default function BuddyPhoneInvite() {
     setSending(true)
     void sendPhoneInvite(trimmed).then(() => {
       markPhoneInvited(trimmed)
-      navigate(`/buddy/invite/phone?state=success&phone=${encodeURIComponent(trimmed)}${keepDebug}`, { replace: true })
+      fixtureNavigate(
+        `/buddy/invite/phone?phone=${encodeURIComponent(trimmed)}`,
+        { state: 'success', debug: debug ? '1' : null },
+        { replace: true },
+      )
     })
   }
 
-  const closeSuccess = () => navigate(`/buddy${searchParams.get('debug') === '1' ? '?debug=1' : ''}`, { replace: true })
+  const closeSuccess = () => {
+    fixtureNavigate('/buddy', { debug: debug ? '1' : null }, { replace: true })
+  }
 
   return (
     <>
