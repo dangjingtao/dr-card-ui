@@ -1,6 +1,6 @@
 # H003｜切断正式 H5 对 legacy runtime 的依赖
 
-**Status:** Agent Review  
+**Status:** Accepted  
 **Phase:** Hygiene  
 **Depends on:** H002
 
@@ -49,4 +49,6 @@
 
 PR #9 首轮 Build run `35040382153` 全绿；Codex P1 修正后的最终 head `d7ca3b3fca` Build run `35041121691` 全绿，Codex re-review 结论为 `Didn't find any major issues.`；PR #9 已合入 `dev`，merge commit `b7d6a87170dceb8b021354d29684bb0ace487a39`。
 
-当前状态为 `Agent Review`；只有用户可以把任务标记为 `Accepted`。
+## 验收结论
+
+2026-09-16：用户授权本轮由 Agent 自验。逐条复核上述验收项、最终 CI、Codex P1 修正与 re-review 后，未发现阻断 H004 后续施工的问题，H003 标记为 `Accepted`。
