@@ -34,13 +34,13 @@
 
 | ID | 任务 | 状态 |
 |---|---|---|
-| H006 | 环境配置与构建身份 | Agent Review |
-| H007 | Axios HTTP Client 与统一错误模型 | Agent Review |
+| H006 | 环境配置与构建身份 | User Review |
+| H007 | Axios HTTP Client 与统一错误模型 | User Review |
 | H008 | Service 层与首条真实 API 垂直链路 | Blocked |
-| H009 | Zod 运行时数据契约 | Ready |
-| H010 | Zustand 状态基建与旧共享状态迁移 | Ready |
+| H009 | Zod 运行时数据契约 | Accepted |
+| H010 | Zustand 状态基建与旧共享状态迁移 | Accepted |
 | H011 | Storage Adapter | Accepted |
-| H012 | React Hook Form + Zod 表单基线 | Ready |
+| H012 | React Hook Form + Zod 表单基线 | Accepted |
 | H013 | MSW 网络 Mock 基建 | Ready |
 | H014 | Mock 场景迁移与页面假网络清理 | Ready |
 
