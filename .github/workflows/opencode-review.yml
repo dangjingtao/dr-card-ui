@@ -51,7 +51,7 @@ jobs:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         with:
           use_github_token: true
-          model: ${{ vars.OPENCODE_REVIEW_MODEL || 'opencode-go/kimi-k3' }}
+          model: ${{ vars.OPENCODE_REVIEW_MODEL || 'opencode-go/deepseek-v4-pro' }}
           prompt: |
             Review this pull request as a read-only second reviewer.
 
