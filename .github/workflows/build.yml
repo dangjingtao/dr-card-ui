@@ -35,6 +35,9 @@ jobs:
       - name: Verify H007 HTTP foundation
         run: npm run verify:h007
 
+      - name: Verify H009 runtime contracts
+        run: npm run verify:h009
+
       - name: Smoke test development server
         shell: bash
         run: |
