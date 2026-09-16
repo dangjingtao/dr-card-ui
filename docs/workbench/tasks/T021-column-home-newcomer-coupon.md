@@ -8,14 +8,14 @@
 
 ## 当前事实与差距
 
-- 当前 `/` 是卡博士 APP 首页，`/dearseed` 是独立的诗得丽品牌专栏；本轮需求要求原首页改为新的「诗得丽品牌专栏」。
+- 当前 `/` 是卡博士 APP 首页，`/dearseed` 是独立的极地种子品牌专栏；本轮需求要求原首页改为新的「极地种子品牌专栏」。
 - 当前首页仍包含金刚区，且没有完整嵌入 `/checkin` 内容。
 - 当前新人弹窗不是“随机 1/2 张体验券”的领取流程。
 - 本卡是对已验收 T005 的新增需求，不修改 T005 的历史验收结论。
 
 ## 目标
 
-完成新版诗得丽品牌专栏首页，并建立新用户随机 1/2 张体验券的领取与关闭路径。
+完成新版极地种子品牌专栏首页，并建立新用户随机 1/2 张体验券的领取与关闭路径。
 
 ## 原型范围
 
@@ -31,7 +31,7 @@
 ## 依赖与阻塞决策
 
 - 依赖现有移动端壳层、Com Design Token、Banner、搜索栏和打卡组件。
-- 最终名称按「诗得丽品牌专栏」执行。
+- 最终名称按「极地种子品牌专栏」执行。
 - 用户已确认打卡内容暂时全部迁入，但不重复页面标题、返回栏和底部导航。
 
 ## 实施要求
@@ -78,13 +78,13 @@
 - `src/pages/Checkin.tsx`：改为消费 `CheckinBoard` 与 `CheckinMakeupSuccessOverlay`，从约 400 行收敛到约 55 行；二级页外壳（返回标题栏、无底部 Tab）与内部业务规则均未改，避免首页迁入造成打卡页退化。
 - 新增 `src/components/mobile/CheckinMakeupSuccessOverlay.tsx`：补打卡成功弹窗抽出共用，使补签这一主要操作在首页也能自持反馈（需求 §2.3），节点沿用 `/checkin` 的 #22、不新增节点（D-076）。
 - 新增 `src/components/mobile/NewcomerCouponDialog.tsx`：需求 §3.1 的新人体验券弹窗，视觉交互参照 `/dearseed?overlay=reminder` 的 `PromptOverlay`；弹窗内直接展示体验券商品图文与数量（`本次共 N 张体验券` + `ul[aria-label="本次赠送的体验券"]`），并内置 §3.2 的领取成功层。关闭按钮为 `button[aria-label="关闭新人体验券"]`。
-- `src/pages/Home.tsx`：按需求 §2.1–§2.2 重写为「诗得丽品牌专栏」首页——保留搜索栏与头像入口、保留既有 `BannerCarousel`，**整块删除金刚区**（淋浴 / 洗烘 / 饮水 / 吹风），Banner 下接 `CheckinBoard`，再依次接公益板块与卡博士品牌故事；两个附加区随页面正常滚动、不吸底不悬浮，底部导航保持既有固定方式。新人券 variant 取值优先读 `?state=`，仅在无参数时按 1:1 抽取一次性默认落点（D-074/D-079）。文件头注释逐条引用需求条款与三项未决阻塞。
+- `src/pages/Home.tsx`：按需求 §2.1–§2.2 重写为「极地种子品牌专栏」首页——保留搜索栏与头像入口、保留既有 `BannerCarousel`，**整块删除金刚区**（淋浴 / 洗烘 / 饮水 / 吹风），Banner 下接 `CheckinBoard`，再依次接公益板块与卡博士品牌故事；两个附加区随页面正常滚动、不吸底不悬浮，底部导航保持既有固定方式。新人券 variant 取值优先读 `?state=`，仅在无参数时按 1:1 抽取一次性默认落点（D-074/D-079）。文件头注释逐条引用需求条款与三项未决阻塞。
 - `src/pages/Home.tsx`（用户 2026-08-27 追加口径）：**默认全是新用户**——不带参数进入 `/` 即自动弹出新人体验券。由于 `useOverlay()` 完全由 URL `?overlay=` 驱动、无内部 state，「默认弹出」不能写成 `overlay === null → 弹`（`close()` 删参后会立刻复弹形成死循环），故引入独立的 `autoNewcomer` state 挂载时惰性求值一次，关闭与确定时置 `false`（D-077）。**公益板块暂不实现跳转**——该板块渲染为 `div` 静态承载，不给 `button` 语义、不带入口文案与 `ChevronRight`，「卡博士品牌故事」保留跳 `/brand-culture`（D-079）。
-- `src/app/router/routes.ts`：`/` 的 `title` / `titleBarTitle` 改为「诗得丽品牌专栏」，登记 `task: 'T021'`、`states: coupon-1 / coupon-2`、`overlays: newcomer-coupon / coupon-success / make-up-success`。T021 为需求变更新增内容、摹客无对应 artboard，故 `nodes: []`，新人券相关 `node` 记 0 占位，补签弹层 `node: 22`（D-072/D-076）。取证专用参数 `?newcomer=off` 既不是 fixture 状态也不是弹层，因此不进 `states` / `overlays`，`RouteMeta` 也不为它新增字段（现有字段集无「取证参数」语义位），改为就近块注释 + `owner` 文案登记（D-078）。
+- `src/app/router/routes.ts`：`/` 的 `title` / `titleBarTitle` 改为「极地种子品牌专栏」，登记 `task: 'T021'`、`states: coupon-1 / coupon-2`、`overlays: newcomer-coupon / coupon-success / make-up-success`。T021 为需求变更新增内容、摹客无对应 artboard，故 `nodes: []`，新人券相关 `node` 记 0 占位，补签弹层 `node: 22`（D-072/D-076）。取证专用参数 `?newcomer=off` 既不是 fixture 状态也不是弹层，因此不进 `states` / `overlays`，`RouteMeta` 也不为它新增字段（现有字段集无「取证参数」语义位），改为就近块注释 + `owner` 文案登记（D-078）。
 - `src/app/fixtures/index.ts`：新增 T021 区段——`NewcomerCoupon` 类型、`NEWCOMER_COUPON_VARIANTS`（`coupon-1` 1 张 / `coupon-2` 2 张两组固定券面）、`NEWCOMER_COUPON_DIALOG`、`NEWCOMER_COUPON_SUCCESS`（`actionTo: '/exchange'`）、`COLUMN_HOME_SECTIONS`（公益板块 `action`/`to` 均为 `null` 不跳转、卡博士品牌故事 → `/brand-culture`），以及 `NEWCOMER_COUPON_RULE_STATUS` 按 D-017/D-037/D-049/D-065 的规则隔离模式登记 B-031 / B-032 / B-033，不在页面内自行补写判定逻辑。用户 2026-08-27 定案后三条 `note` 已按新口径收窄（新用户识别 `confirmed: true`）。
 - 新增 `scripts/capture-t021.mjs`：本卡专用取证脚本，在真实 375 × 812 视口校验首屏结构、金刚区已移除、打卡内容完整且无重复外壳、附加区顺序与公益板块不可点击、长页滚动与底部导航不重叠、默认自动弹窗与关闭后不复现、`?newcomer=off` 抑制、1/2 张券两态、领取与关闭两条出口、首页补签反馈，并回归 `/checkin`。
 - 取证/回归脚本兼容首页默认弹窗（D-078）：`capture-t001.mjs`、`capture-t004.mjs`、`capture-t023.mjs`、`verify-t001.mjs`、`verify-t004.mjs`、`verify-reference-pages.mjs` 中触碰 `/` 的访问一律改为 `/?newcomer=off`；`console-check-t004.mjs` 同时保留 `/` 与 `/?newcomer=off`，因为弹窗态本身也必须无 console error。`capture-t023.mjs` 的 `membershipEntries` 由 3 元组扩为 4 元组，把「访问地址」与「返回后预期 `pathname`」分列，避免 `pathOf()` 只比 pathname 导致断言必然失败。
-- `scripts/capture-t005.mjs`（金刚区删除的连带修正，D-080）：该脚本原先点击首页「诗得丽品牌专栏」卡片进入 `/dearseed?overlay=reminder`，而该卡片正是金刚区的一部分，已随 D-072 一并删除（经 `git show HEAD:src/pages/Home.tsx` 核实旧版存在），属真实脚本失效而非弹窗遮挡，加参数无效。改为直连该 overlay，只继续验证专栏侧提示层与关闭出口；首页与专栏的新入口关系由本卡取证覆盖，**T005 历史验收结论不回改**。
+- `scripts/capture-t005.mjs`（金刚区删除的连带修正，D-080）：该脚本原先点击首页「极地种子品牌专栏」卡片进入 `/dearseed?overlay=reminder`，而该卡片正是金刚区的一部分，已随 D-072 一并删除（经 `git show HEAD:src/pages/Home.tsx` 核实旧版存在），属真实脚本失效而非弹窗遮挡，加参数无效。改为直连该 overlay，只继续验证专栏侧提示层与关闭出口；首页与专栏的新入口关系由本卡取证覆盖，**T005 历史验收结论不回改**。
 
 ### 证据
 
@@ -92,7 +92,7 @@
 
 | 文件 | 覆盖项 |
 | --- | --- |
-| `t021-01-home-first-screen.png` | 新首页首屏（标题「诗得丽品牌专栏」+ 搜索栏 + 头像 + Banner + 打卡首块，无金刚区） |
+| `t021-01-home-first-screen.png` | 新首页首屏（标题「极地种子品牌专栏」+ 搜索栏 + 头像 + Banner + 打卡首块，无金刚区） |
 | `t021-02-home-bottom.png` | 长页滚到底：公益板块与卡博士品牌故事顺序、与固定底部导航不重叠 |
 | `t021-03-newcomer-coupon-1.png` | 新人弹窗 1 张体验券态（`?state=coupon-1`） |
 | `t021-03-newcomer-coupon-2.png` | 新人弹窗 2 张体验券态（`?state=coupon-2`） |

@@ -77,7 +77,7 @@ await page.waitForTimeout(800)
 console.log(`  legacy Tab「首页」 → ${pathOf()}`)
 expect(pathOf() === '/legacy-home', `应进入 /legacy-home，实际 ${pathOf()}`)
 
-/* 点"诗得丽品牌专栏"卡片上的"进入专栏"按钮 */
+/* 点"极地种子品牌专栏"卡片上的"进入专栏"按钮 */
 await page.locator('button:has-text("进入专栏")').first().click()
 await page.waitForTimeout(800)
 console.log(`  「进入专栏」 → ${pathOf()}`)

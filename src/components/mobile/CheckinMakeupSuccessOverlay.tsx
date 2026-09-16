@@ -15,7 +15,7 @@ export interface CheckinMakeupSuccessOverlayProps {
  * -------------------------------------------------------------
  * 视觉与文案完全沿用 T006 已验收的 /checkin 实现，本组件只做「弹窗抽取」，
  * 使补签这个打卡主要操作可以被任意宿主页面自持，不必跳转到 /checkin 才能看到反馈。
- * T021 起被 /checkin 与诗得丽品牌专栏首页 `/` 共同复用（需求 §2.3「完整迁入主要操作」）。
+ * T021 起被 /checkin 与极地种子品牌专栏首页 `/` 共同复用（需求 §2.3「完整迁入主要操作」）。
  * 宿主仍各自在 routes.ts 登记自己的 `?overlay=make-up-success` 以保证可复现。
  */
 export default function CheckinMakeupSuccessOverlay({

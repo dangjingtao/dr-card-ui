@@ -131,8 +131,8 @@ export default function LegacyHome() {
         <span className="text-sm font-medium">扫一扫</span>
       </button>
 
-      {/* 诗得丽品牌专栏（大卡片）
-       * 用户 2026-09-10 反馈：从此卡片进入的是根路径 /（T021 诗得丽品牌专栏首页），
+      {/* 极地种子品牌专栏（大卡片）
+       * 用户 2026-09-10 反馈：从此卡片进入的是根路径 /（T021 极地种子品牌专栏首页），
        * 不是 /dearseed（独立的旧版专栏入口）。身份选择弹窗在 Home.tsx 实现。 */}
       <button
         type="button"
@@ -141,7 +141,7 @@ export default function LegacyHome() {
         style={{ aspectRatio: '3 / 1' }}
       >
         <div className="flex-1 px-5 text-left">
-          <div className="text-base font-bold text-[#5C3D1E]">诗得丽品牌专栏</div>
+          <div className="text-base font-bold text-[#5C3D1E]">极地种子品牌专栏</div>
           <div className="mt-1 text-xs text-[#8B6A45]">会员福利 · 品牌服务 · 洗护好物</div>
           <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-[#D9A968] px-3 py-1 text-[10px] font-medium text-[#2A1A10]">
             进入专栏

@@ -46,7 +46,7 @@ if (await later.count()) { await later.first().click(); await page.waitForTimeou
 // SPA 导航进根路由：legacy 三项导航「首页」→ /legacy-home → 专栏大卡片 → /
 await page.locator('nav[aria-label="主导航"] button[aria-label="首页"]').click()
 await page.waitForTimeout(900)
-const toColumn = page.locator('button:has-text("诗得丽品牌专栏")').first()
+const toColumn = page.locator('button:has-text("极地种子品牌专栏")').first()
 if (await toColumn.count()) { await toColumn.click(); await page.waitForTimeout(1100) }
 const closeIdp = page.locator('button[aria-label="关闭身份选择"]')
 if (await closeIdp.count()) { await closeIdp.first().click(); await page.waitForTimeout(400) }

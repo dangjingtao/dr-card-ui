@@ -1944,7 +1944,7 @@ export const BUDDY_RULE_STATUS = {
 } as const
 
 /* ------------------------------------------------------------------ *
- * T021 诗得丽品牌专栏首页：新人体验券
+ * T021 极地种子品牌专栏首页：新人体验券
  * ------------------------------------------------------------------ */
 
 export interface NewcomerCoupon {
@@ -1976,7 +1976,7 @@ export const NEWCOMER_COUPON_VARIANTS: Record<'coupon-1' | 'coupon-2', NewcomerC
 export const NEWCOMER_COUPON_DIALOG = {
   eyebrow: 'DEAR SEED',
   title: '新人见面礼',
-  desc: '欢迎来到诗得丽品牌专栏，以下体验券已为你准备好，确认后即可在洗护体验券专区查看。',
+  desc: '欢迎来到极地种子品牌专栏，以下体验券已为你准备好，确认后即可在洗护体验券专区查看。',
   action: '确定',
 } as const
 

@@ -72,7 +72,7 @@ expect(suppressed === 0, '`?newcomer=off` 应确定性地抑制自动弹窗')
 await go('/?newcomer=off')
 const titleBar = await page.locator('[data-title-bar]').first().innerText()
 console.log(`  §2.2 页面标题=${titleBar.replace(/\n/g, ' ')}`)
-expect(titleBar.includes('诗得丽品牌专栏'), `页面标题应为「诗得丽品牌专栏」，实际=${titleBar}`)
+expect(titleBar.includes('极地种子品牌专栏'), `页面标题应为「极地种子品牌专栏」，实际=${titleBar}`)
 
 const searchBox = await box('section[aria-label="搜索与用户入口"]')
 const banner = await box('section[aria-label="首页活动轮播"], [aria-label="首页活动轮播"]')

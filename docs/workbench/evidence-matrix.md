@@ -23,7 +23,7 @@ T014 范围关闭节点使用范围结论：`Exclude / Preserve Evidence / Futur
 
 | Tab | 路由 | 页面文件 | 当前语义 / 承载节点 | 实现等级 | 375×812 新截图 |
 | --- | --- | --- | --- | --- | --- |
-| 首页 | `/` | [Home.tsx](../../src/pages/Home.tsx) | 诗得丽品牌专栏首页（T021 改造）：搜索栏 + 头像 + Banner + 迁入的打卡内容 + 公益板块（静态、无跳转）+ 卡博士品牌故事；默认弹出新人体验券，承载领取成功态 | `Implemented`：金刚区已移除、打卡内容经 `CheckinBoard` 完整迁入且无重复页面壳；默认全是新用户（D-077），1/2 张券概率 1:1 且由夹具 `?state=` 确定性复现；取证用 `?newcomer=off` 抑制弹窗（D-078） | [t021-01-home-first-screen.png](./evidence/screenshots/t021-01-home-first-screen.png)、[t021-02-home-bottom.png](./evidence/screenshots/t021-02-home-bottom.png)、[t021-05-home-auto-newcomer.png](./evidence/screenshots/t021-05-home-auto-newcomer.png) |
+| 首页 | `/` | [Home.tsx](../../src/pages/Home.tsx) | 极地种子品牌专栏首页（T021 改造）：搜索栏 + 头像 + Banner + 迁入的打卡内容 + 公益板块（静态、无跳转）+ 卡博士品牌故事；默认弹出新人体验券，承载领取成功态 | `Implemented`：金刚区已移除、打卡内容经 `CheckinBoard` 完整迁入且无重复页面壳；默认全是新用户（D-077），1/2 张券概率 1:1 且由夹具 `?state=` 确定性复现；取证用 `?newcomer=off` 抑制弹窗（D-078） | [t021-01-home-first-screen.png](./evidence/screenshots/t021-01-home-first-screen.png)、[t021-02-home-bottom.png](./evidence/screenshots/t021-02-home-bottom.png)、[t021-05-home-auto-newcomer.png](./evidence/screenshots/t021-05-home-auto-newcomer.png) |
 | 泡泡 | `/points` | [Points.tsx](../../src/pages/Points.tsx) | 泡泡值任务页（T022 改造）：泡泡值余额 + 任务占位区 + 三项福利入口（每日签到 / 澡运 / 体验券兑换）+ 吸底兑换按钮，承接 #5；流水明细已拆到二级页 [`/points/detail`](../../src/pages/PointsDetail.tsx)（收入/消耗筛选与空态四态） | `Implemented`：Tab 语义为任务页，`/points/detail` 为二级页（无底部导航、有返回栏）；打卡页 `/checkin` 保留为二级页面 | 截图由 `scripts/capture-t001.mjs` 生成 `t001-seed-points.png`；本轮见 [t024-06-points-detail-expense.png](./evidence/screenshots/t024-06-points-detail-expense.png)、[t024-07-points-detail-empty.png](./evidence/screenshots/t024-07-points-detail-empty.png)、[t024-08-points-benefits-tasks.png](./evidence/screenshots/t024-08-points-benefits-tasks.png) |
 | 扫码 | `/card/verify` | [ScanVerify.tsx](../../src/pages/ScanVerify.tsx) | 扫码核销 #67；可继续进入确认核销 | `Implemented`：reference 标准扫码页，核销确认链路由 T009 继续验收 | [t001-seed-scan.png](./evidence/screenshots/t001-seed-scan.png) |
 | 服务 | `/membership` | [Membership.tsx](../../src/pages/Membership.tsx) | 会员中心 #6 | `Implemented`：会员 hero、功能入口、连续打卡福利与权益区已落地 | [t001-seed-membership.png](./evidence/screenshots/t001-seed-membership.png) |
@@ -35,7 +35,7 @@ T014 范围关闭节点使用范围结论：`Exclude / Preserve Evidence / Futur
 
 - 路由注册表已由 T004 扩展为全量 60 实施节点（见 [route-table.md](./route-table.md) 与 [routes.ts](../../src/app/router/routes.ts)）；五个种籽页是当前主导航入口，不是全量路由数量。
 - 旧快照中的 4 Tab（首页/卡包/兑换/我的）已失效：`/card` 与 `/exchange` 保留为二级可达页面；主导航现为 首页/泡泡/扫码/服务/我的。
-- `/` 根首页已由 T021 按需求 §2.1 改为「诗得丽品牌专栏」首页并删除金刚区，打卡内容经共享组件 `CheckinBoard` 完整迁入（D-072/D-073）；`/dearseed` 仍为独立专栏页，#12/#13 新人弹窗/引导弹窗与 #23 领取态继续由 `/dearseed` 的 `?overlay=` / `?state=claimed` 承载，D-054 中「`/` 仅承载 APP 首页」的口径已被 D-072 覆盖。
+- `/` 根首页已由 T021 按需求 §2.1 改为「极地种子品牌专栏」首页并删除金刚区，打卡内容经共享组件 `CheckinBoard` 完整迁入（D-072/D-073）；`/dearseed` 仍为独立专栏页，#12/#13 新人弹窗/引导弹窗与 #23 领取态继续由 `/dearseed` 的 `?overlay=` / `?state=claimed` 承载，D-054 中「`/` 仅承载 APP 首页」的口径已被 D-072 覆盖。
 - `/exchange` 语义已由 T004 纠正为「洗护兑换专区」（#18/#37/#38），不再是兑换码页；兑换码入口迁移至 `/redeem`（#68）。
 - `/draw-success` 旧路由已由 T004 移除并重定向至 `/luck/result`（#41）；T006 已于 2026-08-22 把三档签运降级为显式 `?state=great|good|minor` 并各带「未定稿」标识，`nextLuck()` 为确定性推进、无随机与持久化，规则本体仍待确认（B-003）。
 - 运行证据：`BASE_URL=http://127.0.0.1:5174 node scripts/verify-t001.mjs` 于本次刷新全部 PASS（5 个标签顺序、5 个直达路由及对应激活态）；截图由 `scripts/capture-t001.mjs` 同一 375×812 视口生成。
@@ -105,7 +105,7 @@ T005 补充证据（2026-08-24 #12/#13 按摹客真值修正后复跑）：`BASE
 本轮新增断言记录：
 - #2 轮播：可见=true、帧数=2、指示点=2、**位于黑金签到 Banner 之上**（用 `getBoundingClientRect().top` 客观比对 `[data-carousel-slide]` 与 `[data-home-checkin-banner]`）；轮播整体点击 → URL 含 `overlay=newcomer`。
 - #2 为你精选：卡片数=2、「去兑换」按钮数=2、价格「200🫧」可见；点「去兑换」跳 `/exchange?overlay=redeem`。
-- #16 品牌文化：`长图=true 全宽铺满=true(w=375) 页内按钮=0 返回栏=1 占位文案=0`；长图滚到底可完整浏览无裁切；**返回链路 `/` →（首页「诗得丽品牌专栏」入口）→ `/brand-culture` → 返回 `/`**。
+- #16 品牌文化：`长图=true 全宽铺满=true(w=375) 页内按钮=0 返回栏=1 占位文案=0`；长图滚到底可完整浏览无裁切；**返回链路 `/` →（首页「极地种子品牌专栏」入口）→ `/brand-culture` → 返回 `/`**。
 - 沿用上一轮断言（#2 主按钮=前往领取；#23 已领取且 disabled；#15/#25 容器形态与关闭回落；#14 空提交校验；#24 年级=8；#12/#13 全部要点）本轮同样全部通过。
 
 ⚠️ 取证方式修正说明：#16 返回断言初版用 `page.goto('/brand-culture')` 直达后点返回，实测退回 `/onboarding/success`。原因是项目返回栏由 `TitleBar` 统一实现为 `navigate(-1)`（history back，全局既有行为、属禁改层），直达时 history 上一条正是脚本前一步地址。已改为走首页真实入口进入再返回，与摹客 remark「点击左上角的返回按钮回到主页面」一致；页面本身无缺陷。

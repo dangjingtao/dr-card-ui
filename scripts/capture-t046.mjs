@@ -1,4 +1,4 @@
-// T046 诗得丽品牌专栏首页右上角头像 → 会员中心 375×812 验收
+// T046 极地种子品牌专栏首页右上角头像 → 会员中心 375×812 验收
 // 覆盖：头像跳转目标、不再跳商城、卡博士主壳头像不受影响、返回路径闭合
 //
 // ⚠️ 前置：T037 起根路由 `/` 有登录守卫（未登录 → /legacy-profile/login），
@@ -75,9 +75,9 @@ if (await bindLater.count()) {
 console.log(`  登录后 → ${pathOf()}`)
 expect(pathOf() === '/legacy-profile', `登录后应落在 /legacy-profile，实际 ${pathOf()}`)
 
-/* ── 1. 经真实入口进入诗得丽品牌专栏首页 ── */
-currentStep = '步骤 1｜卡博士首页 → 诗得丽品牌专栏卡片'
-console.log('步骤 1｜卡博士首页 → 诗得丽品牌专栏卡片')
+/* ── 1. 经真实入口进入极地种子品牌专栏首页 ── */
+currentStep = '步骤 1｜卡博士首页 → 极地种子品牌专栏卡片'
+console.log('步骤 1｜卡博士首页 → 极地种子品牌专栏卡片')
 await page.locator('nav[aria-label="主导航"] button[aria-label="首页"]').click()
 await page.waitForTimeout(600)
 console.log(`  底部 Tab「首页」 → ${pathOf()}`)
@@ -85,7 +85,7 @@ expect(pathOf() === '/legacy-home', `应进入 /legacy-home，实际 ${pathOf()}
 
 await page.locator('button:has-text("进入专栏")').first().click()
 await page.waitForTimeout(800)
-console.log(`  「诗得丽品牌专栏」卡片 → ${pathOf()}`)
+console.log(`  「极地种子品牌专栏」卡片 → ${pathOf()}`)
 expect(pathOf() === '/', `专栏卡片应进入根路由 /，实际 ${pathOf()}`)
 
 /* 首页默认自动弹身份选择（T043）；关闭后取干净形态 */
@@ -97,7 +97,7 @@ if (await pickerClose.count()) {
 }
 const titleBar = await page.locator('[data-title-bar]').first().innerText()
 console.log(`  页面标题栏="${titleBar.replace(/\n/g, ' ')}"`)
-expect(titleBar.includes('诗得丽品牌专栏'), `首页标题栏应为「诗得丽品牌专栏」，实际="${titleBar.replace(/\n/g, ' ')}"`)
+expect(titleBar.includes('极地种子品牌专栏'), `首页标题栏应为「极地种子品牌专栏」，实际="${titleBar.replace(/\n/g, ' ')}"`)
 
 /* ── 2. 头像入口语义已由「商城」改为「会员中心」── */
 currentStep = '步骤 2｜头像入口存在性与语义'

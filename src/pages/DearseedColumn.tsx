@@ -45,7 +45,7 @@ const columnEntries = [
 ]
 
 /**
- * 诗得丽品牌专栏（摹客顶级页面 mRzKbV3B_ / 主画板 6CDuUGxQ1p）。
+ * 极地种子品牌专栏（摹客顶级页面 mRzKbV3B_ / 主画板 6CDuUGxQ1p）。
  * 与卡博士 APP 首页分离；只接入原型中已确认且当前有真实去向的三个主入口。
  * 个性定制、数字空间、核心小科普等无已确认业务页或明确暂缓的入口不擅自上线。
  */
@@ -71,7 +71,7 @@ export default function DearseedColumn() {
   const dearseedCoupons = NEWCOMER_COUPON_VARIANTS['coupon-1']
 
   /* T043R2｜进入专栏页面自动弹身份选择器。
-   * - 用户 2026-09-10 现场反馈：从卡博士 APP 首页「诗得丽品牌专栏」卡片跳转进专栏后必须弹出
+   * - 用户 2026-09-10 现场反馈：从卡博士 APP 首页「极地种子品牌专栏」卡片跳转进专栏后必须弹出
    * - 取消原 T043 实现的 sessionStorage 会话级抑制：每次 mount 都弹
    * - URL 带 `?picker=off` 时跳过（演示态可关闭、自动化脚本可抑制）
    * - 已带其他 overlay 的入口（如 ?overlay=reminder）也跳过，避免覆盖其他演示态

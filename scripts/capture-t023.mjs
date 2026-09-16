@@ -130,7 +130,7 @@ await shot('17-mall-from-tab')
 // visit 是实际访问地址，backPath 是返回后预期的 pathname；首页需带 ?newcomer=off 抑制
 // T021 的默认新人体验券弹窗（模态会遮挡点击），而 pathOf() 只比较 pathname，故两者分列。
 // ⚠️ T046（2026-09-09 用户现场反馈）已反转本批次对「首页头像」这一条入口的结论：
-//    诗得丽品牌专栏首页右上角头像改跳 /dearseed/membership，本脚本不再断言首页头像进商城，
+//    极地种子品牌专栏首页右上角头像改跳 /dearseed/membership，本脚本不再断言首页头像进商城，
 //    该入口的期望由 scripts/capture-t046.mjs 接管。其余两条入口维持 T023 结论不变。
 const membershipEntries = [
   ['专栏-会员空间', '/dearseed', '/dearseed', 'button:has-text("会员空间")'],

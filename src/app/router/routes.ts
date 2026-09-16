@@ -15,7 +15,7 @@ import { CircleDot, Headset, Home, QrCode, UserRound } from 'lucide-react'
  * - H5 商城（#17/#48/#49）承载为 WebView 边界页。
  * - 2026-08-28 用户确认：底部 Tab `/mall` 文案由「服务」改为「商城」；会员中心重新作为
  *   「我的 → 快捷服务」入口开放，`/membership` 恢复挂载既有会员中心页面，不新建页面。
- * - T021（2026-08-27 需求变更 §2）：根路由 `/` 由「卡博士 APP 首页」改为「诗得丽品牌专栏」
+ * - T021（2026-08-27 需求变更 §2）：根路由 `/` 由「卡博士 APP 首页」改为「极地种子品牌专栏」
  *   首页，删除金刚区并迁入 `/checkin` 打卡内容；`/dearseed` 仍保留为已验收的独立专栏页，
  *   不修改 T005 历史结论。`/` 新增的新人体验券状态与弹层是需求新增内容，摹客原型无对应
  *   artboard，故 node 占位 0（未决口径见 fixtures 的 NEWCOMER_COUPON_RULE_STATUS）。
@@ -90,10 +90,10 @@ export const ROUTES: RouteMeta[] = [
     tabOrder: 1,
     label: '首页',
     icon: Home,
-    /* T021：需求 §2.1–§2.2 要求根首页改为「诗得丽品牌专栏」并删除金刚区 */
-    title: '诗得丽品牌专栏',
+    /* T021：需求 §2.1–§2.2 要求根首页改为「极地种子品牌专栏」并删除金刚区 */
+    title: '极地种子品牌专栏',
     titleBar: 'plain',
-    titleBarTitle: '诗得丽品牌专栏',
+    titleBarTitle: '极地种子品牌专栏',
     /* T021 为需求变更新增内容，摹客原型无对应 artboard，故节点留空、下列状态/弹层 node 占位 0 */
     nodes: [],
     task: 'T021',
@@ -114,7 +114,7 @@ export const ROUTES: RouteMeta[] = [
       /* 打卡内容随 CheckinBoard 迁入后，补签这个主要操作也在首页自持反馈（需求 §2.3），节点沿用 /checkin 的 #22 */
       { key: 'make-up-success', node: 22, label: '补打卡成功弹窗', type: 'dialog' },
     ],
-    owner: '诗得丽品牌专栏首页（T021 改造；打卡内容与 /checkin 共用 CheckinBoard；默认弹出新人体验券，`?newcomer=off` 抑制）',
+    owner: '极地种子品牌专栏首页（T021 改造；打卡内容与 /checkin 共用 CheckinBoard；默认弹出新人体验券，`?newcomer=off` 抑制）',
   },
   {
     path: '/legacy-home',
@@ -493,7 +493,7 @@ export const ROUTES: RouteMeta[] = [
     task: 'T028',
     entry: '设置-在线客服（已跳转至诗得丽 /service/chat，本页面保留不再被业务入口使用）',
     returnTo: '设置',
-    owner: '客服中心页（T028；当前业务入口（卡博士服务页 / 我的设置）均改跳诗得丽品牌专栏的 /service/chat；本页面作为过渡保留，地址栏直接访问仍可达）',
+    owner: '客服中心页（T028；当前业务入口（卡博士服务页 / 我的设置）均改跳极地种子品牌专栏的 /service/chat；本页面作为过渡保留，地址栏直接访问仍可达）',
   },
   {
     path: '/legacy-profile/school-accounts',
@@ -642,7 +642,7 @@ export const ROUTES: RouteMeta[] = [
     titleBarAction: 'notifications',
     nodes: [2, 23],
     task: 'T005',
-    entry: '卡博士首页-「诗得丽品牌专栏」',
+    entry: '卡博士首页-「极地种子品牌专栏」',
     returnTo: '卡博士首页',
     states: [{ key: 'claimed', node: 23, label: '领取完专栏状态' }],
     overlays: [
@@ -650,7 +650,7 @@ export const ROUTES: RouteMeta[] = [
       { key: 'newcomer', node: 12, label: '新人弹窗', type: 'dialog' },
       { key: 'app-guide', node: 13, label: '引导弹窗（APP 下载）', type: 'dialog' },
     ],
-    owner: '诗得丽品牌专栏独立业务首页（用户 2026-08-24 确认与 APP 首页分离）',
+    owner: '极地种子品牌专栏独立业务首页（用户 2026-08-24 确认与 APP 首页分离）',
   },
   {
     path: '/onboarding',

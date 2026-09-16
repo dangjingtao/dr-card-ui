@@ -3,7 +3,7 @@
 //       选「诗得丽新增用户」→ 洗发水体验券弹窗 → 领取成功跳 /exchange
 //
 // ⚠️ 前置：T037 起根路由 `/` 有登录守卫，因此本脚本先走真实登录动线
-//    再用 SPA 导航进 `/dearseed`。注意：T046 起 `/` 已是「诗得丽品牌专栏」首页，
+//    再用 SPA 导航进 `/dearseed`。注意：T046 起 `/` 已是「极地种子品牌专栏」首页，
 //    而 `/dearseed` 是历史独立专栏；T043 的身份选择弹窗挂在 `/dearseed`。
 //
 // 用法: BASE_URL=http://127.0.0.1:5173 node scripts/capture-t043.mjs
@@ -72,7 +72,7 @@ if (await bindLater.count()) {
 console.log(`  登录后 → ${pathOf()}`)
 expect(pathOf() === '/legacy-profile', `登录后应落在 /legacy-profile，实际 ${pathOf()}`)
 
-/* ── 1. 进入卡博士主壳 → 进诗得丽品牌专栏卡片 → 跳到 /dearseed ── */
+/* ── 1. 进入卡博士主壳 → 进极地种子品牌专栏卡片 → 跳到 /dearseed ── */
 currentStep = '步骤 1｜卡博士首页 → 专栏入口 → /dearseed'
 console.log('步骤 1｜卡博士首页 → 专栏入口 → /dearseed')
 await page.locator('nav[aria-label="主导航"] button[aria-label="首页"]').click()
@@ -81,7 +81,7 @@ expect(pathOf() === '/legacy-home', `应进入 /legacy-home，实际 ${pathOf()}
 
 await page.locator('button:has-text("进入专栏")').first().click()
 await page.waitForTimeout(800)
-console.log(`  「诗得丽品牌专栏」卡片 → ${pathOf()}`)
+console.log(`  「极地种子品牌专栏」卡片 → ${pathOf()}`)
 /* /dearseed 入口可能在 /legacy-home 顶部或中部；卡片文案可能是「进入专栏」/「立即进入」等，按实际文本匹配 */
 if (pathOf() !== '/dearseed') {
   /* 兜底：直接 SPA 跳 /dearseed */

@@ -24,7 +24,7 @@ const cases = [
   ['ref-notice', '/notifications', ['通知', '一键已读', '订单核销成功']],
   ['ref-notice-detail', '/notifications/n1', ['订单核销成功', '本条为系统通知', '280 泡泡值']],
   // 首页带 ?newcomer=off 抑制 T021 的默认新人体验券弹窗，保证参考截图取到无遮挡形态
-  ['ref-home', '/?newcomer=off', ['首页', '诗得丽品牌专栏', '公益板块']],
+  ['ref-home', '/?newcomer=off', ['首页', '极地种子品牌专栏', '公益板块']],
   ['ref-checkin', '/checkin', ['今日已签到', '本周期签到日历', '连续签到奖励']],
   /* T023 起 `/membership` 重定向到 /mall（需求 §6），原会员中心用例下线，证据见 ref-membership.png */
   ['ref-profile', '/profile', ['我的', 'VIP 泡泡新生', '热门兑换']],
