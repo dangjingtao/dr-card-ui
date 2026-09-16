@@ -54,7 +54,7 @@ export default function BottomNav({ variant = 'main' }: { variant?: 'main' | 'le
     const currentRoute = findRouteByPathname(location.pathname)
     const targetRoute = findRouteByPathname(value)
     if (isActiveFormalH5Route(currentRoute) && isActiveFormalH5Route(targetRoute)) {
-      navigateWithH5ViewTransition(navigate, value, 'tab')
+      navigateWithH5ViewTransition(navigate, value)
       return
     }
 
