@@ -1,7 +1,5 @@
 import type { NavigateFunction, NavigateOptions, To } from 'react-router-dom'
 
-export type H5NavigationKind = 'tab' | 'forward' | 'back'
-
 function canUseViewTransition(): boolean {
   if (typeof document === 'undefined' || !('startViewTransition' in document)) return false
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return true
@@ -16,7 +14,6 @@ function canUseViewTransition(): boolean {
 export function navigateWithH5ViewTransition(
   navigate: NavigateFunction,
   to: To,
-  _kind: H5NavigationKind,
   options: NavigateOptions = {},
 ) {
   navigate(to, { ...options, viewTransition: canUseViewTransition() })
