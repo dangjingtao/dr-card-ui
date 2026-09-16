@@ -1,6 +1,6 @@
 import { type ZodType, type ZodError } from 'zod'
 
-import { createContractError } from '../http/appError'
+import { createContractError } from '../../lib/appError'
 
 export type ContractSource = 'api' | 'mock' | 'bridge'
 
