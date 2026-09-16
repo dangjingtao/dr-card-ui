@@ -142,6 +142,8 @@ try {
   const sourceFiles = await listSourceFiles('src')
   const storageImplementation = path.normalize('src/app/storage/storage.ts')
   const keyRegistry = path.normalize('src/app/storage/keys.ts')
+  const directWebStoragePattern = /\b(?:localStorage|sessionStorage)\b/
+  const keyDefinitionPattern = /\bdefineStorageKey\s*\(/
 
   for (const file of sourceFiles) {
     const normalized = path.normalize(file)
@@ -149,20 +151,15 @@ try {
 
     if (normalized !== storageImplementation) {
       assert.equal(
-        source.includes('localStorage'),
+        directWebStoragePattern.test(source),
         false,
-        `${file} bypasses H011 by referencing localStorage directly`,
-      )
-      assert.equal(
-        source.includes('sessionStorage'),
-        false,
-        `${file} bypasses H011 by referencing sessionStorage directly`,
+        `${file} bypasses H011 by referencing Web Storage directly`,
       )
     }
 
     if (normalized !== keyRegistry) {
       assert.equal(
-        source.includes('defineStorageKey('),
+        keyDefinitionPattern.test(source),
         false,
         `${file} defines a storage key outside the centralized registry`,
       )
