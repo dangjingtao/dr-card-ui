@@ -39,7 +39,8 @@ iOS debug 草稿中虽存在 `webkit.messageHandlers.getAuthorizationInfo` / `wi
 - host/version 信息与支持判断；未提供的宿主 version 明确返回 `null`，不猜版本；
 - Browser/H5 明确 unsupported，不返回假 Native 成功；
 - 首个正式能力：Android `getLoginToken()`；
-- 页面禁止直接访问宿主全局对象。
+- 正式 H5 页面禁止直接访问宿主全局对象；
+- H002 / `AGENTS.md` §3.4 已标记的 Native reference / legacy 页面继续“只看、不动、不验”，不纳入 H015 H5 gate。
 
 ## 不做
 
@@ -47,27 +48,29 @@ iOS debug 草稿中虽存在 `webkit.messageHandlers.getAuthorizationInfo` / `wi
 - 不自行发明扫码、相机、相册、分享、登录、导航协议；
 - 不把尚未确认的 iOS 草稿包装成已支持能力；
 - 不猜测 `getLoginToken()` 的 token DTO/schema；
-- 不让 Native 默认代理 H5 的业务 HTTP。
+- 不让 Native 默认代理 H5 的业务 HTTP；
+- 不借 H015 校验或改造 Native reference / legacy 页面。
 
 ## 实现结果
 
-- 新增 `src/services/nativeBridge.ts` 作为唯一正式宿主适配层；
+- 新增 `src/services/nativeBridge.ts` 作为唯一正式 H5 宿主适配层；
 - `VITE_BRIDGE_MODE=native` 才允许真实 Native 调用，disabled/mock 不会静默 fallback；
 - 每次调用重新解析 `window.androidBridge`，支持晚注入；
 - `method.call(bridge)` 保留 Android receiver binding；
 - 同步宿主返回归一为 Promise，并提供默认 5 秒 timeout；
 - `bridge-disabled`、`bridge-unsupported`、`capability-unsupported`、`invocation-failed`、`invocation-timeout` 分开可观察；
 - diagnostics 显式区分 Android / iOS / Browser；host version 未确认时为 `null`；
-- 新增 `scripts/verify-h015-jsbridge.mjs`，验证 adapter 行为并扫描 `src/pages`，阻止页面重新直连宿主对象；
+- 新增 `scripts/verify-h015-jsbridge.mjs`，验证 adapter 行为并只扫描正式 H5 页面，阻止 H5 重新直连宿主对象；Native reference / legacy 按 H002 边界排除；
 - CI 增加 `npm run verify:h015` gate。
 
 ## 验收
 
 - [x] 至少一个真实 Native 方法已有仓库内 WebView 联调证据，正式 adapter 只采用该已确认方法；
 - [x] Browser/无 bridge 对 unsupported 有确定行为；
-- [x] 页面不直接依赖宿主全局对象；
+- [x] 正式 H5 页面不直接依赖宿主全局对象；
 - [x] Promise normalization、timeout、unsupported/error 已收口；
 - [x] iOS / version / navigation 未确认部分不会被错误伪装成已支持；
+- [x] H015 verifier 不跨越 H002 ownership 去验 Native reference / legacy 页面；
 - [ ] 当前 App WebView build 使用正式 adapter 再跑一次 `getLoginToken()` 的人工宿主回归确认；
 - [ ] PR CI 通过 `lint`、`typecheck`、`verify:h015` 与完整 build gate。
 
