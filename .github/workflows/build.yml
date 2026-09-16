@@ -47,6 +47,9 @@ jobs:
       - name: Verify H012 RHF + Zod forms
         run: npm run verify:h012
 
+      - name: Verify H013 MSW network boundary
+        run: npm run verify:h013
+
       - name: Smoke test development server
         shell: bash
         run: |
@@ -55,6 +58,7 @@ jobs:
           trap 'kill $VITE_PID || true' EXIT
           for attempt in {1..20}; do
             if curl --fail --silent --show-error http://127.0.0.1:4174/ > /dev/null; then
+              curl --fail --silent --show-error http://127.0.0.1:4174/mockServiceWorker.js > /dev/null
               exit 0
             fi
             sleep 1
@@ -68,6 +72,7 @@ jobs:
       - name: Verify development build identity
         run: |
           node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('dist/build-meta.json','utf8'));if(m.appEnvironment!=='dev'||m.dataMode!=='mock')process.exit(1)"
+          test -f dist/mockServiceWorker.js
 
       - name: Verify local dev can explicitly use API
         shell: bash
@@ -104,6 +109,7 @@ jobs:
       - name: Verify Cloudflare preview build identity
         run: |
           node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('dist/build-meta.json','utf8'));if(m.appEnvironment!=='preview'||m.dataMode!=='mock'||m.build.sha!==process.env.GITHUB_SHA)process.exit(1)"
+          test -f dist/mockServiceWorker.js
 
       - name: Build test bundle
         run: npm run build:test
@@ -111,6 +117,7 @@ jobs:
       - name: Verify test build identity
         run: |
           node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('dist/build-meta.json','utf8'));if(m.appEnvironment!=='test'||m.dataMode!=='api')process.exit(1)"
+          test ! -f dist/mockServiceWorker.js
 
       - name: Reject Mock in production-like builds
         shell: bash
@@ -130,6 +137,7 @@ jobs:
       - name: Verify production build identity
         run: |
           node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('dist/build-meta.json','utf8'));if(m.appEnvironment!=='prod'||m.dataMode!=='api'||m.build.sha!==process.env.GITHUB_SHA)process.exit(1)"
+          test ! -f dist/mockServiceWorker.js
 
       - name: Verify Cloudflare SPA fallback asset
         run: test -f dist/_redirects && grep -F '/* /index.html 200' dist/_redirects
@@ -144,6 +152,10 @@ jobs:
             if curl --fail --silent --show-error http://127.0.0.1:4173/ > /dev/null; then
               curl --fail --silent --show-error http://127.0.0.1:4173/profile > /dev/null
               curl --fail --silent --show-error http://127.0.0.1:4173/build-meta.json > /dev/null
+              if curl --fail --silent http://127.0.0.1:4173/mockServiceWorker.js > /dev/null; then
+                echo 'Production preview unexpectedly serves mockServiceWorker.js.'
+                exit 1
+              fi
               exit 0
             fi
             sleep 1
