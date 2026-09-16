@@ -1,6 +1,6 @@
 # H005｜Fixture 巨石按域拆分
 
-**Status:** In Progress  
+**Status:** Agent Review  
 **Phase:** Hygiene  
 **Depends on:** H004
 
@@ -21,6 +21,15 @@
 - 不删除历史 blocker / 未决记录。
 - 不处理商城域。
 
+## 实现结果
+
+- 历史约 86KB / 2140 行 `src/app/fixtures/index.ts` 已缩为 555B 稳定 barrel。
+- 巨石内容拆入 `dearseed.ts`、`membership.ts`、`cards.ts`、`cardUse.ts`、`notifications.ts`、`support.ts`、`exchange.ts`、`addressOrders.ts`、`buddy.ts`。
+- H005 前已经存在的 `device.ts`、`service.ts` 与 H004 `useFixture.ts` 原样保留，不冒充本卡拆分成果。
+- 页面侧继续通过 `app/fixtures` 导入，未制造无业务价值的 import 路径迁移。
+- 原先隐藏在同文件作用域中的 `exchange → BUBBLE_BALANCE` 依赖改为 `exchange.ts → membership.ts` 显式 import；判断规则和数值未改。
+- 历史上追加在专栏段后的 `COUPON_USE_GUIDE` 按职责独立到 `cardUse.ts`，文案值不变。
+
 ## 验收
 
 - 不再由单个巨型 fixture 文件承载多数业务域。
@@ -29,4 +38,8 @@
 
 ## 证据
 
-记录拆分后的目录图、关键兼容出口和 commit SHA。
+详见 [`../evidence/h005-fixture-domain-split.md`](../evidence/h005-fixture-domain-split.md)。
+
+工程 head `bbccdfe24d6` 的 Build run `35046955770` 全绿：Static hygiene、Typecheck、dev/prod build、dev/prod smoke、SPA fallback 均 PASS。
+
+当前状态为 `Agent Review`；Ready 后仍需 AI reviewer 对最终 head 复核语义漏搬与域间依赖。
