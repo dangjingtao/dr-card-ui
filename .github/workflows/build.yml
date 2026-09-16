@@ -140,7 +140,7 @@ jobs:
     name: Test branch gate
     if: github.ref_name == 'test' || github.base_ref == 'test'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     env:
       VITE_APP_ENV: test
       VITE_DATA_MODE: api
@@ -164,9 +164,6 @@ jobs:
           test "$VITE_DATA_MODE" = "api"
           test "$VITE_DATA_MODE" != "mock"
 
-      - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
-
       - name: Build test bundle
         run: npm run build:test
 
@@ -182,7 +179,11 @@ jobs:
             exit 1
           fi
 
-      - name: Run browser regression gate
+      # Historical T015 verifies UI fixture query states from the archived prototype phase.
+      # H004/H006 intentionally disable those state/overlay/debug injections in test/API,
+      # so promotion now validates the production-like test bundle instead. H018 owns the
+      # future formal-H5 Playwright route suite.
+      - name: Smoke test API-only test preview
         shell: bash
         run: |
           npm run preview -- --port 4173 > /tmp/dr-card-test-preview.log 2>&1 &
@@ -191,20 +192,13 @@ jobs:
 
           for attempt in {1..20}; do
             if curl --fail --silent --show-error http://127.0.0.1:4173/ > /dev/null; then
-              BASE_URL=http://127.0.0.1:4173 npm run verify:t015
-              exit $?
+              curl --fail --silent --show-error http://127.0.0.1:4173/profile > /dev/null
+              curl --fail --silent --show-error http://127.0.0.1:4173/settings > /dev/null
+              curl --fail --silent --show-error http://127.0.0.1:4173/build-meta.json > /dev/null
+              exit 0
             fi
             sleep 1
           done
 
           cat /tmp/dr-card-test-preview.log
           exit 1
-
-      - name: Upload browser regression evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-browser-regression-${{ github.sha }}
-          path: docs/workbench/evidence/t015-results.json
-          if-no-files-found: warn
-          retention-days: 14
