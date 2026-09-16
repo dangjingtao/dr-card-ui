@@ -1,8 +1,8 @@
 import { UserRoundCheck, X } from 'lucide-react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
 import PromptOverlay from '../components/mobile/PromptOverlay'
 import { Button } from '../components/ui'
 import { BUDDY_INVITE_COPY } from '../app/fixtures'
+import { useFixtureDebug, useFixtureNavigate, useFixtureQueryControls } from '../app/fixtures/useFixture'
 import { acceptBuddyInvite } from '../app/state/buddies'
 import buddyAvatarXiaomei from '../assets/brand/buddy/buddy-avatar-xiaomei.webp'
 import DearseedColumn from './DearseedColumn'
@@ -13,21 +13,21 @@ import DearseedColumn from './DearseedColumn'
  * 原型是「诗得丽专栏首页 + 遮罩 + 邀请弹窗」，故把专栏页作为背景层渲染，
  * 与 ClaimSuccess / ExchangeResult 同一套「背景页 + 弹窗」写法。
  * 本页不自挂 DebugPanel：背景层 DearseedColumn 已经挂了一个（bound 到 /dearseed），
- * 两个面板都是 fixed bottom-0，重复挂会完全重叠。因此 `?state=dismissed`
- * （关闭图标的取消路径）以 URL 直达复现，不依赖调试面板切换。
+ * 两个面板都是 fixed bottom-0，重复挂会完全重叠。dismissed 状态继续支持 fixture 复现，
+ * 但 test/prod 外部 `?state=` 不再能直接注入。
  */
 export default function BuddyAccept() {
-  const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const state = searchParams.get('state')
-  const debug = searchParams.get('debug') === '1' ? '?debug=1' : ''
+  const fixtureNavigate = useFixtureNavigate()
+  const { get, patch } = useFixtureQueryControls()
+  const debug = useFixtureDebug()
+  const state = get('state')
 
   if (state === 'dismissed') return <DearseedColumn />
 
-  const dismiss = () => navigate(`/buddy/accept?state=dismissed${debug ? '&debug=1' : ''}`, { replace: true })
+  const dismiss = () => patch({ state: 'dismissed' })
   const accept = () => {
     acceptBuddyInvite('小美')
-    navigate(`/buddy${debug}`, { replace: true })
+    fixtureNavigate('/buddy', { debug: debug ? '1' : null }, { replace: true })
   }
 
   return (
