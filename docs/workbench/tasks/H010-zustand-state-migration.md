@@ -1,6 +1,6 @@
 # H010｜Zustand 状态基建与旧共享状态迁移
 
-**Status:** Ready  
+**Status:** Doing  
 **Phase:** Foundation  
 **Depends on:** H003
 
