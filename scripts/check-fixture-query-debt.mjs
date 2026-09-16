@@ -41,7 +41,7 @@ function loadProgram() {
   const configPath = path.join(ROOT, 'tsconfig.json')
   const configFile = ts.readConfigFile(configPath, ts.sys.readFile)
   if (configFile.error) throw new Error(ts.flattenDiagnosticMessageText(configFile.error.messageText, '\n'))
-  const parsed = ts.parseJsonConfigFileContent(configFile, ts.sys, ROOT, { noEmit: true })
+  const parsed = ts.parseJsonConfigFileContent(configFile.config, ts.sys, ROOT, { noEmit: true })
   if (parsed.errors.length) {
     throw new Error(parsed.errors.map((item) => ts.flattenDiagnosticMessageText(item.messageText, '\n')).join('\n'))
   }
