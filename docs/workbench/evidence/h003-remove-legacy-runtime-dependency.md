@@ -24,10 +24,11 @@ H003 已将普通正式 H5 运行时代码对 `src/pages/legacy/*` 的直接依�
 
 ### 正式设置页
 
-- 新增 `src/app/state/memberProfile.ts`，只承载当前正式 H5 确实需要的生日 UI 状态：`birthday` 与 `birthdayLastModifiedAt`。
-- 没有把完整 legacy `UserInfo` 搬进正式 H5，以免把历史 mock 换目录后误当成生产模型。
-- `Settings` 使用 `useMemberProfile()` / `memberProfileActions`，生日三个月编辑限制与原有确定性演示行为保持。
-- 该状态明确不是认证事实源，真实持久化等待 API contract；H010 可在 Zustand 基建时再统一迁移。
+- 新增 `src/app/state/memberProfile.ts`，只承载当前 SPA 会话中由用户自己产生的临时生日 UI 状态：`birthday` 与 `birthdayLastModifiedAt`。
+- 没有把完整 legacy `UserInfo` 搬进正式 H5。
+- 初始 formal H5 profile state 为空：`birthday=''`、`birthdayLastModifiedAt=0`，不携带 Native-reference fixture 用户资料。
+- `Settings` 使用 `useMemberProfile()` / `memberProfileActions`；真实资料读取、保存与服务端 90 天规则仍等待 API contract。
+- 该状态明确不是认证事实源，也不是 durable profile persistence；H010 不得把它直接升级成 production Mock store。
 
 ### 防回归门禁
 
@@ -36,6 +37,20 @@ H003 已将普通正式 H5 运行时代码对 `src/pages/legacy/*` 的直接依�
 - 普通 formal H5 模块 import / re-export / dynamic import 到 `src/pages/legacy/*` 会直接失败；
 - `src/app/router/index.tsx` 是唯一显式例外，因为 router composition root 必须继续注册 Native reference 页面，让其保持可查看；
 - Native reference 页面本身仍不纳入 formal H5 hygiene 施工面。
+
+## AI Review 修正
+
+PR #9 首次 Ready 后，Codex Review 提出 P1：首版 `memberProfile.ts` 仍预置历史生日 `2003-08-15`，会把 fixture 用户资料带进 formal H5 production bundle，实质上只是把 mock 从 legacy 换了目录。
+
+该意见有效，已修正：
+
+- 移除 `2003-08-15` fixture seed；
+- 移除“历史用户默认回溯 100 天”的 production 初始化；
+- formal H5 profile state 新 runtime 从空值开始；
+- `birthdayGate.ts` 不再假定 `userInfoStore` 初始值；
+- 文档明确该临时状态不等于真实资料持久化。
+
+最终以修正后的最新 head CI 与 Codex re-review 作为 H003 收口依据。
 
 ## 自动化证据
 
@@ -61,7 +76,7 @@ H5 hygiene PASS: 115 formal source files checked; 0 unused diagnostic(s) within 
 
 这意味着新增 `no-formal-h5-legacy-import` 后，没有发现其他普通 formal H5 源文件仍直接依赖 `src/pages/legacy/*`。
 
-Cloudflare Pages 也为 `h003-remove-legacy-runtime` 分支生成过成功预览；由于最终证据以源码、CI 与 PR commit 为准，不把外部预览域名可达性作为 H003 新门禁。
+Cloudflare Pages 也为 `h003-remove-legacy-runtime` 最新工程提交生成成功分支预览；最终证据以源码、CI 与 PR commit 为准。
 
 ## 明确未做
 
@@ -74,4 +89,4 @@ Cloudflare Pages 也为 `h003-remove-legacy-runtime` 分支生成过成功预览
 
 ## 当前结论
 
-H003 满足进入 Agent Review 的工程条件。最终 `Accepted` 仍由用户确认。
+H003 满足 Agent Review 工程条件；Codex P1 已进入修正验证。最终 `Accepted` 仍由用户确认。
