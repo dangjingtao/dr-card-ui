@@ -7,7 +7,6 @@ const positions = new Map<string, number>()
 export default function H5ScrollRestoration() {
   const location = useLocation()
   const navigationType = useNavigationType()
-  const previousKey = useRef<string | null>(null)
   const previousPathname = useRef(location.pathname)
 
   useLayoutEffect(() => {
@@ -16,10 +15,6 @@ export default function H5ScrollRestoration() {
 
     const currentTop = scrollContainer.scrollTop
     const pathnameChanged = previousPathname.current !== location.pathname
-
-    if (previousKey.current && previousKey.current !== location.key) {
-      positions.set(previousKey.current, currentTop)
-    }
 
     let top = currentTop
     if (navigationType === 'POP') {
@@ -32,11 +27,20 @@ export default function H5ScrollRestoration() {
       scrollContainer.scrollTo({ top, left: 0, behavior: 'auto' })
     }
 
-    previousKey.current = location.key
     previousPathname.current = location.pathname
 
-    return () => {
+    // Persist the active history entry while the user scrolls. Recording continuously means the
+    // outgoing position already exists before React swaps the outlet; a shorter destination cannot
+    // clamp the source page's saved scrollTop during the next layout effect.
+    const savePosition = () => {
       positions.set(location.key, scrollContainer.scrollTop)
+    }
+
+    savePosition()
+    scrollContainer.addEventListener('scroll', savePosition, { passive: true })
+
+    return () => {
+      scrollContainer.removeEventListener('scroll', savePosition)
     }
   }, [location.key, location.pathname, navigationType])
 
