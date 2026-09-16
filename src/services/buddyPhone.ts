@@ -15,15 +15,6 @@ function contractSource() {
   return runtimePolicy.dataMode === 'mock' ? 'mock' as const : 'api' as const
 }
 
-function unwrapBusinessResult<T extends { ok: boolean }>(result: T) {
-  if (result.ok) return result
-  const failure = result as T & { ok: false; error: { code: string; message: string } }
-  throw createBusinessError(failure.error.message, {
-    code: failure.error.code,
-    details: { contract: 'H014 buddy phone flow' },
-  })
-}
-
 export interface BuddyPhoneService {
   search(phone: string): Promise<BuddyPhoneSearchSuccess>
   invite(phone: string): Promise<BuddyPhoneInviteSuccess>
@@ -41,7 +32,13 @@ export function createBuddyPhoneService(client: HttpClient = httpClient): BuddyP
         source: contractSource(),
         contract: 'buddy-phone-search',
       })
-      return unwrapBusinessResult(parsed).data
+      if (!parsed.ok) {
+        throw createBusinessError(parsed.error.message, {
+          code: parsed.error.code,
+          details: { contract: 'buddy-phone-search' },
+        })
+      }
+      return parsed.data
     },
 
     async invite(phone) {
@@ -54,7 +51,13 @@ export function createBuddyPhoneService(client: HttpClient = httpClient): BuddyP
         source: contractSource(),
         contract: 'buddy-phone-invite',
       })
-      return unwrapBusinessResult(parsed).data
+      if (!parsed.ok) {
+        throw createBusinessError(parsed.error.message, {
+          code: parsed.error.code,
+          details: { contract: 'buddy-phone-invite' },
+        })
+      }
+      return parsed.data
     },
   }
 }
