@@ -1,12 +1,12 @@
 import { useEffect } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { CalendarCheck, Gift, QrCode, Smartphone, Sparkles } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import PageContainer from '../components/mobile/PageContainer'
 import DebugPanel from '../components/mobile/DebugPanel'
 import { Button, EmptyState } from '../components/ui'
 import { findRouteByPathname } from '../app/router/routes'
-import { useFixtureState } from '../app/fixtures/useFixture'
+import { useFixtureDebug, useFixtureState, withFixtureQuery } from '../app/fixtures/useFixture'
 import { BUDDY_EMPTY_COPY, BUDDY_FEATURE_INTRO, BUDDY_INVITE_ENTRIES } from '../app/fixtures'
 import { applyBuddyPreset, ensureBuddyDefaultPreset, useBuddies, type BuddyListPreset } from '../app/state/buddies'
 import buddyEmptyHero from '../assets/brand/buddy/buddy-empty-hero-v2.webp'
@@ -16,14 +16,13 @@ import buddyAvatarXiaomei from '../assets/brand/buddy/buddy-avatar-xiaomei.webp'
  * 洗头搭子（摹客 #27 空态 / #28 有态）
  * -------------------------------------------------------------
  * - 空态与有态共用同一业务模型（搭子集合 + 说明卡 + 两个邀请入口），只在列表区切换视觉；
- * - 2026-08-28 用户确认：无 `?state=` 的默认访问约 50% 空态 / 50% 单搭子态；
- *   明确 `?state=empty|list|multi` 仍是确定性验收入口，不受随机默认态影响；
+ * - 2026-08-28 用户确认：无 fixture state 的默认访问约 50% 空态 / 50% 单搭子态；
+ *   明确 empty/list/multi 仍是确定性验收入口，不受随机默认态影响；
  * - ⚠️ 说明卡第三行「默契升级」是 #27/#28 的原型文案，此处只渲染文字，
  *   不提供任何默契值入口、数值或进度视觉（#31 先不做，B-006 / T014）；
  * - ⚠️ 不引入历史 T07 稿的 4 人 mock 与 98/86/72/55 默契值。
  */
 
-/** `?state=` → 共享状态档位；URL 有 state 时以 URL 为准，否则初始化一次 50/50 默认态 */
 const STATE_PRESETS: Record<string, BuddyListPreset> = {
   empty: 'empty',
   list: 'single',
@@ -44,8 +43,8 @@ const ENTRY_ICONS: Record<string, LucideIcon> = {
 export default function Buddy() {
   const route = findRouteByPathname('/buddy')
   const { raw } = useFixtureState(route)
+  const debug = useFixtureDebug()
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
   const { items, count } = useBuddies()
 
   /** 显式 fixture 优先；无 fixture 时仅在本次会话第一次进入时抽一次 50/50 默认态。 */
@@ -57,8 +56,6 @@ export default function Buddy() {
     }
     ensureBuddyDefaultPreset()
   }, [raw])
-
-  const keepDebug = searchParams.get('debug') === '1' ? '?debug=1' : ''
 
   return (
     <PageContainer inset={false} className="flex min-h-full flex-col pb-6">
@@ -101,7 +98,6 @@ export default function Buddy() {
                   <p className="min-w-0 flex-1 truncate text-[15px] font-medium text-buddy-text">
                     {buddy.name}
                   </p>
-                  {/* ⚠️ 原型 #28 每行只有头像 + 昵称；默契值/等级/徽标均为历史稿补写，不在此渲染 */}
                 </article>
               </li>
             ))}
@@ -143,7 +139,7 @@ export default function Buddy() {
             variant={index === 0 ? 'primary' : 'outline'}
             leadingIcon={ENTRY_ICONS[entry.key]}
             className="flex-1 rounded-pill"
-            onClick={() => navigate(`${entry.to}${keepDebug}`)}
+            onClick={() => navigate(withFixtureQuery(entry.to, { debug: debug ? '1' : null }))}
           >
             {entry.label}
           </Button>
