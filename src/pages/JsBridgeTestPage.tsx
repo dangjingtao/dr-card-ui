@@ -96,14 +96,13 @@ export default function JsBridgeTestPage() {
     const bridge = requireAndroidBridge()
     if (!bridge) return
 
-    const method = bridge.showToast
-    if (typeof method !== 'function') {
+    if (typeof bridge.showToast !== 'function') {
       appendLog('error', 'androidBridge.showToast 不存在')
       return
     }
 
     try {
-      method('H5 调用原生 Toast')
+      bridge.showToast('H5 调用原生 Toast')
       appendLog('result', 'showToast 已调用')
     } catch (error) {
       appendLog('error', 'showToast 调用失败', error instanceof Error ? error.message : error)
@@ -115,14 +114,13 @@ export default function JsBridgeTestPage() {
     const bridge = requireAndroidBridge()
     if (!bridge) return
 
-    const method = bridge.getLoginToken
-    if (typeof method !== 'function') {
+    if (typeof bridge.getLoginToken !== 'function') {
       appendLog('error', 'androidBridge.getLoginToken 不存在')
       return
     }
 
     try {
-      const result = method()
+      const result = bridge.getLoginToken()
       setToken(typeof result === 'string' ? result : formatValue(result))
       appendLog('result', 'getLoginToken 同步返回', result)
     } catch (error) {
@@ -136,14 +134,13 @@ export default function JsBridgeTestPage() {
     const bridge = requireAndroidBridge()
     if (!bridge) return
 
-    const method = bridge.submitOrder
-    if (typeof method !== 'function') {
+    if (typeof bridge.submitOrder !== 'function') {
       appendLog('error', 'androidBridge.submitOrder 不存在')
       return
     }
 
     try {
-      method(JSON.stringify(payload))
+      bridge.submitOrder(JSON.stringify(payload))
       appendLog('result', 'submitOrder 已调用')
     } catch (error) {
       appendLog('error', 'submitOrder 调用失败', error instanceof Error ? error.message : error)
