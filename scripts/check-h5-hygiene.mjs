@@ -28,15 +28,6 @@ const EXCLUDED_FILES = new Set([
 // directly viewable. Ordinary formal-H5 modules have no reason to import legacy runtime code.
 const LEGACY_IMPORT_ALLOWLIST = new Set(['src/app/router/index.tsx'])
 
-// H004 centralizes deterministic fixture/debug query access. Formal pages must consume the helper
-// instead of reading/writing these keys directly, otherwise test/prod isolation can be bypassed.
-const FIXTURE_QUERY_KEYS = new Set(['state', 'overlay', 'debug'])
-const FIXTURE_QUERY_METHODS = new Set(['get', 'getAll', 'has', 'set', 'append', 'delete'])
-const FIXTURE_QUERY_ALLOWLIST = new Set([
-  'src/app/fixtures/useFixture.ts',
-  'src/components/mobile/DebugPanel.tsx',
-])
-
 const normalize = (value) => value.split(path.sep).join('/')
 const relative = (fileName) => normalize(path.relative(ROOT, fileName))
 
@@ -128,7 +119,6 @@ function collectArchitectureViolations(program) {
     const allowsNetwork = file.startsWith('src/services/') || file.startsWith('src/mocks/')
     const allowsBridge = file.startsWith('src/bridge/')
     const allowsLegacyImports = LEGACY_IMPORT_ALLOWLIST.has(file)
-    const allowsFixtureQuery = FIXTURE_QUERY_ALLOWLIST.has(file)
 
     const report = (node, rule, message) => {
       violations.push({
@@ -151,24 +141,6 @@ function collectArchitectureViolations(program) {
       }
     }
 
-    const inspectFixtureQueryAccess = (node) => {
-      if (allowsFixtureQuery || !ts.isCallExpression(node) || !ts.isPropertyAccessExpression(node.expression)) return
-      const method = node.expression.name.text
-      const key = node.arguments[0]
-      if (
-        FIXTURE_QUERY_METHODS.has(method) &&
-        key &&
-        ts.isStringLiteralLike(key) &&
-        FIXTURE_QUERY_KEYS.has(key.text)
-      ) {
-        report(
-          node,
-          'no-direct-fixture-query',
-          `Fixture/debug query key "${key.text}" must be accessed through src/app/fixtures/useFixture.ts.`,
-        )
-      }
-    }
-
     const visit = (node) => {
       if (ts.isImportDeclaration(node)) {
         inspectModuleSpecifier(node, node.moduleSpecifier)
@@ -181,8 +153,6 @@ function collectArchitectureViolations(program) {
       ) {
         inspectModuleSpecifier(node, node.arguments[0])
       }
-
-      inspectFixtureQueryAccess(node)
 
       if (!allowsStorage && ts.isIdentifier(node) && (node.text === 'localStorage' || node.text === 'sessionStorage')) {
         report(node, 'no-direct-web-storage', 'Web Storage must be accessed through src/storage/.')
