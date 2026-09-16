@@ -42,7 +42,7 @@
 | H011 | Storage Adapter | Accepted |
 | H012 | React Hook Form + Zod 表单基线 | Accepted |
 | H013 | MSW 网络 Mock 基建 | Accepted |
-| H014 | Mock 场景迁移与页面假网络清理 | Ready |
+| H014 | Mock 场景迁移与页面假网络清理 | User Review |
 
 ### C. 宿主与体验
 
