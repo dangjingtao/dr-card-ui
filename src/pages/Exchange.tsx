@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ChevronRight, Droplets, Gift, Search, Ticket } from 'lucide-react'
 import DebugPanel from '../components/mobile/DebugPanel'
@@ -19,6 +19,7 @@ import {
   resolveExchangeSort,
   type ExchangeProductFixture,
 } from '../app/fixtures'
+import { redeemExchangeProduct } from '../services/exchange'
 import kitThumb from '../assets/brand/member/checkin-dearseed-kit.webp'
 import bubbleOrb from '../assets/brand/bubble/checkin-bubble-3d.webp'
 import hotBerry from '../assets/brand/exchange/profile-hot-berry.webp'
@@ -33,6 +34,8 @@ const PRODUCT_IMAGES: Partial<Record<NonNullable<ExchangeProductFixture['thumb']
   seasalt: hotSeasalt,
   herbal: hotHerbal,
 }
+
+const EXCHANGE_REQUEST_ERROR_COPY = '兑换失败，请稍后重试'
 
 /**
  * 洗护体验券兑换专区（#18 / #37 / #38 / #39）
@@ -69,8 +72,7 @@ export default function Exchange() {
   const availability = exchangeAvailability(activeProduct)
 
   const [submitting, setSubmitting] = useState(false)
-  const timers = useRef<number[]>([])
-  useEffect(() => () => timers.current.forEach((id) => window.clearTimeout(id)), [])
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   const patchParams = (patch: (next: URLSearchParams) => void) => {
     setSearchParams(
@@ -92,24 +94,28 @@ export default function Exchange() {
   }
 
   const openRedeem = (product: ExchangeProductFixture) => {
+    setSubmitError(null)
     patchParams((next) => {
       next.set('product', product.id)
       next.set('overlay', 'redeem')
     })
   }
 
-  const submit = () => {
+  const submit = async () => {
     if (availability !== 'redeemable' || submitting) return
+
     setSubmitting(true)
-    /** 提交中态：夹具环境下用固定时长模拟一次请求往返，非随机 */
-    timers.current.push(
-      window.setTimeout(() => {
-        setSubmitting(false)
-        const query = new URLSearchParams({ product: activeProduct.id })
-        if (searchParams.get('debug') === '1') query.set('debug', '1')
-        navigate(`/exchange/result?${query.toString()}`)
-      }, 700),
-    )
+    setSubmitError(null)
+    try {
+      await redeemExchangeProduct(activeProduct.id)
+      setSubmitting(false)
+      const query = new URLSearchParams({ product: activeProduct.id })
+      if (searchParams.get('debug') === '1') query.set('debug', '1')
+      navigate(`/exchange/result?${query.toString()}`)
+    } catch {
+      setSubmitting(false)
+      setSubmitError(EXCHANGE_REQUEST_ERROR_COPY)
+    }
   }
 
   return (
@@ -271,12 +277,18 @@ export default function Exchange() {
           </p>
         )}
 
+        {submitError && (
+          <p className="mt-2 text-xs text-danger-text" role="alert">
+            {submitError}
+          </p>
+        )}
+
         <Button
           size="large"
           className="mt-4 w-full rounded-full"
           loading={submitting}
           disabled={availability !== 'redeemable'}
-          onClick={submit}
+          onClick={() => void submit()}
         >
           {submitting
             ? EXCHANGE_COPY.submitting
