@@ -1,5 +1,12 @@
 import { useLayoutEffect, useRef } from 'react'
-import { Navigate, Outlet, useLocation, useNavigate, useNavigationType } from 'react-router-dom'
+import {
+  Navigate,
+  Outlet,
+  useLocation,
+  useNavigate,
+  useNavigationType,
+  useViewTransitionState,
+} from 'react-router-dom'
 import { Bell, MessageSquare, Settings } from 'lucide-react'
 import BottomNav from '../components/mobile/BottomNav'
 import StatusBar from '../components/mobile/StatusBar'
@@ -17,13 +24,14 @@ type H5RouteTransitionKind = 'none' | 'tab' | 'forward' | 'back'
  * H016 route-motion boundary.
  *
  * - Only active formal-H5 pathname changes animate; search/hash/fixture state changes stay in-page.
- * - POP and an explicit route `backTo` relationship are treated as back navigation.
+ * - Browser POP is treated as back navigation.
  * - Entering a first-level tab fades only; deeper routes get a very small forward/back displacement.
  * - Native reference and deferred formal-H5 routes never opt into this boundary.
  */
 function H5RouteOutlet() {
   const location = useLocation()
   const navigationType = useNavigationType()
+  const nativeTransitionActive = useViewTransitionState(location)
   const previousPathname = useRef(location.pathname)
   const previousPath = previousPathname.current
   const pathnameChanged = previousPath !== location.pathname
@@ -33,25 +41,41 @@ function H5RouteOutlet() {
     pathnameChanged &&
     isActiveFormalH5Route(previousRoute) &&
     isActiveFormalH5Route(currentRoute)
-  const nativeTransitionActive =
-    typeof document !== 'undefined' && Boolean(document.documentElement.dataset.h5NativeTransition)
 
-  let transition: H5RouteTransitionKind = 'none'
-  // A helper-driven native View Transition already owns this navigation. Keep the route-frame
-  // fallback disabled from the first render so removing the short-lived html marker cannot replay it.
-  if (activeTransition && !nativeTransitionActive) {
-    if (navigationType === 'POP' || previousRoute.backTo === location.pathname) {
-      transition = 'back'
+  let navigationKind: H5RouteTransitionKind = 'none'
+  if (activeTransition) {
+    if (navigationType === 'POP') {
+      navigationKind = 'back'
     } else if (isFormalH5TabPath(location.pathname)) {
-      transition = 'tab'
+      navigationKind = 'tab'
     } else {
-      transition = 'forward'
+      navigationKind = 'forward'
     }
   }
+
+  // React Router can automatically run a native View Transition on browser POP/Forward after a
+  // transition-enabled navigation. Trust the router's live state rather than a timer/DOM marker so
+  // the CSS fallback never double-animates with that native transition.
+  const transition: H5RouteTransitionKind = nativeTransitionActive ? 'none' : navigationKind
 
   useLayoutEffect(() => {
     previousPathname.current = location.pathname
   }, [location.pathname])
+
+  useLayoutEffect(() => {
+    const root = document.documentElement
+    if (nativeTransitionActive && navigationKind !== 'none') {
+      root.dataset.h5NativeTransition = navigationKind
+    } else {
+      delete root.dataset.h5NativeTransition
+    }
+
+    return () => {
+      if (root.dataset.h5NativeTransition === navigationKind) {
+        delete root.dataset.h5NativeTransition
+      }
+    }
+  }, [nativeTransitionActive, navigationKind])
 
   return (
     <div
@@ -98,10 +122,10 @@ export default function MobileLayout() {
     return <Navigate to={fixtureRedirect.to} replace state={fixtureRedirect.state} />
   }
 
-  const navigateShell = (target: string, kind: 'forward' | 'back') => {
+  const navigateShell = (target: string) => {
     const targetRoute = findRouteByPathname(target)
     if (isActiveFormalH5Route(route) && isActiveFormalH5Route(targetRoute)) {
-      navigateWithH5ViewTransition(navigate, target, kind)
+      navigateWithH5ViewTransition(navigate, target)
       return
     }
     navigate(target)
@@ -135,13 +159,13 @@ export default function MobileLayout() {
     )
     : route?.titleBarAction === 'settings'
       ? (
-        <button type="button" aria-label="设置" onClick={() => navigateShell('/settings', 'forward')} className="flex h-9 w-9 items-center justify-center rounded-full text-text-primary active:bg-[rgba(89,55,15,0.06)]">
+        <button type="button" aria-label="设置" onClick={() => navigateShell('/settings')} className="flex h-9 w-9 items-center justify-center rounded-full text-text-primary active:bg-[rgba(89,55,15,0.06)]">
           <Settings className="h-[22px] w-[22px]" />
         </button>
       )
       : route?.titleBarAction === 'notifications'
         ? (
-          <button type="button" aria-label="通知" onClick={() => navigateShell('/notifications', 'forward')} className="flex h-9 w-9 items-center justify-center rounded-full text-text-primary active:bg-[rgba(89,55,15,0.06)]">
+          <button type="button" aria-label="通知" onClick={() => navigateShell('/notifications')} className="flex h-9 w-9 items-center justify-center rounded-full text-text-primary active:bg-[rgba(89,55,15,0.06)]">
             <Bell className="h-[22px] w-[22px]" />
           </button>
         )
@@ -171,7 +195,7 @@ export default function MobileLayout() {
           <TitleBar
             title={title}
             back={titleBarMode === 'back'}
-            onBack={route?.backTo ? () => navigateShell(route.backTo as string, 'back') : undefined}
+            onBack={route?.backTo ? () => navigateShell(route.backTo as string) : undefined}
             action={titleAction}
             actionWide={isNotificationsPage || location.pathname === '/service/chat'}
           />
