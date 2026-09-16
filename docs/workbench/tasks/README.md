@@ -16,7 +16,7 @@
 - 不为了目录整齐、覆盖率、像素检查或历史脚本而改业务代码。
 - 不虚构后台 API、认证协议或 Native Bridge 能力。
 - 历史证据不删除；真正影响后续施工的结构债必须治理。
-- 只有用户可以把任务明确标记为 `Accepted`。
+- 只有用户可以把任务明确标记为 `Accepted`；若用户明确授权某张卡由 Agent 自验，则仅该张卡可按授权自验收口。
 
 ## 当前任务
 
@@ -26,7 +26,7 @@
 |---|---|---|
 | H001 | 代码质量与卫生基线 | Accepted |
 | H002 | 正式 H5 / Native reference 路由边界 | Accepted |
-| H003 | 切断正式 H5 对 legacy runtime 的依赖 | Agent Review |
+| H003 | 切断正式 H5 对 legacy runtime 的依赖 | Accepted |
 | H004 | Fixture / Debug 运行环境隔离 | Ready |
 | H005 | Fixture 巨石按域拆分 | Ready |
 
