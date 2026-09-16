@@ -7,9 +7,8 @@ const BASELINE_PATH = path.join(ROOT, 'scripts', 'h5-hygiene-baseline.json')
 
 const UNUSED_DIAGNOSTIC_CODES = new Set([6133, 6192, 6196])
 
-// H001 only guards the formal H5 construction surface. H002 will make route
-// ownership first-class; until then these known Native-reference / mall pages
-// stay outside this gate so hygiene work cannot silently turn into a legacy rewrite.
+// H001 keeps this gate focused on the formal H5 construction surface. H002 made route ownership
+// explicit; these physical exclusions remain until H018 moves route-wide tooling to that registry.
 const EXCLUDED_PREFIXES = ['src/pages/legacy/']
 const EXCLUDED_FILES = new Set([
   'src/pages/LegacyHome.tsx',
@@ -24,6 +23,10 @@ const EXCLUDED_FILES = new Set([
   'src/pages/VendingOrderPage.tsx',
   'src/pages/MallHome.tsx',
 ])
+
+// Router composition must import Native-reference page components so those reference routes remain
+// directly viewable. Ordinary formal-H5 modules have no reason to import legacy runtime code.
+const LEGACY_IMPORT_ALLOWLIST = new Set(['src/app/router/index.tsx'])
 
 const normalize = (value) => value.split(path.sep).join('/')
 const relative = (fileName) => normalize(path.relative(ROOT, fileName))
@@ -101,6 +104,11 @@ function rootIdentifierText(expression) {
   return ts.isIdentifier(current) ? current.text : ''
 }
 
+function resolveRelativeImport(sourceFileName, specifier) {
+  if (!specifier.startsWith('.')) return null
+  return normalize(path.relative(ROOT, path.resolve(path.dirname(sourceFileName), specifier)))
+}
+
 function collectArchitectureViolations(program) {
   const violations = []
 
@@ -110,6 +118,7 @@ function collectArchitectureViolations(program) {
     const allowsStorage = file.startsWith('src/storage/')
     const allowsNetwork = file.startsWith('src/services/') || file.startsWith('src/mocks/')
     const allowsBridge = file.startsWith('src/bridge/')
+    const allowsLegacyImports = LEGACY_IMPORT_ALLOWLIST.has(file)
 
     const report = (node, rule, message) => {
       violations.push({
@@ -120,7 +129,31 @@ function collectArchitectureViolations(program) {
       })
     }
 
+    const inspectModuleSpecifier = (node, moduleSpecifier) => {
+      if (allowsLegacyImports || !ts.isStringLiteralLike(moduleSpecifier)) return
+      const target = resolveRelativeImport(sourceFile.fileName, moduleSpecifier.text)
+      if (target && target.startsWith('src/pages/legacy/')) {
+        report(
+          node,
+          'no-formal-h5-legacy-import',
+          `Formal H5 modules must not depend on Native-reference runtime code (${moduleSpecifier.text}).`,
+        )
+      }
+    }
+
     const visit = (node) => {
+      if (ts.isImportDeclaration(node)) {
+        inspectModuleSpecifier(node, node.moduleSpecifier)
+      } else if (ts.isExportDeclaration(node) && node.moduleSpecifier) {
+        inspectModuleSpecifier(node, node.moduleSpecifier)
+      } else if (
+        ts.isCallExpression(node) &&
+        node.expression.kind === ts.SyntaxKind.ImportKeyword &&
+        node.arguments.length === 1
+      ) {
+        inspectModuleSpecifier(node, node.arguments[0])
+      }
+
       if (!allowsStorage && ts.isIdentifier(node) && (node.text === 'localStorage' || node.text === 'sessionStorage')) {
         report(node, 'no-direct-web-storage', 'Web Storage must be accessed through src/storage/.')
       }
