@@ -10,6 +10,8 @@ if (!rootElement) {
   throw new Error('Root element #root was not found')
 }
 
+const appRootElement = rootElement
+
 async function prepareRuntime() {
   if (runtimePolicy.dataMode !== 'mock') return
 
@@ -20,7 +22,7 @@ async function prepareRuntime() {
 async function bootstrap() {
   await prepareRuntime()
 
-  ReactDOM.createRoot(rootElement).render(
+  ReactDOM.createRoot(appRootElement).render(
     <React.StrictMode>
       <App />
     </React.StrictMode>,
