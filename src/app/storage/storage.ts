@@ -11,7 +11,7 @@ export type StorageResolver = (area: StorageArea) => StorageBackend | null
 export interface StorageAdapter {
   read<T>(key: StorageKey<T>): T | null
   write<T>(key: StorageKey<T>, value: T): boolean
-  remove(key: StorageKey<unknown>): boolean
+  remove<T>(key: StorageKey<T>): boolean
 }
 
 function resolveBrowserStorage(area: StorageArea): StorageBackend | null {
@@ -98,7 +98,7 @@ export function createStorageAdapter(
       }
     },
 
-    remove(key: StorageKey<unknown>): boolean {
+    remove<T>(key: StorageKey<T>): boolean {
       const storage = resolveSafely(resolveStorage, key.area)
       if (!storage) return false
 
