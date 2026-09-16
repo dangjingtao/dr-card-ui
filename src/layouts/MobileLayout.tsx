@@ -114,7 +114,7 @@ export default function MobileLayout() {
         search: location.search,
         hash: '#wecom',
       },
-      { replace: true },
+      { replace: true, state: location.state },
     )
   }
 
