@@ -98,113 +98,110 @@ export default function AddressNew() {
 
   return (
     <PageContainer inset={false} className="flex min-h-full flex-col pb-6">
-      <form className="contents" noValidate onSubmit={handleSubmit(onSubmit)}>
-        <div className="space-y-4 px-4 pt-4">
-          <Controller
-            name="name"
-            control={control}
-            render={({ field, fieldState }) => (
-              <Input
-                label={ADDRESS_FORM_COPY.nameLabel}
-                placeholder={ADDRESS_FORM_COPY.namePlaceholder}
-                value={field.value}
-                error={fieldState.error?.message}
-                onBlur={field.onBlur}
-                onChange={(event) => {
-                  field.onChange(event.target.value)
-                  clearErrors('name')
-                }}
-              />
-            )}
-          />
-          <Controller
-            name="phone"
-            control={control}
-            render={({ field, fieldState }) => (
-              <Input
-                label={ADDRESS_FORM_COPY.phoneLabel}
-                placeholder={ADDRESS_FORM_COPY.phonePlaceholder}
-                type="tel"
-                inputMode="numeric"
-                maxLength={11}
-                value={field.value}
-                error={fieldState.error?.message}
-                onBlur={field.onBlur}
-                onChange={(event) => {
-                  field.onChange(event.target.value.replace(/\D/g, ''))
-                  clearErrors('phone')
-                }}
-              />
-            )}
-          />
-          <Controller
-            name="region"
-            control={control}
-            render={({ field, fieldState }) => (
-              <Select
-                label={ADDRESS_FORM_COPY.regionLabel}
-                placeholder={ADDRESS_FORM_COPY.regionPlaceholder}
-                options={ADDRESS_REGION_OPTIONS}
-                value={field.value}
-                error={fieldState.error?.message}
-                onBlur={field.onBlur}
-                onChange={(event) => {
-                  field.onChange(event.target.value)
-                  clearErrors('region')
-                }}
-              />
-            )}
-          />
-          <Controller
-            name="detail"
-            control={control}
-            render={({ field, fieldState }) => (
-              <Input
-                label={ADDRESS_FORM_COPY.detailLabel}
-                placeholder={ADDRESS_FORM_COPY.detailPlaceholder}
-                value={field.value}
-                error={fieldState.error?.message}
-                onBlur={field.onBlur}
-                onChange={(event) => {
-                  field.onChange(event.target.value)
-                  clearErrors('detail')
-                }}
-              />
-            )}
-          />
-
-          <Button
-            type="button"
-            variant="outline"
-            leadingIcon={ClipboardPaste}
-            className="w-full"
-            onClick={onPaste}
-          >
-            {ADDRESS_FORM_COPY.pasteAction}
-          </Button>
-
-          <div className="flex items-center justify-between rounded-container bg-surface px-4 py-3 shadow-card">
-            <span className="text-sm text-text-primary">{ADDRESS_FORM_COPY.defaultSwitch}</span>
-            <Controller
-              name="isDefault"
-              control={control}
-              render={({ field }) => (
-                <Switch
-                  checked={field.value}
-                  onChange={field.onChange}
-                  label={ADDRESS_FORM_COPY.defaultSwitch}
-                />
-              )}
+      <div className="space-y-4 px-4 pt-4">
+        <Controller
+          name="name"
+          control={control}
+          render={({ field, fieldState }) => (
+            <Input
+              label={ADDRESS_FORM_COPY.nameLabel}
+              placeholder={ADDRESS_FORM_COPY.namePlaceholder}
+              value={field.value}
+              error={fieldState.error?.message}
+              onBlur={field.onBlur}
+              onChange={(event) => {
+                field.onChange(event.target.value)
+                clearErrors('name')
+              }}
             />
-          </div>
-        </div>
+          )}
+        />
+        <Controller
+          name="phone"
+          control={control}
+          render={({ field, fieldState }) => (
+            <Input
+              label={ADDRESS_FORM_COPY.phoneLabel}
+              placeholder={ADDRESS_FORM_COPY.phonePlaceholder}
+              type="tel"
+              inputMode="numeric"
+              maxLength={11}
+              value={field.value}
+              error={fieldState.error?.message}
+              onBlur={field.onBlur}
+              onChange={(event) => {
+                field.onChange(event.target.value.replace(/\D/g, ''))
+                clearErrors('phone')
+              }}
+            />
+          )}
+        />
+        <Controller
+          name="region"
+          control={control}
+          render={({ field, fieldState }) => (
+            <Select
+              label={ADDRESS_FORM_COPY.regionLabel}
+              placeholder={ADDRESS_FORM_COPY.regionPlaceholder}
+              options={ADDRESS_REGION_OPTIONS}
+              value={field.value}
+              error={fieldState.error?.message}
+              onBlur={field.onBlur}
+              onChange={(event) => {
+                field.onChange(event.target.value)
+                clearErrors('region')
+              }}
+            />
+          )}
+        />
+        <Controller
+          name="detail"
+          control={control}
+          render={({ field, fieldState }) => (
+            <Input
+              label={ADDRESS_FORM_COPY.detailLabel}
+              placeholder={ADDRESS_FORM_COPY.detailPlaceholder}
+              value={field.value}
+              error={fieldState.error?.message}
+              onBlur={field.onBlur}
+              onChange={(event) => {
+                field.onChange(event.target.value)
+                clearErrors('detail')
+              }}
+            />
+          )}
+        />
 
-        <div className="sticky bottom-0 mt-auto bg-background px-4 pb-[env(safe-area-inset-bottom)] pt-3">
-          <Button type="submit" size="large" className="w-full rounded-pill">
-            {ADDRESS_FORM_COPY.submit}
-          </Button>
+        <Button
+          variant="outline"
+          leadingIcon={ClipboardPaste}
+          className="w-full"
+          onClick={onPaste}
+        >
+          {ADDRESS_FORM_COPY.pasteAction}
+        </Button>
+
+        <div className="flex items-center justify-between rounded-container bg-surface px-4 py-3 shadow-card">
+          <span className="text-sm text-text-primary">{ADDRESS_FORM_COPY.defaultSwitch}</span>
+          <Controller
+            name="isDefault"
+            control={control}
+            render={({ field }) => (
+              <Switch
+                checked={field.value}
+                onChange={field.onChange}
+                label={ADDRESS_FORM_COPY.defaultSwitch}
+              />
+            )}
+          />
         </div>
-      </form>
+      </div>
+
+      <div className="sticky bottom-0 mt-auto bg-background px-4 pb-[env(safe-area-inset-bottom)] pt-3">
+        <Button size="large" className="w-full rounded-pill" onClick={handleSubmit(onSubmit)}>
+          {ADDRESS_FORM_COPY.submit}
+        </Button>
+      </div>
 
       {toast && (
         <div className="pointer-events-none fixed inset-x-0 bottom-28 z-40 flex justify-center px-6">
