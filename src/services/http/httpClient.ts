@@ -4,9 +4,17 @@ import axios, {
   type AxiosRequestConfig,
   type AxiosResponse,
 } from 'axios'
+import { runtimePolicy } from '../../app/config/runtime'
 import { AppError, toAppError } from './appError'
 
 export const DEFAULT_HTTP_TIMEOUT_MS = 10_000
+
+/**
+ * Browser-only synthetic origin used when dev/preview runs in API Mock mode without a confirmed
+ * backend base URL. MSW intercepts matched requests before they leave the browser. API mode never
+ * receives this fallback, so test/prod still fail closed when VITE_API_BASE_URL is absent.
+ */
+export const MOCK_API_BASE_URL = 'https://mock-api.dr-card.invalid'
 
 type Awaitable<T> = T | Promise<T>
 
@@ -48,6 +56,10 @@ function createConfigurationError() {
 
 function getConfiguredBaseURL() {
   return normalizeBaseURL(import.meta.env.VITE_API_BASE_URL)
+}
+
+function getDefaultBaseURL() {
+  return getConfiguredBaseURL() ?? (runtimePolicy.dataMode === 'mock' ? MOCK_API_BASE_URL : undefined)
 }
 
 export function createHttpClient(options: HttpClientOptions = {}): HttpClient {
@@ -96,6 +108,6 @@ export function createHttpClient(options: HttpClientOptions = {}): HttpClient {
 }
 
 export const httpClient = createHttpClient({
-  baseURL: getConfiguredBaseURL(),
+  baseURL: getDefaultBaseURL(),
   authHeadersProvider: () => defaultAuthHeadersProvider?.(),
 })
