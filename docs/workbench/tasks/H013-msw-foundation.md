@@ -1,6 +1,6 @@
 # H013｜MSW 网络 Mock 基建
 
-**Status:** User Review  
+**Status:** Accepted  
 **Phase:** Foundation  
 **Depends on:** H006, H007
 
@@ -46,4 +46,8 @@
 - 实现 head `4d325496869f4b23549ac4e9f70a6e29d7ce85b9` 的 Build run `35089924783` 全绿，覆盖 npm ci、hygiene、typecheck、H007/H009/H010/H011/H012/H013 验证、dev/Cloudflare preview/test/prod 构建与 identity、worker 资产存在/缺失规则、production-like Mock 拒绝、SPA fallback 与 production preview smoke。
 - Cloudflare Pages 已成功部署同一实现 head `4d325496869f4b23549ac4e9f70a6e29d7ce85b9`。
 - PR #20 已记录独立人工 self-review；最终 diff 仅 13 个 H013 相关文件，无业务页面、Native reference 或 Com Design 扩散，当前无剩余 blocking finding。
-- `Accepted` 保留给用户明确验收。
+- Final User Review head `168541cb2af1ce9b4fa972a355ad3984630cc94c` 的 Build run `35090287630` 全绿，Cloudflare Pages 同一 head 部署成功。
+
+## 代理验收记录
+
+2026-09-16：用户明确表示当前无法进行人工验收，并授权助手代为验收 H013。基于完整人工 review、最终 diff 范围检查、两轮全绿 Build、MSW/真实 HTTP 双链路验证、worker 资产环境门禁与 Cloudflare final-head 部署结果，H013 判定满足任务卡验收条件，状态更新为 `Accepted`。
