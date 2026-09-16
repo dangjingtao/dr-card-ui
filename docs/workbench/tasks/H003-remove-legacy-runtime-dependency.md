@@ -47,6 +47,6 @@
 
 详见 [`../evidence/h003-remove-legacy-runtime-dependency.md`](../evidence/h003-remove-legacy-runtime-dependency.md)。
 
-PR #9 首轮 Build run `35040382153` 全绿；静态门禁检查 115 个 formal source files，0 unused、0 architecture violation。Codex P1 修正后需以最新 head CI / re-review 为最终证据。
+PR #9 首轮 Build run `35040382153` 全绿；Codex P1 修正后的最终 head `d7ca3b3fca` Build run `35041121691` 全绿，Codex re-review 结论为 `Didn't find any major issues.`；PR #9 已合入 `dev`，merge commit `b7d6a87170dceb8b021354d29684bb0ace487a39`。
 
 当前状态为 `Agent Review`；只有用户可以把任务标记为 `Accepted`。
