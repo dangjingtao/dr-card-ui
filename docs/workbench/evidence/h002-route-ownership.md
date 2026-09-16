@@ -13,11 +13,22 @@ H002 将“正式 H5 / Native reference / 当前 deferred”的边界从文档�
 - `active`：当前 H5 工程施工面。
 - `deferred`：保留产品路由，但当前工程轮次不施工。
 
-Native reference 采用 canonical route 精确清单，不依赖 `/legacy` 字符串匹配；因此 `/device/*`、`/vending/*` 也被正确归入 Native reference。
+Native reference 采用 canonical route 精确清单，不依赖 `/legacy` 字符串匹配；因此 `/device/*`、`/vending/*` 以及不含 `legacy` 的历史签到链路 `/signin`、`/signin/detail` 也归入 Native reference。
 
-当前登记 43 条 Native reference canonical route。
+当前登记 45 条 Native reference canonical route。
 
 商城当前按用户要求暂缓施工，三条路由 `/mall`、`/mall/goods/:id`、`/mall/cart` 保持 `formal-h5` ownership，但 `engineeringScope=deferred`，不改变现有产品导航。
+
+## Review 修正
+
+PR #6 合并后，Codex Review 指出 `/signin` 与 `/signin/detail` 未被列入 Native reference，导致未来 `ACTIVE_FORMAL_H5_ROUTES` 会错误包含这两条历史页面。
+
+复核 `src/app/router/index.tsx` 后确认：
+
+- `/signin` → `src/pages/legacy/SignInPage`
+- `/signin/detail` → `src/pages/legacy/PointsPage`
+
+因此该 review 有效。本次 H002 修正将两条 canonical path 补入 `NATIVE_REFERENCE_ROUTE_PATHS`，不改页面实现、不改入口行为。
 
 ## 实际消费点
 
@@ -38,9 +49,9 @@ Native reference 采用 canonical route 精确清单，不依赖 `/legacy` 字�
 
 ## 自动化证据
 
-PR：#6 `refactor: establish H002 route ownership boundary`
+原实现 PR：#6 `refactor: establish H002 route ownership boundary`
 
-GitHub Actions Build run：`35033599628`
+原 GitHub Actions Build run：`35033599628`
 
 结果：
 
@@ -52,10 +63,8 @@ GitHub Actions Build run：`35033599628`
 - Cloudflare SPA fallback asset: PASS
 - Production preview smoke: PASS
 
-scope registry 会在运行时代码初始化时校验显式归类的 canonical path 是否真实存在于 `ROUTES`；本次 smoke/build 均通过，未发现未知归类路径或归属重叠。
+scope registry 会在运行时代码初始化时校验显式归类的 canonical path 是否真实存在于 `ROUTES`；本次 review 修正 PR 继续走同一套 CI，并接受 Codex / OpenCode review。
 
 ## 当前结论
 
-H002 已满足 Agent Review 条件。代码已能可靠判断 formal H5 / Native reference，并将“商城当前暂缓”作为独立 engineering scope 表达，而不是混进产品 ownership。
-
-是否标记为 `Accepted` 仍由用户确认。
+H002 在 review 修正完成后继续保持 `Agent Review`。是否标记为 `Accepted` 仍由用户确认。
