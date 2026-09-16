@@ -54,6 +54,8 @@ function resolveRequestedTarget() {
   return requestedTarget
 }
 
+const cloudflareBuildContext =
+  requestedTarget === 'cf' || (requestedTarget === 'auto' && Boolean(process.env.CF_PAGES_BRANCH))
 const targetName = resolveRequestedTarget()
 const target = TARGETS[targetName]
 if (!target) {
@@ -87,6 +89,13 @@ if (prodLike && dataMode === 'mock') {
 }
 if (prodLike && bridgeMode === 'mock') {
   errors.push(`${target.appEnvironment} builds forbid VITE_BRIDGE_MODE=mock; Bridge Mock is dev/preview only.`)
+}
+if (
+  cloudflareBuildContext &&
+  (target.appEnvironment === 'dev' || target.appEnvironment === 'preview') &&
+  dataMode !== 'mock'
+) {
+  errors.push(`Cloudflare ${target.appEnvironment} builds are fixed to VITE_DATA_MODE=mock.`)
 }
 
 const apiBaseUrl = readEnv('VITE_API_BASE_URL')?.trim() ?? ''
