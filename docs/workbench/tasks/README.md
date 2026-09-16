@@ -41,7 +41,7 @@
 | H010 | Zustand 状态基建与旧共享状态迁移 | Accepted |
 | H011 | Storage Adapter | Accepted |
 | H012 | React Hook Form + Zod 表单基线 | Accepted |
-| H013 | MSW 网络 Mock 基建 | Ready |
+| H013 | MSW 网络 Mock 基建 | Accepted |
 | H014 | Mock 场景迁移与页面假网络清理 | Ready |
 
 ### C. 宿主与体验
