@@ -40,6 +40,8 @@
 
 详见 [`../evidence/h005-fixture-domain-split.md`](../evidence/h005-fixture-domain-split.md)。
 
-工程 head `bbccdfe24d6` 的 Build run `35046955770` 全绿：Static hygiene、Typecheck、dev/prod build、dev/prod smoke、SPA fallback 均 PASS。
+最终 review head `15a8c6de99` 的 Build run `35047133441` 全绿：Static hygiene、Typecheck、dev/prod build、dev/prod smoke、SPA fallback 均 PASS；Cloudflare 分支预览部署成功。
 
-当前状态为 `Agent Review`；Ready 后仍需 AI reviewer 对最终 head 复核语义漏搬与域间依赖。
+Codex 已对同一最终 head 完成 review，结论为 `Didn't find any major issues.`，没有遗留 review thread。PR #11 已合入 `dev`，merge commit `45138a3e8f61ccb558151cfe2a4d43d6fa5bb4a1`。
+
+当前状态保持 `Agent Review`，等待用户决定是否标记 `Accepted`。
