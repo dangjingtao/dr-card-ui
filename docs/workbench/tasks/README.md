@@ -35,7 +35,7 @@
 | ID | 任务 | 状态 |
 |---|---|---|
 | H006 | 环境配置与构建身份 | Agent Review |
-| H007 | Axios HTTP Client 与统一错误模型 | Ready |
+| H007 | Axios HTTP Client 与统一错误模型 | Agent Review |
 | H008 | Service 层与首条真实 API 垂直链路 | Blocked |
 | H009 | Zod 运行时数据契约 | Ready |
 | H010 | Zustand 状态基建与旧共享状态迁移 | Ready |

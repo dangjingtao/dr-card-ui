@@ -32,6 +32,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Verify H007 HTTP foundation
+        run: npm run verify:h007
+
       - name: Smoke test development server
         shell: bash
         run: |
