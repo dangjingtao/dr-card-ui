@@ -28,7 +28,8 @@
     "verify:h010": "node scripts/verify-h010-state.mjs",
     "verify:h011": "node scripts/verify-h011-storage.mjs",
     "verify:h012": "node scripts/verify-h012-forms.mjs",
-    "verify:h013": "node scripts/verify-h013-msw.mjs"
+    "verify:h013": "node scripts/verify-h013-msw.mjs",
+    "verify:h014": "node scripts/verify-h014-mock-scenarios.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "5.9.1",
