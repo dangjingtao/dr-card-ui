@@ -1,5 +1,5 @@
 import { AlertCircle, CheckCircle2 } from 'lucide-react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import DebugPanel from '../components/mobile/DebugPanel'
 import PromptOverlay from '../components/mobile/PromptOverlay'
 import WecomQrPlaceholder from '../components/mobile/WecomQrPlaceholder'
@@ -9,6 +9,7 @@ import {
   BUDDY_SHARE_FEEDBACK,
   type BuddyShareOutcome,
 } from '../app/fixtures'
+import { useFixtureDebug, useFixtureQueryControls, withFixtureQuery } from '../app/fixtures/useFixture'
 import { findRouteByPathname } from '../app/router/routes'
 import BuddyInvite from './BuddyInvite'
 
@@ -24,17 +25,17 @@ const STATE_OUTCOME: Record<string, BuddyShareOutcome> = {
 /**
  * 搭子分享结果（摹客 #34 / #35）
  * 保存海报用居中反馈卡，复制链接用页内轻提示；
- * 失败态只由 `?state=` 驱动，不伪造端能力成功/失败。
+ * 失败态只由受控 fixture state 驱动，不伪造端能力成功/失败。
  */
 export default function BuddyShareResult() {
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
   const route = findRouteByPathname('/buddy/invite/qrcode')
-  const outcome = STATE_OUTCOME[searchParams.get('state') ?? ''] ?? 'poster-saved'
+  const { get } = useFixtureQueryControls()
+  const debug = useFixtureDebug()
+  const outcome = STATE_OUTCOME[get('state') ?? ''] ?? 'poster-saved'
   const feedback = BUDDY_SHARE_FEEDBACK[outcome]
   const isLink = outcome.startsWith('link-')
-  const keepDebug = searchParams.get('debug') === '1' ? '?debug=1' : ''
-  const back = () => navigate(`/buddy/invite${keepDebug}`, { replace: true })
+  const back = () => navigate(withFixtureQuery('/buddy/invite', { debug: debug ? '1' : null }), { replace: true })
 
   return (
     <>
@@ -88,7 +89,6 @@ export default function BuddyShareResult() {
         </PromptOverlay>
       )}
 
-      {/* 4 个结果状态都要能被验收面板直接切到（D-021 面板只在 ?debug=1 下出现） */}
       <DebugPanel route={route} />
     </>
   )
