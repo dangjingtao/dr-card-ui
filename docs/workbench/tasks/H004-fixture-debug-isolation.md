@@ -34,7 +34,7 @@
 
 ## H006 边界
 
-H004 为完成 fixture/debug 隔离建立了最小 runtime policy，因此不再阻塞于 H006。H006 继续负责 `.env.example`、API base URL、Bridge mode、build SHA、非法配置组合硬失败等完整环境/构建身份能力。
+H004 为完成 fixture/debug 隔离建立了最小 runtime policy，因此不再阻塞于 H006。H006 继续负责 `.env.example`、API base URL、Bridge mode、build SHA、非法配置组合硬失败，以及 Cloudflare 实际 build command 与各环境 mode 的最终对齐。
 
 ## 验收
 
@@ -48,6 +48,6 @@ H004 为完成 fixture/debug 隔离建立了最小 runtime policy，因此不再
 
 详见 [`../evidence/h004-fixture-debug-isolation.md`](../evidence/h004-fixture-debug-isolation.md)。
 
-工程 head `ac0ea74fdd5` 的 Build run `35045461711` 全绿：Static hygiene、Typecheck、dev/prod build、dev/prod smoke、SPA fallback 均 PASS。
+最终 PR head `b28f3d2f3f` 的 Build run `35045692216` 全绿：Static hygiene、Typecheck、dev/prod build、dev/prod smoke、SPA fallback 均 PASS。Cloudflare Pages 成功部署该 head。Codex 对同一 head re-review 结论为 `Didn't find any major issues.`。PR #10 已合入 `dev`，merge commit `ca1dff0c8de83ba4800db4f28847beafd002b8e5`。
 
-当前状态为 `Agent Review`；Ready 后仍需 AI reviewer 对最新 head 复核。
+当前状态为 `Agent Review`；是否标记 `Accepted` 仍按台账授权规则处理。
