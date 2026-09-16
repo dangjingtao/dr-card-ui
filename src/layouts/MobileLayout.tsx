@@ -56,7 +56,7 @@ function H5RouteOutlet() {
   return (
     <div
       key={location.pathname}
-      className="h5-route-frame min-h-full"
+      className="h5-route-frame h-full min-h-full"
       data-h5-route-active={isActiveFormalH5Route(currentRoute) ? 'true' : 'false'}
       data-h5-route-transition={transition}
     >
