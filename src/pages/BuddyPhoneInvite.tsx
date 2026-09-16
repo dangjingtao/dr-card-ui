@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
 import { Loader2, Search, Send, UserRoundPlus } from 'lucide-react'
 import DebugPanel from '../components/mobile/DebugPanel'
 import PageContainer from '../components/mobile/PageContainer'
@@ -36,7 +35,6 @@ export default function BuddyPhoneInvite() {
   const fixtureNavigate = useFixtureNavigate()
   const { get } = useFixtureQueryControls()
   const debug = useFixtureDebug()
-  const [searchParams] = useSearchParams()
   const raw = get('state')
   const directState: BuddySearchOutcome = raw && FIXTURE_STATES.has(raw as BuddySearchOutcome)
     ? (raw as BuddySearchOutcome)
