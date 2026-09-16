@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { CalendarDays, Check, ChevronRight, Clock, Info, KeyRound, QrCode, ReceiptText, Ticket, X } from 'lucide-react'
+import { CalendarDays, Check, Clock, Info, KeyRound, QrCode, ReceiptText, Ticket, X } from 'lucide-react'
 import DebugPanel from '../components/mobile/DebugPanel'
 import PageContainer from '../components/mobile/PageContainer'
 import { useFixtureState, useOverlay } from '../app/fixtures/useFixture'

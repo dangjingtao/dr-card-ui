@@ -1,12 +1,12 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { useBlocker, useNavigate } from 'react-router-dom'
 import { Camera, CheckCircle2, ChevronRight, Eye, EyeOff, Image, Lock, X } from 'lucide-react'
 import PageContainer from '../components/mobile/PageContainer'
 import PromptOverlay from '../components/mobile/PromptOverlay'
 import { Button, IconButton } from '../components/ui'
 import { useOverlay } from '../app/fixtures/useFixture'
+import { memberProfileActions, useMemberProfile } from '../app/state/memberProfile'
 import avatar from '../assets/brand/home/home-avatar.webp'
-import { userInfoActions, useUserInfo } from './legacy/userInfoStore'
 import { canEditBirthday, formatNextEditableDate } from '../utils/birthdayGate'
 
 type SheetKey = 'avatar' | 'nickname' | 'birthday' | 'password' | null
@@ -25,12 +25,12 @@ const yearGroups: Array<{ group: string; items: string[] }> = [
 export default function Settings() {
   const navigate = useNavigate()
   const { overlay, close: closeOverlay } = useOverlay()
-  /* T050｜生日字段从 userInfoStore 读取，保证与「会员中心」展示一致 */
-  const userInfo = useUserInfo()
-  const birthdayGate = canEditBirthday(userInfo.birthdayLastModifiedAt)
+  /* H003｜正式 H5 的生日 UI 状态不再借用 Native reference userInfoStore。 */
+  const memberProfile = useMemberProfile()
+  const birthdayGate = canEditBirthday(memberProfile.birthdayLastModifiedAt)
   const [sheet, setSheet] = useState<SheetKey>(null)
   const [nickname, setNickname] = useState(initialProfile.nickname)
-  const [birthdayDraft, setBirthdayDraft] = useState(userInfo.birthday)
+  const [birthdayDraft, setBirthdayDraft] = useState(memberProfile.birthday)
   const [year, setYear] = useState(initialProfile.year)
   const [passwordSet, setPasswordSet] = useState(initialProfile.passwordSet)
   const [pw1, setPw1] = useState('')
@@ -42,7 +42,7 @@ export default function Settings() {
 
   const dirty =
     nickname !== initialProfile.nickname ||
-    birthdayDraft !== userInfo.birthday ||
+    birthdayDraft !== memberProfile.birthday ||
     year !== initialProfile.year ||
     passwordSet !== initialProfile.passwordSet
 
@@ -114,7 +114,7 @@ export default function Settings() {
         </div>
         <div className="flex items-center gap-3 border-b border-border-subtle px-4 py-3">
           <span className="w-12 shrink-0 text-sm text-text-tertiary">生日</span>
-          <span className="min-w-0 flex-1 text-right text-sm text-text-primary">{userInfo.birthday || '未设置'}</span>
+          <span className="min-w-0 flex-1 text-right text-sm text-text-primary">{memberProfile.birthday || '未设置'}</span>
           {/* T050｜锁定态显示锁图标 + 灰色（不可点击）；非锁定态维持原 ChevronRight */}
           {birthdayGate.allowed ? (
             <button type="button" onClick={() => setSheet('birthday')} aria-label="修改生日" className="shrink-0 text-text-tertiary">
@@ -252,9 +252,8 @@ export default function Settings() {
                       <button
                         type="button"
                         onClick={() => {
-                          /* T050｜写入新生日 + 当前时间戳作为 lastModifiedAt，
-                           * 由 userInfoStore update action 统一维护（避免多处写）。 */
-                          userInfoActions.update({
+                          /* H003｜当前只维护正式 H5 的确定性 UI 状态；真实资料持久化待 API contract。 */
+                          memberProfileActions.update({
                             birthday: birthdayDraft,
                             birthdayLastModifiedAt: Date.now(),
                           })

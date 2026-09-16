@@ -3,7 +3,9 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { Bug, X } from 'lucide-react'
 import { Tag } from '../ui'
 import type { RouteMeta } from '../../app/router/routes'
+import { isActiveFormalH5Route } from '../../app/router/routeScope'
 import { useFixtureState, useOverlay } from '../../app/fixtures/useFixture'
+import { runtimePolicy } from '../../app/config/runtime'
 
 interface DebugPanelProps {
   route?: RouteMeta
@@ -15,8 +17,10 @@ interface DebugPanelProps {
  * 只读 routes.ts 已登记的 `states` / `overlays`，把「确定性状态」与「可复现弹层」
  * 摆成可点的胶囊；切换仍然只改 URL（`?state=` / `?overlay=`），页面照旧从 URL 派生状态，
  * 因此面板本身不持有任何业务状态，也不会引入第二套真值来源。
- * - 仅在 URL 带 `?debug=1` 时渲染：正常页面（含验收截图与真实浏览）不会出现任何调试入口，
- *   避免调试胶囊遮挡底部操作区；
+ * - 只服务当前 active formal-H5 路由；Native reference / deferred 路由不渲染调试面板；
+ * - 仅 preview/dev Mock 环境允许启用，且 URL 还必须带 `?debug=1`；
+ * - test/prod/API mode 即使手工拼 `?debug=1` 也不会渲染；
+ * - H006 在面板顶部显示环境 / data / bridge / branch / build SHA，方便确认当前预览版本；
  * - 切换状态/弹层时从当前 search 派生新 search，`debug=1` 原样保留，保证连续切换不掉出调试态；
  * - 没有登记任何状态/弹层的路由直接返回 null，不在页面上留痕；
  * - z-[60] 高于弹层与 Toast（z-50）与 Tabbar（z-40），确保弹层打开时仍可继续切换。
@@ -30,10 +34,13 @@ export default function DebugPanel({ route }: DebugPanelProps) {
 
   const states = route?.states ?? []
   const overlays = route?.overlays ?? []
-  const debugEnabled = new URLSearchParams(location.search).get('debug') === '1'
+  const debugEnabled =
+    runtimePolicy.debugPanelEnabled && new URLSearchParams(location.search).get('debug') === '1'
+  const shortSha = runtimePolicy.build.sha === 'local' ? 'local' : runtimePolicy.build.sha.slice(0, 8)
 
   if (!debugEnabled) return null
-  if (!route || (states.length === 0 && overlays.length === 0)) return null
+  if (!isActiveFormalH5Route(route)) return null
+  if (states.length === 0 && overlays.length === 0) return null
 
   /** 从当前 search 派生，`debug=1` 等无关参数原样保留 */
   const apply = (patch: Array<[string, string | null]>) => {
@@ -63,6 +70,10 @@ export default function DebugPanel({ route }: DebugPanelProps) {
               <p className="truncate text-sm font-medium">调试面板 · {route.task}</p>
               <p className="truncate text-[11px] opacity-70">
                 {route.path} · 节点 {route.nodes.join('/')}
+              </p>
+              <p data-debug-build className="truncate text-[11px] opacity-70">
+                {runtimePolicy.appEnvironment}/{runtimePolicy.dataMode}/{runtimePolicy.bridgeMode} ·{' '}
+                {runtimePolicy.build.sourceBranch}@{shortSha} · {runtimePolicy.build.id}
               </p>
             </div>
             <button

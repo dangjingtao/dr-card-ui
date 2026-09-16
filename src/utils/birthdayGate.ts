@@ -1,16 +1,13 @@
 /**
  * T050｜会员中心生日字段 3 个月修改限制
  * -------------------------------------------------------------
- * 仅前端 UI 限制 + mock 服务端返回（PRD「不在范围：本期仅前端限制 + mock 服务端返回」）。
- * 真实场景下应由后端校验 + 持久化，前端只展示限制状态。
+ * 当前仅保留前端 UI 限制算法；真实场景下应由后端校验 + 持久化，前端只展示限制状态。
+ * H003 后该工具不再假定任何 legacy userInfoStore 初始值，调用方必须提供真实或明确的
+ * 客户端状态，不能把 Native reference mock 当成正式资料来源。
  *
  * 锚点规则（B-050）：
  * - 以"上次成功保存时间"为锚点，currentTime - lastModifiedAt ≥ 90 天 才允许再次编辑。
  * - 若 lastModifiedAt 为 0 / null / undefined，视为从未修改过 → 直接允许编辑。
- *
- * 回溯规则（B-051）：
- * - 历史用户进入即视为"早已可编辑"：userInfoStore.birthdayLastModifiedAt
- *   默认回溯到 100 天前（见 userInfoStore INITIAL_USER_INFO）。
  */
 
 export const BIRTHDAY_LOCK_DAYS = 90

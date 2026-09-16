@@ -1,15 +1,16 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 import { BottomNavigation } from '../ui'
-import { LEGACY_TAB_ITEMS, TAB_ROUTES } from '../../app/router/routes'
+import { LEGACY_TAB_ITEMS } from '../../app/router/routes'
+import { FORMAL_H5_TAB_ROUTES } from '../../app/router/routeScope'
 
-// 一级导航配置以 ROUTES 为单一事实源，避免路由、文案与图标分别维护。
-const mainItems = TAB_ROUTES.flatMap((route) =>
+// 主入口只消费 formal-H5 Tab 路由；Native reference 使用独立 legacy 导航。
+const mainItems = FORMAL_H5_TAB_ROUTES.flatMap((route) =>
   route.tab && route.label && route.icon
     ? [{ value: route.path, label: route.label, icon: route.icon, fab: route.tabFab }]
     : [],
 )
 
-// 历史首页入口的三项导航同样从注册表派生，不在组件内另写一份配置。
+// 历史首页入口的三项导航继续作为 Native reference 独立存在。
 const legacyItems = LEGACY_TAB_ITEMS.map((item) => ({
   value: item.key,
   label: item.label,

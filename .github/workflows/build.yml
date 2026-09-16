@@ -12,7 +12,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -21,9 +21,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
 
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
+
+      - name: Static hygiene
+        run: npm run lint
 
       - name: Typecheck
         run: npm run typecheck
@@ -46,8 +50,71 @@ jobs:
       - name: Build development bundle
         run: npm run build:dev
 
+      - name: Verify development build identity
+        run: |
+          node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('dist/build-meta.json','utf8'));if(m.appEnvironment!=='dev'||m.dataMode!=='mock')process.exit(1)"
+
+      - name: Verify local dev can explicitly use API
+        shell: bash
+        run: |
+          VITE_DATA_MODE=api node scripts/build-h5.mjs dev --dry-run | tee /tmp/local-dev-api.txt
+          grep -F '"appEnvironment":"dev"' /tmp/local-dev-api.txt
+          grep -F '"dataMode":"api"' /tmp/local-dev-api.txt
+
+      - name: Verify Cloudflare branch-to-mode policy
+        shell: bash
+        run: |
+          CF_PAGES_BRANCH=feature/h006 CF_PAGES_COMMIT_SHA="$GITHUB_SHA" node scripts/build-h5.mjs cf --dry-run | tee /tmp/cf-feature-build.txt
+          grep -F 'env=preview' /tmp/cf-feature-build.txt
+          grep -F '"appEnvironment":"preview"' /tmp/cf-feature-build.txt
+          grep -F '"dataMode":"mock"' /tmp/cf-feature-build.txt
+
+          CF_PAGES_BRANCH=feature/h006 CF_PAGES_COMMIT_SHA="$GITHUB_SHA" node scripts/build-h5.mjs auto --dry-run | tee /tmp/cf-auto-build.txt
+          grep -F '"appEnvironment":"preview"' /tmp/cf-auto-build.txt
+          grep -F '"dataMode":"mock"' /tmp/cf-auto-build.txt
+
+          if CF_PAGES_BRANCH=dev VITE_DATA_MODE=api node scripts/build-h5.mjs cf --dry-run; then
+            echo 'Cloudflare dev accepted API mode; dev/preview Pages builds must be fixed Mock.'
+            exit 1
+          fi
+
+          if CF_PAGES_BRANCH=main CF_PAGES_COMMIT_SHA="$GITHUB_SHA" node scripts/build-h5.mjs cf --dry-run; then
+            echo 'main must not resolve to a deployable formal-H5 Cloudflare target.'
+            exit 1
+          fi
+
+      - name: Build Cloudflare preview bundle
+        run: CF_PAGES_BRANCH=preview CF_PAGES_COMMIT_SHA="$GITHUB_SHA" npm run build:cf
+
+      - name: Verify Cloudflare preview build identity
+        run: |
+          node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('dist/build-meta.json','utf8'));if(m.appEnvironment!=='preview'||m.dataMode!=='mock'||m.build.sha!==process.env.GITHUB_SHA)process.exit(1)"
+
+      - name: Build test bundle
+        run: npm run build:test
+
+      - name: Verify test build identity
+        run: |
+          node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('dist/build-meta.json','utf8'));if(m.appEnvironment!=='test'||m.dataMode!=='api')process.exit(1)"
+
+      - name: Reject Mock in production-like builds
+        shell: bash
+        run: |
+          if VITE_DATA_MODE=mock node scripts/build-h5.mjs test --dry-run; then
+            echo 'test accepted forbidden API Mock configuration.'
+            exit 1
+          fi
+          if VITE_BRIDGE_MODE=mock node scripts/build-h5.mjs prod --dry-run; then
+            echo 'prod accepted forbidden Bridge Mock configuration.'
+            exit 1
+          fi
+
       - name: Build production bundle
         run: npm run build:prod
+
+      - name: Verify production build identity
+        run: |
+          node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('dist/build-meta.json','utf8'));if(m.appEnvironment!=='prod'||m.dataMode!=='api'||m.build.sha!==process.env.GITHUB_SHA)process.exit(1)"
 
       - name: Verify Cloudflare SPA fallback asset
         run: test -f dist/_redirects && grep -F '/* /index.html 200' dist/_redirects
@@ -61,9 +128,77 @@ jobs:
           for attempt in {1..20}; do
             if curl --fail --silent --show-error http://127.0.0.1:4173/ > /dev/null; then
               curl --fail --silent --show-error http://127.0.0.1:4173/profile > /dev/null
+              curl --fail --silent --show-error http://127.0.0.1:4173/build-meta.json > /dev/null
               exit 0
             fi
             sleep 1
           done
           cat /tmp/dr-card-vite-preview.log
+          exit 1
+
+  test-gate:
+    name: Test branch gate
+    if: github.ref_name == 'test' || github.base_ref == 'test'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      VITE_APP_ENV: test
+      VITE_DATA_MODE: api
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Verify test environment policy
+        shell: bash
+        run: |
+          test "$VITE_APP_ENV" = "test"
+          test "$VITE_DATA_MODE" = "api"
+          test "$VITE_DATA_MODE" != "mock"
+
+      - name: Build test bundle
+        run: npm run build:test
+
+      - name: Verify test bundle identity
+        run: |
+          node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('dist/build-meta.json','utf8'));if(m.appEnvironment!=='test'||m.dataMode!=='api')process.exit(1)"
+
+      - name: Verify test bundle has no Mock Service Worker asset
+        shell: bash
+        run: |
+          if find dist -type f -name 'mockServiceWorker.js' -print -quit | grep -q .; then
+            echo 'Mock Service Worker asset must not be present in the test bundle.'
+            exit 1
+          fi
+
+      # Historical T015 verifies UI fixture query states from the archived prototype phase.
+      # H004/H006 intentionally disable those state/overlay/debug injections in test/API,
+      # so promotion now validates the production-like test bundle instead. H018 owns the
+      # future formal-H5 Playwright route suite.
+      - name: Smoke test API-only test preview
+        shell: bash
+        run: |
+          npm run preview -- --port 4173 > /tmp/dr-card-test-preview.log 2>&1 &
+          PREVIEW_PID=$!
+          trap 'kill $PREVIEW_PID || true' EXIT
+
+          for attempt in {1..20}; do
+            if curl --fail --silent --show-error http://127.0.0.1:4173/ > /dev/null; then
+              curl --fail --silent --show-error http://127.0.0.1:4173/profile > /dev/null
+              curl --fail --silent --show-error http://127.0.0.1:4173/settings > /dev/null
+              curl --fail --silent --show-error http://127.0.0.1:4173/build-meta.json > /dev/null
+              exit 0
+            fi
+            sleep 1
+          done
+
+          cat /tmp/dr-card-test-preview.log
           exit 1

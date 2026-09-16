@@ -1,10 +1,10 @@
 import { ExternalLink, Smartphone } from 'lucide-react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
 import DebugPanel from '../components/mobile/DebugPanel'
 import PageContainer from '../components/mobile/PageContainer'
 import PromptOverlay from '../components/mobile/PromptOverlay'
 import { Button } from '../components/ui'
 import { BUDDY_INVITE_COPY } from '../app/fixtures'
+import { useFixtureDebug, useFixtureNavigate, useFixtureQueryControls } from '../app/fixtures/useFixture'
 import { findRouteByPathname } from '../app/router/routes'
 
 /**
@@ -15,13 +15,13 @@ import { findRouteByPathname } from '../app/router/routes'
  * 也不实现真实唤起（B-005）。
  */
 export default function BuddyScanLanding() {
-  const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
+  const fixtureNavigate = useFixtureNavigate()
+  const { get, patch } = useFixtureQueryControls()
+  const debug = useFixtureDebug()
   const route = findRouteByPathname('/buddy/invite/scan')
-  const hasApp = searchParams.get('state') === 'has-app'
-  const debug = searchParams.get('debug') === '1'
-  const close = () => navigate(`/buddy/invite/scan?state=no-app${debug ? '&debug=1' : ''}`, { replace: true })
-  const openApp = () => navigate(`/buddy/accept${debug ? '?debug=1' : ''}`)
+  const hasApp = get('state') === 'has-app'
+  const close = () => patch({ state: 'no-app' })
+  const openApp = () => fixtureNavigate('/buddy/accept', { debug: debug ? '1' : null })
 
   return (
     <>

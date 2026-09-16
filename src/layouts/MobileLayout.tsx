@@ -1,12 +1,12 @@
-import { useEffect } from 'react'
-import { Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Bell, MessageSquare, Settings } from 'lucide-react'
 import BottomNav from '../components/mobile/BottomNav'
 import StatusBar from '../components/mobile/StatusBar'
 import TitleBar from '../components/mobile/TitleBar'
-import { findRouteByPathname, isLegacyTabPath, isTabPath } from '../app/router/routes'
+import { findRouteByPathname, isLegacyTabPath } from '../app/router/routes'
+import { isActiveFormalH5Route, isFormalH5TabPath } from '../app/router/routeScope'
 import { useNotifications } from '../app/state/notifications'
-import { useUserInfo } from '../pages/legacy/userInfoStore'
+import { protectedFixtureRedirect, useOverlay } from '../app/fixtures/useFixture'
 
 /**
  * 移动应用壳层（T004）
@@ -15,36 +15,34 @@ import { useUserInfo } from '../pages/legacy/userInfoStore'
  * - TabBar 位于壳层底部，自身负责底部安全区，页面不再重复预留
  * - 二级页不显示底部导航，避免遮挡输入区/弹层
  * - /legacy-home 为独立入口，使用「首页 / 服务 / 我的」三项导航，与主入口五项 TabBar 并存
- * - T037（2026-09-07 用户决定）：冷启动进入 `/` 且未登录时，自动重定向到登录页
- *   `/legacy-profile/login`；已登录（账号已写入 userInfoStore 且 isRegistered=true）
- *   则正常渲染诗得丽专栏首页。
+ * - H003：正式 H5 壳层不再从 Native reference mock 用户状态推断登录态，也不再把 `/`
+ *   重定向到 `/legacy-profile/login`。真实认证 / App 宿主会话协议尚未确认，在协议到位前
+ *   保持正式 H5 路由可直接运行，不用 legacy mock 冒充生产认证。
+ * - H004：仅 active formal H5 在页面渲染前处理受保护 fixture/debug query。preview/dev Mock
+ *   保持 URL 可复现；test/prod/API mode 的外部 state/overlay/debug 会被剥离，旧的 SPA 内部
+ *   跳转仅临时转成 router location state。Native reference / deferred 路由不受该策略改写。
  */
 export default function MobileLayout() {
   const location = useLocation()
   const navigate = useNavigate()
   const { unreadCount } = useNotifications()
-  const userInfo = useUserInfo()
+  const { open: openOverlay } = useOverlay()
   const showLegacyNav = isLegacyTabPath(location.pathname)
-  const showNav = showLegacyNav || isTabPath(location.pathname)
+  const showNav = showLegacyNav || isFormalH5TabPath(location.pathname)
   const route = findRouteByPathname(location.pathname)
+  const fixtureRedirect = isActiveFormalH5Route(route) ? protectedFixtureRedirect(location) : null
   const titleBarMode = route?.titleBar ?? 'back'
   const fallbackTitle = location.pathname === '/tokens' ? '品牌 Token 展示' : '页面不存在'
   const title = route?.titleBarTitle ?? route?.title ?? fallbackTitle
   const isNotificationsPage = location.pathname === '/notifications'
   const allNotificationsRead = unreadCount === 0
 
-  /* T037：未登录访问根路由时引导到登录页；登录后（account 非空且 isRegistered=true）放行 */
-  const isLoggedIn = Boolean(userInfo.account) && userInfo.isRegistered
-  useEffect(() => {
-    if (location.pathname === '/' && !isLoggedIn) {
-      navigate('/legacy-profile/login', { replace: true })
-    }
-  }, [location.pathname, isLoggedIn, navigate])
+  if (fixtureRedirect) {
+    return <Navigate to={fixtureRedirect.to} replace state={fixtureRedirect.state} />
+  }
 
   const openMarkAllRead = () => {
-    const params = new URLSearchParams(location.search)
-    params.set('overlay', 'clear')
-    navigate({ pathname: location.pathname, search: params.toString() })
+    openOverlay('clear')
   }
 
   const titleAction = isNotificationsPage
