@@ -12,7 +12,7 @@
 
 - 为路由元数据建立明确的 ownership / scope 语义。
 - 正式 H5 的导航、测试枚举、调试与后续工程能力只消费 formal-H5 范围。
-- 将 `/legacy-home*`、`/legacy-service*`、`/legacy-profile*` 及按归属属于 Native reference 的 `/device/*`、`/vending/*` 从 H5 施工/验收枚举中排除。
+- 将 `/legacy-home*`、`/legacy-service*`、`/legacy-profile*` 及按归属属于 Native reference 的 `/device/*`、`/vending/*`、`/signin*` 从 H5 施工/验收枚举中排除。
 - 保留历史 reference 路由可查看性，不删除旧页面。
 
 ## 不做
@@ -27,7 +27,8 @@
 
 - 新增 `src/app/router/routeScope.ts`，按 canonical route path 精确维护 scope，不使用 `/legacy` 前缀猜测。
 - ownership 明确为 `formal-h5` / `native-reference`；engineering scope 明确为 `active` / `deferred`。
-- 当前登记 43 条 Native reference canonical route，包括不含 `legacy` 的 `/device/*` 与 `/vending/*`。
+- 当前登记 45 条 Native reference canonical route，包括不含 `legacy` 的 `/device/*`、`/vending/*`、`/signin` 与 `/signin/detail`。
+- PR #6 的 Codex Review 指出 `/signin`、`/signin/detail` 漏归类；复核 router 后确认两条路由分别直接渲染 `pages/legacy/SignInPage` 与 `pages/legacy/PointsPage`，本次修正已补入 Native reference。
 - 商城三条路由保持 formal-H5 ownership，但按当前决定标记为 `deferred`；现有商城 Tab 不因此消失。
 - 导出 `ACTIVE_FORMAL_H5_ROUTES`，供后续 CI / E2E / 体验治理统一枚举。
 - `BottomNav` 主入口、`MobileLayout` 主 Tab 判断、`DebugPanel` 已实际消费统一 scope。
@@ -43,6 +44,6 @@
 
 详见 [`../evidence/h002-route-ownership.md`](../evidence/h002-route-ownership.md)。
 
-PR #6 首轮 GitHub Actions Build run `35033599628`：Static hygiene、Typecheck、dev/prod build、dev/preview smoke、Cloudflare SPA fallback 全部通过。
+原 PR #6 GitHub Actions Build run `35033599628` 全绿；review 修正另走独立 PR 与同一套 CI / AI review。
 
 当前状态为 `Agent Review`；只有用户可以把任务标记为 `Accepted`。
