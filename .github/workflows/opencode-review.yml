@@ -41,8 +41,10 @@ jobs:
           fetch-depth: 1
           persist-credentials: true
 
-      - name: Review pull request with OpenCode
+      - name: Review pull request with DeepSeek V4.1 Flash
+        id: primary-review
         if: steps.credentials.outputs.ready == 'true'
+        continue-on-error: true
         uses: anomalyco/opencode/github@latest
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -52,24 +54,28 @@ jobs:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         with:
           use_github_token: true
-          model: ${{ vars.OPENCODE_REVIEW_MODEL || 'opencode-go/deepseek-v4-pro' }}
+          model: ${{ vars.OPENCODE_REVIEW_MODEL || 'opencode-go/deepseek-v4.1-flash' }}
           prompt: |
             Review this pull request as a read-only second reviewer.
 
             Read and follow the repository AGENTS.md before judging the diff.
-            Focus on high-confidence, actionable defects in changed code and its immediate integration surface:
-            - correctness and regressions;
-            - route / state / environment boundary violations;
-            - security or data-safety problems;
-            - broken contracts between formal H5 and Native reference code;
-            - tests or CI logic that can produce a false pass or false failure.
-
-            Repository-specific constraints:
-            - formal H5 and Native reference / legacy are different ownership domains;
-            - do not demand refactors inside Native reference code unless the PR changes it or it leaks into formal H5;
-            - mall work is currently deferred unless the PR explicitly targets it;
-            - do not invent backend API, authentication, or JSBridge contracts;
-            - do not request broad cleanup, style-only changes, coverage-chasing, or historical UI re-acceptance;
-            - avoid duplicating an existing reviewer finding unless independently confirming it adds material evidence.
+            Focus on high-confidence, actionable defects in changed code and its immediate integration surface.
 
             Do not modify code. Post only review findings. If there are no material findings, leave no blocking feedback.
+
+      - name: Retry review with Union Alpha Free
+        if: steps.credentials.outputs.ready == 'true' && steps.primary-review.outcome == 'failure'
+        uses: anomalyco/opencode/github@latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        with:
+          use_github_token: true
+          model: opencode-go/union-alpha-free
+          prompt: |
+            Retry this pull request review as a read-only second reviewer after the primary reviewer failed.
+
+            Focus on high-confidence actionable defects only. Do not modify code.
