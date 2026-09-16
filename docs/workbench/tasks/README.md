@@ -49,7 +49,7 @@
 | ID | 任务 | 状态 |
 |---|---|---|
 | H015 | JSBridge Adapter 与 Native 导航边界 | Blocked |
-| H016 | 路由过渡、返回与滚动体验 | Ready |
+| H016 | 路由过渡、返回与滚动体验 | User Review |
 
 ### D. 测试与交付
 
