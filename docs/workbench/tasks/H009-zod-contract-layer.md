@@ -33,6 +33,7 @@
 - 错误边界：通用 `AppError` 原语位于 `src/lib/appError.ts`；HTTP 层从原入口 re-export，避免 Contract / Bridge 校验反向依赖 Axios，同时保持 H007 兼容。
 - 失败验证：`npm run verify:h009` 覆盖合法数据解析、非法结构可预测失败、附加字段兼容和敏感原始值不泄漏。
 - 自审：PR #15 人工 review 发现并修复 Contract → HTTP/Axios 耦合；修复后无剩余 blocking finding。
-- CI：PR #15 Build run `35065410689` 在 head `febfab64d6e41e093a9f2fa26e7e6f7f7866a3af` 上完整通过 `npm ci`、静态检查、typecheck、H007/H009 验证、dev/Cloudflare preview/test/prod 构建与 production preview smoke。
-- Cloudflare Pages：head `febfab64d6e41e093a9f2fa26e7e6f7f7866a3af` 的 feature preview 部署成功。
+- CI：PR #15 Build run `35065410689` 在实现 head `febfab64d6e41e093a9f2fa26e7e6f7f7866a3af` 上完整通过 `npm ci`、静态检查、typecheck、H007/H009 验证、dev/Cloudflare preview/test/prod 构建与 production preview smoke。
+- Cloudflare Pages：实现 head `febfab64d6e41e093a9f2fa26e7e6f7f7866a3af` 的 feature preview 部署成功。
 - 用户验收：2026-09-16 明确确认“接受”。
+- 验收记录提交：`67b91b02da5f44c156e481d3736e604e80146f7c`，仅将任务卡状态和证据更新为 Accepted。
