@@ -1,6 +1,6 @@
 # H013｜MSW 网络 Mock 基建
 
-**Status:** Ready  
+**Status:** Doing  
 **Phase:** Foundation  
 **Depends on:** H006, H007
 
@@ -29,4 +29,4 @@
 
 ## 证据
 
-记录环境验证、network request 行为和 commit SHA。
+施工中。H013 仅建立网络 Mock 边界和最小 handler 证明；页面内既有假网络/场景迁移留给 H014，不在本卡扩大范围。
