@@ -1,6 +1,6 @@
 # H009｜Zod 运行时数据契约
 
-**Status:** Ready  
+**Status:** Agent Review  
 **Phase:** Foundation  
 **Depends on:** H007
 
@@ -28,4 +28,8 @@
 
 ## 证据
 
-记录 schema 示例、失败验证和 commit SHA。
+- Schema 示例：`src/services/contracts/h009MockExample.ts`，消费类型通过 `z.infer<typeof h009MockPayloadSchema>` 推导。
+- 运行时边界：`src/services/contracts/parseContract.ts`，校验失败统一转换为 `AppError(kind='contract', code='CONTRACT_VALIDATION_FAILED')`，错误详情不复制原始 payload。
+- 失败验证：`npm run verify:h009` 覆盖合法数据解析、非法结构可预测失败、附加字段兼容和敏感原始值不泄漏。
+- CI：PR #15 的 Build run `35063678184` 在实现 SHA `61b2941bca610c47b1770bd47e0fde6e734a0ef6` 上通过 `npm ci`、静态检查、typecheck、H007/H009 验证、dev/Cloudflare preview/test/prod 构建与 production preview smoke。
+- 实现提交基线：`61b2941bca610c47b1770bd47e0fde6e734a0ef6`。
