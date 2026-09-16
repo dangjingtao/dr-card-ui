@@ -1,8 +1,9 @@
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { X } from 'lucide-react'
 import DebugPanel from '../components/mobile/DebugPanel'
 import PageContainer from '../components/mobile/PageContainer'
 import { findRouteByPathname } from '../app/router/routes'
+import { useFixtureQueryControls } from '../app/fixtures/useFixture'
 import { LUCK_REWARD_BUBBLE, LUCK_RULE_STATUS, resolveLuck } from '../app/fixtures'
 
 /**
@@ -13,16 +14,16 @@ import { LUCK_REWARD_BUBBLE, LUCK_RULE_STATUS, resolveLuck } from '../app/fixtur
  * ⚠️ B-003 未决（隔离处理）：
  *    - 大吉/中吉/小吉三档、「再抽一次」重抽、结果当天持久化，全部来自历史稿倾向，未确认；
  *    - 默认视图只呈现摹客确认的泡泡值奖励，不出现档位名称，也不提供重抽按钮；
- *    - 三档仅在显式 `?state=great|good|minor` 夹具参数下作为隔离演示出现，并强制带未定稿标识；
+ *    - 三档仅在显式 fixture state 下作为隔离演示出现，并强制带未定稿标识；
  *    - 隔离期内页面不写入任何抽签概率、次数或冷却规则。
  */
 export default function DrawSuccess() {
   const navigate = useNavigate()
   const route = findRouteByPathname('/luck/result')
-  const [searchParams] = useSearchParams()
+  const { get } = useFixtureQueryControls()
 
-  /** 只有显式给出 `?state=` 才进入隔离演示；默认走摹客已确认的结果表达 */
-  const requested = searchParams.get('state')
+  /** 只有显式 fixture state 才进入隔离演示；默认走摹客已确认的结果表达 */
+  const requested = get('state')
   const isolated = requested != null && ['great', 'good', 'minor'].includes(requested)
   const luck = isolated ? resolveLuck(requested) : null
 
@@ -58,7 +59,6 @@ export default function DrawSuccess() {
           </span>
         </span>
 
-        {/* 摹客 §9 唯一确认的结果文案 */}
         <h1 className="mt-7 text-xl font-semibold text-text-primary">
           恭喜你获得 {LUCK_REWARD_BUBBLE}🫧
         </h1>

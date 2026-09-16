@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Download, Link2, Loader2 } from 'lucide-react'
 import PageContainer from '../components/mobile/PageContainer'
 import WecomQrPlaceholder from '../components/mobile/WecomQrPlaceholder'
 import { BUDDY_INVITE_COPY } from '../app/fixtures'
+import { useFixtureDebug, useFixtureNavigate } from '../app/fixtures/useFixture'
 import { copyInviteLink, saveInvitePoster } from '../app/adapters/buddyShare'
 import buddyAvatarSelf from '../assets/brand/buddy/buddy-avatar-self.webp'
 
@@ -17,15 +17,15 @@ import buddyAvatarSelf from '../assets/brand/buddy/buddy-avatar-self.webp'
  * ⚠️ 历史稿 T06 的 200×200 QR 卡片、金色高亮话术与北极熊剪影属二次视觉设计，未采用（见文档 §3 警示）。
  * ⚠️ 二维码为占位图形，不伪造可扫码内容（B-005 / BUDDY_RULE_STATUS.shareCapability）。
  * 分享结果统一由 app/adapters/buddyShare 返回，本页不直接触碰相册与剪贴板；
- * 成功反馈落到 /buddy/invite/qrcode 的 #34 / #35 两个状态（D-056：失败态只由 `?state=` 复现）。
+ * 成功反馈落到 /buddy/invite/qrcode 的 #34 / #35 两个状态（D-056：失败态只由 fixture state 复现）。
  *
  * 本路由在 routes.ts 未登记 states，因此不渲染 DebugPanel（D-064）。
  */
 type SharePending = 'poster' | 'link' | null
 
 export default function BuddyInvite() {
-  const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
+  const fixtureNavigate = useFixtureNavigate()
+  const debug = useFixtureDebug()
   const [pending, setPending] = useState<SharePending>(null)
   const alive = useRef(true)
 
@@ -36,9 +36,7 @@ export default function BuddyInvite() {
     }
   }, [])
 
-  const keepDebug = searchParams.get('debug') === '1' ? '&debug=1' : ''
-
-  /** 走适配层拿反馈，再用 `?state=` 落到对应结果节点，保证结果页可被 URL 直达复现 */
+  /** 走适配层拿反馈，再落到对应结果节点；Mock 环境仍可生成确定性 URL。 */
   const share = (kind: Exclude<SharePending, null>) => {
     if (pending) return
     setPending(kind)
@@ -47,7 +45,10 @@ export default function BuddyInvite() {
       if (!alive.current) return
       setPending(null)
       const state = feedback.outcome === 'poster-saved' ? 'saved' : 'link-copied'
-      navigate(`/buddy/invite/qrcode?state=${state}${keepDebug}`)
+      fixtureNavigate(
+        '/buddy/invite/qrcode',
+        { state, debug: debug ? '1' : null },
+      )
     })
   }
 
