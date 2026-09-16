@@ -4,6 +4,7 @@ import axios, {
   type AxiosRequestConfig,
   type AxiosResponse,
 } from 'axios'
+import { runtimePolicy } from '../../app/config/runtime'
 import { AppError, toAppError } from './appError'
 
 export const DEFAULT_HTTP_TIMEOUT_MS = 10_000
@@ -48,6 +49,20 @@ function createConfigurationError() {
 
 function getConfiguredBaseURL() {
   return normalizeBaseURL(import.meta.env.VITE_API_BASE_URL)
+}
+
+function getRuntimeBaseURL() {
+  const configured = getConfiguredBaseURL()
+  if (configured) return configured
+
+  // H013/H014: browser Mock still crosses a real HTTP boundary. In dev/preview Mock mode,
+  // use the current H5 origin so MSW can intercept relative business requests. API mode keeps
+  // the H007 missing-base failure instead of silently falling back to the H5 origin.
+  if (runtimePolicy.dataMode === 'mock' && typeof window !== 'undefined') {
+    return window.location.origin
+  }
+
+  return undefined
 }
 
 export function createHttpClient(options: HttpClientOptions = {}): HttpClient {
@@ -96,6 +111,6 @@ export function createHttpClient(options: HttpClientOptions = {}): HttpClient {
 }
 
 export const httpClient = createHttpClient({
-  baseURL: getConfiguredBaseURL(),
+  baseURL: getRuntimeBaseURL(),
   authHeadersProvider: () => defaultAuthHeadersProvider?.(),
 })
