@@ -1,6 +1,6 @@
 # H004｜Fixture / Debug 运行环境隔离
 
-**Status:** Agent Review  
+**Status:** Accepted  
 **Phase:** Hygiene  
 **Depends on:** H001
 
@@ -50,4 +50,6 @@ H004 为完成 fixture/debug 隔离建立了最小 runtime policy，因此不再
 
 最终 PR head `b28f3d2f3f` 的 Build run `35045692216` 全绿：Static hygiene、Typecheck、dev/prod build、dev/prod smoke、SPA fallback 均 PASS。Cloudflare Pages 成功部署该 head。Codex 对同一 head re-review 结论为 `Didn't find any major issues.`。PR #10 已合入 `dev`，merge commit `ca1dff0c8de83ba4800db4f28847beafd002b8e5`。
 
-当前状态为 `Agent Review`；是否标记 `Accepted` 仍按台账授权规则处理。
+## 签收
+
+2026-09-16：用户明确授权 Agent 对 H004 自验签收；基于既有 CI、Cloudflare 部署与最终 Codex review 证据，本卡标记为 `Accepted`。
