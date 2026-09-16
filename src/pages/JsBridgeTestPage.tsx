@@ -82,19 +82,15 @@ export default function JsBridgeTestPage() {
     }
   }, [])
 
-  const requireAndroidBridge = () => {
+  const callAndroidToast = () => {
+    appendLog('call', 'Android: showToast("H5 调用原生 Toast")')
+
+    // 每次点击都从 window 读取当前注入实例，禁止缓存 bridge 引用。
     const bridge = (window as BridgeWindow).androidBridge
     if (!bridge) {
       appendLog('error', 'window.androidBridge 不存在')
-      return null
+      return
     }
-    return bridge
-  }
-
-  const callAndroidToast = () => {
-    appendLog('call', 'Android: showToast("H5 调用原生 Toast")')
-    const bridge = requireAndroidBridge()
-    if (!bridge) return
 
     if (typeof bridge.showToast !== 'function') {
       appendLog('error', 'androidBridge.showToast 不存在')
@@ -111,8 +107,13 @@ export default function JsBridgeTestPage() {
 
   const callAndroidGetToken = () => {
     appendLog('call', 'Android: getLoginToken()')
-    const bridge = requireAndroidBridge()
-    if (!bridge) return
+
+    // 每次点击都从 window 读取当前注入实例，禁止缓存 bridge 引用。
+    const bridge = (window as BridgeWindow).androidBridge
+    if (!bridge) {
+      appendLog('error', 'window.androidBridge 不存在')
+      return
+    }
 
     if (typeof bridge.getLoginToken !== 'function') {
       appendLog('error', 'androidBridge.getLoginToken 不存在')
@@ -131,8 +132,13 @@ export default function JsBridgeTestPage() {
   const callAndroidSubmitOrder = () => {
     const payload = { orderId: 1001, money: 99 }
     appendLog('call', 'Android: submitOrder(JSON.stringify(data))', payload)
-    const bridge = requireAndroidBridge()
-    if (!bridge) return
+
+    // 每次点击都从 window 读取当前注入实例，禁止缓存 bridge 引用。
+    const bridge = (window as BridgeWindow).androidBridge
+    if (!bridge) {
+      appendLog('error', 'window.androidBridge 不存在')
+      return
+    }
 
     if (typeof bridge.submitOrder !== 'function') {
       appendLog('error', 'androidBridge.submitOrder 不存在')
