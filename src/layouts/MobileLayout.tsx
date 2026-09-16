@@ -1,13 +1,65 @@
-import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { useLayoutEffect, useRef } from 'react'
+import { Navigate, Outlet, useLocation, useNavigate, useNavigationType } from 'react-router-dom'
 import { Bell, MessageSquare, Settings } from 'lucide-react'
 import BottomNav from '../components/mobile/BottomNav'
 import StatusBar from '../components/mobile/StatusBar'
 import TitleBar from '../components/mobile/TitleBar'
 import { findRouteByPathname, isLegacyTabPath } from '../app/router/routes'
 import { isActiveFormalH5Route, isFormalH5TabPath } from '../app/router/routeScope'
+import { navigateWithH5ViewTransition } from '../app/router/h5Transition'
 import { useNotifications } from '../app/state/notifications'
 import { protectedFixtureRedirect, useOverlay } from '../app/fixtures/useFixture'
 import H5ScrollRestoration from '../components/mobile/H5ScrollRestoration'
+
+type H5RouteTransitionKind = 'none' | 'tab' | 'forward' | 'back'
+
+/**
+ * H016 route-motion boundary.
+ *
+ * - Only active formal-H5 pathname changes animate; search/hash/fixture state changes stay in-page.
+ * - POP and an explicit route `backTo` relationship are treated as back navigation.
+ * - Entering a first-level tab fades only; deeper routes get a very small forward/back displacement.
+ * - Native reference and deferred formal-H5 routes never opt into this boundary.
+ */
+function H5RouteOutlet() {
+  const location = useLocation()
+  const navigationType = useNavigationType()
+  const previousPathname = useRef(location.pathname)
+  const previousPath = previousPathname.current
+  const pathnameChanged = previousPath !== location.pathname
+  const currentRoute = findRouteByPathname(location.pathname)
+  const previousRoute = findRouteByPathname(previousPath)
+  const activeTransition =
+    pathnameChanged &&
+    isActiveFormalH5Route(previousRoute) &&
+    isActiveFormalH5Route(currentRoute)
+
+  let transition: H5RouteTransitionKind = 'none'
+  if (activeTransition) {
+    if (navigationType === 'POP' || previousRoute.backTo === location.pathname) {
+      transition = 'back'
+    } else if (isFormalH5TabPath(location.pathname)) {
+      transition = 'tab'
+    } else {
+      transition = 'forward'
+    }
+  }
+
+  useLayoutEffect(() => {
+    previousPathname.current = location.pathname
+  }, [location.pathname])
+
+  return (
+    <div
+      key={location.pathname}
+      className="h5-route-frame min-h-full"
+      data-h5-route-active={isActiveFormalH5Route(currentRoute) ? 'true' : 'false'}
+      data-h5-route-transition={transition}
+    >
+      <Outlet />
+    </div>
+  )
+}
 
 /**
  * 移动应用壳层（T004）
@@ -42,8 +94,28 @@ export default function MobileLayout() {
     return <Navigate to={fixtureRedirect.to} replace state={fixtureRedirect.state} />
   }
 
+  const navigateShell = (target: string, kind: 'forward' | 'back') => {
+    const targetRoute = findRouteByPathname(target)
+    if (isActiveFormalH5Route(route) && isActiveFormalH5Route(targetRoute)) {
+      navigateWithH5ViewTransition(navigate, target, kind)
+      return
+    }
+    navigate(target)
+  }
+
   const openMarkAllRead = () => {
     openOverlay('clear')
+  }
+
+  const openWecom = () => {
+    navigate(
+      {
+        pathname: location.pathname,
+        search: location.search,
+        hash: '#wecom',
+      },
+      { replace: true },
+    )
   }
 
   const titleAction = isNotificationsPage
@@ -59,26 +131,25 @@ export default function MobileLayout() {
     )
     : route?.titleBarAction === 'settings'
       ? (
-        <button type="button" aria-label="设置" onClick={() => navigate('/settings')} className="flex h-9 w-9 items-center justify-center rounded-full text-text-primary active:bg-[rgba(89,55,15,0.06)]">
+        <button type="button" aria-label="设置" onClick={() => navigateShell('/settings', 'forward')} className="flex h-9 w-9 items-center justify-center rounded-full text-text-primary active:bg-[rgba(89,55,15,0.06)]">
           <Settings className="h-[22px] w-[22px]" />
         </button>
       )
       : route?.titleBarAction === 'notifications'
         ? (
-          <button type="button" aria-label="通知" onClick={() => navigate('/notifications')} className="flex h-9 w-9 items-center justify-center rounded-full text-text-primary active:bg-[rgba(89,55,15,0.06)]">
+          <button type="button" aria-label="通知" onClick={() => navigateShell('/notifications', 'forward')} className="flex h-9 w-9 items-center justify-center rounded-full text-text-primary active:bg-[rgba(89,55,15,0.06)]">
             <Bell className="h-[22px] w-[22px]" />
           </button>
         )
         : location.pathname === '/service/chat'
           ? (
             /* T013R5+R6：「企微客服」pill 回到壳层 TitleBar 右侧（与「< 智能客服」同右侧）；
-              * 点击通过 location.hash = '#wecom' 通知 ServiceChat 弹企微二维码，
-              * 不需要新增全局 store。T013R6：pill 不限制宽度、whitespace-nowrap
-              * 保证「企微客服」四个字自然横向不被换行或裁剪。 */
+              * H016：hash 只表示当前页弹层状态，使用 replace 避免新增历史项和触发页面级滚动/过渡。
+              * T013R6：pill 不限制宽度、whitespace-nowrap，保证「企微客服」四个字自然横向不被换行或裁剪。 */
             <button
               type="button"
               data-chat-wecom-entry
-              onClick={() => navigate('/service/chat#wecom')}
+              onClick={openWecom}
               className="inline-flex min-h-9 items-center gap-1 whitespace-nowrap rounded-pill bg-surface px-3 text-[13px] font-medium text-text-brand shadow-sm active:bg-surface-selected"
             >
               <MessageSquare className="h-3.5 w-3.5" aria-hidden />
@@ -96,7 +167,7 @@ export default function MobileLayout() {
           <TitleBar
             title={title}
             back={titleBarMode === 'back'}
-            onBack={route?.backTo ? () => navigate(route.backTo as string) : undefined}
+            onBack={route?.backTo ? () => navigateShell(route.backTo as string, 'back') : undefined}
             action={titleAction}
             actionWide={isNotificationsPage || location.pathname === '/service/chat'}
           />
@@ -104,7 +175,7 @@ export default function MobileLayout() {
       </div>
       <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain" data-page-scroll>
         {isActiveFormalH5Route(route) && <H5ScrollRestoration />}
-        <Outlet />
+        <H5RouteOutlet />
       </div>
       {showNav && <BottomNav variant={showLegacyNav ? 'legacy' : 'main'} />}
     </div>
