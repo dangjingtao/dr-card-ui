@@ -15,7 +15,7 @@ const TARGETS = {
 const DATA_MODES = new Set(['mock', 'api'])
 const BRIDGE_MODES = new Set(['disabled', 'mock', 'native'])
 const root = process.cwd()
-const requestedTarget = process.argv[2] ?? 'prod'
+const requestedTarget = process.argv[2] ?? 'auto'
 const dryRun = process.argv.includes('--dry-run')
 
 function fail(message) {
@@ -30,7 +30,7 @@ function commandOutput(command, args) {
 
 function resolveCloudflareTarget() {
   const branch = process.env.CF_PAGES_BRANCH?.trim()
-  if (!branch) fail('CF_PAGES_BRANCH is required for `npm run build:cf`.')
+  if (!branch) fail('CF_PAGES_BRANCH is required for the Cloudflare build target.')
 
   if (branch === 'main') {
     fail('`main` is the retained legacy branch. Cloudflare production must target `prod`, not `main`.')
@@ -44,9 +44,21 @@ function resolveCloudflareTarget() {
   return 'preview'
 }
 
-const targetName = requestedTarget === 'cf' ? resolveCloudflareTarget() : requestedTarget
+function resolveRequestedTarget() {
+  if (requestedTarget === 'cf') return resolveCloudflareTarget()
+  if (requestedTarget === 'auto') {
+    // Migration safety: an existing Pages project may still call `npm run build`.
+    // When Cloudflare context is present, preserve branch-aware semantics instead of silently building prod.
+    return process.env.CF_PAGES_BRANCH ? resolveCloudflareTarget() : 'prod'
+  }
+  return requestedTarget
+}
+
+const targetName = resolveRequestedTarget()
 const target = TARGETS[targetName]
-if (!target) fail(`Unknown build target "${requestedTarget}". Expected dev, preview, test, prod, or cf.`)
+if (!target) {
+  fail(`Unknown build target "${requestedTarget}". Expected auto, dev, preview, test, prod, or cf.`)
+}
 
 const fileEnv = loadEnv(target.mode, root, 'VITE_')
 const readEnv = (key) => process.env[key] ?? fileEnv[key]
