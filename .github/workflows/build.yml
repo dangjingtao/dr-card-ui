@@ -44,6 +44,9 @@ jobs:
       - name: Verify H011 Storage Adapter
         run: npm run verify:h011
 
+      - name: Verify H012 RHF + Zod forms
+        run: npm run verify:h012
+
       - name: Smoke test development server
         shell: bash
         run: |

@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { Controller, useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ClipboardPaste } from 'lucide-react'
 import { Button, Input, Select, Switch, Toast } from '../components/ui'
@@ -6,23 +8,25 @@ import PageContainer from '../components/mobile/PageContainer'
 import DebugPanel from '../components/mobile/DebugPanel'
 import { findRouteByPathname } from '../app/router/routes'
 import { useFixtureState } from '../app/fixtures/useFixture'
-import {
-  ADDRESS_FORM_COPY,
-  ADDRESS_REGION_OPTIONS,
-  validateAddressForm,
-  type AddressFormErrors,
-  type AddressFormValue,
-} from '../app/fixtures'
+import { ADDRESS_FORM_COPY, ADDRESS_REGION_OPTIONS } from '../app/fixtures'
+import { addressFormSchema, type AddressFormData } from '../app/forms/address'
 import { addAddress, updateAddress, useAddress } from '../app/state/addresses'
 
-const EMPTY_FORM: AddressFormValue = { name: '', phone: '', region: '', detail: '' }
+const EMPTY_FORM: AddressFormData = {
+  name: '',
+  phone: '',
+  region: '',
+  detail: '',
+  isDefault: false,
+}
 
 /** `?state=invalid` 用的确定性错误样本：姓名为空 + 手机号位数不足 */
-const INVALID_FORM: AddressFormValue = {
+const INVALID_FORM: AddressFormData = {
   name: '',
   phone: '138000',
   region: '',
   detail: '青年路 5 号大悦城 B1-038',
+  isDefault: false,
 }
 
 /**
@@ -39,18 +43,29 @@ export default function AddressNew() {
   const editId = searchParams.get('id')
   const editing = useAddress(editId)
 
-  const initial = useMemo<AddressFormValue>(() => {
+  const initial = useMemo<AddressFormData>(() => {
     if (editing) {
-      const { name, phone, region, detail } = editing
-      return { name, phone, region, detail }
+      const { name, phone, region, detail, isDefault } = editing
+      return { name, phone, region, detail, isDefault }
     }
     if (state?.key === 'invalid') return INVALID_FORM
     return EMPTY_FORM
   }, [editing, state?.key])
 
-  const [value, setValue] = useState<AddressFormValue>(initial)
-  const [isDefault, setIsDefault] = useState<boolean>(editing?.isDefault ?? false)
-  const [errors, setErrors] = useState<AddressFormErrors>({})
+  const {
+    control,
+    handleSubmit,
+    reset,
+    trigger,
+    clearErrors,
+  } = useForm<AddressFormData>({
+    resolver: zodResolver(addressFormSchema),
+    defaultValues: initial,
+    mode: 'onSubmit',
+    reValidateMode: 'onSubmit',
+    shouldFocusError: false,
+  })
+
   const [toast, setToast] = useState<{ message: string; ok: boolean } | null>(null)
 
   const timers = useRef<number[]>([])
@@ -61,15 +76,9 @@ export default function AddressNew() {
 
   /** `?state=` 或编辑目标变化时重新同步表单，保证深链可复现 */
   useEffect(() => {
-    setValue(initial)
-    setIsDefault(editing?.isDefault ?? false)
-    setErrors(state?.key === 'invalid' ? validateAddressForm(INVALID_FORM) : {})
-  }, [initial, editing?.isDefault, state?.key])
-
-  const setField = (key: keyof AddressFormValue, next: string) => {
-    setValue((prev) => ({ ...prev, [key]: next }))
-    setErrors((prev) => (prev[key] ? { ...prev, [key]: undefined } : prev))
-  }
+    reset(initial)
+    if (state?.key === 'invalid') void trigger()
+  }, [initial, reset, state?.key, trigger])
 
   /** ⚠️ 粘贴识别原型只画了入口，未定义解析规则（B-028），这里只给可关闭的说明性提示 */
   const onPaste = () => {
@@ -77,10 +86,8 @@ export default function AddressNew() {
     track(() => setToast(null), 1600)
   }
 
-  const onSubmit = () => {
-    const nextErrors = validateAddressForm(value)
-    setErrors(nextErrors)
-    if (Object.keys(nextErrors).length > 0) return
+  const onSubmit = (data: AddressFormData) => {
+    const { isDefault, ...value } = data
 
     if (editing) updateAddress(editing.id, value, isDefault)
     else addAddress(value, isDefault)
@@ -92,37 +99,77 @@ export default function AddressNew() {
   return (
     <PageContainer inset={false} className="flex min-h-full flex-col pb-6">
       <div className="space-y-4 px-4 pt-4">
-        <Input
-          label={ADDRESS_FORM_COPY.nameLabel}
-          placeholder={ADDRESS_FORM_COPY.namePlaceholder}
-          value={value.name}
-          error={errors.name}
-          onChange={(event) => setField('name', event.target.value)}
+        <Controller
+          name="name"
+          control={control}
+          render={({ field, fieldState }) => (
+            <Input
+              label={ADDRESS_FORM_COPY.nameLabel}
+              placeholder={ADDRESS_FORM_COPY.namePlaceholder}
+              value={field.value}
+              error={fieldState.error?.message}
+              onBlur={field.onBlur}
+              onChange={(event) => {
+                field.onChange(event.target.value)
+                clearErrors('name')
+              }}
+            />
+          )}
         />
-        <Input
-          label={ADDRESS_FORM_COPY.phoneLabel}
-          placeholder={ADDRESS_FORM_COPY.phonePlaceholder}
-          type="tel"
-          inputMode="numeric"
-          maxLength={11}
-          value={value.phone}
-          error={errors.phone}
-          onChange={(event) => setField('phone', event.target.value.replace(/\D/g, ''))}
+        <Controller
+          name="phone"
+          control={control}
+          render={({ field, fieldState }) => (
+            <Input
+              label={ADDRESS_FORM_COPY.phoneLabel}
+              placeholder={ADDRESS_FORM_COPY.phonePlaceholder}
+              type="tel"
+              inputMode="numeric"
+              maxLength={11}
+              value={field.value}
+              error={fieldState.error?.message}
+              onBlur={field.onBlur}
+              onChange={(event) => {
+                field.onChange(event.target.value.replace(/\D/g, ''))
+                clearErrors('phone')
+              }}
+            />
+          )}
         />
-        <Select
-          label={ADDRESS_FORM_COPY.regionLabel}
-          placeholder={ADDRESS_FORM_COPY.regionPlaceholder}
-          options={ADDRESS_REGION_OPTIONS}
-          value={value.region}
-          error={errors.region}
-          onChange={(event) => setField('region', event.target.value)}
+        <Controller
+          name="region"
+          control={control}
+          render={({ field, fieldState }) => (
+            <Select
+              label={ADDRESS_FORM_COPY.regionLabel}
+              placeholder={ADDRESS_FORM_COPY.regionPlaceholder}
+              options={ADDRESS_REGION_OPTIONS}
+              value={field.value}
+              error={fieldState.error?.message}
+              onBlur={field.onBlur}
+              onChange={(event) => {
+                field.onChange(event.target.value)
+                clearErrors('region')
+              }}
+            />
+          )}
         />
-        <Input
-          label={ADDRESS_FORM_COPY.detailLabel}
-          placeholder={ADDRESS_FORM_COPY.detailPlaceholder}
-          value={value.detail}
-          error={errors.detail}
-          onChange={(event) => setField('detail', event.target.value)}
+        <Controller
+          name="detail"
+          control={control}
+          render={({ field, fieldState }) => (
+            <Input
+              label={ADDRESS_FORM_COPY.detailLabel}
+              placeholder={ADDRESS_FORM_COPY.detailPlaceholder}
+              value={field.value}
+              error={fieldState.error?.message}
+              onBlur={field.onBlur}
+              onChange={(event) => {
+                field.onChange(event.target.value)
+                clearErrors('detail')
+              }}
+            />
+          )}
         />
 
         <Button
@@ -136,12 +183,22 @@ export default function AddressNew() {
 
         <div className="flex items-center justify-between rounded-container bg-surface px-4 py-3 shadow-card">
           <span className="text-sm text-text-primary">{ADDRESS_FORM_COPY.defaultSwitch}</span>
-          <Switch checked={isDefault} onChange={setIsDefault} label={ADDRESS_FORM_COPY.defaultSwitch} />
+          <Controller
+            name="isDefault"
+            control={control}
+            render={({ field }) => (
+              <Switch
+                checked={field.value}
+                onChange={field.onChange}
+                label={ADDRESS_FORM_COPY.defaultSwitch}
+              />
+            )}
+          />
         </div>
       </div>
 
       <div className="sticky bottom-0 mt-auto bg-background px-4 pb-[env(safe-area-inset-bottom)] pt-3">
-        <Button size="large" className="w-full rounded-pill" onClick={onSubmit}>
+        <Button size="large" className="w-full rounded-pill" onClick={handleSubmit(onSubmit)}>
           {ADDRESS_FORM_COPY.submit}
         </Button>
       </div>

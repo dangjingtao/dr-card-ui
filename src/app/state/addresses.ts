@@ -10,7 +10,8 @@
 import { useMemo } from 'react'
 import { create } from 'zustand'
 
-import { ADDRESS_FIXTURES, sortAddresses, type AddressFixture, type AddressFormValue } from '../fixtures'
+import { ADDRESS_FIXTURES, sortAddresses, type AddressFixture } from '../fixtures'
+import type { AddressFormValue } from '../forms/address'
 
 interface AddressStoreState {
   addresses: AddressFixture[]
