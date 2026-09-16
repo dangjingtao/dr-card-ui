@@ -53,6 +53,9 @@ jobs:
       - name: Verify H014 Mock scenarios
         run: npm run verify:h014
 
+      - name: Verify H015 JSBridge boundary
+        run: npm run verify:h015
+
       - name: Smoke test development server
         shell: bash
         run: |
