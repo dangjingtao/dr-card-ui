@@ -19,7 +19,9 @@ export default function H5ScrollRestoration() {
     let top = currentTop
     if (navigationType === 'POP') {
       top = positions.get(location.key) ?? (pathnameChanged ? 0 : currentTop)
-    } else if (navigationType === 'PUSH' && pathnameChanged) {
+    } else if (pathnameChanged) {
+      // PUSH and cross-pathname REPLACE both enter a new page and should start at the top.
+      // Same-page REPLACE/search/hash updates keep the current scroll position.
       top = 0
     }
 
