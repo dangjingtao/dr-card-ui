@@ -1,6 +1,6 @@
 # H002｜正式 H5 / Native reference 路由边界
 
-**Status:** Agent Review  
+**Status:** Accepted  
 **Phase:** Hygiene  
 **Depends on:** H001
 
@@ -28,7 +28,7 @@
 - 新增 `src/app/router/routeScope.ts`，按 canonical route path 精确维护 scope，不使用 `/legacy` 前缀猜测。
 - ownership 明确为 `formal-h5` / `native-reference`；engineering scope 明确为 `active` / `deferred`。
 - 当前登记 45 条 Native reference canonical route，包括不含 `legacy` 的 `/device/*`、`/vending/*`、`/signin` 与 `/signin/detail`。
-- PR #6 的 Codex Review 指出 `/signin`、`/signin/detail` 漏归类；复核 router 后确认两条路由分别直接渲染 `pages/legacy/SignInPage` 与 `pages/legacy/PointsPage`，本次修正已补入 Native reference。
+- PR #6 的 Codex Review 指出 `/signin`、`/signin/detail` 漏归类；复核 router 后确认两条路由分别直接渲染 `pages/legacy/SignInPage` 与 `pages/legacy/PointsPage`，修正已补入 Native reference。
 - 商城三条路由保持 formal-H5 ownership，但按当前决定标记为 `deferred`；现有商城 Tab 不因此消失。
 - 导出 `ACTIVE_FORMAL_H5_ROUTES`，供后续 CI / E2E / 体验治理统一枚举。
 - `BottomNav` 主入口、`MobileLayout` 主 Tab 判断、`DebugPanel` 已实际消费统一 scope。
@@ -44,6 +44,6 @@
 
 详见 [`../evidence/h002-route-ownership.md`](../evidence/h002-route-ownership.md)。
 
-原 PR #6 GitHub Actions Build run `35033599628` 全绿；review 修正另走独立 PR 与同一套 CI / AI review。
+原 PR #6 GitHub Actions Build run `35033599628` 全绿；review 修正通过 PR #8 合并到 `dev`，merge commit `72ec303ef80e1ebca028e90734cde11b42e41a04`。
 
-当前状态为 `Agent Review`；只有用户可以把任务标记为 `Accepted`。
+用户已确认通过，状态记为 `Accepted`。
