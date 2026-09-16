@@ -43,8 +43,8 @@ function createMemoryStorage() {
 }
 
 try {
-  const storageModule = await server.ssrLoadModule('/src/app/storage/storage.ts')
-  const keyModule = await server.ssrLoadModule('/src/app/storage/keys.ts')
+  const storageModule = await server.ssrLoadModule('/src/storage/storage.ts')
+  const keyModule = await server.ssrLoadModule('/src/storage/keys.ts')
   const { createStorageAdapter, storage: browserStorage } = storageModule
   const { defineStorageKey, STORAGE_KEYS } = keyModule
 
@@ -140,8 +140,8 @@ try {
   assert.equal(browserStorage.remove(localKey), false)
 
   const sourceFiles = await listSourceFiles('src')
-  const storageImplementation = path.normalize('src/app/storage/storage.ts')
-  const keyRegistry = path.normalize('src/app/storage/keys.ts')
+  const storageImplementation = path.normalize('src/storage/storage.ts')
+  const keyRegistry = path.normalize('src/storage/keys.ts')
   const directWebStoragePattern = /\b(?:localStorage|sessionStorage)\b/
   const keyDefinitionPattern = /\bdefineStorageKey\s*\(/
 
