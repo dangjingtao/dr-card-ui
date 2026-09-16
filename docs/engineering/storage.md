@@ -11,7 +11,7 @@ localStorage
 sessionStorage
 ```
 
-统一通过 `src/app/storage` 的公开入口导入 `STORAGE_KEYS` 与 `storage`，调用方式为：
+统一通过 `src/storage` 的公开入口导入 `STORAGE_KEYS` 与 `storage`，调用方式为：
 
 ```ts
 const value = storage.read(STORAGE_KEYS.someConfirmedKey)
@@ -19,7 +19,7 @@ storage.write(STORAGE_KEYS.someConfirmedKey, value)
 storage.remove(STORAGE_KEYS.someConfirmedKey)
 ```
 
-当前正式 H5 尚无已确认的真实持久化业务，因此 H011 不虚构业务 key。后续新增 key 必须先确认数据 ownership 和持久化必要性，再集中定义在 `src/app/storage/keys.ts` 的 `STORAGE_KEYS` 中。
+当前正式 H5 尚无已确认的真实持久化业务，因此 H011 不虚构业务 key。后续新增 key 必须先确认数据 ownership 和持久化必要性，再集中定义在 `src/storage/keys.ts` 的 `STORAGE_KEYS` 中。
 
 ## 2. localStorage / sessionStorage 边界
 
@@ -59,7 +59,7 @@ H011 **不决定认证 token 的存储方案**。在 Native 容器认证链路�
 
 所有正式 key：
 
-- 由 `src/app/storage/keys.ts` 集中定义；
+- 由 `src/storage/keys.ts` 集中定义；
 - 通过 `defineStorageKey` 自动增加 `dr-card:` 前缀；
 - 明确选择 `local` 或 `session`；
 - 必须附带 Zod runtime schema；
