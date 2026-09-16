@@ -234,12 +234,12 @@ export interface OverlayControl {
   /** Mock 环境来自 `?overlay=`；API/test/prod 只接受 app 内部 router location state。 */
   overlay: string | null
   open: (key: string, searchPatch?: SearchPatch) => void
-  close: (searchPatch?: SearchPatch) => void
+  close: () => void
 }
 
 /**
  * 弹层控制器。外部 `?overlay=` 在 test/prod/API mode 被忽略，真实点击仍可通过 router state
- * 打开弹层。可选 searchPatch 用于像卡包这种需要同时携带普通业务选择参数的交互。
+ * 打开弹层。`open` 的可选 searchPatch 用于需要同时携带普通业务选择参数的交互。
  */
 export function useOverlay(): OverlayControl {
   const { get, patch } = useFixtureQueryControls()
@@ -247,6 +247,6 @@ export function useOverlay(): OverlayControl {
   return {
     overlay: get('overlay'),
     open: (key, searchPatch = {}) => patch({ overlay: key }, searchPatch),
-    close: (searchPatch = {}) => patch({ overlay: null }, searchPatch),
+    close: () => patch({ overlay: null }),
   }
 }
