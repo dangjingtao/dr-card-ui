@@ -33,9 +33,13 @@ function H5RouteOutlet() {
     pathnameChanged &&
     isActiveFormalH5Route(previousRoute) &&
     isActiveFormalH5Route(currentRoute)
+  const nativeTransitionActive =
+    typeof document !== 'undefined' && Boolean(document.documentElement.dataset.h5NativeTransition)
 
   let transition: H5RouteTransitionKind = 'none'
-  if (activeTransition) {
+  // A helper-driven native View Transition already owns this navigation. Keep the route-frame
+  // fallback disabled from the first render so removing the short-lived html marker cannot replay it.
+  if (activeTransition && !nativeTransitionActive) {
     if (navigationType === 'POP' || previousRoute.backTo === location.pathname) {
       transition = 'back'
     } else if (isFormalH5TabPath(location.pathname)) {
