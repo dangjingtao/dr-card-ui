@@ -3,6 +3,7 @@ import { PartyPopper } from 'lucide-react'
 import PromptOverlay from '../components/mobile/PromptOverlay'
 import { Button } from '../components/ui'
 import { EXCHANGE_COPY, resolveExchangeProduct } from '../app/fixtures'
+import { useFixtureDebug, withFixtureQuery } from '../app/fixtures/useFixture'
 import Exchange from './Exchange'
 
 /**
@@ -17,11 +18,11 @@ import Exchange from './Exchange'
 export default function ExchangeResult() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  const debug = useFixtureDebug()
   const product = resolveExchangeProduct(searchParams.get('product'))
 
-  const keepDebug = searchParams.get('debug') === '1' ? '?debug=1' : ''
-  const back = () => navigate(`/exchange${keepDebug}`, { replace: true })
-  const toCardPack = () => navigate(`/card${keepDebug}`, { replace: true })
+  const back = () => navigate(withFixtureQuery('/exchange', { debug: debug ? '1' : null }), { replace: true })
+  const toCardPack = () => navigate(withFixtureQuery('/card', { debug: debug ? '1' : null }), { replace: true })
 
   return (
     <>
