@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { createServer } from 'vite'
+import ts from 'typescript'
 import { z } from 'zod'
 
 const server = await createServer({
@@ -24,6 +25,39 @@ async function listSourceFiles(dir) {
   }
 
   return files
+}
+
+function scriptKindFor(file) {
+  if (file.endsWith('.tsx')) return ts.ScriptKind.TSX
+  if (file.endsWith('.jsx')) return ts.ScriptKind.JSX
+  if (file.endsWith('.js')) return ts.ScriptKind.JS
+  return ts.ScriptKind.TS
+}
+
+function containsStorageKeyDefinition(file, source) {
+  const sourceFile = ts.createSourceFile(
+    file,
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    scriptKindFor(file),
+  )
+  let found = false
+
+  const visit = (node) => {
+    if (
+      ts.isCallExpression(node) &&
+      ts.isIdentifier(node.expression) &&
+      node.expression.text === 'defineStorageKey'
+    ) {
+      found = true
+      return
+    }
+    if (!found) ts.forEachChild(node, visit)
+  }
+
+  visit(sourceFile)
+  return found
 }
 
 function createMemoryStorage() {
@@ -139,35 +173,25 @@ try {
   assert.equal(browserStorage.write(localKey, { theme: 'light' }), false)
   assert.equal(browserStorage.remove(localKey), false)
 
+  // Direct Web Storage access is already enforced by the repository's AST-based H5 hygiene gate.
+  // H011 adds the narrower rule that storage-key construction stays in the central registry.
   const sourceFiles = await listSourceFiles('src')
-  const storageImplementation = path.normalize('src/storage/storage.ts')
   const keyRegistry = path.normalize('src/storage/keys.ts')
-  const directWebStoragePattern = /\b(?:localStorage|sessionStorage)\b/
-  const keyDefinitionPattern = /\bdefineStorageKey\s*\(/
 
   for (const file of sourceFiles) {
     const normalized = path.normalize(file)
+    if (normalized === keyRegistry) continue
+
     const source = await readFile(file, 'utf8')
-
-    if (normalized !== storageImplementation) {
-      assert.equal(
-        directWebStoragePattern.test(source),
-        false,
-        `${file} bypasses H011 by referencing Web Storage directly`,
-      )
-    }
-
-    if (normalized !== keyRegistry) {
-      assert.equal(
-        keyDefinitionPattern.test(source),
-        false,
-        `${file} defines a storage key outside the centralized registry`,
-      )
-    }
+    assert.equal(
+      containsStorageKeyDefinition(file, source),
+      false,
+      `${file} defines a storage key outside the centralized registry`,
+    )
   }
 
   console.log(
-    'H011 STORAGE PASS: guarded typed storage behavior, local/session separation, corrupt-value handling, SSR safety, centralized keys, and direct Web Storage bypass checks are verified.',
+    'H011 STORAGE PASS: guarded typed storage behavior, local/session separation, corrupt-value handling, SSR safety, and centralized key construction are verified; direct Web Storage access remains enforced by H5 hygiene.',
   )
 } finally {
   await server.close()
