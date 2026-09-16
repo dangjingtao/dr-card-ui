@@ -50,6 +50,9 @@ jobs:
       - name: Verify H013 MSW network boundary
         run: npm run verify:h013
 
+      - name: Verify H014 Mock scenarios
+        run: npm run verify:h014
+
       - name: Smoke test development server
         shell: bash
         run: |
