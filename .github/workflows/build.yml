@@ -41,6 +41,9 @@ jobs:
       - name: Verify H010 Zustand state
         run: npm run verify:h010
 
+      - name: Verify H011 Storage Adapter
+        run: npm run verify:h011
+
       - name: Smoke test development server
         shell: bash
         run: |

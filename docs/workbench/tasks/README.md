@@ -39,7 +39,7 @@
 | H008 | Service 层与首条真实 API 垂直链路 | Blocked |
 | H009 | Zod 运行时数据契约 | Ready |
 | H010 | Zustand 状态基建与旧共享状态迁移 | Ready |
-| H011 | Storage Adapter | Ready |
+| H011 | Storage Adapter | Accepted |
 | H012 | React Hook Form + Zod 表单基线 | Ready |
 | H013 | MSW 网络 Mock 基建 | Ready |
 | H014 | Mock 场景迁移与页面假网络清理 | Ready |
