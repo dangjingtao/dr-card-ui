@@ -36,4 +36,3 @@
 - CI：PR #15 Build run `35065410689` 在实现 head `febfab64d6e41e093a9f2fa26e7e6f7f7866a3af` 上完整通过 `npm ci`、静态检查、typecheck、H007/H009 验证、dev/Cloudflare preview/test/prod 构建与 production preview smoke。
 - Cloudflare Pages：实现 head `febfab64d6e41e093a9f2fa26e7e6f7f7866a3af` 的 feature preview 部署成功。
 - 用户验收：2026-09-16 明确确认“接受”。
-- 验收记录提交：`67b91b02da5f44c156e481d3736e604e80146f7c`，仅将任务卡状态和证据更新为 Accepted。
