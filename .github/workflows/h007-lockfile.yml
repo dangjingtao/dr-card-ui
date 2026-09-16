@@ -5,15 +5,18 @@ on:
     branches: [h007-http-error-foundation]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   lockfile:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: h007-http-error-foundation
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -21,14 +24,22 @@ jobs:
           node-version: 20
           cache: npm
 
-      - name: Generate Axios lockfile
-        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund --save-exact axios@1.19.0
+      - name: Generate Axios manifests
+        run: |
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund --save-exact axios@1.19.0
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs'
+          const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'))
+          packageJson.scripts['verify:h007'] = 'node scripts/verify-h007-http.mjs'
+          fs.writeFileSync('package.json', `${JSON.stringify(packageJson)}\n`)
+          NODE
 
-      - name: Upload generated manifests
-        uses: actions/upload-artifact@v4
-        with:
-          name: h007-axios-manifests
-          path: |
-            package.json
-            package-lock.json
-          retention-days: 1
+      - name: Commit generated manifests and remove generator
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/h007-lockfile.yml
+          git add package.json package-lock.json
+          git commit -m 'build: add axios dependency for H007'
+          git push origin HEAD:h007-http-error-foundation
