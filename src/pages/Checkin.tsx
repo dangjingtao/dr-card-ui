@@ -1,4 +1,3 @@
-import { useNavigate } from 'react-router-dom'
 import { X } from 'lucide-react'
 import CheckinBoard from '../components/mobile/CheckinBoard'
 import CheckinMakeupSuccessOverlay from '../components/mobile/CheckinMakeupSuccessOverlay'
@@ -30,7 +29,6 @@ import checkinRitualHero from '../assets/brand/bubble/checkin-ritual-hero-v2.web
  * 2026-08-28：诗得丽首页改为紧凑 7 日入口；本签到内页继续保留金色 Hero，并恢复完整 30 天月历与补签入口。
  */
 export default function Checkin() {
-  const navigate = useNavigate()
   const route = findRouteByPathname('/checkin')
   const { state } = useFixtureState(route)
   const { patch: patchFixtureState } = useFixtureQueryControls()
