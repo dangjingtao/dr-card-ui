@@ -1,12 +1,17 @@
 import { useMemo } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import type { NavigateOptions } from 'react-router-dom'
 import type { RouteMeta, RouteState } from '../router/routes'
 import { runtimePolicy } from '../config/runtime'
 
-const RUNTIME_OVERLAY_STATE_KEY = '__drCardOverlay'
+const RUNTIME_STATE_KEYS = {
+  state: '__drCardFixtureState',
+  overlay: '__drCardOverlay',
+} as const
 
 export type FixtureQueryKey = 'state' | 'overlay' | 'debug'
 export type FixtureQueryPatch = Partial<Record<FixtureQueryKey, string | null>>
+export type SearchPatch = Record<string, string | null>
 
 function asLocationState(value: unknown): Record<string, unknown> {
   if (value && typeof value === 'object' && !Array.isArray(value)) {
@@ -15,37 +20,91 @@ function asLocationState(value: unknown): Record<string, unknown> {
   return {}
 }
 
-function applyFixturePatch(params: URLSearchParams, patch: FixtureQueryPatch) {
-  for (const [key, value] of Object.entries(patch) as Array<[FixtureQueryKey, string | null | undefined]>) {
+function applySearchPatch(params: URLSearchParams, patch: SearchPatch) {
+  for (const [key, value] of Object.entries(patch)) {
     if (value == null) params.delete(key)
     else params.set(key, value)
   }
 }
 
+function applyFixtureQueryPatch(params: URLSearchParams, patch: FixtureQueryPatch) {
+  applySearchPatch(params, patch as SearchPatch)
+}
+
+function applyRuntimeStatePatch(
+  current: Record<string, unknown>,
+  patch: FixtureQueryPatch,
+): Record<string, unknown> {
+  const next = { ...current }
+
+  for (const key of ['state', 'overlay'] as const) {
+    if (!(key in patch)) continue
+    const runtimeKey = RUNTIME_STATE_KEYS[key]
+    const value = patch[key]
+    if (value == null) delete next[runtimeKey]
+    else next[runtimeKey] = value
+  }
+
+  // `debug` intentionally has no runtime-state representation outside fixture environments.
+  return next
+}
+
 /**
- * Centralized fixture query controls. Formal pages may use this helper for deterministic demo URLs;
- * test/prod/API mode always observes these protected query keys as disabled.
+ * Centralized protected state controls.
+ *
+ * - preview/dev Mock: state/overlay/debug are URL-backed deterministic fixture controls.
+ * - test/prod/API mode: external protected query keys are ignored. state/overlay written by the
+ *   app itself live only in router location state as a temporary compatibility bridge; debug is off.
+ *
+ * H014 will replace page-local fake business outcomes with service/MSW/API flows. H004 only makes
+ * the URL boundary trustworthy without breaking existing user-triggered UI transitions.
  */
 export function useFixtureQueryControls() {
+  const location = useLocation()
+  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
+  const locationState = asLocationState(location.state)
 
-  const get = (key: FixtureQueryKey) =>
-    runtimePolicy.fixtureQueriesEnabled ? searchParams.get(key) : null
+  const get = (key: FixtureQueryKey) => {
+    if (runtimePolicy.fixtureQueriesEnabled) return searchParams.get(key)
+    if (key === 'debug') return null
+    const value = locationState[RUNTIME_STATE_KEYS[key]]
+    return typeof value === 'string' ? value : null
+  }
 
-  const patch = (values: FixtureQueryPatch) => {
-    if (!runtimePolicy.fixtureQueriesEnabled) return
-    setSearchParams(
-      (prev) => {
-        const next = new URLSearchParams(prev)
-        applyFixturePatch(next, values)
-        return next
+  const patch = (values: FixtureQueryPatch, searchPatch: SearchPatch = {}) => {
+    if (runtimePolicy.fixtureQueriesEnabled) {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev)
+          applySearchPatch(next, searchPatch)
+          applyFixtureQueryPatch(next, values)
+          return next
+        },
+        { replace: true },
+      )
+      return
+    }
+
+    const nextSearch = new URLSearchParams(location.search)
+    applySearchPatch(nextSearch, searchPatch)
+    const nextState = applyRuntimeStatePatch(locationState, values)
+    const query = nextSearch.toString()
+    navigate(
+      {
+        pathname: location.pathname,
+        search: query ? `?${query}` : '',
+        hash: location.hash,
       },
-      { replace: true },
+      {
+        replace: true,
+        state: Object.keys(nextState).length > 0 ? nextState : null,
+      },
     )
   }
 
   return {
-    enabled: runtimePolicy.fixtureQueriesEnabled,
+    fixtureUrlEnabled: runtimePolicy.fixtureQueriesEnabled,
     get,
     patch,
   }
@@ -71,14 +130,39 @@ export function withFixtureQuery(path: string, patch: FixtureQueryPatch): string
   const pathname = queryIndex >= 0 ? beforeHash.slice(0, queryIndex) : beforeHash
   const query = queryIndex >= 0 ? beforeHash.slice(queryIndex + 1) : ''
   const params = new URLSearchParams(query)
-  applyFixturePatch(params, patch)
+  applyFixtureQueryPatch(params, patch)
   const nextQuery = params.toString()
   return `${pathname}${nextQuery ? `?${nextQuery}` : ''}${hash}`
 }
 
 /**
+ * 跨路由 fixture 导航。Mock 环境把状态编码进 URL；API/test/prod 只把 app 自己触发的
+ * state/overlay 放进 destination location state，外部同名 query 仍然无效。
+ */
+export function useFixtureNavigate() {
+  const navigate = useNavigate()
+
+  return (
+    path: string,
+    patch: FixtureQueryPatch,
+    options: NavigateOptions = {},
+  ) => {
+    if (runtimePolicy.fixtureQueriesEnabled) {
+      navigate(withFixtureQuery(path, patch), options)
+      return
+    }
+
+    const runtimeState = applyRuntimeStatePatch(asLocationState(options.state), patch)
+    navigate(path, {
+      ...options,
+      state: Object.keys(runtimeState).length > 0 ? runtimeState : options.state,
+    })
+  }
+}
+
+/**
  * 读取当前路由的确定性状态（`?state=`）。
- * 只有 preview/dev Mock 环境允许 URL fixture；test/prod 与 API mode 一律忽略该参数。
+ * URL fixture 只在 preview/dev Mock 生效；API/test/prod 仅接受 app 内部 location state。
  */
 export function useFixtureState(route?: RouteMeta): { raw: string | null; state?: RouteState } {
   const { get } = useFixtureQueryControls()
@@ -91,87 +175,22 @@ export function useFixtureState(route?: RouteMeta): { raw: string | null; state?
 }
 
 export interface OverlayControl {
-  /** 当前打开的 overlay key；Mock 环境来自 `?overlay=`，API 环境来自 router location state。 */
+  /** Mock 环境来自 `?overlay=`；API/test/prod 只接受 app 内部 router location state。 */
   overlay: string | null
-  open: (key: string) => void
-  close: () => void
+  open: (key: string, searchPatch?: SearchPatch) => void
+  close: (searchPatch?: SearchPatch) => void
 }
 
 /**
- * 弹层控制器。
- *
- * - preview/dev Mock：继续使用 `?overlay=`，保留可复制 URL、截图与验收能力；
- * - test/prod/API mode：忽略外部 `?overlay=`，用户真实操作改走 router location state，
- *   因此业务弹层仍可正常跨壳层/页面协作，但 query 参数不能伪造业务状态。
+ * 弹层控制器。外部 `?overlay=` 在 test/prod/API mode 被忽略，真实点击仍可通过 router state
+ * 打开弹层。可选 searchPatch 用于像卡包这种需要同时携带普通业务选择参数的交互。
  */
 export function useOverlay(): OverlayControl {
-  const location = useLocation()
-  const navigate = useNavigate()
-  const [searchParams, setSearchParams] = useSearchParams()
-  const locationState = asLocationState(location.state)
-  const runtimeOverlay = locationState[RUNTIME_OVERLAY_STATE_KEY]
-  const overlay = runtimePolicy.fixtureQueriesEnabled
-    ? searchParams.get('overlay')
-    : typeof runtimeOverlay === 'string'
-      ? runtimeOverlay
-      : null
+  const { get, patch } = useFixtureQueryControls()
 
-  const open = (key: string) => {
-    if (runtimePolicy.fixtureQueriesEnabled) {
-      setSearchParams(
-        (prev) => {
-          const next = new URLSearchParams(prev)
-          next.set('overlay', key)
-          return next
-        },
-        { replace: true },
-      )
-      return
-    }
-
-    navigate(
-      {
-        pathname: location.pathname,
-        search: location.search,
-        hash: location.hash,
-      },
-      {
-        replace: true,
-        state: {
-          ...locationState,
-          [RUNTIME_OVERLAY_STATE_KEY]: key,
-        },
-      },
-    )
+  return {
+    overlay: get('overlay'),
+    open: (key, searchPatch = {}) => patch({ overlay: key }, searchPatch),
+    close: (searchPatch = {}) => patch({ overlay: null }, searchPatch),
   }
-
-  const close = () => {
-    if (runtimePolicy.fixtureQueriesEnabled) {
-      setSearchParams(
-        (prev) => {
-          const next = new URLSearchParams(prev)
-          next.delete('overlay')
-          return next
-        },
-        { replace: true },
-      )
-      return
-    }
-
-    const nextState = { ...locationState }
-    delete nextState[RUNTIME_OVERLAY_STATE_KEY]
-    navigate(
-      {
-        pathname: location.pathname,
-        search: location.search,
-        hash: location.hash,
-      },
-      {
-        replace: true,
-        state: Object.keys(nextState).length > 0 ? nextState : null,
-      },
-    )
-  }
-
-  return { overlay, open, close }
 }
