@@ -802,10 +802,13 @@ export default function MallHome() {
 
   // ── Render ──
   return (
-    <div className="mall-home min-h-screen w-full" style={{ background: 'var(--bg)', fontFamily: 'var(--font-body)', color: 'var(--fg)', fontSize: 'var(--fs-base)', lineHeight: 1.5 }}>
+    <div
+      className="mall-home mx-auto min-h-screen w-full max-w-[480px]"
+      style={{ background: 'var(--bg)', fontFamily: 'var(--font-body)', color: 'var(--fg)', fontSize: 'var(--fs-base)', lineHeight: 1.5 }}
+    >
       <style dangerouslySetInnerHTML={{ __html: designTokensCss }} />
 
-      <div className="w-full pb-24" style={{ background: 'var(--bg)', maxWidth: '100%', margin: '0 auto' }}>
+      <div className="w-full pb-24" style={{ background: 'var(--bg)' }}>
         {/* ─── Store header ─── */}
         <section className="px-4 py-3 flex items-center justify-between gap-2" style={{ background: 'var(--bg)' }}>
           <div className="min-w-0 flex-1">
@@ -1186,36 +1189,38 @@ export default function MallHome() {
         </section>
       </div>
 
-      {/* ─── Floating cart ─── */}
-      <button
-        key={cartBounceKey}
-        className={`float-cart-bg fixed right-4 bottom-[86px] h-12 px-4 pl-3.5 rounded-[24px] inline-flex items-center gap-2.5 elev-float z-30 bounce-anim`}
-        style={{ color: 'var(--surface)' }}
-        onClick={openDrawer}
-        aria-label="打开购物车"
-      >
-        <span className="relative w-7.5 h-7.5 rounded-full grid place-items-center flex-shrink-0" style={{ width: 30, height: 30, background: 'var(--accent)' }}>
-          <IconCart />
-          {totals.count > 0 && (
-            <span
-              className="absolute -top-0.75 -right-1 min-w-[18px] h-[18px] px-1.25 rounded-[9px] font-bold text-[11px] grid place-items-center"
-              style={{
-                top: -3, right: -4,
-                background: 'var(--cart-badge-bg)',
-                color: 'var(--accent)',
-                fontFamily: 'var(--font-mono)',
-                border: '2px solid var(--cart-bg-a)',
-              }}
-            >
-              {totals.count}
-            </span>
-          )}
-        </span>
-        <span className="flex flex-col leading-tight">
-          <span className="text-[9px] opacity-65 uppercase" style={{ letterSpacing: '0.05em' }}>共 {totals.count} 件</span>
-          <span className="font-bold tracking-tight" style={{ fontFamily: 'var(--font-display)', fontSize: 16 }}>¥ {totals.total.toFixed(2)}</span>
-        </span>
-      </button>
+      {/* ─── Floating cart（与 PageContainer 480px 壳层对齐，宽屏不贴视口边） ─── */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-[86px] z-30 mx-auto w-full max-w-[480px] px-4">
+        <button
+          key={cartBounceKey}
+          className={`float-cart-bg pointer-events-auto ml-auto h-12 px-4 pl-3.5 rounded-[24px] inline-flex items-center gap-2.5 elev-float bounce-anim`}
+          style={{ color: 'var(--surface)' }}
+          onClick={openDrawer}
+          aria-label="打开购物车"
+        >
+          <span className="relative w-7.5 h-7.5 rounded-full grid place-items-center flex-shrink-0" style={{ width: 30, height: 30, background: 'var(--accent)' }}>
+            <IconCart />
+            {totals.count > 0 && (
+              <span
+                className="absolute -top-0.75 -right-1 min-w-[18px] h-[18px] px-1.25 rounded-[9px] font-bold text-[11px] grid place-items-center"
+                style={{
+                  top: -3, right: -4,
+                  background: 'var(--cart-badge-bg)',
+                  color: 'var(--accent)',
+                  fontFamily: 'var(--font-mono)',
+                  border: '2px solid var(--cart-bg-a)',
+                }}
+              >
+                {totals.count}
+              </span>
+            )}
+          </span>
+          <span className="flex flex-col leading-tight">
+            <span className="text-[9px] opacity-65 uppercase" style={{ letterSpacing: '0.05em' }}>共 {totals.count} 件</span>
+            <span className="font-bold tracking-tight" style={{ fontFamily: 'var(--font-display)', fontSize: 16 }}>¥ {totals.total.toFixed(2)}</span>
+          </span>
+        </button>
+      </div>
 
       {/* ─── Cart drawer mask ─── */}
       <div
@@ -1224,9 +1229,9 @@ export default function MallHome() {
         onClick={closeDrawer}
       />
 
-      {/* ─── Cart drawer ─── */}
+      {/* ─── Cart drawer（限宽居中，与其它页面 480px 壳层一致） ─── */}
       <aside
-        className={`drawer-panel fixed left-0 right-0 bottom-0 rounded-t-[20px] elev-sheet z-[60] max-h-[78%] flex flex-col ${drawerOpen ? 'translate-y-0' : 'translate-y-full'}`}
+        className={`drawer-panel fixed bottom-0 left-1/2 z-[60] flex max-h-[78%] w-full max-w-[480px] flex-col rounded-t-[20px] elev-sheet ${drawerOpen ? 'translate-x-[-50%] translate-y-0' : 'translate-x-[-50%] translate-y-full'}`}
         style={{ background: 'var(--surface)' }}
         aria-label="购物车"
       >
