@@ -15,7 +15,8 @@ export interface ScopedRouteMeta extends RouteMeta, RouteScopeMeta {}
  * Native reference routes are explicit canonical route entries, not pathname-prefix guesses.
  *
  * Important:
- * - `/device/*` and `/vending/*` do not contain `legacy`, but are still Native reference.
+ * - `/device/*`, `/vending/*` and the legacy sign-in flow do not contain `legacy`, but are still
+ *   Native reference by product ownership.
  * - Keeping the list explicit makes ownership reviewable and prevents `/legacy` string matching
  *   from becoming the product boundary.
  * - These routes remain registered and directly viewable; H002 only removes them from the
@@ -29,6 +30,8 @@ const NATIVE_REFERENCE_ROUTE_PATHS = new Set<string>([
   '/device/success',
   '/vending/buy',
   '/vending/order',
+  '/signin',
+  '/signin/detail',
   '/legacy-service',
   '/legacy-service/repair/projects',
   '/legacy-service/repair/form',

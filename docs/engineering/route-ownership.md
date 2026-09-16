@@ -13,6 +13,10 @@
 - `/device/success`
 - `/vending/buy`
 - `/vending/order`
+- `/signin`
+- `/signin/detail`
+
+其中 `/signin` 与 `/signin/detail` 直接渲染 `src/pages/legacy/SignInPage` 与 `src/pages/legacy/PointsPage`，因此归属按实际页面责任判定，而不是按 URL 是否包含 `legacy` 判定。
 
 因此“路径里有没有 `legacy`”不是产品归属规则，只能算历史命名痕迹。
 
@@ -47,9 +51,10 @@ engineeringScope = deferred
 - `/legacy-service` 与现有后代；
 - `/legacy-profile` 与现有后代；
 - `/device/*` 当前注册的三条设备参考路由；
-- `/vending/*` 当前注册的两条售货机参考路由。
+- `/vending/*` 当前注册的两条售货机参考路由；
+- `/signin` 与 `/signin/detail` 两条历史签到/积分参考路由。
 
-当前共登记 43 条 canonical Native reference route。
+当前共登记 45 条 canonical Native reference route。
 
 这些路由仍由原 router 注册，不因 H002 被删除、重定向或改写内部实现。
 
