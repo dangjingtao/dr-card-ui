@@ -1,6 +1,6 @@
 # H006｜环境配置与构建身份
 
-**Status:** Agent Review  
+**Status:** User Review  
 **Phase:** Foundation  
 **Depends on:** H001
 
@@ -52,4 +52,6 @@
 
 Cloudflare bot 已成功部署包含最新构建脚本的 `5db2fcdc41fd99e864a360322c18d46fef47fe1c`。仓库无法读取 Pages Dashboard 当前保存的 build command 文本，因此只确认“仓库入口与部署能力可用”，不声称 Dashboard 已经手工改成 `npm run build:cf`。
 
-当前状态为 `Agent Review`；待 AI reviewer 对最终 head 复核环境矩阵与 build wrapper。
+2026-09-16 人工复核：重新检查 `src/app/config/runtime.ts` 与 `scripts/build-h5.mjs` 的环境矩阵、Cloudflare branch mapping、build/runtime 双重校验和未配置 API/Bridge 边界；未发现 blocking finding。后续 H012 最终验收 Build `35085484143` 再次完整通过 dev / Cloudflare preview / test / prod 构建、identity、production-like Mock 拒绝与 production smoke，证明当前 `dev` 上 H006 基建未被后续工程改坏。
+
+OpenCode/AI reviewer 不再作为本卡进入用户验收的前置条件；人工 review 已完成。本卡现进入 `User Review`，`Accepted` 仍仅由用户明确验收后更新。
