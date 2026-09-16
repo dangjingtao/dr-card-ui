@@ -29,7 +29,8 @@
     "verify:h011": "node scripts/verify-h011-storage.mjs",
     "verify:h012": "node scripts/verify-h012-forms.mjs",
     "verify:h013": "node scripts/verify-h013-msw.mjs",
-    "verify:h014": "node scripts/verify-h014-mock-scenarios.mjs"
+    "verify:h014": "node scripts/verify-h014-mock-scenarios.mjs",
+    "verify:h015": "node scripts/verify-h015-jsbridge.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "5.9.1",
@@ -39,7 +40,6 @@
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-hook-form": "7.88.0",
-    "react-router-dom": "6.28.1",
     "zod": "4.6.5",
     "zustand": "5.0.15"
   },
