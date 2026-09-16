@@ -11,11 +11,9 @@ localStorage
 sessionStorage
 ```
 
-统一通过 `src/app/storage`：
+统一通过 `src/app/storage` 的公开入口导入 `STORAGE_KEYS` 与 `storage`，调用方式为：
 
 ```ts
-import { STORAGE_KEYS, storage } from '@/app/storage'
-
 const value = storage.read(STORAGE_KEYS.someConfirmedKey)
 storage.write(STORAGE_KEYS.someConfirmedKey, value)
 storage.remove(STORAGE_KEYS.someConfirmedKey)
