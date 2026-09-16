@@ -1,6 +1,6 @@
 # H012｜React Hook Form + Zod 表单基线
 
-**Status:** Ready  
+**Status:** Doing  
 **Phase:** Foundation  
 **Depends on:** H009
 
@@ -29,4 +29,4 @@
 
 ## 证据
 
-记录迁移页面、schema、关键交互验证与 commit SHA。
+施工中。选择正式 H5 `AddressNew`（新增/编辑地址）作为真实复杂表单样板：保留现有四字段、错误文案、编辑回填、`?state=invalid` 深链、默认地址开关与保存跳转语义；不新增未确认业务规则，不改 Com Design 视觉组件。
