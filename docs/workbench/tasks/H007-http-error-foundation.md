@@ -1,6 +1,6 @@
 # H007｜Axios HTTP Client 与统一错误模型
 
-**Status:** Agent Review  
+**Status:** User Review  
 **Phase:** Foundation  
 **Depends on:** H006
 
@@ -47,4 +47,6 @@
 
 > H008 的真实 backend base URL、认证方式与核心接口契约仍未确认。H007 不以伪造这些协议作为收口条件。
 
-当前等待用户验收；只有用户可以将本卡更新为 `Accepted`。
+2026-09-16 人工复核：重新检查 `src/services/http/httpClient.ts`、`src/services/http/appError.ts`、共享 `src/lib/appError.ts` 与 `scripts/verify-h007-http.mjs`。当前默认 client 仍只从显式 API base 获取相对请求目标；未配置 base 时明确报配置错误；auth 注入保持协议中立；timeout、HTTP、network、cancelled/unknown 等错误归一化边界没有被 H009-H012 后续工程破坏。未发现 blocking finding。
+
+H012 最终验收 Build `35085484143` 再次执行并通过 `verify:h007`、typecheck、dev/preview/test/prod 构建及 production smoke。人工 review 已完成，本卡现进入 `User Review`；`Accepted` 仍仅由用户明确验收后更新。
