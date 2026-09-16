@@ -30,7 +30,7 @@ window.androidBridge.getLoginToken()
 
 正式实现位于 `src/services/nativeBridge.ts`：
 
-- 所有宿主全局对象访问集中在 adapter；
+- 所有正式 H5 宿主全局对象访问集中在 adapter；
 - 只有 `VITE_BRIDGE_MODE=native` 才允许 Native 调用；
 - 每次调用重新读取 `window.androidBridge`；
 - 使用 `method.call(bridge)` 保留 receiver；
@@ -51,8 +51,10 @@ window.androidBridge.getLoginToken()
 4. Browser/无 bridge 明确 unsupported；
 5. 能力缺失、同步异常、timeout 均可观察；
 6. iOS 不会被错误声明支持 Android `getLoginToken`；
-7. `src/pages` 不得直接访问 `androidBridge` / `webkit.messageHandlers`；
+7. 正式 H5 页面不得直接访问 `androidBridge` / `webkit.messageHandlers`；
 8. adapter 不包含 fake/mock token fallback。
+
+第 7 项严格遵守 H002 与 `AGENTS.md` §3.4 的 ownership 边界：`src/pages/legacy/**`，以及只承载 Native-reference 路由的 `LegacyHome`、`LegacyScan`、`Device*`、`Vending*`、`LegacyService`、`Repair*`、`FeedbackPage` 不进入 H015 的 H5 CI 验收。Native reference 保持“只看、不动、不验”，即使其中未来出现直接宿主调用，也不会反向把 H5 gate 变成 Native reference 的验收器。
 
 CI 通过 `.github/workflows/build.yml` 的 `Verify H015 JSBridge boundary` 运行 `npm run verify:h015`，同时保留既有 `lint`、`typecheck` 和多环境 build gate。
 
