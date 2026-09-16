@@ -7,6 +7,7 @@ import { findRouteByPathname, isLegacyTabPath } from '../app/router/routes'
 import { isActiveFormalH5Route, isFormalH5TabPath } from '../app/router/routeScope'
 import { useNotifications } from '../app/state/notifications'
 import { protectedFixtureRedirect, useOverlay } from '../app/fixtures/useFixture'
+import H5ScrollRestoration from '../components/mobile/H5ScrollRestoration'
 
 /**
  * 移动应用壳层（T004）
@@ -102,6 +103,7 @@ export default function MobileLayout() {
         )}
       </div>
       <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain" data-page-scroll>
+        <H5ScrollRestoration />
         <Outlet />
       </div>
       {showNav && <BottomNav variant={showLegacyNav ? 'legacy' : 'main'} />}
