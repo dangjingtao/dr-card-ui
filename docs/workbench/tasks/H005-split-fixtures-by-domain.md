@@ -1,6 +1,6 @@
 # H005｜Fixture 巨石按域拆分
 
-**Status:** Agent Review  
+**Status:** Accepted  
 **Phase:** Hygiene  
 **Depends on:** H004
 
@@ -44,4 +44,6 @@
 
 Codex 已对同一最终 head 完成 review，结论为 `Didn't find any major issues.`，没有遗留 review thread。PR #11 已合入 `dev`，merge commit `45138a3e8f61ccb558151cfe2a4d43d6fa5bb4a1`。
 
-当前状态保持 `Agent Review`，等待用户决定是否标记 `Accepted`。
+## 签收
+
+2026-09-16：用户明确授权 Agent 对 H005 自验签收；基于最终 CI、Cloudflare 部署与 Codex review 证据，本卡标记为 `Accepted`。
