@@ -103,7 +103,7 @@ export default function MobileLayout() {
         )}
       </div>
       <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain" data-page-scroll>
-        <H5ScrollRestoration />
+        {isActiveFormalH5Route(route) && <H5ScrollRestoration />}
         <Outlet />
       </div>
       {showNav && <BottomNav variant={showLegacyNav ? 'legacy' : 'main'} />}
