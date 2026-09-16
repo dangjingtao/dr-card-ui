@@ -1,6 +1,6 @@
 # H011｜Storage Adapter
 
-**Status:** User Review  
+**Status:** Accepted  
 **Phase:** Foundation  
 **Depends on:** H006
 
@@ -42,6 +42,7 @@
 - `npm run verify:h011` 覆盖 local/session 隔离、正常读写删除、缺失值、损坏 JSON、schema 无效值、不可序列化值、SSR、Storage resolver/get/set/remove 异常，以及集中 key 定义约束。
 - H011 verifier 使用 AST 检查 `defineStorageKey` 不得在 `src/storage/keys.ts` 外调用，避免文本扫描误伤注释/字符串。
 - 人工 review 已检查完整 PR diff、公开 API、异常路径、敏感数据边界、与现有 hygiene 的职责重叠以及任务范围；施工中发现并修复了错误的 `src/app/storage` 放置、无效 `@` alias 文档示例、`remove` 泛型、公用 API 过宽和 verifier 注释误报问题。当前无剩余 blocking finding。
-- PR #18 Build run `35076996801` 在实现 head `83ce5d40561408d452ea15eead91bb7260adeb34` 上完整通过静态 hygiene、typecheck、H007/H009/H010 回归、H011 验证、dev/Cloudflare preview/test/prod 构建与 identity 检查、production-like Mock 拒绝、SPA fallback 和 production preview smoke。
-- Cloudflare Pages 已成功部署实现 head `83ce5d40561408d452ea15eead91bb7260adeb34` 的 feature preview。
-- PR #18 已记录人工 self-review。`Accepted` 保留给用户明确验收。
+- PR #18 Build run `35077368293` 在验收前 final head `0e8da321c51f6ad791ed5dedb6df0bee3b353cb5` 上完整通过静态 hygiene、typecheck、H007/H009/H010 回归、H011 验证、dev/Cloudflare preview/test/prod 构建与 identity 检查、production-like Mock 拒绝、SPA fallback 和 production preview smoke。
+- Cloudflare Pages 已成功部署验收前 final head `0e8da321c51f6ad791ed5dedb6df0bee3b353cb5` 的 feature preview。
+- PR #18 已记录人工 self-review。
+- 2026-09-16：用户明确回复“接受”，H011 正式验收为 `Accepted`；后续按 squash merge 合入 `dev`。
