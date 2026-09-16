@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import type { NavigateOptions } from 'react-router-dom'
+import type { Location, NavigateOptions, To } from 'react-router-dom'
 import type { RouteMeta, RouteState } from '../router/routes'
 import { runtimePolicy } from '../config/runtime'
 
@@ -47,6 +47,62 @@ function applyRuntimeStatePatch(
 
   // `debug` intentionally has no runtime-state representation outside fixture environments.
   return next
+}
+
+export interface ProtectedFixtureRedirect {
+  to: To
+  state: Record<string, unknown> | null
+}
+
+/**
+ * H004 shell guard.
+ *
+ * In test/prod/API mode protected fixture/debug parameters are removed before the page Outlet is
+ * rendered. A direct browser entry/reload (`location.key === 'default'`) never inherits their value.
+ * For an in-app SPA navigation from older code we temporarily convert state/overlay into router
+ * location state so user-triggered prototype interactions keep working until H014 migrates them.
+ * Debug is always dropped.
+ */
+export function protectedFixtureRedirect(location: Location): ProtectedFixtureRedirect | null {
+  if (runtimePolicy.fixtureQueriesEnabled) return null
+
+  const params = new URLSearchParams(location.search)
+  const state = params.get('state')
+  const overlay = params.get('overlay')
+  const debug = params.get('debug')
+  if (state == null && overlay == null && debug == null) return null
+
+  params.delete('state')
+  params.delete('overlay')
+  params.delete('debug')
+
+  const directEntry = location.key === 'default'
+  const nextState = asLocationState(location.state)
+  if (directEntry) {
+    delete nextState[RUNTIME_STATE_KEYS.state]
+    delete nextState[RUNTIME_STATE_KEYS.overlay]
+  } else {
+    if (state == null) delete nextState[RUNTIME_STATE_KEYS.state]
+    else nextState[RUNTIME_STATE_KEYS.state] = state
+    if (overlay == null) delete nextState[RUNTIME_STATE_KEYS.overlay]
+    else nextState[RUNTIME_STATE_KEYS.overlay] = overlay
+
+    // Home / Dearseed historically suppress their automatic identity picker when an overlay is the
+    // explicit destination. Preserve that in-app behavior without leaving `?overlay=` trustworthy.
+    if (overlay != null && (location.pathname === '/' || location.pathname === '/dearseed')) {
+      params.set('picker', 'off')
+    }
+  }
+
+  const query = params.toString()
+  return {
+    to: {
+      pathname: location.pathname,
+      search: query ? `?${query}` : '',
+      hash: location.hash,
+    },
+    state: Object.keys(nextState).length > 0 ? nextState : null,
+  }
 }
 
 /**
@@ -118,7 +174,7 @@ export function useFixtureDebug(): boolean {
 
 /**
  * 给跨路由验收链接附加受控 fixture 参数。非 fixture 环境只返回原业务 URL，
- * 因此 production 点击不会把 `state/overlay/debug` 写进地址栏。
+ * 因此 production 点击不会主动把 `state/overlay/debug` 写进地址栏。
  */
 export function withFixtureQuery(path: string, patch: FixtureQueryPatch): string {
   if (!runtimePolicy.fixtureQueriesEnabled) return path
