@@ -28,7 +28,7 @@
 | H002 | 正式 H5 / Native reference 路由边界 | Accepted |
 | H003 | 切断正式 H5 对 legacy runtime 的依赖 | Accepted |
 | H004 | Fixture / Debug 运行环境隔离 | Agent Review |
-| H005 | Fixture 巨石按域拆分 | Ready |
+| H005 | Fixture 巨石按域拆分 | Agent Review |
 
 ### B. 生产 H5 基础能力
 
