@@ -139,7 +139,7 @@ Cloudflare 发布必须使用独立 Pages 项目。workflow 会拒绝把 evidenc
 - Variable `CF_TEST_EVIDENCE_PROJECT`：独立 evidence Pages 项目名，不能是 `dr-card-ui`；
 - Optional Variable `CF_TEST_EVIDENCE_BRANCH`：未配置时使用 `main`。
 
-Cloudflare 未配置或发布失败不会抹掉测试证据：Actions Summary 与 GitHub Artifact 仍然保留。累计站点会优先恢复最新未过期的 `h019-evidence-site` Artifact，再写入当前 commit 快照。
+Cloudflare 未配置或发布失败不会抹掉测试证据：Actions Summary 与 GitHub Artifact 仍然保留。累计站点会优先恢复最新未过期的 `h019-evidence-site` Artifact，再写入当前 commit 快照。`test-gate` 对累计站发布串行执行；如果上一份累计站恢复失败，本次仍上传 raw artifact，但不会覆盖累计 artifact，也不会发布 Cloudflare，从而保留最后一份完整历史。
 
 Evidence 页面显式声明：Browser CI evidence 不是 App WebView、真实 API 业务或 Native JSBridge 的验收结论。
 
