@@ -111,10 +111,11 @@ button {
     animation: h5-route-back-enter 150ms cubic-bezier(0.2, 0, 0, 1);
   }
 
-  /* React Router 的原生 View Transition 已启用时，route frame 从首帧就是 transition=none；
-     这里保留兜底抑制，确保旧/新快照期间不会叠加普通 route animation。 */
+  /* 原生 View Transition 只负责快照生命周期；H016 的可见运动全部由 old/new keyframes 定义。
+     禁用浏览器对 group 默认施加的 geometry interpolation，避免 TitleBar / BottomNav 高度变化
+     被额外动画成上下位移或尺寸 morph。 */
   @supports (view-transition-name: h5-route-content) {
-    html[data-h5-native-transition] .h5-route-frame[data-h5-route-transition] {
+    html[data-h5-native-transition]::view-transition-group(h5-route-content) {
       animation: none;
     }
 
