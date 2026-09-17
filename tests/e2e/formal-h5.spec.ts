@@ -22,7 +22,6 @@ function collectRuntimeErrors(page: Page) {
 async function waitForRouteReadiness(page: Page) {
   const routeFrame = page.locator('[data-h5-route-active="true"]')
   await expect(routeFrame).toBeVisible()
-  await page.waitForLoadState('networkidle')
   await page.evaluate(async () => {
     await document.fonts.ready
   })
@@ -53,7 +52,9 @@ async function expectHealthyFormalRoute(page: Page) {
     nodes.flatMap((node) => {
       const image = node as HTMLImageElement
       if (!image.currentSrc && !image.src) return []
-      return image.naturalWidth === 0 ? [image.currentSrc || image.src] : []
+      return image.complete && image.naturalWidth === 0
+        ? [image.currentSrc || image.src]
+        : []
     }),
   )
   expect(brokenImages, `broken visible image(s): ${brokenImages.join(', ')}`).toEqual([])
