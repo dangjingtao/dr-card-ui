@@ -58,9 +58,10 @@
 |---|---|---|
 | H017 | Vitest + React Testing Library 基线 | Accepted |
 | H018 | Playwright / CI 正式 H5 基线 | Accepted |
-| H019 | 测试报告与 Cloudflare Pages 证据站 | In Progress |
+| H019 | 测试报告与 Cloudflare Pages 证据站 | Blocked |
 
 ## 主要阻塞
 
 - H008：真实 backend base URL、认证方式、核心接口契约尚未确认；禁止为完成任务自行发明协议。
 - H015：Native JSBridge 的真实能力与协议尚未提供；在协议确认前不伪造扫码、相册、导航等宿主方法。
+- H019：GitHub evidence 链已通过真实 `dev → test` gate；独立 Cloudflare evidence Pages 尚缺 Repository Variable `CF_TEST_EVIDENCE_PROJECT`，在独立项目实际发布前不标记 Accepted。
