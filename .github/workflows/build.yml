@@ -257,6 +257,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Restore previous cumulative evidence site
+        if: always()
         id: evidence-restore
         continue-on-error: true
         shell: bash
@@ -298,7 +299,7 @@ jobs:
           exit 1
 
       - name: Assemble H019 evidence site
-        if: always()
+        if: always() && steps.evidence-restore.outcome == 'success'
         env:
           EVIDENCE_COMMIT_SHA: ${{ github.sha }}
           EVIDENCE_BRANCH: ${{ github.head_ref || github.ref_name }}
@@ -326,6 +327,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: h019-test-evidence-${{ github.sha }}
+          overwrite: true
           if-no-files-found: warn
           retention-days: 30
           path: |
@@ -334,16 +336,17 @@ jobs:
             dist/build-meta.json
 
       - name: Upload cumulative H019 evidence site
-        if: always() && steps.evidence-restore.outcome != 'failure'
+        if: always() && steps.evidence-restore.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: h019-evidence-site
+          overwrite: true
           if-no-files-found: error
           retention-days: 30
           path: test-evidence-site/
 
       - name: Check independent evidence Pages configuration
-        if: always() && steps.evidence-restore.outcome != 'failure'
+        if: always() && steps.evidence-restore.outcome == 'success'
         id: evidence-pages-config
         shell: bash
         env:
@@ -383,8 +386,8 @@ jobs:
           echo '' >> "$GITHUB_STEP_SUMMARY"
           echo '### Evidence delivery' >> "$GITHUB_STEP_SUMMARY"
           echo '- Raw GitHub artifact: `h019-test-evidence-${{ github.sha }}`' >> "$GITHUB_STEP_SUMMARY"
-          if [ "$RESTORE_OUTCOME" = "failure" ]; then
-            echo '- Cumulative site: not replaced; the last good history was preserved because restore failed.' >> "$GITHUB_STEP_SUMMARY"
+          if [ "$RESTORE_OUTCOME" != "success" ]; then
+            echo "- Cumulative site: not replaced; the last good history was preserved because restore outcome was \`${RESTORE_OUTCOME:-unknown}\`." >> "$GITHUB_STEP_SUMMARY"
             echo '- Cloudflare Pages: skipped for this run to avoid publishing truncated history.' >> "$GITHUB_STEP_SUMMARY"
           else
             echo '- Cumulative site artifact: `h019-evidence-site`' >> "$GITHUB_STEP_SUMMARY"
