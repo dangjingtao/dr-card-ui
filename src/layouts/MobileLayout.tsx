@@ -106,6 +106,8 @@ function H5RouteOutlet() {
 export default function MobileLayout() {
   const location = useLocation()
   const navigate = useNavigate()
+  const previousShellPathname = useRef(location.pathname)
+  const scrollSourcePathname = previousShellPathname.current
   const { unreadCount } = useNotifications()
   const { open: openOverlay } = useOverlay()
   const showLegacyNav = isLegacyTabPath(location.pathname)
@@ -117,6 +119,10 @@ export default function MobileLayout() {
   const title = route?.titleBarTitle ?? route?.title ?? fallbackTitle
   const isNotificationsPage = location.pathname === '/notifications'
   const allNotificationsRead = unreadCount === 0
+
+  useLayoutEffect(() => {
+    previousShellPathname.current = location.pathname
+  }, [location.pathname])
 
   if (fixtureRedirect) {
     return <Navigate to={fixtureRedirect.to} replace state={fixtureRedirect.state} />
@@ -202,7 +208,9 @@ export default function MobileLayout() {
         )}
       </div>
       <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain" data-page-scroll>
-        {isActiveFormalH5Route(route) && <H5ScrollRestoration />}
+        {isActiveFormalH5Route(route) && (
+          <H5ScrollRestoration previousPathname={scrollSourcePathname} />
+        )}
         <H5RouteOutlet />
       </div>
       {showNav && <BottomNav variant={showLegacyNav ? 'legacy' : 'main'} />}
