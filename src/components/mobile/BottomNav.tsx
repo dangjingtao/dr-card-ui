@@ -1,7 +1,8 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 import { BottomNavigation } from '../ui'
-import { LEGACY_TAB_ITEMS } from '../../app/router/routes'
-import { FORMAL_H5_TAB_ROUTES } from '../../app/router/routeScope'
+import { findRouteByPathname, LEGACY_TAB_ITEMS } from '../../app/router/routes'
+import { FORMAL_H5_TAB_ROUTES, isActiveFormalH5Route } from '../../app/router/routeScope'
+import { navigateWithH5ViewTransition } from '../../app/router/h5Transition'
 
 // 主入口只消费 formal-H5 Tab 路由；Native reference 使用独立 legacy 导航。
 const mainItems = FORMAL_H5_TAB_ROUTES.flatMap((route) =>
@@ -47,6 +48,17 @@ export default function BottomNav({ variant = 'main' }: { variant?: 'main' | 'le
       if (target && target !== location.pathname) navigate(target)
       return
     }
+
+    if (value === location.pathname) return
+
+    const currentRoute = findRouteByPathname(location.pathname)
+    const targetRoute = findRouteByPathname(value)
+    if (isActiveFormalH5Route(currentRoute) && isActiveFormalH5Route(targetRoute)) {
+      navigateWithH5ViewTransition(navigate, value)
+      return
+    }
+
+    // Deferred formal-H5 routes (currently mall) and Native reference routes keep their old behavior.
     navigate(value)
   }
 
