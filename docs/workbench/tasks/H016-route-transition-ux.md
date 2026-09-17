@@ -1,6 +1,6 @@
 # H016｜路由过渡、返回与滚动体验
 
-**Status:** User Review  
+**Status:** Accepted  
 **Phase:** UX  
 **Depends on:** H002
 
@@ -50,7 +50,7 @@
 
 ## 代表性链路验证
 
-实现与代码路径已覆盖以下 H016 回归点；本卡保持 `User Review`，真实 App WebView 返回由后续验收确认，不把静态检查冒充人工/设备验收：
+实现、CI 与 OpenCode Review 已覆盖以下 H016 回归点；用户于 2026-09-17 明确验收通过，本卡标记 `Accepted`。真实 App WebView / 宿主返回仍按工程分层留到 `test` 阶段做设备侧验证，不把 dev 阶段浏览器检查冒充宿主能力验收：
 
 1. 正式 H5 一级 Tab → 一级 Tab：不横向推页，只做轻微淡入；重复点击当前 Tab 不产生新导航。
 2. 一级页 → 二级/详情，以及跨 pathname `REPLACE`：进入新 pathname 时滚动置顶，并提供克制前进感（若该导航参与 route-motion boundary）。
@@ -59,12 +59,19 @@
 5. `/service/chat` 滚动后打开/关闭 `#wecom`：同页 Router replace，不新增历史项、不触发 pathname 级动画、不主动滚到顶部。
 6. reduced-motion：关闭 H016 动画，路由与 scroll restoration 逻辑仍工作。
 7. legacy / Native reference / deferred 商城：不进入 H016 route-motion boundary。
+8. deferred `/mall` 滚动后进入正式 H5：目标正式 H5 页面正确置顶，不继承商城旧 `scrollTop`。
 
 ## 证据
 
 - PR：#22 `h016-route-scroll → dev`
 - H016 主体实现 SHA：`9677bd124e696e5e3c96f09ac46fb08acfdfd9e1`
 - Review hardening：`1943ee25348a726eca8ca56757e8e7294ad71eb0`（Router VT lifecycle + cross-path REPLACE scroll）
+- Scroll scope hardening：`f16fe5548e4d914fad1d8c650336ca961b295463`、`c114a4081ae615003ee272bb29c76123b3767176`
+- 最终代码 reviewed head：`c114a4081ae615003ee272bb29c76123b3767176`（`c114a40`）
+- Build #367：success；Static hygiene、Typecheck、各环境 build / identity / smoke 全部通过。
+- Cloudflare Pages：`c114a40` deploy successful；branch preview：`https://h016-route-scroll.dr-card-ui.pages.dev`
+- OpenCode Review #125：completed / success；对 `c114a40` 的 built app + headless Chrome 检查无 material finding。
+- 用户验收：2026-09-17 明确“接受通过”。
 - 关键文件：
   - `src/components/mobile/H5ScrollRestoration.tsx`
   - `src/app/router/h5Transition.ts`
@@ -72,4 +79,4 @@
   - `src/components/mobile/BottomNav.tsx`
   - `src/pages/ServiceChat.tsx`
   - `src/styles/globals.css`
-- PR CI 负责 `typecheck`、静态卫生、各环境构建与 smoke；OpenCode Review 已用于补充路由/布局/滚动回归检查；真实 App WebView / 宿主返回不在 dev 阶段伪造通过，保留到 `test` 验收。
+- 真实 App WebView / 宿主返回不在 dev 阶段伪造通过，保留到 `test` 阶段做宿主侧验证。
