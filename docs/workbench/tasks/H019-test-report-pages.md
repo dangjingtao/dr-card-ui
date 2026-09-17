@@ -1,6 +1,6 @@
 # H019｜测试报告与 Cloudflare Pages 证据站
 
-**Status:** User Review  
+**Status:** Accepted  
 **Phase:** Delivery  
 **Depends on:** H018
 
@@ -86,10 +86,8 @@ GitHub Actions run：`35210266910`。
 - 正式 `dr-card-ui` Pages 项目未被用于 H019 evidence 发布。
 - Actions Summary 最终记录：restore success、config ready、project ensure success、deploy success。
 
-## 验收边界
+## 验收结论
 
-H019 已满足本卡三条工程验收条件，当前进入 `User Review`。
+H019 已满足本卡三条工程验收条件，并于 2026-09-17 经用户明确验收，状态标记为 `Accepted`。
 
 Evidence 页面与 CI 仍明确声明：Browser CI evidence 不是 App WebView、真实 API 业务或 Native JSBridge 验收。H008 / H015 的阻塞状态不因 H019 完成而改变。
-
-按台账纪律，只有用户可以把本卡最终标记为 `Accepted`。
