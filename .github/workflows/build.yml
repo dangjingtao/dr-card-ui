@@ -345,34 +345,81 @@ jobs:
           retention-days: 30
           path: test-evidence-site/
 
-      - name: Check independent evidence Pages configuration
+      - name: Resolve independent evidence Pages configuration
         if: always() && steps.evidence-restore.outcome == 'success'
         id: evidence-pages-config
         shell: bash
         env:
           CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CF_PROJECT: ${{ vars.CF_TEST_EVIDENCE_PROJECT }}
+          CF_PROJECT: ${{ vars.CF_TEST_EVIDENCE_PROJECT || 'dr-card-ui-test-evidence' }}
+          CF_BRANCH: ${{ vars.CF_TEST_EVIDENCE_BRANCH || 'main' }}
         run: |
+          echo "project=$CF_PROJECT" >> "$GITHUB_OUTPUT"
+          echo "branch=$CF_BRANCH" >> "$GITHUB_OUTPUT"
           if [ "$CF_PROJECT" = "dr-card-ui" ]; then
             echo '::warning::H019 refuses to deploy evidence into the formal dr-card-ui Pages project.'
             echo 'ready=false' >> "$GITHUB_OUTPUT"
           elif [ -n "$CF_TOKEN" ] && [ -n "$CF_ACCOUNT" ] && [ -n "$CF_PROJECT" ]; then
             echo 'ready=true' >> "$GITHUB_OUTPUT"
           else
-            echo '::notice::H019 Cloudflare publish skipped: configure CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID and CF_TEST_EVIDENCE_PROJECT for a separate Pages project.'
+            echo '::notice::H019 Cloudflare publish skipped: CLOUDFLARE_API_TOKEN or CLOUDFLARE_ACCOUNT_ID is not configured.'
             echo 'ready=false' >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Publish independent H019 evidence Pages
+      - name: Ensure independent H019 evidence Pages project
         if: always() && steps.evidence-pages-config.outputs.ready == 'true'
+        id: evidence-pages-project
+        continue-on-error: true
+        shell: bash
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CF_PROJECT: ${{ steps.evidence-pages-config.outputs.project }}
+          CF_BRANCH: ${{ steps.evidence-pages-config.outputs.branch }}
+        run: |
+          API_BASE="https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT/pages/projects"
+          HTTP_CODE="$(curl --silent --show-error --output /tmp/h019-cf-project.json --write-out '%{http_code}' \
+            -H "Authorization: Bearer $CF_TOKEN" \
+            -H 'Accept: application/json' \
+            "$API_BASE/$CF_PROJECT")"
+
+          if [ "$HTTP_CODE" = "200" ]; then
+            node -e "const fs=require('fs');const r=JSON.parse(fs.readFileSync('/tmp/h019-cf-project.json','utf8'));if(r.success!==true)process.exit(1)"
+            echo "H019 evidence Pages project already exists: $CF_PROJECT"
+            exit 0
+          fi
+
+          if [ "$HTTP_CODE" != "404" ]; then
+            cat /tmp/h019-cf-project.json
+            echo "Unexpected Cloudflare project lookup status: $HTTP_CODE"
+            exit 1
+          fi
+
+          CREATE_BODY="$(node -e "process.stdout.write(JSON.stringify({name:process.env.CF_PROJECT,production_branch:process.env.CF_BRANCH}))")"
+          CREATE_CODE="$(curl --silent --show-error --output /tmp/h019-cf-project-create.json --write-out '%{http_code}' \
+            --request POST \
+            -H "Authorization: Bearer $CF_TOKEN" \
+            -H 'Content-Type: application/json' \
+            --data "$CREATE_BODY" \
+            "$API_BASE")"
+          node -e "const fs=require('fs');const r=JSON.parse(fs.readFileSync('/tmp/h019-cf-project-create.json','utf8'));if(r.success!==true)process.exit(1)"
+          if [ "$CREATE_CODE" -lt 200 ] || [ "$CREATE_CODE" -ge 300 ]; then
+            cat /tmp/h019-cf-project-create.json
+            echo "Cloudflare project create returned status: $CREATE_CODE"
+            exit 1
+          fi
+          echo "Created isolated H019 evidence Pages project: $CF_PROJECT"
+
+      - name: Publish independent H019 evidence Pages
+        if: always() && steps.evidence-pages-config.outputs.ready == 'true' && steps.evidence-pages-project.outcome == 'success'
         id: evidence-pages-deploy
         continue-on-error: true
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy test-evidence-site --project-name=${{ vars.CF_TEST_EVIDENCE_PROJECT }} --branch=${{ vars.CF_TEST_EVIDENCE_BRANCH || 'main' }}
+          command: pages deploy test-evidence-site --project-name=${{ steps.evidence-pages-config.outputs.project }} --branch=${{ steps.evidence-pages-config.outputs.branch }}
 
       - name: Record H019 publish status
         if: always()
@@ -380,8 +427,9 @@ jobs:
         env:
           RESTORE_OUTCOME: ${{ steps.evidence-restore.outcome }}
           CONFIG_READY: ${{ steps.evidence-pages-config.outputs.ready }}
+          PROJECT_OUTCOME: ${{ steps.evidence-pages-project.outcome }}
           DEPLOY_OUTCOME: ${{ steps.evidence-pages-deploy.outcome }}
-          CF_PROJECT: ${{ vars.CF_TEST_EVIDENCE_PROJECT }}
+          CF_PROJECT: ${{ steps.evidence-pages-config.outputs.project }}
         run: |
           echo '' >> "$GITHUB_STEP_SUMMARY"
           echo '### Evidence delivery' >> "$GITHUB_STEP_SUMMARY"
@@ -392,9 +440,11 @@ jobs:
           else
             echo '- Cumulative site artifact: `h019-evidence-site`' >> "$GITHUB_STEP_SUMMARY"
             if [ "$CONFIG_READY" != "true" ]; then
-              echo '- Cloudflare Pages: skipped (independent evidence project is not fully configured).' >> "$GITHUB_STEP_SUMMARY"
+              echo '- Cloudflare Pages: skipped (Cloudflare credentials are not fully configured).' >> "$GITHUB_STEP_SUMMARY"
+            elif [ "$PROJECT_OUTCOME" != "success" ]; then
+              echo "- Cloudflare Pages: project \`$CF_PROJECT\` could not be ensured; GitHub artifacts remain available." >> "$GITHUB_STEP_SUMMARY"
             elif [ "$DEPLOY_OUTCOME" = "success" ]; then
-              echo "- Cloudflare Pages: published to independent project \`$CF_PROJECT\`." >> "$GITHUB_STEP_SUMMARY"
+              echo "- Cloudflare Pages: published to isolated project \`$CF_PROJECT\`." >> "$GITHUB_STEP_SUMMARY"
             else
               echo "- Cloudflare Pages: publish attempt did not succeed (outcome: \`${DEPLOY_OUTCOME:-unknown}\`); GitHub artifacts remain available." >> "$GITHUB_STEP_SUMMARY"
             fi
