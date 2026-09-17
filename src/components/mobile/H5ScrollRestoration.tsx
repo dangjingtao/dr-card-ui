@@ -1,20 +1,23 @@
-import { useLayoutEffect, useRef } from 'react'
+import { useLayoutEffect } from 'react'
 import { useLocation, useNavigationType } from 'react-router-dom'
 
 const positions = new Map<string, number>()
 
+type H5ScrollRestorationProps = {
+  previousPathname: string
+}
+
 /** Keeps the shell's internal scroll container in sync with browser navigation. */
-export default function H5ScrollRestoration() {
+export default function H5ScrollRestoration({ previousPathname }: H5ScrollRestorationProps) {
   const location = useLocation()
   const navigationType = useNavigationType()
-  const previousPathname = useRef(location.pathname)
 
   useLayoutEffect(() => {
     const scrollContainer = document.querySelector<HTMLElement>('[data-page-scroll]')
     if (!scrollContainer) return
 
     const currentTop = scrollContainer.scrollTop
-    const pathnameChanged = previousPathname.current !== location.pathname
+    const pathnameChanged = previousPathname !== location.pathname
 
     let top = currentTop
     if (navigationType === 'POP') {
@@ -29,8 +32,6 @@ export default function H5ScrollRestoration() {
       scrollContainer.scrollTo({ top, left: 0, behavior: 'auto' })
     }
 
-    previousPathname.current = location.pathname
-
     // Persist the active history entry while the user scrolls. Recording continuously means the
     // outgoing position already exists before React swaps the outlet; a shorter destination cannot
     // clamp the source page's saved scrollTop during the next layout effect.
@@ -44,7 +45,7 @@ export default function H5ScrollRestoration() {
     return () => {
       scrollContainer.removeEventListener('scroll', savePosition)
     }
-  }, [location.key, location.pathname, navigationType])
+  }, [location.key, location.pathname, navigationType, previousPathname])
 
   return null
 }
