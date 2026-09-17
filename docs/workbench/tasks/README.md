@@ -55,7 +55,7 @@
 
 | ID | 任务 | 状态 |
 |---|---|---|
-| H017 | Vitest + React Testing Library 基线 | Ready |
+| H017 | Vitest + React Testing Library 基线 | User Review |
 | H018 | Playwright / CI 正式 H5 基线 | Ready |
 | H019 | 测试报告与 Cloudflare Pages 证据站 | Ready |
 

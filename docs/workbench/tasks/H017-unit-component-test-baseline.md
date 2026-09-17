@@ -1,6 +1,6 @@
 # H017｜Vitest + React Testing Library 基线
 
-**Status:** Ready  
+**Status:** User Review  
 **Phase:** Test  
 **Depends on:** H007, H009, H010, H011
 
@@ -29,4 +29,12 @@
 
 ## 证据
 
-记录 test summary、CI 结果和 commit SHA。
+- PR：#23 `H017: add Vitest and React Testing Library baseline`。
+- 实现校验 commit：`47923e832ee964253f4d35dc4fae0df44ccca873`。
+- `npm test`：4 个测试文件、13 个测试全部通过；覆盖 contract、HTTP/AppError、Storage Adapter、Zustand/React 订阅行为。
+- GitHub Actions Build #375：success；lint、typecheck、H007-H015 retained verify、dev/preview/test/prod 构建与 smoke 链路均通过。
+- OpenCode Review #132：No blocking findings；此前指出的 `tests/storage` 未被 Vitest discovery 纳入的问题已由 `47923e8` 修复。
+- `package-lock.json` 由 Node 20.20.2 / npm 10.8.2 的 GitHub Actions runner 实际生成。
+- Bridge adapter 测试仍按本卡约束等待 H015 真实 Native 协议解阻，不在 H017 中伪造宿主能力。
+
+待用户验收后方可标记为 `Accepted`。
