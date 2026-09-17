@@ -9,7 +9,7 @@ import {
 } from 'react-router-dom'
 import { Bell, MessageSquare, Settings } from 'lucide-react'
 import BottomNav from '../components/mobile/BottomNav'
-import StatusBar from '../components/mobile/StatusBar'
+// import StatusBar from '../components/mobile/StatusBar'
 import TitleBar from '../components/mobile/TitleBar'
 import { findRouteByPathname, isLegacyTabPath } from '../app/router/routes'
 import { isActiveFormalH5Route, isFormalH5TabPath } from '../app/router/routeScope'
@@ -196,7 +196,6 @@ export default function MobileLayout() {
     <div className="app-background flex h-dvh flex-col overflow-hidden pt-[env(safe-area-inset-top)] text-text-primary">
       {/* T013R7：min-w-0 防止 TitleBar 第三列 action 被撑大撑出页面右侧 */}
       <div className="min-w-0 shrink-0">
-        <StatusBar />
         {titleBarMode !== 'hidden' && (
           <TitleBar
             title={title}
