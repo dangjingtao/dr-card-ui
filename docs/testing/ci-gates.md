@@ -40,7 +40,7 @@ ACTIVE_FORMAL_H5_ROUTES
 - deferred formal-H5：当前商城 `/mall*` 不进入 gate；
 - 动态参数路由不通过伪造 ID 做全量枚举，待真实业务契约或稳定 fixture 存在时按业务 spec 补充。
 
-当前 Native reference 明确包括 `/legacy-home*`、`legacy-service*`、`legacy-profile*`，以及按产品归属属于 Native reference 的 `/device/*`、`/vending/*`、`/signin*`。
+当前 Native reference 明确包括 `/legacy-home*`、`/legacy-service*`、`/legacy-profile*`，以及按产品归属属于 Native reference 的 `/device/*`、`/vending/*`、`/signin*`。
 
 ### 2.2 通用 formal-H5 route smoke
 
