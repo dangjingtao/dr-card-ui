@@ -1,0 +1,31 @@
+name: H017 Lockfile
+
+on:
+  push:
+    branches: [h017-vitest-rtl]
+
+permissions:
+  contents: read
+
+jobs:
+  generate-lockfile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Generate package lock
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+
+      - name: Upload package lock
+        uses: actions/upload-artifact@v4
+        with:
+          name: h017-package-lock
+          path: package-lock.json
+          if-no-files-found: error
