@@ -1,6 +1,6 @@
 # H017｜Vitest + React Testing Library 基线
 
-**Status:** User Review  
+**Status:** Accepted  
 **Phase:** Test  
 **Depends on:** H007, H009, H010, H011
 
@@ -36,5 +36,4 @@
 - OpenCode Review #132：No blocking findings；此前指出的 `tests/storage` 未被 Vitest discovery 纳入的问题已由 `47923e8` 修复。
 - `package-lock.json` 由 Node 20.20.2 / npm 10.8.2 的 GitHub Actions runner 实际生成。
 - Bridge adapter 测试仍按本卡约束等待 H015 真实 Native 协议解阻，不在 H017 中伪造宿主能力。
-
-待用户验收后方可标记为 `Accepted`。
+- 用户于 2026-09-17 明确验收通过，状态更新为 `Accepted`。
