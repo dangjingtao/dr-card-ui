@@ -1,8 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 import { BottomNavigation } from '../ui'
-import { findRouteByPathname, LEGACY_TAB_ITEMS } from '../../app/router/routes'
-import { FORMAL_H5_TAB_ROUTES, isActiveFormalH5Route } from '../../app/router/routeScope'
-import { navigateWithH5ViewTransition } from '../../app/router/h5Transition'
+import { LEGACY_TAB_ITEMS } from '../../app/router/routes'
+import { FORMAL_H5_TAB_ROUTES } from '../../app/router/routeScope'
 
 // 主入口只消费 formal-H5 Tab 路由；Native reference 使用独立 legacy 导航。
 const mainItems = FORMAL_H5_TAB_ROUTES.flatMap((route) =>
@@ -51,14 +50,9 @@ export default function BottomNav({ variant = 'main' }: { variant?: 'main' | 'le
 
     if (value === location.pathname) return
 
-    const currentRoute = findRouteByPathname(location.pathname)
-    const targetRoute = findRouteByPathname(value)
-    if (isActiveFormalH5Route(currentRoute) && isActiveFormalH5Route(targetRoute)) {
-      navigateWithH5ViewTransition(navigate, value)
-      return
-    }
-
-    // Deferred formal-H5 routes (currently mall) and Native reference routes keep their old behavior.
+    // 一级 Tab 是频道切换，只使用 H016 的 130ms CSS fade。
+    // 不进入 native View Transition，避免 old/new snapshot 叠加造成残影；
+    // deferred formal-H5（当前 mall）也继续保持普通 Router 导航。
     navigate(value)
   }
 

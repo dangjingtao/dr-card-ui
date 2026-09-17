@@ -80,3 +80,16 @@
   - `src/pages/ServiceChat.tsx`
   - `src/styles/globals.css`
 - 真实 App WebView / 宿主返回不在 dev 阶段伪造通过，保留到 `test` 阶段做宿主侧验证。
+
+## Post-Acceptance Correction｜H020（2026-09-17）
+
+H016 的 **UX 契约不变**：一级 Tab 仍只做约 130ms 轻淡入，前进/返回仍维持约 150ms 的克制方向感；滚动恢复规则也不变。
+
+用户在 H016 Accepted 后的真实视觉验收中继续发现了两类实现回归：一级 Tab 的 native View Transition 产生上下 geometry drift，随后又暴露 old/new snapshot 双曝光残影。为避免静默改写本卡的历史验收记录，上文“共享一级 Tab 使用 native View Transition”的内容保留为 **原 Accepted 实现记录**，当前实现真相由增量卡 [H020](./H020-route-transition-ghosting.md) 接管：
+
+- 一级 Tab 改为普通 Router 导航 + 既有 130ms CSS fade，不再创建 native snapshot；
+- native View Transition 只保留给需要方向语义的 forward/back；
+- 默认 root snapshot 被关闭，只允许显式命名的 `h5-route-content` 参与 native VT；
+- native forward/back 禁止默认 geometry interpolation 与 old/new blending，可见运动由项目 keyframes 定义。
+
+H020 是对 H016 **实现边界的纠正**，不是对 H016 产品体验结论的改写。

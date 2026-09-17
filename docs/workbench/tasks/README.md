@@ -50,6 +50,7 @@
 |---|---|---|
 | H015 | JSBridge Adapter 与 Native 导航边界 | Blocked |
 | H016 | 路由过渡、返回与滚动体验 | Accepted |
+| H020 | 路由过渡残影与快照边界修复 | Accepted |
 
 ### D. 测试与交付
 
