@@ -52,7 +52,7 @@ ACTIVE_FORMAL_H5_ROUTES
 - 页面主滚动容器明显横向溢出；
 - 一条代表性的正式 H5 UI 导航链路（会员中心 → 通知 → 浏览器返回）。
 
-健康检查不依赖固定毫秒数睡眠。测试会等待 active route 可见、网络进入 idle、字体就绪、可见图片完成 load/error settle 后，再判断 runtime error、坏图和横向溢出。
+健康检查不依赖固定毫秒数睡眠。测试会等待 active route 可见、字体就绪、可见图片完成 load/error settle 后，再判断 runtime error、坏图和横向溢出。
 
 这是一组工程回归，不做逐页面像素比对，也不以历史摹客节点文案作为发布门槛。
 
