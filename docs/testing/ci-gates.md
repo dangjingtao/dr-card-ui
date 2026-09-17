@@ -44,13 +44,15 @@ ACTIVE_FORMAL_H5_ROUTES
 
 ### 2.2 通用 formal-H5 route smoke
 
-`tests/e2e/formal-h5.spec.ts` 在 preview / Mock 语义下检查 active formal-H5 静态路由：
+`tests/e2e/formal-h5.spec.ts` 在 preview / Mock 语义下，以仓库主要移动端视觉基准 `375 × 812` 检查 active formal-H5 静态路由：
 
 - 路由仍被运行时识别为 active formal-H5；
 - 浏览器 `pageerror` 与 `console.error`；
 - 可见坏图；
 - 页面主滚动容器明显横向溢出；
 - 一条代表性的正式 H5 UI 导航链路（会员中心 → 通知 → 浏览器返回）。
+
+健康检查不依赖固定毫秒数睡眠。测试会等待 active route 可见、网络进入 idle、字体就绪、可见图片完成 load/error settle 后，再判断 runtime error、坏图和横向溢出。
 
 这是一组工程回归，不做逐页面像素比对，也不以历史摹客节点文案作为发布门槛。
 
@@ -70,7 +72,7 @@ VITE_DATA_MODE=api
 - test bundle 能成功构建；
 - `build-meta.json` 为 `test + api`；
 - `dist/` 不存在 `mockServiceWorker.js`；
-- Playwright 可以启动 production-like test bundle；
+- CI 启动 production-like test bundle，Playwright 通过 `PLAYWRIGHT_BASE_URL` 接入该产物；
 - `/`、`/profile`、`/settings` 三个关键正式 H5 路由可运行且无浏览器 runtime failure、坏图和明显横向溢出。
 
 H008 仍因真实 backend base URL / auth / 核心接口契约未知而 Blocked，因此本门禁不把“真实 API 业务成功”伪装成已完成能力。
