@@ -152,13 +152,21 @@ const latestDir = path.join(siteRoot, 'latest')
 writeSnapshot(commitDir)
 writeSnapshot(latestDir)
 
-const commitNames = fs.readdirSync(path.join(siteRoot, 'commits'), { withFileTypes: true })
+const commitEntries = fs.readdirSync(path.join(siteRoot, 'commits'), { withFileTypes: true })
   .filter((entry) => entry.isDirectory())
-  .map((entry) => entry.name)
-  .sort((a, b) => (a === sha ? -1 : b.localeCompare(a)))
+  .map((entry) => {
+    const metadata = readJson(path.join(siteRoot, 'commits', entry.name, 'summary.json'))
+    return { name: entry.name, generatedAt: metadata?.generatedAt ?? '' }
+  })
+  .sort((a, b) => {
+    if (a.name === sha) return -1
+    if (b.name === sha) return 1
+    const byTime = b.generatedAt.localeCompare(a.generatedAt)
+    return byTime !== 0 ? byTime : b.name.localeCompare(a.name)
+  })
 
-const commitLinks = commitNames.slice(0, 100)
-  .map((commit) => `<li><a href="./commits/${encodeURIComponent(commit)}/"><code>${escapeHtml(commit)}</code></a>${commit === sha ? ' · current' : ''}</li>`)
+const commitLinks = commitEntries.slice(0, 100)
+  .map(({ name: commit }) => `<li><a href="./commits/${encodeURIComponent(commit)}/"><code>${escapeHtml(commit)}</code></a>${commit === sha ? ' · current' : ''}</li>`)
   .join('')
 
 fs.writeFileSync(path.join(siteRoot, 'index.html'), `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>卡博士 H5 测试证据</title><style>body{font-family:Inter,system-ui,sans-serif;max-width:880px;margin:40px auto;padding:0 18px;color:#171717}a{color:#9a6700}code{word-break:break-all}.notice{background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:14px}</style></head><body><h1>卡博士 H5 测试证据</h1><p><a href="./latest/">查看 latest</a></p><div class="notice">Browser CI evidence only. This site does not mean App WebView, real API business, or Native JSBridge has been accepted.</div><h2>Commits</h2><ul>${commitLinks}</ul></body></html>`)
