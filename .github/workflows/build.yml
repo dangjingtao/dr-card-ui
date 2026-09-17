@@ -32,6 +32,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Unit and component tests
+        run: npm test
+
       - name: Verify H007 HTTP foundation
         run: npm run verify:h007
 
