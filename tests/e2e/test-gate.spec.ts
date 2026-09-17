@@ -41,8 +41,8 @@ test('@test-gate build identity matches the production-like test policy', async 
   expect(response.ok()).toBeTruthy()
 
   const metadata = await response.json()
-  expect(metadata.appEnvironment).toBe(process.env.PLAYWRIGHT_EXPECT_APP_ENV ?? 'test')
-  expect(metadata.dataMode).toBe(process.env.PLAYWRIGHT_EXPECT_DATA_MODE ?? 'api')
+  expect(metadata.appEnvironment).toBe('test')
+  expect(metadata.dataMode).toBe('api')
 })
 
 for (const path of criticalRoutes) {
