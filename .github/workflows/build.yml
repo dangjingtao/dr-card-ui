@@ -12,7 +12,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 16
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -120,6 +120,27 @@ jobs:
           node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('dist/build-meta.json','utf8'));if(m.appEnvironment!=='preview'||m.dataMode!=='mock'||m.build.sha!==process.env.GITHUB_SHA)process.exit(1)"
           test -f dist/mockServiceWorker.js
 
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Formal H5 browser regression
+        shell: bash
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
+        run: |
+          npm run preview -- --port 4173 --strictPort > /tmp/dr-card-playwright-preview.log 2>&1 &
+          PREVIEW_PID=$!
+          trap 'kill $PREVIEW_PID || true' EXIT
+          for attempt in {1..20}; do
+            if curl --fail --silent --show-error http://127.0.0.1:4173/build-meta.json > /dev/null; then
+              npm run test:e2e:formal
+              exit $?
+            fi
+            sleep 1
+          done
+          cat /tmp/dr-card-playwright-preview.log
+          exit 1
+
       - name: Build test bundle
         run: npm run build:test
 
@@ -172,7 +193,7 @@ jobs:
     name: Test branch gate
     if: github.ref_name == 'test' || github.base_ref == 'test'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 14
     env:
       VITE_APP_ENV: test
       VITE_DATA_MODE: api
@@ -211,26 +232,27 @@ jobs:
             exit 1
           fi
 
-      # Historical T015 verifies UI fixture query states from the archived prototype phase.
-      # H004/H006 intentionally disable those state/overlay/debug injections in test/API,
-      # so promotion now validates the production-like test bundle instead. H018 owns the
-      # future formal-H5 Playwright route suite.
-      - name: Smoke test API-only test preview
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run production-like test browser gate
         shell: bash
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
+          PLAYWRIGHT_EXPECT_APP_ENV: test
+          PLAYWRIGHT_EXPECT_DATA_MODE: api
         run: |
-          npm run preview -- --port 4173 > /tmp/dr-card-test-preview.log 2>&1 &
+          npm run preview -- --port 4173 --strictPort > /tmp/dr-card-test-playwright.log 2>&1 &
           PREVIEW_PID=$!
           trap 'kill $PREVIEW_PID || true' EXIT
 
           for attempt in {1..20}; do
-            if curl --fail --silent --show-error http://127.0.0.1:4173/ > /dev/null; then
-              curl --fail --silent --show-error http://127.0.0.1:4173/profile > /dev/null
-              curl --fail --silent --show-error http://127.0.0.1:4173/settings > /dev/null
-              curl --fail --silent --show-error http://127.0.0.1:4173/build-meta.json > /dev/null
-              exit 0
+            if curl --fail --silent --show-error http://127.0.0.1:4173/build-meta.json > /dev/null; then
+              npm run test:e2e:test-gate
+              exit $?
             fi
             sleep 1
           done
 
-          cat /tmp/dr-card-test-preview.log
+          cat /tmp/dr-card-test-playwright.log
           exit 1
