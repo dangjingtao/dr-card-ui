@@ -257,6 +257,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Restore previous cumulative evidence site
+        id: evidence-restore
         continue-on-error: true
         shell: bash
         env:
@@ -333,7 +334,7 @@ jobs:
             dist/build-meta.json
 
       - name: Upload cumulative H019 evidence site
-        if: always()
+        if: always() && steps.evidence-restore.outcome != 'failure'
         uses: actions/upload-artifact@v4
         with:
           name: h019-evidence-site
@@ -342,7 +343,7 @@ jobs:
           path: test-evidence-site/
 
       - name: Check independent evidence Pages configuration
-        if: always()
+        if: always() && steps.evidence-restore.outcome != 'failure'
         id: evidence-pages-config
         shell: bash
         env:
@@ -374,6 +375,7 @@ jobs:
         if: always()
         shell: bash
         env:
+          RESTORE_OUTCOME: ${{ steps.evidence-restore.outcome }}
           CONFIG_READY: ${{ steps.evidence-pages-config.outputs.ready }}
           DEPLOY_OUTCOME: ${{ steps.evidence-pages-deploy.outcome }}
           CF_PROJECT: ${{ vars.CF_TEST_EVIDENCE_PROJECT }}
@@ -381,11 +383,16 @@ jobs:
           echo '' >> "$GITHUB_STEP_SUMMARY"
           echo '### Evidence delivery' >> "$GITHUB_STEP_SUMMARY"
           echo '- Raw GitHub artifact: `h019-test-evidence-${{ github.sha }}`' >> "$GITHUB_STEP_SUMMARY"
-          echo '- Cumulative site artifact: `h019-evidence-site`' >> "$GITHUB_STEP_SUMMARY"
-          if [ "$CONFIG_READY" != "true" ]; then
-            echo '- Cloudflare Pages: skipped (independent evidence project is not fully configured).' >> "$GITHUB_STEP_SUMMARY"
-          elif [ "$DEPLOY_OUTCOME" = "success" ]; then
-            echo "- Cloudflare Pages: published to independent project \`$CF_PROJECT\`." >> "$GITHUB_STEP_SUMMARY"
+          if [ "$RESTORE_OUTCOME" = "failure" ]; then
+            echo '- Cumulative site: not replaced; the last good history was preserved because restore failed.' >> "$GITHUB_STEP_SUMMARY"
+            echo '- Cloudflare Pages: skipped for this run to avoid publishing truncated history.' >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "- Cloudflare Pages: publish attempt did not succeed (outcome: \`${DEPLOY_OUTCOME:-unknown}\`); GitHub artifacts remain available." >> "$GITHUB_STEP_SUMMARY"
+            echo '- Cumulative site artifact: `h019-evidence-site`' >> "$GITHUB_STEP_SUMMARY"
+            if [ "$CONFIG_READY" != "true" ]; then
+              echo '- Cloudflare Pages: skipped (independent evidence project is not fully configured).' >> "$GITHUB_STEP_SUMMARY"
+            elif [ "$DEPLOY_OUTCOME" = "success" ]; then
+              echo "- Cloudflare Pages: published to independent project \`$CF_PROJECT\`." >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "- Cloudflare Pages: publish attempt did not succeed (outcome: \`${DEPLOY_OUTCOME:-unknown}\`); GitHub artifacts remain available." >> "$GITHUB_STEP_SUMMARY"
+            fi
           fi
