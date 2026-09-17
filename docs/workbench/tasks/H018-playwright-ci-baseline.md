@@ -1,6 +1,6 @@
 # H018｜Playwright / CI 正式 H5 基线
 
-**Status:** User Review  
+**Status:** Accepted  
 **Phase:** Test  
 **Depends on:** H002, H004, H013
 
@@ -56,4 +56,12 @@
 - OpenCode Review #150：success，最终结论 `No material findings`；确认前序 broken-image、`networkidle`、viewport、dead env 与文档一致性问题均已解决。
 - 合入 `dev` 后 GitHub Actions Build #401：success；说明验收加固并非仅在 PR 分支成立，`dev` 落地后的完整 CI 仍保持全绿。
 
-当前 H018 的任务卡验收项已有可复验工程证据支持。待用户明确验收后方可标记为 `Accepted`。
+### 真实 test 晋级门禁
+
+- PR：#29 `chore: verify dev → test gate after H018`，仅用于真实触发 `dev → test` 条件，不合并。
+- GitHub Actions Build #406 的 `Test branch gate`：success；不再是 `dev` 普通 Build 中的 skipped 状态。
+- `VITE_APP_ENV=test`、`VITE_DATA_MODE=api` 环境策略通过；test bundle 身份验证通过；bundle 中无 `mockServiceWorker.js`。
+- production-like Playwright test gate：4/4 passed，覆盖 build identity、`/`、`/profile`、`/settings`。
+- AI Review 最终通过；独立人工 review 无 blocker。
+
+H018 已由用户明确验收为 `Accepted`。
