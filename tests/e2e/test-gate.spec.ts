@@ -12,8 +12,24 @@ function collectPageErrors(page: Page) {
   return errors
 }
 
-async function expectBasicRouteHealth(page: Page) {
+async function waitForRouteReadiness(page: Page) {
   await expect(page.locator('[data-h5-route-active="true"]')).toBeVisible()
+  await page.evaluate(async () => {
+    await document.fonts.ready
+  })
+  await expect
+    .poll(
+      () =>
+        page.locator('img:visible').evaluateAll((nodes) =>
+          nodes.every((node) => (node as HTMLImageElement).complete),
+        ),
+      { message: 'visible images did not settle before route health checks', timeout: 5_000 },
+    )
+    .toBe(true)
+}
+
+async function expectBasicRouteHealth(page: Page) {
+  await waitForRouteReadiness(page)
 
   const overflow = await page.locator('[data-page-scroll]').evaluate((node) => {
     const element = node as HTMLElement
@@ -51,7 +67,6 @@ for (const path of criticalRoutes) {
 
     await page.goto(routeUrl(path), { waitUntil: 'domcontentloaded' })
     await expectBasicRouteHealth(page)
-    await page.waitForTimeout(100)
 
     expect(pageErrors, pageErrors.join('\n')).toEqual([])
   })
