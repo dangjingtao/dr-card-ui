@@ -7,6 +7,7 @@ dist/
 *.log
 playwright-report/
 test-results/
+test-evidence-site/
 
 # Figma 导出脚本的可再生产物（交付件见 design-export/）
 scripts/figma-export/out/
