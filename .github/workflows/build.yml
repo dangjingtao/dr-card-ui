@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   build:
@@ -124,6 +125,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Formal H5 browser regression
+        id: formal-e2e
         shell: bash
         env:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
@@ -140,6 +142,22 @@ jobs:
           done
           cat /tmp/dr-card-playwright-preview.log
           exit 1
+
+      - name: Verify H019 evidence assembler
+        if: always() && steps.formal-e2e.outcome != 'skipped'
+        env:
+          EVIDENCE_COMMIT_SHA: ${{ github.sha }}
+          EVIDENCE_BRANCH: ${{ github.head_ref || github.ref_name }}
+          EVIDENCE_REPOSITORY: ${{ github.repository }}
+          EVIDENCE_RUN_ID: ${{ github.run_id }}
+          EVIDENCE_RUN_ATTEMPT: ${{ github.run_attempt }}
+          EVIDENCE_PLAYWRIGHT_OUTCOME: ${{ steps.formal-e2e.outcome }}
+          EVIDENCE_BRIDGE_STATUS: not verified — H015 real Native protocol is blocked
+        run: |
+          npm run report:evidence
+          test -f test-evidence-site/latest/index.html
+          test -f "test-evidence-site/commits/$GITHUB_SHA/summary.json"
+          grep -F 'Browser CI evidence only' test-evidence-site/latest/index.html
 
       - name: Build test bundle
         run: npm run build:test
@@ -193,7 +211,7 @@ jobs:
     name: Test branch gate
     if: github.ref_name == 'test' || github.base_ref == 'test'
     runs-on: ubuntu-latest
-    timeout-minutes: 14
+    timeout-minutes: 18
     env:
       VITE_APP_ENV: test
       VITE_DATA_MODE: api
@@ -235,7 +253,27 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
+      - name: Restore previous cumulative evidence site
+        continue-on-error: true
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p test-evidence-site
+          ARTIFACT_URL="$(gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts?name=h019-evidence-site&per_page=20" --jq '[.artifacts[] | select(.expired == false)] | sort_by(.created_at) | reverse | .[0].archive_download_url // empty')"
+          if [ -z "$ARTIFACT_URL" ]; then
+            echo 'No previous H019 site artifact found; starting a new evidence history.'
+            exit 0
+          fi
+          curl --fail --silent --show-error --location \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "$ARTIFACT_URL" \
+            --output /tmp/h019-evidence-site.zip
+          unzip -q -o /tmp/h019-evidence-site.zip -d test-evidence-site
+
       - name: Run production-like test browser gate
+        id: test-playwright
         shell: bash
         env:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
@@ -254,3 +292,97 @@ jobs:
 
           cat /tmp/dr-card-test-playwright.log
           exit 1
+
+      - name: Assemble H019 evidence site
+        if: always()
+        env:
+          EVIDENCE_COMMIT_SHA: ${{ github.sha }}
+          EVIDENCE_BRANCH: ${{ github.head_ref || github.ref_name }}
+          EVIDENCE_REPOSITORY: ${{ github.repository }}
+          EVIDENCE_RUN_ID: ${{ github.run_id }}
+          EVIDENCE_RUN_ATTEMPT: ${{ github.run_attempt }}
+          EVIDENCE_PLAYWRIGHT_OUTCOME: ${{ steps.test-playwright.outcome }}
+          EVIDENCE_BRIDGE_STATUS: not verified — H015 real Native protocol is blocked
+        run: npm run report:evidence
+
+      - name: Write H019 Actions summary
+        if: always()
+        shell: bash
+        run: |
+          if [ -f test-evidence-site/summary.md ]; then
+            cat test-evidence-site/summary.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo '## H5 test evidence' >> "$GITHUB_STEP_SUMMARY"
+            echo '' >> "$GITHUB_STEP_SUMMARY"
+            echo 'Evidence assembly did not produce summary.md.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload raw H019 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: h019-test-evidence-${{ github.sha }}
+          if-no-files-found: warn
+          retention-days: 30
+          path: |
+            playwright-report/
+            test-results/
+            dist/build-meta.json
+
+      - name: Upload cumulative H019 evidence site
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: h019-evidence-site
+          if-no-files-found: error
+          retention-days: 30
+          path: test-evidence-site/
+
+      - name: Check independent evidence Pages configuration
+        if: always()
+        id: evidence-pages-config
+        shell: bash
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CF_PROJECT: ${{ vars.CF_TEST_EVIDENCE_PROJECT }}
+        run: |
+          if [ "$CF_PROJECT" = "dr-card-ui" ]; then
+            echo '::warning::H019 refuses to deploy evidence into the formal dr-card-ui Pages project.'
+            echo 'ready=false' >> "$GITHUB_OUTPUT"
+          elif [ -n "$CF_TOKEN" ] && [ -n "$CF_ACCOUNT" ] && [ -n "$CF_PROJECT" ]; then
+            echo 'ready=true' >> "$GITHUB_OUTPUT"
+          else
+            echo '::notice::H019 Cloudflare publish skipped: configure CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID and CF_TEST_EVIDENCE_PROJECT for a separate Pages project.'
+            echo 'ready=false' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish independent H019 evidence Pages
+        if: always() && steps.evidence-pages-config.outputs.ready == 'true'
+        id: evidence-pages-deploy
+        continue-on-error: true
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy test-evidence-site --project-name=${{ vars.CF_TEST_EVIDENCE_PROJECT }} --branch=${{ vars.CF_TEST_EVIDENCE_BRANCH || 'main' }}
+
+      - name: Record H019 publish status
+        if: always()
+        shell: bash
+        env:
+          CONFIG_READY: ${{ steps.evidence-pages-config.outputs.ready }}
+          DEPLOY_OUTCOME: ${{ steps.evidence-pages-deploy.outcome }}
+          CF_PROJECT: ${{ vars.CF_TEST_EVIDENCE_PROJECT }}
+        run: |
+          echo '' >> "$GITHUB_STEP_SUMMARY"
+          echo '### Evidence delivery' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Raw GitHub artifact: `h019-test-evidence-${{ github.sha }}`' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Cumulative site artifact: `h019-evidence-site`' >> "$GITHUB_STEP_SUMMARY"
+          if [ "$CONFIG_READY" != "true" ]; then
+            echo '- Cloudflare Pages: skipped (independent evidence project is not fully configured).' >> "$GITHUB_STEP_SUMMARY"
+          elif [ "$DEPLOY_OUTCOME" = "success" ]; then
+            echo "- Cloudflare Pages: published to independent project \`$CF_PROJECT\`." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- Cloudflare Pages: publish attempt did not succeed (outcome: \`${DEPLOY_OUTCOME:-unknown}\`); GitHub artifacts remain available." >> "$GITHUB_STEP_SUMMARY"
+          fi
