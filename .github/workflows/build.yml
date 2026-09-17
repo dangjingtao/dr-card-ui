@@ -210,6 +210,9 @@ jobs:
   test-gate:
     name: Test branch gate
     if: github.ref_name == 'test' || github.base_ref == 'test'
+    concurrency:
+      group: h019-test-evidence
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     timeout-minutes: 18
     env:
