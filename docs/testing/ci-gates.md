@@ -128,18 +128,23 @@ H019 在 H018 的 `test` branch gate 上增加独立证据层，不改变测试�
 - GitHub Actions Summary：状态、commit、branch、env/API mode、Bridge 验证状态和 Playwright 汇总；
 - 原始 GitHub Artifact：Playwright HTML、JSON、失败 screenshot/trace/video（若产生）及 `build-meta.json`；
 - 累计 evidence site artifact：保留 `/latest/` 与 `/commits/<sha>/`，可按 commit 追溯；
-- 可选独立 Cloudflare Pages evidence site。
+- 独立 Cloudflare Pages evidence site。
 
 Cloudflare 发布必须使用独立 Pages 项目。workflow 会拒绝把 evidence site 发布到正式 `dr-card-ui` Pages 项目。
 
-需要的仓库配置：
+需要的 Cloudflare 凭据：
 
-- Secret `CLOUDFLARE_API_TOKEN`；
-- Secret `CLOUDFLARE_ACCOUNT_ID`；
-- Variable `CF_TEST_EVIDENCE_PROJECT`：独立 evidence Pages 项目名，不能是 `dr-card-ui`；
+- Secret `CLOUDFLARE_API_TOKEN`，需要 Pages Read/Write；
+- Secret `CLOUDFLARE_ACCOUNT_ID`。
+
+独立项目名无需强制手工配置：
+
+- Optional Variable `CF_TEST_EVIDENCE_PROJECT`：若提供则使用该独立项目名，不能是 `dr-card-ui`；
+- 未提供时默认使用 `dr-card-ui-test-evidence`；
+- workflow 会先通过 Cloudflare Pages API 查询项目，不存在时幂等创建，再用 Wrangler Direct Upload 发布；
 - Optional Variable `CF_TEST_EVIDENCE_BRANCH`：未配置时使用 `main`。
 
-Cloudflare 未配置或发布失败不会抹掉测试证据：Actions Summary 与 GitHub Artifact 仍然保留。累计站点会优先恢复最新未过期的 `h019-evidence-site` Artifact，再写入当前 commit 快照。`test-gate` 对累计站发布串行执行；如果上一份累计站恢复失败，本次仍上传 raw artifact，但不会覆盖累计 artifact，也不会发布 Cloudflare，从而保留最后一份完整历史。
+Cloudflare 建站或发布失败不会抹掉测试证据：Actions Summary 与 GitHub Artifact 仍然保留。累计站点会优先恢复最新未过期的 `h019-evidence-site` Artifact，再写入当前 commit 快照。`test-gate` 对累计站发布串行执行；如果上一份累计站恢复失败，本次仍上传 raw artifact，但不会覆盖累计 artifact，也不会发布 Cloudflare，从而保留最后一份完整历史。
 
 Evidence 页面显式声明：Browser CI evidence 不是 App WebView、真实 API 业务或 Native JSBridge 的验收结论。
 
