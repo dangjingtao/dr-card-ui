@@ -40,7 +40,7 @@ ACTIVE_FORMAL_H5_ROUTES
 - deferred formal-H5：当前商城 `/mall*` 不进入 gate；
 - 动态参数路由不通过伪造 ID 做全量枚举，待真实业务契约或稳定 fixture 存在时按业务 spec 补充。
 
-当前 Native reference 明确包括 `/legacy-home*`、`/legacy-service*`、`/legacy-profile*`，以及按产品归属属于 Native reference 的 `/device/*`、`/vending/*`、`/signin*`。
+当前 Native reference 明确包括 `/legacy-home*`、`legacy-service*`、`legacy-profile*`，以及按产品归属属于 Native reference 的 `/device/*`、`/vending/*`、`/signin*`。
 
 ### 2.2 通用 formal-H5 route smoke
 
@@ -119,9 +119,31 @@ Playwright 默认保留：
 - 失败 trace；
 - 失败 video。
 
-H019 负责把这些机器原始证据整理、上传并发布到独立报告站；H018 只建立可靠的测试与 gate 基线。
+## 5. H019 测试证据交付
 
-## 5. CI 通过后仍需人工 / 真机验证
+H019 在 H018 的 `test` branch gate 上增加独立证据层，不改变测试本身的通过标准。
+
+每次真实 test gate 会生成：
+
+- GitHub Actions Summary：状态、commit、branch、env/API mode、Bridge 验证状态和 Playwright 汇总；
+- 原始 GitHub Artifact：Playwright HTML、JSON、失败 screenshot/trace/video（若产生）及 `build-meta.json`；
+- 累计 evidence site artifact：保留 `/latest/` 与 `/commits/<sha>/`，可按 commit 追溯；
+- 可选独立 Cloudflare Pages evidence site。
+
+Cloudflare 发布必须使用独立 Pages 项目。workflow 会拒绝把 evidence site 发布到正式 `dr-card-ui` Pages 项目。
+
+需要的仓库配置：
+
+- Secret `CLOUDFLARE_API_TOKEN`；
+- Secret `CLOUDFLARE_ACCOUNT_ID`；
+- Variable `CF_TEST_EVIDENCE_PROJECT`：独立 evidence Pages 项目名，不能是 `dr-card-ui`；
+- Optional Variable `CF_TEST_EVIDENCE_BRANCH`：未配置时使用 `main`。
+
+Cloudflare 未配置或发布失败不会抹掉测试证据：Actions Summary 与 GitHub Artifact 仍然保留。累计站点会优先恢复最新未过期的 `h019-evidence-site` Artifact，再写入当前 commit 快照。
+
+Evidence 页面显式声明：Browser CI evidence 不是 App WebView、真实 API 业务或 Native JSBridge 的验收结论。
+
+## 6. CI 通过后仍需人工 / 真机验证
 
 以下内容不能因为 GitHub Actions 变绿而标记为通过：
 
