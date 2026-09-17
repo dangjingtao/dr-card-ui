@@ -58,7 +58,7 @@
 |---|---|---|
 | H017 | Vitest + React Testing Library 基线 | Accepted |
 | H018 | Playwright / CI 正式 H5 基线 | Accepted |
-| H019 | 测试报告与 Cloudflare Pages 证据站 | User Review |
+| H019 | 测试报告与 Cloudflare Pages 证据站 | Accepted |
 
 ## 主要阻塞
 
