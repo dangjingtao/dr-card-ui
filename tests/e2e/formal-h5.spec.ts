@@ -73,6 +73,26 @@ test.describe('@formal-h5 active route smoke', () => {
   }
 })
 
+test('@formal-h5 first-level tab uses CSS fade without root snapshot', async ({ page }) => {
+  const runtimeErrors = collectRuntimeErrors(page)
+
+  await page.goto('/?newcomer=off', { waitUntil: 'domcontentloaded' })
+  await expectHealthyFormalRoute(page)
+
+  const rootTransitionName = await page.evaluate(() =>
+    getComputedStyle(document.documentElement).getPropertyValue('view-transition-name').trim(),
+  )
+  expect(rootTransitionName).toBe('none')
+
+  await page.getByRole('button', { name: '泡泡' }).click()
+  await expect(page).toHaveURL(/\/points$/)
+  const routeFrame = page.locator('[data-h5-route-active="true"]')
+  await expect(routeFrame).toHaveAttribute('data-h5-route-transition', 'tab')
+  await expectHealthyFormalRoute(page)
+
+  expect(runtimeErrors, runtimeErrors.join('\n')).toEqual([])
+})
+
 test('@formal-h5 @business profile notification navigation remains inside formal H5', async ({ page }) => {
   const runtimeErrors = collectRuntimeErrors(page)
 
