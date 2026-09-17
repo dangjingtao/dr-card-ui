@@ -239,8 +239,6 @@ jobs:
         shell: bash
         env:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
-          PLAYWRIGHT_EXPECT_APP_ENV: test
-          PLAYWRIGHT_EXPECT_DATA_MODE: api
         run: |
           npm run preview -- --port 4173 --strictPort > /tmp/dr-card-test-playwright.log 2>&1 &
           PREVIEW_PID=$!
