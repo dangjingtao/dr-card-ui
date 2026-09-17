@@ -88,15 +88,26 @@ H008 仍因真实 backend base URL / auth / 核心接口契约未知而 Blocked�
 
 ## 4. Playwright 运行与产物
 
-本地运行：
+常规本地 formal-H5 回归：
 
 ```bash
-npm run test:e2e:formal
-npm run test:e2e:test-gate
 npm run test:e2e
+# 等价于
+npm run test:e2e:formal
 ```
 
-未提供 `PLAYWRIGHT_BASE_URL` 时，Playwright 会自动构建 preview bundle 并启动本地 preview server；CI 对已经构建好的 bundle 设置 `PLAYWRIGHT_BASE_URL`，避免重复构建。
+未提供 `PLAYWRIGHT_BASE_URL` 时，Playwright 会自动构建 preview bundle 并启动本地 preview server。
+
+`test:e2e:test-gate` 专门验证已经构建的 `test + api` bundle，不直接复用默认 preview server。手工复现时应先构建并启动 test bundle，再显式提供目标地址，例如：
+
+```bash
+npm run build:test
+npm run preview -- --port 4173 --strictPort
+# 另一个终端
+PLAYWRIGHT_BASE_URL=http://127.0.0.1:4173 npm run test:e2e:test-gate
+```
+
+CI 对已经构建好的 preview/test bundle 设置 `PLAYWRIGHT_BASE_URL`，避免重复构建，也保证测试的环境身份与待验产物一致。
 
 Playwright 默认保留：
 
