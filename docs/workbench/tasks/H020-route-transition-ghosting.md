@@ -90,6 +90,7 @@ H016 原实现把共享一级 Tab 也接入 React Router native View Transition�
 - PR：#27 `fix/h020-route-transition-ghosting → dev`。
 - Cloudflare branch preview：`https://fix-h020-route-transition-gh.dr-card-ui.pages.dev`，用户已实际切换一级 Tab 验收。
 - 预览实现 Build #395 曾完整通过 Static hygiene、Typecheck、Unit/Component、Formal H5 browser regression 与各环境构建；后续新增的一条 native-VT 观察型测试因生命周期采样假设不成立被撤销，不作为产品行为契约。
+- H020 在合并前重新基于 H018 最终验收后的最新 `dev` 收敛，保留 H018 的稳定 readiness E2E 改动，不反向覆盖测试基线。
 - 用户验收：2026-09-17 明确确认“合并吧，可以了。”，H020 标记 `Accepted`。
 - 最终 rebased CI 与合并 SHA 以 PR #27 / `dev` 历史为准。
 
