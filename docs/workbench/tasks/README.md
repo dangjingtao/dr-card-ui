@@ -88,6 +88,17 @@
 
 H021–H024 完成后，后续工作原则上按功能页面或可独立验收的业务闭环建卡，不再把通用原则拆成无限基础设施卡。
 
+### F. JSBridge 与宿主能力收口
+
+| ID | 任务 | Issue |
+|---|---|---|
+| H025 | JSBridge Capability Runtime 可扩展内核 | [#43](https://github.com/dangjingtao/dr-card-ui/issues/43) |
+| H026 | Android / iOS Transport 与回调适配机制 | [#44](https://github.com/dangjingtao/dr-card-ui/issues/44) |
+| H027 | Bridge Lab 真机联调页升级 | [#45](https://github.com/dangjingtao/dr-card-ui/issues/45) |
+| H028 | 正式 H5 Native 能力盘点与接口征集清单 | [#46](https://github.com/dangjingtao/dr-card-ui/issues/46) |
+
+H025–H028 继续沿用本仓库 H021 起的 GitHub Issue 工作项契约 + 本 README 索引模式；不接入 Mira Organization Project/Issue Fields，也不引入第二套任务编号。
+
 ## 主要阻塞
 
 - H008：真实 backend base URL、认证方式、核心接口契约尚未确认；禁止为完成任务自行发明协议。
