@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Headset, Send } from 'lucide-react'
+import { Headset, MessageSquare, Send } from 'lucide-react'
 import PageContainer from '../components/mobile/PageContainer'
 import ChatMessageList from '../components/mobile/ChatMessageList'
 import DebugPanel from '../components/mobile/DebugPanel'
@@ -46,8 +46,18 @@ export default function ServiceChat() {
   /** 人工客服状态机：idle → queuing（→ mock 1.2s 后 connected） */
   const [humanStage, setHumanStage] = useState<HumanStage>('idle')
 
-  /** T013R5：企微二维码弹层 —— 与壳层 TitleBar 联动，靠 `#wecom` hash 触发 */
+  /** H021：企微二维码仍是页面业务动作，不再依赖共享宿主 TitleBar；hash 只承载当前页弹层状态。 */
   const [wecomOpen, setWecomOpen] = useState(false)
+  const openWecom = () => {
+    navigate(
+      {
+        pathname: location.pathname,
+        search: location.search,
+        hash: '#wecom',
+      },
+      { replace: true, state: location.state },
+    )
+  }
   const closeWecom = () => {
     setWecomOpen(false)
     /* H016：通过 Router replace 清 hash，保留当前 history entry/state，不绕过 React Router。 */
@@ -173,11 +183,20 @@ export default function ServiceChat() {
 
   return (
     <PageContainer className="flex min-h-full flex-col pb-0" inset={false}>
-      {/* T013R5：「企微客服」pill 移回壳层 TitleBar 右侧，页内顶部区只保留居中小字。 */}
-      <div className="px-4 pt-3">
-        <p className="text-center text-xs text-text-tertiary">
+      {/* H021：这是页面自己的客服动作区，不是宿主导航栏。 */}
+      <div className="flex items-center justify-between gap-3 px-4 pt-3">
+        <p className="min-w-0 text-xs text-text-tertiary">
           AI 客服 {CHAT_BOT.name} 为您服务
         </p>
+        <button
+          type="button"
+          data-chat-wecom-entry
+          onClick={openWecom}
+          className="inline-flex min-h-9 flex-none items-center gap-1 whitespace-nowrap rounded-pill bg-surface px-3 text-[13px] font-medium text-text-brand shadow-sm active:bg-surface-selected"
+        >
+          <MessageSquare className="h-3.5 w-3.5" aria-hidden />
+          企微客服
+        </button>
       </div>
 
       <div className="flex-1 px-4 pb-4 pt-4" data-human-stage={humanStage}>
@@ -231,7 +250,7 @@ export default function ServiceChat() {
       </div>
 
       {/* T013R4：企微二维码弹层恢复（R1+R2 撤掉的 #71 重新启用，但仅承担"企微客服"入口）。
-        * 触发：点击壳层 TitleBar 右侧「企微客服」pill（data-chat-wecom-entry）。
+        * 触发：点击页面业务动作区「企微客服」pill（data-chat-wecom-entry）。
         * 行为：仅展示福利官二维码 + 「取消」按钮，不承担"转人工"职责 ——「人工」走 requestHuman。
         * T013R5：「取消」按钮居中（外层 flex justify-center）。 */}
       <BottomSheet
