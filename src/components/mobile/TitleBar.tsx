@@ -10,6 +10,8 @@ export interface TitleBarProps {
   action?: ReactNode
   /** 文本型右侧动作需要更宽的对称槽位，保证标题仍然严格居中。 */
   actionWide?: boolean
+  /** active formal H5 在 App WebView 内随视口铺满；Native reference/deferred 继续保留预览兼容宽度。 */
+  fullWidth?: boolean
   className?: string
 }
 
@@ -27,6 +29,7 @@ export default function TitleBar({
   onBack,
   action,
   actionWide = false,
+  fullWidth = false,
   className = '',
 }: TitleBarProps) {
   const navigate = useNavigate()
@@ -37,11 +40,12 @@ export default function TitleBar({
   const gridColumns = actionWide
     ? 'grid-cols-[96px_minmax(0,1fr)_96px]'
     : 'grid-cols-[36px_minmax(0,1fr)_36px]'
+  const widthClass = fullWidth ? '' : 'mx-auto max-w-legacy-shell'
 
   if (!back && !action) {
     return (
       <header className={`w-full bg-transparent ${className}`} data-title-bar="plain">
-        <div className="mx-auto flex h-11 w-full max-w-legacy-shell items-center justify-center px-3 text-center">
+        <div className={`flex h-11 w-full items-center justify-center px-3 text-center ${widthClass}`}>
           <h1 className="m-0 text-[18px] font-semibold leading-6 text-text-primary">{title}</h1>
         </div>
       </header>
@@ -53,7 +57,7 @@ export default function TitleBar({
       className={`w-full min-w-0 overflow-hidden bg-transparent ${className}`}
       data-title-bar={back ? 'back' : 'action'}
     >
-      <div className={`mx-auto grid h-11 w-full min-w-0 max-w-legacy-shell items-center px-3 ${gridColumns}`}>
+      <div className={`grid h-11 w-full min-w-0 items-center px-3 ${gridColumns} ${widthClass}`}>
         {back ? (
           <div className="flex h-9 items-center justify-start">
             <button
