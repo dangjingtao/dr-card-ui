@@ -159,12 +159,12 @@ describe('iOS-style messageHandler transport', () => {
   })
 
   it('correlates concurrent callbacks even when Native completes them out of order', async () => {
-    const posted: Array<{ requestId: string }> = []
+    const posted: Array<{ requestId: string; input: number }> = []
     bridgeWindow.webkit = {
       messageHandlers: {
         bridge: {
           postMessage(payload) {
-            posted.push(payload as { requestId: string })
+            posted.push(payload as { requestId: string; input: number })
           },
         },
       },
@@ -191,7 +191,10 @@ describe('iOS-style messageHandler transport', () => {
     const firstPromise = Promise.resolve(first.invoke())
     const secondPromise = Promise.resolve(second.invoke())
 
-    expect(posted).toEqual([{ requestId: 'req-1' }, { requestId: 'req-2' }])
+    expect(posted).toEqual([
+      { requestId: 'req-1', input: 1 },
+      { requestId: 'req-2', input: 2 },
+    ])
     expect(transport.pendingCount()).toBe(2)
 
     transport.handleCallback({ requestId: 'req-2', ok: true, payload: 20 })
