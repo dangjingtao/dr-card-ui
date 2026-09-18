@@ -115,6 +115,7 @@ export default function BuddyPhoneInvite() {
               placeholder={BUDDY_INVITE_COPY.phonePlaceholder}
               value={phone}
               variant="pill"
+              inputClassName="placeholder:text-text-tertiary"
               loading={outcome === 'searching'}
               onChange={(event) => {
                 searchRequest.current += 1
