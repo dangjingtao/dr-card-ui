@@ -84,7 +84,7 @@ T003 已由用户于 2026-08-21 在此缺口未闭合的情况下明确验收为
 | mobile 组件 | 现状 | 结论与去向 |
 | --- | --- | --- |
 | `mobile/BottomNav.tsx` | 消费 `ui/BottomNavigation`，注入路由与 `TAB_ROUTES` | 保留。壳层负责路由绑定，Core 负责视觉，不重复。 |
-| `mobile/TitleBar.tsx` | H021 后仅服务 Native reference / deferred / 工程兜底壳层 | 兼容保留；active formal H5 不渲染共享宿主标题栏，不与业务页面标题混用。 |
+| `mobile/TitleBar.tsx` | H021 后统一承担 H5 的 App 标准业务标题栏 | 保留；不模拟系统状态栏。active formal H5 使用 44px App 标题栏并随 WebView 铺满；Native reference / deferred 保留历史预览宽度。 |
 | `mobile/Header.tsx` | 曾为 `TitleBar` 的无引用 re-export | 已删除；标题栏统一使用 `mobile/TitleBar.tsx`。 |
 | `mobile/EmptyState.tsx` | 曾为 `ui/EmptyState` 的无引用纯透传包装 | 已删除；页面直接使用 `ui/EmptyState`。 |
 | `mobile/PageContainer.tsx` | 正式 H5 页面根容器 | 保留；H021 已移除 480px 设备壳限制，随 WebView 宽度铺满。 |
