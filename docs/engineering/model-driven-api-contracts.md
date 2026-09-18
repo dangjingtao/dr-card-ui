@@ -88,8 +88,8 @@ Handler 应：
 
 来源：`docs/api/dearseed-openapi.json` 与 `docs/api/dearseed-api.md`。
 
-- Endpoint：`GET /api/userpoints/index`
-- Params：`page`、`pageSize`
+- Existing raw CRUD endpoint：`GET /api/userpoints/index`（存在于 OpenAPI，但**不直接提升为正式 H5 页面 endpoint**）
+- Existing CRUD params：`page`、`pageSize`
 - UserPoints fields：
   - `user_id`
   - `points`
@@ -107,17 +107,18 @@ Handler 应：
   - `last_page`
 - Generic envelope：`{ code, msg, data }`
 
-### Frontend decision / temporary usage
+### Frontend proposal / temporary usage
 
-- `/points/detail` 暂时直接消费该 read-only model index。
-- 这不代表 raw CRUD 是最终 H5 业务 API。
+- 页面 service 暂定 `GET /__h024/user-points?page&pageSize` 作为 **frontend-proposed transport seam**。
+- MSW 用该 seam 验证“模型字段 + envelope + pagination → adapter → page”链路。
+- 不直接调用现有 `/api/userpoints/index`：OpenAPI 虽确认该 CRUD 路径，但 authorization 机制未知，且它并不等于最终 H5 业务 API。
 - `type/object_type` 到列表 `kind/title` 的映射属于 adapter。
 - 页面仍保留已有 UI fixture state 用于视觉验收，但它不改变 service/HTTP/MSW 调用方式。
 
 ### Still unknown
 
-- DearSeed 正式认证方式。
-- 是否会提供专用 H5 泡泡值业务 endpoint。
+- DearSeed 正式认证方式；因此当前 raw CRUD 不能被页面当作已可用的 production transport。
+- 专用 H5 泡泡值业务 endpoint（路径、method、params、响应是否继续复用 CRUD envelope）。
 - 最终业务流水 title/copy 与对象详情关联方式。
 - 后端真实联调 base URL / 环境治理。
 
@@ -125,13 +126,14 @@ Handler 应：
 
 ## 6. 后端正式接口到位后的迁移方式
 
-若未来得到：
+若未来后端正式确认：
 
 ```text
 GET /api/h5/user-points
+Authorization: <confirmed mechanism>
 ```
 
-且响应与 CRUD 不同：
+且响应与当前 proposed seam / CRUD 不同：
 
 1. 修改 `contracts.ts`；
 2. 修改 `index.ts` 的 endpoint / params；
