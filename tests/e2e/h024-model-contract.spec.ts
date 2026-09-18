@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-const USER_POINTS_PATH = '/api/userpoints/index'
+const USER_POINTS_PATH = '/__h024/user-points'
 
 test('@formal-h5 H024 points detail crosses HTTP/MSW and renders adapter view-model', async ({ page }) => {
   const responsePromise = page.waitForResponse(
