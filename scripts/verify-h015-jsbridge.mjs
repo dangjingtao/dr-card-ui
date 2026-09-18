@@ -53,6 +53,7 @@ function collectFormalH5PageFiles(directory, pageRoot = path.normalize('src/page
 try {
   const {
     NativeBridgeError,
+    closeWebView,
     getLoginToken,
     getNativeBridgeDiagnostics,
   } = await vite.ssrLoadModule('/src/services/nativeBridge.ts')
@@ -70,9 +71,17 @@ try {
     mode: 'native',
     host: 'android',
     hostVersion: null,
-    capabilities: { getLoginToken: true },
+    capabilities: { getLoginToken: true, closeWebView: false },
   })
   assert.equal(await getLoginToken(), 'token-first')
+  await assert.rejects(
+    closeWebView(),
+    (error) =>
+      error instanceof NativeBridgeError &&
+      error.code === 'capability-unsupported' &&
+      error.capability === 'closeWebView',
+    'closeWebView must remain explicitly unsupported until Native confirms the protocol',
+  )
 
   const secondBridge = {
     marker: 'second',
@@ -135,7 +144,7 @@ try {
     mode: 'native',
     host: 'ios',
     hostVersion: null,
-    capabilities: { getLoginToken: false },
+    capabilities: { getLoginToken: false, closeWebView: false },
   })
 
   for (const file of collectFormalH5PageFiles('src/pages')) {
@@ -153,7 +162,7 @@ try {
   assert.doesNotMatch(adapterSource, /mockToken|fakeToken|fallbackToken/)
 
   console.log(
-    'H015 PASS: Android getLoginToken is centralized, late injection and receiver binding are preserved, Promise/timeout/error semantics are deterministic, iOS is not falsely unified, and formal H5 pages do not access host globals directly.',
+    'H015 PASS: Android getLoginToken is centralized, closeWebView remains explicitly unsupported without inventing a host protocol, late injection and receiver binding are preserved, Promise/timeout/error semantics are deterministic, iOS is not falsely unified, and formal H5 pages do not access host globals directly.',
   )
 } finally {
   if (originalWindow === undefined) delete globalThis.window
