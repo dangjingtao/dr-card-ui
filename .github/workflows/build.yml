@@ -63,6 +63,9 @@ jobs:
       - name: Verify H022 route-state convergence
         run: npm run verify:h022
 
+      - name: Verify H023 shared components
+        run: npm run verify:h023
+
       - name: Smoke test development server
         shell: bash
         run: |
