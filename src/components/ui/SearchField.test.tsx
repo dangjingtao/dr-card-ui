@@ -29,11 +29,13 @@ describe('SearchField', () => {
         placeholder="搜索洗护体验券"
         variant="pill"
         size="compact"
+        inputClassName="placeholder:text-text-tertiary"
       />,
     )
 
     const field = screen.getByRole('searchbox', { name: '搜索洗护体验券' })
     expect(field.closest('[data-search-field="pill"]')?.getAttribute('data-search-field-size')).toBe('compact')
+    expect(field.className).toContain('placeholder:text-text-tertiary')
   })
 
   it('supports tel input and reports loading state for async searches', () => {
