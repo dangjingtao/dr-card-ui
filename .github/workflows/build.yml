@@ -60,6 +60,9 @@ jobs:
       - name: Verify H015 JSBridge boundary
         run: npm run verify:h015
 
+      - name: Verify H022 route-state convergence
+        run: npm run verify:h022
+
       - name: Smoke test development server
         shell: bash
         run: |

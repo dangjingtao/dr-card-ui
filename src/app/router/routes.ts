@@ -23,6 +23,8 @@ import { CircleDot, Headset, Home, QrCode, UserRound } from 'lucide-react'
 
 export type OverlayType = 'dialog' | 'sheet'
 export type RouteLeadingAction = 'auto' | 'back' | 'close' | 'none'
+export type RouteImplementationKey = 'membership' | 'claim-success'
+export type RouteImplementationVariant = 'campaign' | 'onboarding'
 
 export interface RouteState {
   /** URL `?state=` 取值 */
@@ -67,6 +69,10 @@ export interface RouteMeta {
   leadingAction?: RouteLeadingAction
   /** 标题栏右侧动作 */
   titleBarAction?: 'settings' | 'notifications'
+  /** H022：合法多 URL 共用同一页面实现时使用，不用复制页面组件。 */
+  implementationKey?: RouteImplementationKey
+  /** 同一实现允许的轻量内容分支；不得用它承载另一套页面实现。 */
+  implementationVariant?: RouteImplementationVariant
   /** 本路由承载的实施节点 */
   nodes: number[]
   /** 所属任务卡 */
@@ -671,6 +677,8 @@ export const ROUTES: RouteMeta[] = [
   },
   {
     path: '/onboarding/success',
+    implementationKey: 'claim-success',
+    implementationVariant: 'onboarding',
     title: '填写完成后领取成功',
     /* 原型是叠在专栏首页上的成功弹窗，非独立页面：标题栏与首页一致，不出返回箭头 */
     titleBar: 'plain',
@@ -683,6 +691,8 @@ export const ROUTES: RouteMeta[] = [
   },
   {
     path: '/claim/success',
+    implementationKey: 'claim-success',
+    implementationVariant: 'campaign',
     title: '领取成功',
     /* 同 #25：专栏背景 + 遮罩 + 居中弹窗，标题栏沿用专栏 */
     titleBar: 'plain',
@@ -735,6 +745,7 @@ export const ROUTES: RouteMeta[] = [
   {
     /* T051v2-rollback｜v2 升格为底部 Tab 5 的改动已回滚；本页保持既有入口，不参与 Tab 5。 */
     path: '/membership',
+    implementationKey: 'membership',
     title: '会员中心',
     titleBarTitle: '会员中心',
     nodes: [6],
@@ -746,6 +757,7 @@ export const ROUTES: RouteMeta[] = [
   /* T046｜诗得丽专栏内会员中心入口：复用既有 Membership 组件，保持 T051 联动路由 slug */
   {
     path: '/dearseed/membership',
+    implementationKey: 'membership',
     title: '会员中心',
     titleBarTitle: '会员中心',
     nodes: [6],
