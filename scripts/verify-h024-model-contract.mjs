@@ -36,6 +36,11 @@ try {
   assert.equal(firstPage.records[0].kind, 'income')
   assert.equal(firstPage.records[0].title, '任务泡泡值')
 
+  const defaultResponse = await fetch('https://h024.mock.invalid' + USER_POINTS_INDEX_PATH)
+  const defaultPayload = await defaultResponse.json()
+  assert.equal(defaultPayload.data.current_page, 1)
+  assert.equal(defaultPayload.data.per_page, 15)
+
   const emptyPage = await listUserPointRecords({ page: 2, pageSize: 15 })
   assert.deepEqual(emptyPage.records, [])
   assert.equal(emptyPage.pagination.page, 2)
