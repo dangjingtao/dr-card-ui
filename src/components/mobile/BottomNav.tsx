@@ -61,7 +61,7 @@ export default function BottomNav({ variant = 'main' }: { variant?: 'main' | 'le
       items={items}
       value={active}
       onChange={handleChange}
-      className="relative z-40 w-full shrink-0"
+      className={`relative z-40 w-full shrink-0 ${isLegacy ? 'mx-auto max-w-legacy-shell' : ''}`}
     />
   )
 }
