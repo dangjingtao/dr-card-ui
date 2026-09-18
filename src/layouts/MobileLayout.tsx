@@ -10,7 +10,7 @@ import {
 import BottomNav from '../components/mobile/BottomNav'
 import TitleBar from '../components/mobile/TitleBar'
 import { findRouteByPathname, isLegacyTabPath } from '../app/router/routes'
-import { isActiveFormalH5Route, isFormalH5TabPath } from '../app/router/routeScope'
+import { getRouteScope, isActiveFormalH5Route, isFormalH5TabPath } from '../app/router/routeScope'
 import { protectedFixtureRedirect } from '../app/fixtures/useFixture'
 import H5ScrollRestoration from '../components/mobile/H5ScrollRestoration'
 
@@ -108,7 +108,9 @@ export default function MobileLayout() {
   const showLegacyNav = isLegacyTabPath(location.pathname)
   const showNav = showLegacyNav || isFormalH5TabPath(location.pathname)
   const route = findRouteByPathname(location.pathname)
-  const activeFormalH5 = isActiveFormalH5Route(route)
+  const routeScope = route ? getRouteScope(route) : undefined
+  const activeFormalH5 =
+    routeScope?.ownership === 'formal-h5' && routeScope.engineeringScope === 'active'
   const fixtureRedirect = activeFormalH5 ? protectedFixtureRedirect(location) : null
   const titleBarMode = route?.titleBar ?? 'back'
   const fallbackTitle = location.pathname === '/tokens' ? '品牌 Token 展示' : '页面不存在'
