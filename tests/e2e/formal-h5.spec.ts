@@ -30,6 +30,17 @@ async function waitForRouteReadiness(page: Page) {
   await page.evaluate(async () => {
     await document.fonts.ready
   })
+  // H016/H020 route transitions can temporarily translate the active frame by 8px. Measuring
+  // scrollWidth during that 130–150ms window creates a false horizontal-overflow failure.
+  await expect
+    .poll(
+      () =>
+        routeFrame.evaluate((node) =>
+          node.getAnimations().every((animation) => animation.playState === 'finished'),
+        ),
+      { message: 'route transition did not settle before route health checks', timeout: 2_000 },
+    )
+    .toBe(true)
   await expect
     .poll(
       () =>
