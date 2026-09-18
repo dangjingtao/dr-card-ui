@@ -154,6 +154,14 @@ function collectArchitectureViolations(program) {
         inspectModuleSpecifier(node, node.arguments[0])
       }
 
+      if (ts.isStringLiteralLike(node) && node.text.includes('max-w-[480px]')) {
+        report(
+          node,
+          'no-device-shell-width',
+          'Formal H5 source must not hardcode the old 480px device-shell width; use full-width WebView layout or an explicit semantic token.',
+        )
+      }
+
       if (!allowsStorage && ts.isIdentifier(node) && (node.text === 'localStorage' || node.text === 'sessionStorage')) {
         report(node, 'no-direct-web-storage', 'Web Storage must be accessed through src/storage/.')
       }
