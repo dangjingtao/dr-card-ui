@@ -225,8 +225,85 @@ export interface TimelineItem { id?: string | number; title: ReactNode; time?: R
 export interface TimelineProps { items?: TimelineItem[]; className?: string }
 export function Timeline({ items = [], className = '' }: TimelineProps) { return <ol className={cn('space-y-0', className)}>{items.map((item,index)=><li key={item.id ?? index} className="relative flex gap-3 pb-5"><span className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-primary"/>{index < items.length-1 && <span className="absolute left-[4px] top-4 h-[calc(100%-8px)] w-px bg-border-subtle"/>}<div className="min-w-0"><div className="text-sm font-medium text-text-primary">{item.title}</div>{item.time && <div className="mt-0.5 text-xs text-text-tertiary">{item.time}</div>}{item.description && <div className="mt-1 text-sm text-text-secondary">{item.description}</div>}</div></li>)}</ol> }
 
-export interface SearchFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'> { value?: string; onChange?: ChangeEventHandler<HTMLInputElement>; onClear?: () => void; loading?: boolean }
-export function SearchField({ value = '', onChange, onClear, loading = false, placeholder = '搜索', className = '', ...props }: SearchFieldProps) { return <label className={cn('flex min-h-10 items-center gap-2 rounded-control bg-surface-subtle px-3 focus-within:bg-surface focus-within:ring-1 focus-within:ring-border-focused', className)}>{loading ? <LoaderCircle className="h-4 w-4 animate-spin text-text-tertiary"/> : <Search className="h-5 w-5 shrink-0 text-text-tertiary"/>}<input type="search" value={value} onChange={onChange} placeholder={placeholder} className="min-w-0 flex-1 bg-transparent text-base text-text-primary outline-none placeholder:text-text-placeholder [&::-webkit-search-cancel-button]:hidden" {...props}/>{value && <button type="button" aria-label="清除搜索" onClick={onClear} className={cn('-mr-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-control text-text-tertiary', focusRing)}><X className="h-5 w-5"/></button>}</label> }
+export interface SearchFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'size'> {
+  value?: string
+  onChange?: ChangeEventHandler<HTMLInputElement>
+  onClear?: () => void
+  loading?: boolean
+  variant?: 'subtle' | 'pill'
+  size?: 'compact' | 'regular'
+  inputClassName?: string
+}
+export function SearchField({
+  value = '',
+  onChange,
+  onClear,
+  loading = false,
+  variant = 'subtle',
+  size = 'regular',
+  placeholder = '搜索',
+  type = 'search',
+  disabled = false,
+  className = '',
+  inputClassName = '',
+  'aria-label': ariaLabel,
+  ...props
+}: SearchFieldProps) {
+  const pill = variant === 'pill'
+  const compact = size === 'compact'
+  return (
+    <div
+      data-search-field={variant}
+      data-search-field-size={size}
+      className={cn(
+        'flex items-center gap-2 px-3 transition',
+        compact ? 'min-h-10' : 'min-h-11',
+        pill
+          ? 'rounded-pill border border-border-subtle bg-surface shadow-sm focus-within:border-border-focused'
+          : 'rounded-control bg-surface-subtle focus-within:bg-surface focus-within:ring-1 focus-within:ring-border-focused',
+        disabled && 'cursor-not-allowed opacity-60',
+        className,
+      )}
+    >
+      <label className="flex min-w-0 flex-1 items-center gap-2">
+        {loading ? (
+          <LoaderCircle className="h-4 w-4 shrink-0 animate-spin text-text-tertiary" aria-hidden />
+        ) : (
+          <Search className="h-4 w-4 shrink-0 text-text-tertiary" aria-hidden />
+        )}
+        <input
+          type={type}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          aria-label={ariaLabel ?? placeholder}
+          aria-busy={loading || undefined}
+          disabled={disabled}
+          className={cn(
+            'min-w-0 flex-1 bg-transparent text-text-primary outline-none placeholder:text-text-placeholder [&::-webkit-search-cancel-button]:hidden',
+            compact ? 'text-xs' : 'text-sm',
+            inputClassName,
+          )}
+          {...props}
+        />
+      </label>
+      {value && onClear && (
+        <button
+          type="button"
+          aria-label="清除搜索"
+          onClick={onClear}
+          disabled={disabled}
+          className={cn(
+            '-mr-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-control text-text-tertiary transition active:bg-surface-pressed disabled:pointer-events-none',
+            focusRing,
+          )}
+        >
+          <X className="h-4 w-4" aria-hidden />
+        </button>
+      )}
+    </div>
+  )
+}
 
 export interface MenuProps { open: boolean; children?: ReactNode; className?: string; onClose?: () => void }
 export function Menu({ open, children, className = '', onClose }: MenuProps) {

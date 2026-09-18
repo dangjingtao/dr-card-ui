@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { ChevronRight, Droplets, Gift, Search, Ticket } from 'lucide-react'
+import { ChevronRight, Droplets, Gift, Ticket } from 'lucide-react'
 import DebugPanel from '../components/mobile/DebugPanel'
 import PageContainer from '../components/mobile/PageContainer'
-import { BottomSheet, Button, EmptyState, SegmentedControl } from '../components/ui'
+import { BottomSheet, Button, EmptyState, SearchField, SegmentedControl } from '../components/ui'
 import { useFixtureState, useOverlay } from '../app/fixtures/useFixture'
 import { findRouteByPathname } from '../app/router/routes'
 import {
@@ -121,20 +121,19 @@ export default function Exchange() {
   return (
     <PageContainer className="flex flex-col pb-8" inset={false}>
       <div className="mx-4 mt-1 flex items-center justify-between gap-3">
-        <label className="flex min-h-9 flex-1 items-center gap-2 rounded-pill border border-border-subtle bg-surface/90 px-3 text-text-tertiary shadow-sm focus-within:border-border-focused">
-          <Search className="h-4 w-4 shrink-0" aria-hidden />
-          <input
-            value={keyword}
-            onChange={(event) => setKeyword(event.target.value)}
-            placeholder={EXCHANGE_COPY.searchPlaceholder}
-            aria-label={EXCHANGE_COPY.searchPlaceholder}
-            className="min-w-0 flex-1 bg-transparent text-xs text-text-primary outline-none placeholder:text-text-placeholder"
-          />
-        </label>
+        <SearchField
+          value={keyword}
+          onChange={(event) => setKeyword(event.target.value)}
+          onClear={() => setKeyword('')}
+          placeholder={EXCHANGE_COPY.searchPlaceholder}
+          variant="pill"
+          size="compact"
+          className="flex-1"
+        />
         <button
           type="button"
           onClick={() => navigate('/points')}
-          className="inline-flex min-h-9 shrink-0 items-center gap-1 rounded-pill bg-surface/90 px-2.5 text-xs text-text-secondary shadow-sm transition active:scale-[.98]"
+          className="inline-flex min-h-10 shrink-0 items-center gap-1 rounded-pill bg-surface px-2.5 text-xs text-text-secondary shadow-sm transition active:scale-[.98]"
         >
           <img src={bubbleOrb} alt="" className="h-6 w-6 object-contain" />
           <strong className="text-sm font-semibold text-exchange-price-text">{BUBBLE_BALANCE.toLocaleString()}</strong>

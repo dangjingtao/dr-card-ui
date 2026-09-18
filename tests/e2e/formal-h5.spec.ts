@@ -30,6 +30,17 @@ async function waitForRouteReadiness(page: Page) {
   await page.evaluate(async () => {
     await document.fonts.ready
   })
+  // H016/H020 route transitions can temporarily translate the active frame by 8px. Measuring
+  // scrollWidth during that 130–150ms window creates a false horizontal-overflow failure.
+  await expect
+    .poll(
+      () =>
+        routeFrame.evaluate((node) =>
+          node.getAnimations().every((animation) => animation.playState === 'finished'),
+        ),
+      { message: 'route transition did not settle before route health checks', timeout: 2_000 },
+    )
+    .toBe(true)
   await expect
     .poll(
       () =>
@@ -292,6 +303,63 @@ test('@formal-h5 H022 prototype states stay on one route implementation', async 
   await page.goto('/service/chat/human?state=connected', { waitUntil: 'domcontentloaded' })
   await expectHealthyFormalRoute(page)
   await expect(page.locator('[data-queue-state]')).toHaveAttribute('data-queue-state', 'connected')
+
+  expect(runtimeErrors, runtimeErrors.join('\n')).toEqual([])
+})
+
+test('@formal-h5 H023 shared SearchField stays consistent across formal H5 consumers', async ({ page }) => {
+  const runtimeErrors = collectRuntimeErrors(page)
+
+  await page.goto('/exchange', { waitUntil: 'domcontentloaded' })
+  await expectHealthyFormalRoute(page)
+  const exchangeField = page.locator('[data-search-field="pill"][data-search-field-size="compact"] input')
+  await expect(exchangeField).toHaveCount(1)
+  await exchangeField.fill('__no_match__')
+  await expect(page.getByRole('button', { name: '清除搜索' })).toBeVisible()
+  await page.getByRole('button', { name: '清除搜索' }).click()
+  await expect(exchangeField).toHaveValue('')
+  const exchangeSearchBox = await page
+    .locator('[data-search-field="pill"][data-search-field-size="compact"]')
+    .boundingBox()
+  const exchangeBalanceBox = await page
+    .locator('[data-search-field="pill"][data-search-field-size="compact"] + button')
+    .boundingBox()
+  expect(Math.round(exchangeSearchBox?.height ?? 0)).toBe(40)
+  expect(Math.round(exchangeBalanceBox?.height ?? 0)).toBe(40)
+
+  await page.goto('/card/share', { waitUntil: 'domcontentloaded' })
+  await expectHealthyFormalRoute(page)
+  const cardShareField = page.locator('[data-search-field="subtle"][data-search-field-size="regular"] input')
+  await expect(cardShareField).toHaveCount(1)
+  await cardShareField.fill('小美')
+  await page.getByRole('button', { name: '清除搜索' }).click()
+  await expect(cardShareField).toHaveValue('')
+
+  await page.goto('/buddy/invite/phone', { waitUntil: 'domcontentloaded' })
+  await expectHealthyFormalRoute(page)
+  const phoneSearch = page.locator('[data-search-field="pill"]')
+  const phoneField = phoneSearch.locator('input[type="tel"]')
+  await expect(phoneField).toHaveCount(1)
+  await expect(phoneField).toHaveAttribute('aria-label', '输入手机号搜索搭子')
+  await expect(phoneSearch).toHaveCSS('padding-left', '16px')
+  await expect(phoneSearch).toHaveCSS('padding-right', '16px')
+
+  expect(runtimeErrors, runtimeErrors.join('\n')).toEqual([])
+})
+
+test('@formal-h5 H023 shared empty-state visual is stable across data pages', async ({ page }) => {
+  const runtimeErrors = collectRuntimeErrors(page)
+
+  for (const path of ['/address?state=empty', '/orders?state=empty']) {
+    await page.goto(path, { waitUntil: 'domcontentloaded' })
+    await expectHealthyFormalRoute(page)
+    const visual = page.locator('[data-empty-state-icon]')
+    await expect(visual).toHaveCount(1)
+    const box = await visual.boundingBox()
+    expect(box).not.toBeNull()
+    expect(Math.round(box?.width ?? 0)).toBe(96)
+    expect(Math.round(box?.height ?? 0)).toBe(96)
+  }
 
   expect(runtimeErrors, runtimeErrors.join('\n')).toEqual([])
 })
