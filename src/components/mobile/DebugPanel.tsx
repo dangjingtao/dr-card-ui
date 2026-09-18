@@ -56,7 +56,7 @@ export default function DebugPanel({ route }: DebugPanelProps) {
   return (
     <div
       data-debug-panel
-      className="pointer-events-none fixed bottom-0 left-1/2 z-[60] flex w-full max-w-[480px] -translate-x-1/2 flex-col items-end px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex w-full flex-col items-end px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"
     >
       {open && (
         <section
