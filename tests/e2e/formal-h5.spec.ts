@@ -307,7 +307,6 @@ test('@formal-h5 H022 prototype states stay on one route implementation', async 
   expect(runtimeErrors, runtimeErrors.join('\n')).toEqual([])
 })
 
-
 test('@formal-h5 H023 shared SearchField stays consistent across formal H5 consumers', async ({ page }) => {
   const runtimeErrors = collectRuntimeErrors(page)
 
