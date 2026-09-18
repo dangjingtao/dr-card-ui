@@ -1,10 +1,13 @@
 import type { ReactNode } from 'react'
 import { ChevronLeft } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import HostCloseButton from './HostCloseButton'
+
+export type TitleBarLeadingAction = 'none' | 'back' | 'close'
 
 export interface TitleBarProps {
   title: ReactNode
-  back?: boolean
+  leadingAction?: TitleBarLeadingAction
   backLabel?: string
   onBack?: () => void
   action?: ReactNode
@@ -24,7 +27,7 @@ export interface TitleBarProps {
  */
 export default function TitleBar({
   title,
-  back = false,
+  leadingAction = 'none',
   backLabel = '返回',
   onBack,
   action,
@@ -39,10 +42,10 @@ export default function TitleBar({
     * 固定宽度彻底避免第三列内容撑破 grid 导致 pill 溢出页面右侧。 */
   const gridColumns = actionWide
     ? 'grid-cols-[96px_minmax(0,1fr)_96px]'
-    : 'grid-cols-[36px_minmax(0,1fr)_36px]'
+    : 'grid-cols-[40px_minmax(0,1fr)_40px]'
   const widthClass = fullWidth ? '' : 'mx-auto max-w-legacy-shell'
 
-  if (!back && !action) {
+  if (leadingAction === 'none' && !action) {
     return (
       <header className={`w-full bg-transparent ${className}`} data-title-bar="plain">
         <div className={`flex h-11 w-full items-center justify-center px-3 text-center ${widthClass}`}>
@@ -55,19 +58,23 @@ export default function TitleBar({
   return (
     <header
       className={`w-full min-w-0 overflow-hidden bg-transparent ${className}`}
-      data-title-bar={back ? 'back' : 'action'}
+      data-title-bar={leadingAction === 'back' ? 'back' : leadingAction === 'close' ? 'close' : 'action'}
     >
       <div className={`grid h-11 w-full min-w-0 items-center px-3 ${gridColumns} ${widthClass}`}>
-        {back ? (
-          <div className="flex h-9 items-center justify-start">
+        {leadingAction === 'back' ? (
+          <div className="flex h-10 items-center justify-start">
             <button
               type="button"
               aria-label={backLabel}
               onClick={onBack ?? (() => navigate(-1))}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full text-text-primary transition active:bg-[rgba(89,55,15,0.06)]"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-text-primary transition active:bg-[rgba(89,55,15,0.06)]"
             >
-              <ChevronLeft className="h-[22px] w-[22px] stroke-[2.2]" />
+              <ChevronLeft className="h-[22px] w-[22px] stroke-[2.2]" aria-hidden />
             </button>
+          </div>
+        ) : leadingAction === 'close' ? (
+          <div className="flex h-10 items-center justify-start">
+            <HostCloseButton />
           </div>
         ) : (
           <span aria-hidden="true" />
@@ -83,7 +90,7 @@ export default function TitleBar({
           className={
             actionWide
               ? 'flex h-9 min-w-0 max-w-full items-center justify-end overflow-hidden'
-              : 'flex h-9 w-9 items-center justify-center'
+              : 'flex h-10 w-10 items-center justify-center'
           }
         >
           {action}
