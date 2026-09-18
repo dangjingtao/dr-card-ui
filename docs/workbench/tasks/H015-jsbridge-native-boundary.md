@@ -60,6 +60,7 @@ iOS debug 草稿中虽存在 `webkit.messageHandlers.getAuthorizationInfo` / `wi
 - 同步宿主返回归一为 Promise，并提供默认 5 秒 timeout；
 - `bridge-disabled`、`bridge-unsupported`、`capability-unsupported`、`invocation-failed`、`invocation-timeout` 分开可观察；
 - diagnostics 显式区分 Android / iOS / Browser；host version 未确认时为 `null`；
+- H021 为标题栏关闭语义新增 H5 侧 `closeWebView()` capability seam；当前 diagnostics 固定报告 `closeWebView: false`，native mode 调用也只返回 `capability-unsupported`。这不是已确认的 Native navigation 方法。
 - 新增 `scripts/verify-h015-jsbridge.mjs`，验证 adapter 行为并只扫描正式 H5 页面，阻止 H5 重新直连宿主对象；Native reference / legacy 按 H002 边界排除；
 - CI 增加 `npm run verify:h015` gate。
 

@@ -84,10 +84,11 @@ T003 已由用户于 2026-08-21 在此缺口未闭合的情况下明确验收为
 | mobile 组件 | 现状 | 结论与去向 |
 | --- | --- | --- |
 | `mobile/BottomNav.tsx` | 消费 `ui/BottomNavigation`，注入路由与 `TAB_ROUTES` | 保留。壳层负责路由绑定，Core 负责视觉，不重复。 |
-| `mobile/TitleBar.tsx` | 业务标题栏，与 `ui/TopAppBar` 布局规格不同（44px 三列 / 居中大标题） | 保留。视觉以已确认页面为准，不与 `TopAppBar` 合并。 |
+| `mobile/TitleBar.tsx` | H021 后统一承担 H5 的 App 标准业务标题栏 | 保留；不模拟系统状态栏。active formal H5 使用 44px App 标题栏：一级 Tab 左侧关闭、二级页左侧返回；Native reference / deferred 保留历史预览宽度。 |
 | `mobile/Header.tsx` | 曾为 `TitleBar` 的无引用 re-export | 已删除；标题栏统一使用 `mobile/TitleBar.tsx`。 |
 | `mobile/EmptyState.tsx` | 曾为 `ui/EmptyState` 的无引用纯透传包装 | 已删除；页面直接使用 `ui/EmptyState`。 |
-| `mobile/PageContainer.tsx` / `StatusBar.tsx` | 壳层容器与状态栏，Core 无对应件 | 保留，无重复。 |
+| `mobile/PageContainer.tsx` | H5 / Native reference 共用页面根容器 | 保留；组件本身继续使用 `max-w-legacy-shell` 兼容 reference/deferred，active formal H5 由 route-scope CSS 显式取消上限并随 WebView 铺满。 |
+| `mobile/StatusBar.tsx` | 原型期手机系统状态栏模拟 | H021 删除；正式 H5 不模拟时间、信号、电量等系统 UI。 |
 | `mobile/FixtureOverlay.tsx` | 原型对照工具，消费 `ui/Dialog` + `ui/BottomSheet` + `ui/Button` | 保留。已复用 Core 弹层，不重复。 |
 | `mobile/PromptOverlay.tsx` | 消费 `ui/Dialog` 的 `presentation="custom"` 紧凑形态，品牌弹窗只负责内容编排 | 保留。遮罩、语义、Esc、焦点陷阱、滚动锁定与焦点归还统一由 Core Dialog 提供。 |
 | `mobile/AppPromptDialog.tsx` | 基于 `PromptOverlay` 的品牌 TIPS 弹窗，使用品牌插画与 Com Design 语义 Token | 保留为品牌件。按钮、关闭操作、面板及反馈状态均复用 Core 组件/Token。 |

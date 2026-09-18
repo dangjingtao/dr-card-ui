@@ -1,31 +1,39 @@
 import type { ReactNode } from 'react'
 import { ChevronLeft } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import HostCloseButton from './HostCloseButton'
+
+export type TitleBarLeadingAction = 'none' | 'back' | 'close'
 
 export interface TitleBarProps {
   title: ReactNode
-  back?: boolean
+  leadingAction?: TitleBarLeadingAction
   backLabel?: string
   onBack?: () => void
   action?: ReactNode
   /** 文本型右侧动作需要更宽的对称槽位，保证标题仍然严格居中。 */
   actionWide?: boolean
+  /** active formal H5 在 App WebView 内随视口铺满；Native reference/deferred 继续保留预览兼容宽度。 */
+  fullWidth?: boolean
   className?: string
 }
 
 /**
- * 业务标题栏，样式以 reference 内已确认页面为准。
- * - 无返回：首页式 44px 居中标题栏，文字 18/24。
- * - 有返回：44px 三列标题栏；图标动作左右 36px，文本动作左右 72px，标题始终居中。
- * - 沉浸式页面（如扫码）由页面不渲染本组件。
+ * App 标准业务标题栏。
+ * - 不模拟系统状态栏；标题栏属于 H5 自身业务 UI。
+ * - 44px 高；一级 Tab 左侧为关闭，二级页左侧为返回，标题始终严格居中。
+ * - 左/右图标动作触控目标 40px；文本型右侧动作使用对称宽槽位，避免标题偏移。
+ * - active formal H5 随 WebView 宽度铺满；Native reference/deferred 保留历史预览兼容宽度。
+ * - 沉浸式页面（如扫码）由页面自行提供关闭入口。
  */
 export default function TitleBar({
   title,
-  back = false,
+  leadingAction = 'none',
   backLabel = '返回',
   onBack,
   action,
   actionWide = false,
+  fullWidth = false,
   className = '',
 }: TitleBarProps) {
   const navigate = useNavigate()
@@ -35,12 +43,13 @@ export default function TitleBar({
     * 固定宽度彻底避免第三列内容撑破 grid 导致 pill 溢出页面右侧。 */
   const gridColumns = actionWide
     ? 'grid-cols-[96px_minmax(0,1fr)_96px]'
-    : 'grid-cols-[36px_minmax(0,1fr)_36px]'
+    : 'grid-cols-[40px_minmax(0,1fr)_40px]'
+  const widthClass = fullWidth ? '' : 'mx-auto max-w-legacy-shell'
 
-  if (!back && !action) {
+  if (leadingAction === 'none' && !action) {
     return (
       <header className={`w-full bg-transparent ${className}`} data-title-bar="plain">
-        <div className="mx-auto flex h-11 w-full max-w-[480px] items-center justify-center px-3 text-center">
+        <div className={`flex h-11 w-full items-center justify-center px-3 text-center ${widthClass}`}>
           <h1 className="m-0 text-[18px] font-semibold leading-6 text-text-primary">{title}</h1>
         </div>
       </header>
@@ -50,19 +59,23 @@ export default function TitleBar({
   return (
     <header
       className={`w-full min-w-0 overflow-hidden bg-transparent ${className}`}
-      data-title-bar={back ? 'back' : 'action'}
+      data-title-bar={leadingAction === 'back' ? 'back' : leadingAction === 'close' ? 'close' : 'action'}
     >
-      <div className={`mx-auto grid h-11 w-full min-w-0 max-w-[480px] items-center px-3 ${gridColumns}`}>
-        {back ? (
-          <div className="flex h-9 items-center justify-start">
+      <div className={`grid h-11 w-full min-w-0 items-center px-3 ${gridColumns} ${widthClass}`}>
+        {leadingAction === 'back' ? (
+          <div className="flex h-10 items-center justify-start">
             <button
               type="button"
               aria-label={backLabel}
               onClick={onBack ?? (() => navigate(-1))}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full text-text-primary transition active:bg-[rgba(89,55,15,0.06)]"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-text-primary transition active:bg-[rgba(89,55,15,0.06)]"
             >
-              <ChevronLeft className="h-[22px] w-[22px] stroke-[2.2]" />
+              <ChevronLeft className="h-[22px] w-[22px] stroke-[2.2]" aria-hidden />
             </button>
+          </div>
+        ) : leadingAction === 'close' ? (
+          <div className="flex h-10 items-center justify-start">
+            <HostCloseButton />
           </div>
         ) : (
           <span aria-hidden="true" />
@@ -78,7 +91,7 @@ export default function TitleBar({
           className={
             actionWide
               ? 'flex h-9 min-w-0 max-w-full items-center justify-end overflow-hidden'
-              : 'flex h-9 w-9 items-center justify-center'
+              : 'flex h-10 w-10 items-center justify-center'
           }
         >
           {action}

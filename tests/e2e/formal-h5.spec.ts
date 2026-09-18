@@ -6,6 +6,11 @@ const staticFormalRoutes = ACTIVE_FORMAL_H5_ROUTES
   .map((route) => ({ path: route.path, title: route.title }))
   .sort((a, b) => a.path.localeCompare(b.path))
 
+const activeFormalTabRoutes = ACTIVE_FORMAL_H5_ROUTES
+  .filter((route) => route.tab)
+  .map((route) => ({ path: route.path, titleBar: route.titleBar ?? 'back' }))
+  .sort((a, b) => a.path.localeCompare(b.path))
+
 function routeUrl(path: string) {
   return path === '/' ? '/?newcomer=off' : path
 }
@@ -106,6 +111,134 @@ test('@formal-h5 @business profile notification navigation remains inside formal
   await page.goBack()
   await expect(page).toHaveURL(/\/profile$/)
   await expectHealthyFormalRoute(page)
+
+  expect(runtimeErrors, runtimeErrors.join('\n')).toEqual([])
+})
+
+
+test('@formal-h5 H021 removes simulated status bar but keeps App-standard title bar', async ({ page }) => {
+  const runtimeErrors = collectRuntimeErrors(page)
+
+  for (const path of ['/?newcomer=off', '/notifications']) {
+    await page.goto(path, { waitUntil: 'domcontentloaded' })
+    await expectHealthyFormalRoute(page)
+    await expect(page.locator('[data-mobile-status-bar]')).toHaveCount(0)
+
+    const titleBar = page.locator('[data-title-bar]')
+    await expect(titleBar).toHaveCount(1)
+    const height = await titleBar.evaluate((node) => node.getBoundingClientRect().height)
+    expect(Math.round(height)).toBe(44)
+  }
+
+  expect(runtimeErrors, runtimeErrors.join('\n')).toEqual([])
+})
+
+test('@formal-h5 H021 title-bar actions remain available', async ({ page }) => {
+  const runtimeErrors = collectRuntimeErrors(page)
+
+  await page.goto('/notifications', { waitUntil: 'domcontentloaded' })
+  await expectHealthyFormalRoute(page)
+  await expect(page.getByRole('button', { name: /一键已读|全部已读/ })).toBeVisible()
+
+  await page.goto('/service/chat', { waitUntil: 'domcontentloaded' })
+  await expectHealthyFormalRoute(page)
+  await expect(page.locator('[data-chat-wecom-entry]')).toBeVisible()
+
+  expect(runtimeErrors, runtimeErrors.join('\n')).toEqual([])
+})
+
+
+test('@formal-h5 H021 active formal H5 fills a wide WebView', async ({ page }) => {
+  const runtimeErrors = collectRuntimeErrors(page)
+
+  await page.setViewportSize({ width: 900, height: 800 })
+  await page.goto('/?newcomer=off', { waitUntil: 'domcontentloaded' })
+  await expectHealthyFormalRoute(page)
+
+  const widths = await page.evaluate(() => {
+    const scroll = document.querySelector('[data-page-scroll]') as HTMLElement | null
+    const container = document.querySelector('[data-page-container]') as HTMLElement | null
+    const nav = document.querySelector('nav[aria-label="主导航"]') as HTMLElement | null
+    const titleBar = document.querySelector('[data-title-bar] > div') as HTMLElement | null
+    if (!scroll || !container || !nav || !titleBar) throw new Error('H021 wide-layout evidence nodes missing')
+    return {
+      scroll: scroll.getBoundingClientRect().width,
+      container: container.getBoundingClientRect().width,
+      nav: nav.getBoundingClientRect().width,
+      titleBar: titleBar.getBoundingClientRect().width,
+    }
+  })
+
+  expect(Math.abs(widths.container - widths.scroll)).toBeLessThanOrEqual(1)
+  expect(Math.abs(widths.nav - widths.scroll)).toBeLessThanOrEqual(1)
+  expect(Math.abs(widths.titleBar - widths.scroll)).toBeLessThanOrEqual(1)
+  expect(widths.container).toBeGreaterThan(480)
+  expect(widths.titleBar).toBeGreaterThan(480)
+
+  expect(runtimeErrors, runtimeErrors.join('\n')).toEqual([])
+})
+
+test('@formal-h5 H021 App title bar stays reachable while content scrolls', async ({ page }) => {
+  const runtimeErrors = collectRuntimeErrors(page)
+
+  await page.goto('/dearseed?picker=off', { waitUntil: 'domcontentloaded' })
+  await expectHealthyFormalRoute(page)
+  await page.getByRole('button', { name: '品牌文化' }).click()
+  await expect(page).toHaveURL(/\/brand-culture$/)
+  await expectHealthyFormalRoute(page)
+
+  const titleBar = page.locator('[data-title-bar="back"]')
+  const back = titleBar.getByRole('button', { name: '返回' })
+  await expect(titleBar).toBeVisible()
+  await expect(back).toBeVisible()
+  const before = await titleBar.boundingBox()
+
+  await page.locator('[data-page-scroll]').evaluate((node) => {
+    ;(node as HTMLElement).scrollTop = 700
+  })
+  await expect
+    .poll(() => page.locator('[data-page-scroll]').evaluate((node) => (node as HTMLElement).scrollTop))
+    .toBeGreaterThan(0)
+
+  await expect(titleBar).toBeVisible()
+  const after = await titleBar.boundingBox()
+  expect(before).not.toBeNull()
+  expect(after).not.toBeNull()
+  expect(Math.abs((after?.y ?? 0) - (before?.y ?? 0))).toBeLessThanOrEqual(1)
+
+  await back.click()
+  await expect(page).toHaveURL(/\/dearseed\?picker=off$/)
+  await expectHealthyFormalRoute(page)
+
+  expect(runtimeErrors, runtimeErrors.join('\n')).toEqual([])
+})
+
+
+test('@formal-h5 H021 first-level tabs use close while child pages use back', async ({ page }) => {
+  const runtimeErrors = collectRuntimeErrors(page)
+
+  for (const route of activeFormalTabRoutes) {
+    await page.goto(routeUrl(route.path), { waitUntil: 'domcontentloaded' })
+    await expectHealthyFormalRoute(page)
+
+    if (route.titleBar === 'hidden') {
+      const close = page.locator('[data-host-close]')
+      await expect(close).toHaveCount(1)
+      await expect(close).toHaveAttribute('data-host-close-supported', 'false')
+      continue
+    }
+
+    const titleBar = page.locator('[data-title-bar="close"]')
+    await expect(titleBar).toHaveCount(1)
+    const close = titleBar.locator('[data-host-close]')
+    await expect(close).toHaveCount(1)
+    await expect(close).toHaveAttribute('data-host-close-supported', 'false')
+  }
+
+  await page.goto('/settings', { waitUntil: 'domcontentloaded' })
+  await expectHealthyFormalRoute(page)
+  await expect(page.locator('[data-title-bar="back"]')).toHaveCount(1)
+  await expect(page.locator('[data-title-bar="back"]').getByRole('button', { name: '返回' })).toBeVisible()
 
   expect(runtimeErrors, runtimeErrors.join('\n')).toEqual([])
 })

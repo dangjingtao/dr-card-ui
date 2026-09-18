@@ -9,10 +9,9 @@ import {
 } from 'react-router-dom'
 import { Bell, MessageSquare, Settings } from 'lucide-react'
 import BottomNav from '../components/mobile/BottomNav'
-// import StatusBar from '../components/mobile/StatusBar'
 import TitleBar from '../components/mobile/TitleBar'
 import { findRouteByPathname, isLegacyTabPath } from '../app/router/routes'
-import { isActiveFormalH5Route, isFormalH5TabPath } from '../app/router/routeScope'
+import { getRouteScope, isActiveFormalH5Route, isFormalH5TabPath } from '../app/router/routeScope'
 import { navigateWithH5ViewTransition } from '../app/router/h5Transition'
 import { useNotifications } from '../app/state/notifications'
 import { protectedFixtureRedirect, useOverlay } from '../app/fixtures/useFixture'
@@ -90,9 +89,10 @@ function H5RouteOutlet() {
 }
 
 /**
- * 移动应用壳层（T004）
- * - 顶部安全区与原型状态栏统一在壳层渲染（index.html 已 viewport-fit=cover）
- * - 页面只有一个纵向滚动区；状态栏、标题栏、TabBar 不参与页面滚动
+ * WebView 应用壳层（T004 + H021）
+ * - 不模拟手机系统状态栏；顶部只保留 H5 自身的 App 标准业务标题栏
+ * - 标题栏固定在页面滚动区之外：44px，高度、返回、居中标题与右侧动作按 App 导航栏结构统一
+ * - active formal H5 的标题栏与内容随 WebView 宽度铺满；Native reference/deferred 保留历史预览边界
  * - TabBar 位于壳层底部，自身负责底部安全区，页面不再重复预留
  * - 二级页不显示底部导航，避免遮挡输入区/弹层
  * - /legacy-home 为独立入口，使用「首页 / 服务 / 我的」三项导航，与主入口五项 TabBar 并存
@@ -113,10 +113,24 @@ export default function MobileLayout() {
   const showLegacyNav = isLegacyTabPath(location.pathname)
   const showNav = showLegacyNav || isFormalH5TabPath(location.pathname)
   const route = findRouteByPathname(location.pathname)
-  const fixtureRedirect = isActiveFormalH5Route(route) ? protectedFixtureRedirect(location) : null
+  const routeScope = route ? getRouteScope(route) : undefined
+  const activeFormalH5 =
+    routeScope?.ownership === 'formal-h5' && routeScope.engineeringScope === 'active'
+  const fixtureRedirect = activeFormalH5 ? protectedFixtureRedirect(location) : null
   const titleBarMode = route?.titleBar ?? 'back'
   const fallbackTitle = location.pathname === '/tokens' ? '品牌 Token 展示' : '页面不存在'
   const title = route?.titleBarTitle ?? route?.title ?? fallbackTitle
+  const requestedLeadingAction = route?.leadingAction ?? 'auto'
+  const leadingAction =
+    titleBarMode === 'hidden'
+      ? 'none'
+      : requestedLeadingAction !== 'auto'
+        ? requestedLeadingAction
+        : activeFormalH5 && isFormalH5TabPath(location.pathname)
+          ? 'close'
+          : titleBarMode === 'back'
+            ? 'back'
+            : 'none'
   const isNotificationsPage = location.pathname === '/notifications'
   const allNotificationsRead = unreadCount === 0
 
@@ -199,10 +213,11 @@ export default function MobileLayout() {
         {titleBarMode !== 'hidden' && (
           <TitleBar
             title={title}
-            back={titleBarMode === 'back'}
+            leadingAction={leadingAction}
             onBack={route?.backTo ? () => navigateShell(route.backTo as string) : undefined}
             action={titleAction}
             actionWide={isNotificationsPage || location.pathname === '/service/chat'}
+            fullWidth={activeFormalH5}
           />
         )}
       </div>

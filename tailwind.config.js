@@ -106,6 +106,11 @@ export default {
         'exchange-price-text': 'var(--color-exchange-price-text)',
         'card-ip-surface': 'var(--color-card-ip-surface)',
       },
+      // H021: only the non-active compatibility shell keeps the historical desktop-preview cap.
+      // Active formal H5 is full-width inside its WebView and must not consume this token.
+      maxWidth: {
+        'legacy-shell': '480px',
+      },
       borderRadius: {
         control: 'var(--radius-control)',
         container: 'var(--radius-container)',
