@@ -30,6 +30,7 @@ H025 当前已进入 Ready for acceptance，但尚未合入 `dev`。因此 H026 
 - `window.webkit.messageHandlers.<handler>.postMessage(payload)`；
 - request-id correlation，可并发并允许乱序完成；
 - single-flight 模式，用于无法携带 request id 的祖传 callback 协议；第二个并发请求会明确失败，不允许靠覆盖单个 global callback 蒙混；
+- single-flight 若发生无关联 timeout，通道会 fail-closed 标记为 unsafe：后续请求继续拒绝，迟到 callback 不会被绑定给新请求；只有宿主恢复/重建或调用方能够确认旧 callback 不再可能到达后，才允许显式 reset；
 - 每个 pending callback 有统一 resolver / rejector / timeout 生命周期；
 - timeout 后清理 pending；
 - duplicate / late callback 返回未处理，不会二次完成 Promise；
@@ -74,6 +75,7 @@ raw string 协议不强制 JSON 化；capability 可使用 identity parser 或�
 - timeout cleanup；
 - duplicate callback；
 - late callback；
+- single-flight timeout 后通道 poison / explicit recovery，避免旧 callback 污染下一请求；
 - postMessage throw；
 - handler receiver binding。
 
