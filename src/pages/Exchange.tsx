@@ -133,7 +133,7 @@ export default function Exchange() {
         <button
           type="button"
           onClick={() => navigate('/points')}
-          className="inline-flex min-h-9 shrink-0 items-center gap-1 rounded-pill bg-surface/90 px-2.5 text-xs text-text-secondary shadow-sm transition active:scale-[.98]"
+          className="inline-flex min-h-10 shrink-0 items-center gap-1 rounded-pill bg-surface/90 px-2.5 text-xs text-text-secondary shadow-sm transition active:scale-[.98]"
         >
           <img src={bubbleOrb} alt="" className="h-6 w-6 object-contain" />
           <strong className="text-sm font-semibold text-exchange-price-text">{BUBBLE_BALANCE.toLocaleString()}</strong>

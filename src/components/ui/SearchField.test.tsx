@@ -57,6 +57,42 @@ describe('SearchField', () => {
     expect(field.getAttribute('aria-busy')).toBe('true')
   })
 
+  it('keeps the input label separate from the clear action', () => {
+    render(
+      <SearchField
+        value="query"
+        onChange={() => {}}
+        onClear={() => {}}
+        placeholder="搜索"
+      />,
+    )
+
+    const field = screen.getByRole('searchbox', { name: '搜索' })
+    const clear = screen.getByRole('button', { name: '清除搜索' })
+    const container = field.closest('[data-search-field]')
+    const label = field.closest('label')
+
+    expect(container?.tagName).toBe('DIV')
+    expect(label).toBeTruthy()
+    expect(label?.contains(clear)).toBe(false)
+    expect(clear.closest('label')).toBeNull()
+  })
+
+  it('preserves disabled behavior for both the input and clear action', () => {
+    render(
+      <SearchField
+        value="query"
+        onChange={() => {}}
+        onClear={() => {}}
+        placeholder="搜索"
+        disabled
+      />,
+    )
+
+    expect(screen.getByRole('searchbox', { name: '搜索' }).hasAttribute('disabled')).toBe(true)
+    expect(screen.getByRole('button', { name: '清除搜索' }).hasAttribute('disabled')).toBe(true)
+  })
+
   it('does not render a dead clear button when no clear handler is supplied', () => {
     render(<SearchField value="query" onChange={() => {}} placeholder="搜索" />)
 

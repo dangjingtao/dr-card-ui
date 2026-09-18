@@ -74,12 +74,12 @@ Core catalog (33): Button, IconButton, Input, Textarea, Select, Checkbox, Radio,
 - `src/pages` 下 21 个页面中，只有 7 个从 `../components/ui` 导入组件；去重后 pages 层实际消费 9 个：`Button`、`EmptyState`、`Card`、`Tag`、`Section`、`IconButton`、`Dialog`、`Toast`、`SegmentedControl`。
 - 这 7 个页面里，`Tokens.tsx`（工程参照页）、`NodeStub.tsx`、`WebViewBoundary.tsx`、`NotFound.tsx` 属参照与兜底页，按本卡「不用组件展示页替代业务页面验收」不能作为消费证据；真正业务页只有 `Notifications.tsx`、`NotificationDetail.tsx`、`DrawSuccess.tsx`。
 - T005（`Home.tsx` / `Onboarding.tsx`）、T006（`Membership.tsx` / `Checkin.tsx` / `Points.tsx`）、T009（`Card.tsx` / `Redeem.tsx` / `ScanVerify.tsx` / `ConfirmVerify.tsx`）覆盖的页面**全部零消费** ui 组件。
-- 全仓库零消费组件 22 个：`Input`、`Textarea`、`Select`、`Checkbox`、`Radio`、`Switch`、`ListItem`、`Tabs`、`TopAppBar`、`Divider`、`Badge`、`Avatar`、`Snackbar`、`Alert`、`LoadingIndicator`、`Skeleton`、`ProgressIndicator`、`Stepper`、`Timeline`、`Menu`、`MenuItem`。（`BottomNavigation` 经 `mobile/BottomNav.tsx`、`BottomSheet` 经 `mobile/FixtureOverlay.tsx` 间接进入运行时。）
+- T003 验收时的零消费组件清单经 H023 移除已正式消费的 `SearchField` 后，当前保留 21 个：`Input`、`Textarea`、`Select`、`Checkbox`、`Radio`、`Switch`、`ListItem`、`Tabs`、`TopAppBar`、`Divider`、`Badge`、`Avatar`、`Snackbar`、`Alert`、`LoadingIndicator`、`Skeleton`、`ProgressIndicator`、`Stepper`、`Timeline`、`Menu`、`MenuItem`。（`BottomNavigation` 经 `mobile/BottomNav.tsx`、`BottomSheet` 经 `mobile/FixtureOverlay.tsx` 间接进入运行时。）
 - 已存在手写等价 UI 而未复用 Core 的位置：`Tokens.tsx` 手写原生 `<input>` 与四态提示条（未用 `Input` / `Alert`）、`Settings.tsx` 有开关与输入交互（未用 `Switch` / `Input`）、`Profile.tsx` 与 `Home.tsx` 有头像（未用 `Avatar`）。
 
 T003 已由用户于 2026-08-21 在此缺口未闭合的情况下明确验收为 `Accepted`，验收时豁免了「至少由 T005、T006、T009 各消费一组组件」这一项。**豁免不等于缺口消失**：上述消费证据须随 T005 / T006 / T009 页面施工产生，不能用参照页截图替代；本节清单保留作为后续页面卡的施工输入。
 
-> H023 更新（2026-09-18）：上述 T003 数量统计保留为历史快照，不再代表当前运行时消费面。H023 已把 `SearchField` 正式接入 `Exchange`、`CardShare`、`BuddyPhoneInvite` 三个 active formal H5 页面，并补齐 `subtle/pill`、`compact/regular`、loading、clear 与 accessible-name 契约。
+> H023 更新（2026-09-18）：本节仍记录 T003 当时的页面消费缺口，作为历史验收快照；组件零消费清单则按 H023 当前事实移除了已正式消费的 `SearchField`，因此现为 21 个。H023 已把 `SearchField` 正式接入 `Exchange`、`CardShare`、`BuddyPhoneInvite` 三个 active formal H5 页面，并补齐 `subtle/pill`、`compact/regular`、loading、clear 与 accessible-name 契约。
 
 ## ui 与 mobile 的职责边界
 

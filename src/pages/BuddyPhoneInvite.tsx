@@ -129,7 +129,7 @@ export default function BuddyPhoneInvite() {
                 setOutcome('idle')
                 setRequestError(null)
               }}
-              className="min-w-0 flex-1"
+              className="min-w-0 flex-1 px-4"
             />
             <Button type="submit" disabled={!phone.trim() || outcome === 'searching'} className="h-11 flex-none rounded-pill px-5">
               搜索

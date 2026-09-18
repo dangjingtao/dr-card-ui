@@ -252,7 +252,7 @@ export function SearchField({
   const pill = variant === 'pill'
   const compact = size === 'compact'
   return (
-    <label
+    <div
       data-search-field={variant}
       data-search-field-size={size}
       className={cn(
@@ -265,26 +265,28 @@ export function SearchField({
         className,
       )}
     >
-      {loading ? (
-        <LoaderCircle className="h-4 w-4 shrink-0 animate-spin text-text-tertiary" aria-hidden />
-      ) : (
-        <Search className="h-4 w-4 shrink-0 text-text-tertiary" aria-hidden />
-      )}
-      <input
-        type={type}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        aria-label={ariaLabel ?? placeholder}
-        aria-busy={loading || undefined}
-        disabled={disabled}
-        className={cn(
-          'min-w-0 flex-1 bg-transparent text-text-primary outline-none placeholder:text-text-placeholder [&::-webkit-search-cancel-button]:hidden',
-          compact ? 'text-xs' : 'text-sm',
-          inputClassName,
+      <label className="flex min-w-0 flex-1 items-center gap-2">
+        {loading ? (
+          <LoaderCircle className="h-4 w-4 shrink-0 animate-spin text-text-tertiary" aria-hidden />
+        ) : (
+          <Search className="h-4 w-4 shrink-0 text-text-tertiary" aria-hidden />
         )}
-        {...props}
-      />
+        <input
+          type={type}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          aria-label={ariaLabel ?? placeholder}
+          aria-busy={loading || undefined}
+          disabled={disabled}
+          className={cn(
+            'min-w-0 flex-1 bg-transparent text-text-primary outline-none placeholder:text-text-placeholder [&::-webkit-search-cancel-button]:hidden',
+            compact ? 'text-xs' : 'text-sm',
+            inputClassName,
+          )}
+          {...props}
+        />
+      </label>
       {value && onClear && (
         <button
           type="button"
@@ -299,7 +301,7 @@ export function SearchField({
           <X className="h-4 w-4" aria-hidden />
         </button>
       )}
-    </label>
+    </div>
   )
 }
 

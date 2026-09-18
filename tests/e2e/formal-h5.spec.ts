@@ -318,6 +318,14 @@ test('@formal-h5 H023 shared SearchField stays consistent across formal H5 consu
   await expect(page.getByRole('button', { name: '清除搜索' })).toBeVisible()
   await page.getByRole('button', { name: '清除搜索' }).click()
   await expect(exchangeField).toHaveValue('')
+  const exchangeSearchBox = await page
+    .locator('[data-search-field="pill"][data-search-field-size="compact"]')
+    .boundingBox()
+  const exchangeBalanceBox = await page
+    .locator('[data-search-field="pill"][data-search-field-size="compact"] + button')
+    .boundingBox()
+  expect(Math.round(exchangeSearchBox?.height ?? 0)).toBe(40)
+  expect(Math.round(exchangeBalanceBox?.height ?? 0)).toBe(40)
 
   await page.goto('/card/share', { waitUntil: 'domcontentloaded' })
   await expectHealthyFormalRoute(page)
@@ -329,9 +337,12 @@ test('@formal-h5 H023 shared SearchField stays consistent across formal H5 consu
 
   await page.goto('/buddy/invite/phone', { waitUntil: 'domcontentloaded' })
   await expectHealthyFormalRoute(page)
-  const phoneField = page.locator('[data-search-field="pill"] input[type="tel"]')
+  const phoneSearch = page.locator('[data-search-field="pill"]')
+  const phoneField = phoneSearch.locator('input[type="tel"]')
   await expect(phoneField).toHaveCount(1)
   await expect(phoneField).toHaveAttribute('aria-label', '输入手机号搜索搭子')
+  await expect(phoneSearch).toHaveCSS('padding-left', '16px')
+  await expect(phoneSearch).toHaveCSS('padding-right', '16px')
 
   expect(runtimeErrors, runtimeErrors.join('\n')).toEqual([])
 })
