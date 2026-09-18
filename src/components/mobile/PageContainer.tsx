@@ -11,7 +11,7 @@ export interface PageContainerProps {
 export default function PageContainer({ children, className = '', inset = true }: PageContainerProps) {
   return (
     <main
-      className={`relative min-h-full w-full bg-transparent ${inset ? 'px-4' : ''} ${className}`}
+      className={`relative mx-auto min-h-full w-full max-w-legacy-shell bg-transparent ${inset ? 'px-4' : ''} ${className}`}
       data-page-container
     >
       {children}
