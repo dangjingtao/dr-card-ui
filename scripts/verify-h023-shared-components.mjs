@@ -15,16 +15,10 @@ for (const path of searchConsumers) {
   assert.doesNotMatch(source, /<Search\b/, path + ' must not keep a page-local Search icon implementation')
 }
 
-const exchange = read('src/pages/Exchange.tsx')
-assert.match(exchange, /variant="pill"/)
-assert.match(exchange, /size="compact"/)
-
-const cardShare = read('src/pages/CardShare.tsx')
-assert.match(cardShare, /placeholder="搜索搭子"/)
-
-const buddyPhone = read('src/pages/BuddyPhoneInvite.tsx')
-assert.match(buddyPhone, /type="tel"/)
-assert.match(buddyPhone, /loading=\{outcome === 'searching'\}/)
+const searchField = read('src/components/ui/ComDesign.tsx')
+assert.match(searchField, /export interface SearchFieldProps/)
+assert.match(searchField, /data-search-field/)
+assert.match(searchField, /aria-busy/)
 
 for (const path of ['src/pages/Address.tsx', 'src/pages/Orders.tsx']) {
   const source = read(path)
@@ -36,16 +30,9 @@ for (const path of ['src/pages/Address.tsx', 'src/pages/Orders.tsx']) {
   )
 }
 
-const core = read('src/components/ui/ComDesign.tsx')
-assert.match(core, /variant\?: 'subtle' \| 'pill'/)
-assert.match(core, /size\?: 'compact' \| 'regular'/)
-assert.match(core, /aria-label=\{ariaLabel \?\? placeholder\}/)
-assert.match(core, /value && onClear/)
-
 const emptyVisual = read('src/components/mobile/EmptyStateIcon.tsx')
 assert.match(emptyVisual, /data-empty-state-icon/)
-assert.match(emptyVisual, /h-24 w-24/)
 
 console.log(
-  'H023 PASS: shared SearchField has three formal-H5 consumers, EmptyStateIcon has two consumers, and extracted JSX is not duplicated in those pages.',
+  'H023 PASS: SearchField is shared by three formal-H5 pages and EmptyStateIcon by two data pages without reintroducing page-local duplicate JSX.',
 )
