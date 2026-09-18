@@ -137,3 +137,63 @@ test('@formal-h5 H021 page-local actions survive shell removal', async ({ page }
 
   expect(runtimeErrors, runtimeErrors.join('\n')).toEqual([])
 })
+
+
+test('@formal-h5 H021 active formal H5 fills a wide WebView', async ({ page }) => {
+  const runtimeErrors = collectRuntimeErrors(page)
+
+  await page.setViewportSize({ width: 900, height: 800 })
+  await page.goto('/?newcomer=off', { waitUntil: 'domcontentloaded' })
+  await expectHealthyFormalRoute(page)
+
+  const widths = await page.evaluate(() => {
+    const scroll = document.querySelector('[data-page-scroll]') as HTMLElement | null
+    const container = document.querySelector('[data-page-container]') as HTMLElement | null
+    const nav = document.querySelector('nav[aria-label="主导航"]') as HTMLElement | null
+    if (!scroll || !container || !nav) throw new Error('H021 wide-layout evidence nodes missing')
+    return {
+      scroll: scroll.getBoundingClientRect().width,
+      container: container.getBoundingClientRect().width,
+      nav: nav.getBoundingClientRect().width,
+    }
+  })
+
+  expect(Math.abs(widths.container - widths.scroll)).toBeLessThanOrEqual(1)
+  expect(Math.abs(widths.nav - widths.scroll)).toBeLessThanOrEqual(1)
+  expect(widths.container).toBeGreaterThan(480)
+
+  expect(runtimeErrors, runtimeErrors.join('\n')).toEqual([])
+})
+
+test('@formal-h5 H021 page back stays reachable while content scrolls', async ({ page }) => {
+  const runtimeErrors = collectRuntimeErrors(page)
+
+  await page.goto('/dearseed?picker=off', { waitUntil: 'domcontentloaded' })
+  await expectHealthyFormalRoute(page)
+  await page.getByRole('button', { name: '品牌文化' }).click()
+  await expect(page).toHaveURL(/\/brand-culture$/)
+  await expectHealthyFormalRoute(page)
+
+  const back = page.locator('[data-h5-back]')
+  await expect(back).toBeVisible()
+  const before = await back.boundingBox()
+
+  await page.locator('[data-page-scroll]').evaluate((node) => {
+    ;(node as HTMLElement).scrollTop = 700
+  })
+  await expect
+    .poll(() => page.locator('[data-page-scroll]').evaluate((node) => (node as HTMLElement).scrollTop))
+    .toBeGreaterThan(0)
+
+  await expect(back).toBeVisible()
+  const after = await back.boundingBox()
+  expect(before).not.toBeNull()
+  expect(after).not.toBeNull()
+  expect(Math.abs((after?.y ?? 0) - (before?.y ?? 0))).toBeLessThanOrEqual(1)
+
+  await back.click()
+  await expect(page).toHaveURL(/\/dearseed\?picker=off$/)
+  await expectHealthyFormalRoute(page)
+
+  expect(runtimeErrors, runtimeErrors.join('\n')).toEqual([])
+})
