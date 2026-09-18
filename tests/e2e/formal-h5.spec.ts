@@ -6,6 +6,11 @@ const staticFormalRoutes = ACTIVE_FORMAL_H5_ROUTES
   .map((route) => ({ path: route.path, title: route.title }))
   .sort((a, b) => a.path.localeCompare(b.path))
 
+const activeFormalTabRoutes = ACTIVE_FORMAL_H5_ROUTES
+  .filter((route) => route.tab)
+  .map((route) => ({ path: route.path, titleBar: route.titleBar ?? 'back' }))
+  .sort((a, b) => a.path.localeCompare(b.path))
+
 function routeUrl(path: string) {
   return path === '/' ? '/?newcomer=off' : path
 }
@@ -204,6 +209,36 @@ test('@formal-h5 H021 App title bar stays reachable while content scrolls', asyn
   await back.click()
   await expect(page).toHaveURL(/\/dearseed\?picker=off$/)
   await expectHealthyFormalRoute(page)
+
+  expect(runtimeErrors, runtimeErrors.join('\n')).toEqual([])
+})
+
+
+test('@formal-h5 H021 first-level tabs use close while child pages use back', async ({ page }) => {
+  const runtimeErrors = collectRuntimeErrors(page)
+
+  for (const route of activeFormalTabRoutes) {
+    await page.goto(routeUrl(route.path), { waitUntil: 'domcontentloaded' })
+    await expectHealthyFormalRoute(page)
+
+    if (route.titleBar === 'hidden') {
+      const close = page.locator('[data-host-close]')
+      await expect(close).toHaveCount(1)
+      await expect(close).toHaveAttribute('data-host-close-supported', 'false')
+      continue
+    }
+
+    const titleBar = page.locator('[data-title-bar="close"]')
+    await expect(titleBar).toHaveCount(1)
+    const close = titleBar.locator('[data-host-close]')
+    await expect(close).toHaveCount(1)
+    await expect(close).toHaveAttribute('data-host-close-supported', 'false')
+  }
+
+  await page.goto('/settings', { waitUntil: 'domcontentloaded' })
+  await expectHealthyFormalRoute(page)
+  await expect(page.locator('[data-title-bar="back"]')).toHaveCount(1)
+  await expect(page.locator('[data-title-bar="back"]').getByRole('button', { name: '返回' })).toBeVisible()
 
   expect(runtimeErrors, runtimeErrors.join('\n')).toEqual([])
 })
