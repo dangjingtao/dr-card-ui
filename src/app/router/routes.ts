@@ -54,10 +54,12 @@ export interface RouteMeta {
   icon?: LucideIcon
   /** TopAppBar / 页面标题 */
   title: string
-  /** 兼容壳层标题栏模式；H021 起 active formal H5 忽略，仅 Native reference / deferred / 工程兜底使用。 */
+  /** 标题栏模式；默认二级页为 back */
   titleBar?: 'plain' | 'back' | 'hidden'
-  /** 兼容壳层标题文案；active formal H5 不渲染共享标题栏。 */
+  /** 标题栏展示文案与页面业务标题不同时单独指定 */
   titleBarTitle?: string
+  /** 标题栏右侧动作 */
+  titleBarAction?: 'settings' | 'notifications'
   /** 本路由承载的实施节点 */
   nodes: number[]
   /** 所属任务卡 */
@@ -615,20 +617,21 @@ export const ROUTES: RouteMeta[] = [
     owner: '洗护体验券专区（T008 施工；语义已从「兑换码页」纠正）',
   },
   {
-    /* T051v2-rollback + v3｜用户 2026-09-10 将该一级入口文案改为「会员中心」。
-     * H021 起 active formal H5 不再渲染共享 TitleBar；tab / tabOrder / icon / path 保持原状。 */
+    /* T051v2-rollback + v3｜用户 2026-09-10 仅要求把文字改为「会员中心」（Tab label + 页面 TitleBar），
+     * 不改路由 / 跳转 / Settings。tab / tabOrder / icon / path / Settings 全部保持原状。 */
     path: '/profile',
     tab: true,
     tabOrder: 5,
     label: '会员中心',
     icon: UserRound,
     title: '会员中心',
+    titleBarAction: 'notifications',
     nodes: [19, 20],
     task: 'T011',
-    entry: '底部 Tab「会员中心」；首页-个人区',
+    entry: '底部 Tab「会员中心」+ TitleBar「会员中心」；首页-个人区',
     returnTo: '底部 Tab；首页',
     overlays: [{ key: 'app-prompt', node: 20, label: 'APP 弹窗（能力引导）', type: 'dialog' }],
-    owner: '我的（T011 已施工；H021 将通知入口收回页面会员卡区域，不再依赖共享 TitleBar）',
+    owner: '我的（T011 已施工；T051v2-rollback+v3 改 Tab label + TitleBar 文案，不改路由 / 跳转）',
   },
 
   /* ────────────────────────── T005 专栏首页与新人流程 ────────────────────────── */
@@ -636,6 +639,7 @@ export const ROUTES: RouteMeta[] = [
     path: '/dearseed',
     title: '诗得丽专栏',
     titleBarTitle: 'DearSeed',
+    titleBarAction: 'notifications',
     nodes: [2, 23],
     task: 'T005',
     entry: '卡博士首页-「诗得丽品牌专栏」',
@@ -1081,7 +1085,7 @@ export const ROUTES: RouteMeta[] = [
     titleBar: 'back',
     nodes: [11, 42, 43],
     task: 'T012',
-    entry: '会员中心页内通知入口',
+    entry: '首页/我的-通知入口',
     returnTo: '诗得丽专栏首页 / 我的',
     states: [{ key: 'unread', node: 42, label: '通知副本（未读数量）' }],
     overlays: [{ key: 'clear', node: 43, label: '清除消息确认', type: 'dialog' }],
