@@ -43,6 +43,7 @@ H023 对既有 Core 组件补齐：
 - loading → `aria-busy`，左侧图标切换 spinner
 - 只有传入 `onClear` 时才渲染清除按钮，避免“看得见但点了没反应”的死按钮
 - 保留 `type` / `inputMode`，手机号搜索可继续使用 `type="tel"`
+- 提供 `inputClassName` 作为输入元素级样式透传；CardShare / BuddyPhoneInvite 显式保留原有 `placeholder:text-text-tertiary`，Exchange 继续使用 Core 默认 `text-text-placeholder`，避免抽象带来无关视觉漂移
 
 消费点：
 
