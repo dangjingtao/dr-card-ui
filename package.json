@@ -37,7 +37,8 @@
     "verify:h013": "node scripts/verify-h013-msw.mjs",
     "verify:h014": "node scripts/verify-h014-mock-scenarios.mjs",
     "verify:h015": "node scripts/verify-h015-jsbridge.mjs",
-    "verify:h022": "node scripts/verify-h022-route-state-convergence.mjs"
+    "verify:h022": "node scripts/verify-h022-route-state-convergence.mjs",
+    "verify:h023": "node scripts/verify-h023-shared-components.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "5.9.1",
