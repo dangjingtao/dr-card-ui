@@ -28,7 +28,6 @@ type H5RouteTransitionKind = 'none' | 'tab' | 'forward' | 'back'
  */
 function H5RouteOutlet() {
   const location = useLocation()
-  const navigate = useNavigate()
   const navigationType = useNavigationType()
   const nativeTransitionActive = useViewTransitionState(location)
   const previousPathname = useRef(location.pathname)
@@ -37,9 +36,6 @@ function H5RouteOutlet() {
   const currentRoute = findRouteByPathname(location.pathname)
   const previousRoute = findRouteByPathname(previousPath)
   const activeFormalH5 = isActiveFormalH5Route(currentRoute)
-  const titleBarMode = currentRoute?.titleBar ?? 'back'
-  const showPageBack =
-    activeFormalH5 && !isFormalH5TabPath(location.pathname) && titleBarMode === 'back'
   const activeTransition =
     pathnameChanged &&
     isActiveFormalH5Route(previousRoute) &&
@@ -80,35 +76,17 @@ function H5RouteOutlet() {
     }
   }, [nativeTransitionActive, navigationKind])
 
-  const handlePageBack = () => {
-    if (currentRoute?.backTo) {
-      navigateWithH5ViewTransition(navigate, currentRoute.backTo)
-      return
-    }
-    navigate(-1)
-  }
-
   return (
     <div
       key={location.pathname}
-      className={`h5-route-frame relative h-full min-h-full ${showPageBack ? 'pt-11' : ''}`}
+      className="h5-route-frame h-full min-h-full"
       data-h5-route-active={activeFormalH5 ? 'true' : 'false'}
       data-h5-route-transition={transition}
     >
-      {showPageBack && (
-        <button
-          type="button"
-          data-h5-back
-          aria-label="返回"
-          onClick={handlePageBack}
-          className="absolute left-2 top-1 z-40 flex h-10 w-10 items-center justify-center rounded-full bg-surface/90 text-text-primary shadow-sm backdrop-blur-sm active:bg-surface-pressed"
-        >
-          <ChevronLeft className="h-[22px] w-[22px] stroke-[2.2]" aria-hidden />
-        </button>
-      )}
       <Outlet />
     </div>
   )
+
 }
 
 /**
@@ -141,6 +119,8 @@ export default function MobileLayout() {
   const titleBarMode = route?.titleBar ?? 'back'
   const fallbackTitle = location.pathname === '/tokens' ? '品牌 Token 展示' : '页面不存在'
   const title = route?.titleBarTitle ?? route?.title ?? fallbackTitle
+  const showPageBack =
+    activeFormalH5 && !isFormalH5TabPath(location.pathname) && titleBarMode === 'back'
 
   useLayoutEffect(() => {
     previousShellPathname.current = location.pathname
@@ -154,8 +134,16 @@ export default function MobileLayout() {
     navigate(target)
   }
 
+  const handlePageBack = () => {
+    if (route?.backTo) {
+      navigateWithH5ViewTransition(navigate, route.backTo)
+      return
+    }
+    navigate(-1)
+  }
+
   return (
-    <div className="app-background flex h-dvh flex-col overflow-hidden pt-[env(safe-area-inset-top)] text-text-primary">
+    <div className="app-background relative flex h-dvh flex-col overflow-hidden pt-[env(safe-area-inset-top)] text-text-primary">
       {/* H021：active formal H5 不再模拟宿主顶部栏；Native reference / deferred / 工程兜底保持既有壳层。 */}
       {!activeFormalH5 && (
         <div className="min-w-0 shrink-0">
@@ -168,7 +156,21 @@ export default function MobileLayout() {
           )}
         </div>
       )}
-      <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain" data-page-scroll>
+      {showPageBack && (
+        <button
+          type="button"
+          data-h5-back
+          aria-label="返回"
+          onClick={handlePageBack}
+          className="absolute left-2 top-[calc(env(safe-area-inset-top)+0.25rem)] z-50 flex h-10 w-10 items-center justify-center rounded-full bg-surface/90 text-text-primary shadow-sm backdrop-blur-sm active:bg-surface-pressed"
+        >
+          <ChevronLeft className="h-[22px] w-[22px] stroke-[2.2]" aria-hidden />
+        </button>
+      )}
+      <div
+        className={`min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain ${showPageBack ? 'pt-11' : ''}`}
+        data-page-scroll
+      >
         {isActiveFormalH5Route(route) && (
           <H5ScrollRestoration previousPathname={scrollSourcePathname} />
         )}
