@@ -33,24 +33,26 @@ type UnsupportedCapabilityResolution = {
   message: string
 }
 
-type SupportedCapabilityResolution<TResult> = {
+type SupportedCapabilityResolution<TInput, TResult> = {
   supported: true
-  invoke: () => TResult | PromiseLike<TResult>
+  invoke: (input: TInput) => TResult | PromiseLike<TResult>
 }
 
-type NativeCapabilityResolution<TResult> =
+type NativeCapabilityResolution<TInput, TResult> =
   | UnsupportedCapabilityResolution
-  | SupportedCapabilityResolution<TResult>
+  | SupportedCapabilityResolution<TInput, TResult>
 
-interface NativeCapabilityDescriptor<TName extends string, TResult> {
+interface NativeCapabilityDescriptor<TName extends string, TInput, TResult> {
   name: TName
   description: string
-  resolve: (hostWindow: NativeBridgeWindow | undefined) => NativeCapabilityResolution<TResult>
+  resolve: (
+    hostWindow: NativeBridgeWindow | undefined,
+  ) => NativeCapabilityResolution<TInput, TResult>
 }
 
-function defineCapability<TName extends string, TResult>(
-  descriptor: NativeCapabilityDescriptor<TName, TResult>,
-): NativeCapabilityDescriptor<TName, TResult> {
+function defineCapability<TName extends string, TInput, TResult>(
+  descriptor: NativeCapabilityDescriptor<TName, TInput, TResult>,
+): NativeCapabilityDescriptor<TName, TInput, TResult> {
   return descriptor
 }
 
@@ -61,14 +63,14 @@ function unsupportedCapability(
   return { supported: false, code, message }
 }
 
-function supportedCapability<TResult>(
-  invoke: SupportedCapabilityResolution<TResult>['invoke'],
-): SupportedCapabilityResolution<TResult> {
+function supportedCapability<TInput, TResult>(
+  invoke: SupportedCapabilityResolution<TInput, TResult>['invoke'],
+): SupportedCapabilityResolution<TInput, TResult> {
   return { supported: true, invoke }
 }
 
 const capabilityRegistry = {
-  getLoginToken: defineCapability<'getLoginToken', unknown>({
+  getLoginToken: defineCapability<'getLoginToken', void, unknown>({
     name: 'getLoginToken',
     description: 'Read the current login token from the confirmed Android host bridge.',
     resolve(hostWindow) {
@@ -90,10 +92,10 @@ const capabilityRegistry = {
 
       // Resolve the bridge for each invocation and keep the injected object as the receiver.
       // Both details are required by the real Android WebView integration evidence.
-      return supportedCapability(() => method.call(bridge))
+      return supportedCapability<void, unknown>(() => method.call(bridge))
     },
   }),
-  closeWebView: defineCapability<'closeWebView', never>({
+  closeWebView: defineCapability<'closeWebView', void, never>({
     name: 'closeWebView',
     description:
       'H5 close intent only; the Native close-WebView protocol is intentionally still unconfirmed.',
@@ -186,13 +188,14 @@ function withTimeout<T>(promise: Promise<T>, capability: string, timeoutMs: numb
   })
 }
 
-async function invokeNativeCapability<TName extends string, TResult>(
-  descriptor: NativeCapabilityDescriptor<TName, TResult>,
+async function invokeNativeCapability<TName extends string, TInput, TResult>(
+  descriptor: NativeCapabilityDescriptor<TName, TInput, TResult>,
+  input: TInput,
   options: NativeInvocationOptions = {},
 ): Promise<TResult> {
   ensureNativeMode(descriptor.name)
 
-  let resolution: NativeCapabilityResolution<TResult>
+  let resolution: NativeCapabilityResolution<TInput, TResult>
   try {
     resolution = descriptor.resolve(getHostWindow())
   } catch (error) {
@@ -214,7 +217,7 @@ async function invokeNativeCapability<TName extends string, TResult>(
 
   let invocation: Promise<TResult>
   try {
-    invocation = Promise.resolve(resolution.invoke())
+    invocation = Promise.resolve(resolution.invoke(input))
   } catch (error) {
     throw new NativeBridgeError(
       'invocation-failed',
@@ -243,7 +246,7 @@ async function invokeNativeCapability<TName extends string, TResult>(
 }
 
 function isCapabilitySupported(
-  descriptor: NativeCapabilityDescriptor<string, unknown>,
+  descriptor: NativeCapabilityDescriptor<string, never, unknown>,
   hostWindow: NativeBridgeWindow | undefined,
 ): boolean {
   if (runtimePolicy.bridgeMode !== 'native') return false
@@ -265,7 +268,7 @@ export function getNativeBridgeDiagnostics(): NativeBridgeDiagnostics {
     Object.entries(capabilityRegistry).map(([name, descriptor]) => [
       name,
       isCapabilitySupported(
-        descriptor as NativeCapabilityDescriptor<string, unknown>,
+        descriptor as NativeCapabilityDescriptor<string, never, unknown>,
         hostWindow,
       ),
     ]),
@@ -288,7 +291,7 @@ export function getNativeBridgeDiagnostics(): NativeBridgeDiagnostics {
  * `unknown` until the Native response schema is explicitly confirmed.
  */
 export function getLoginToken(options: NativeInvocationOptions = {}): Promise<unknown> {
-  return invokeNativeCapability(capabilityRegistry.getLoginToken, options)
+  return invokeNativeCapability(capabilityRegistry.getLoginToken, undefined, options)
 }
 
 /**
@@ -299,5 +302,5 @@ export function getLoginToken(options: NativeInvocationOptions = {}): Promise<un
  * explicitly unsupported until the host team confirms a real Android/iOS protocol.
  */
 export function closeWebView(): Promise<never> {
-  return invokeNativeCapability(capabilityRegistry.closeWebView)
+  return invokeNativeCapability(capabilityRegistry.closeWebView, undefined)
 }
