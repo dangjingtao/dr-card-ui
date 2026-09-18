@@ -232,6 +232,7 @@ export interface SearchFieldProps extends Omit<InputHTMLAttributes<HTMLInputElem
   loading?: boolean
   variant?: 'subtle' | 'pill'
   size?: 'compact' | 'regular'
+  inputClassName?: string
 }
 export function SearchField({
   value = '',
@@ -244,6 +245,7 @@ export function SearchField({
   type = 'search',
   disabled = false,
   className = '',
+  inputClassName = '',
   'aria-label': ariaLabel,
   ...props
 }: SearchFieldProps) {
@@ -279,6 +281,7 @@ export function SearchField({
         className={cn(
           'min-w-0 flex-1 bg-transparent text-text-primary outline-none placeholder:text-text-placeholder [&::-webkit-search-cancel-button]:hidden',
           compact ? 'text-xs' : 'text-sm',
+          inputClassName,
         )}
         {...props}
       />
