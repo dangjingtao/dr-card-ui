@@ -14,6 +14,8 @@ export interface NativeBridgeDiagnostics {
   hostVersion: null
   capabilities: {
     getLoginToken: boolean
+    /** H5-level capability name only. Native method/protocol is intentionally unconfirmed. */
+    closeWebView: boolean
   }
 }
 
@@ -47,6 +49,7 @@ export class NativeBridgeError extends Error {
 
 const DEFAULT_TIMEOUT_MS = 5_000
 const GET_LOGIN_TOKEN_CAPABILITY = 'getLoginToken'
+const CLOSE_WEBVIEW_CAPABILITY = 'closeWebView'
 
 function getHostWindow(): NativeBridgeWindow | undefined {
   if (typeof window === 'undefined') return undefined
@@ -130,6 +133,8 @@ export function getNativeBridgeDiagnostics(): NativeBridgeDiagnostics {
     capabilities: {
       getLoginToken:
         runtimePolicy.bridgeMode === 'native' && typeof androidBridge?.getLoginToken === 'function',
+      // H021 only models the UI intent. No Native close protocol has been confirmed yet.
+      closeWebView: false,
     },
   }
 }
@@ -186,4 +191,23 @@ export async function getLoginToken(options: { timeoutMs?: number } = {}): Promi
       error,
     )
   }
+}
+
+
+/**
+ * H5-facing close intent.
+ *
+ * H021 needs a stable App-title-bar contract before the Native close protocol exists. This function
+ * deliberately exposes the intent without guessing any Android/iOS method name. Once the host team
+ * confirms the protocol, only this adapter needs a real implementation; pages and TitleBar stay
+ * unchanged.
+ */
+export async function closeWebView(): Promise<never> {
+  ensureNativeMode(CLOSE_WEBVIEW_CAPABILITY)
+
+  throw new NativeBridgeError(
+    'capability-unsupported',
+    CLOSE_WEBVIEW_CAPABILITY,
+    'The App host has not confirmed a close-WebView JSBridge protocol yet.',
+  )
 }
