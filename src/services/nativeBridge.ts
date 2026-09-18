@@ -1,4 +1,9 @@
 import { runtimePolicy } from '../app/config/runtime'
+import {
+  createAndroidInjectedObjectTransport,
+  type NativeTransportResolution,
+  type NativeTransportWindow,
+} from './nativeBridgeTransport'
 
 export type NativeHost = 'android' | 'ios' | 'browser'
 export type NativeBridgeErrorCode =
@@ -8,44 +13,20 @@ export type NativeBridgeErrorCode =
   | 'invocation-failed'
   | 'invocation-timeout'
 
-type AndroidBridge = {
-  getLoginToken?: () => unknown
-}
-
-type IOSMessageHandler = {
-  postMessage: (payload: unknown) => void
-}
-
-type NativeBridgeWindow = Window & {
-  androidBridge?: AndroidBridge
-  webkit?: {
-    messageHandlers?: Record<string, IOSMessageHandler | undefined>
-  }
-}
-
 type NativeInvocationOptions = {
   timeoutMs?: number
 }
 
-type UnsupportedCapabilityResolution = {
-  supported: false
-  code: Extract<NativeBridgeErrorCode, 'bridge-unsupported' | 'capability-unsupported'>
-  message: string
-}
-
-type SupportedCapabilityResolution<TResult> = {
-  supported: true
-  invoke: () => TResult | PromiseLike<TResult>
-}
-
-type NativeCapabilityResolution<TResult> =
-  | UnsupportedCapabilityResolution
-  | SupportedCapabilityResolution<TResult>
+type NativeCapabilityResolution<TResult> = NativeTransportResolution<TResult>
+type UnsupportedCapabilityResolution = Extract<
+  NativeTransportResolution<never>,
+  { supported: false }
+>
 
 interface NativeCapabilityDescriptor<TName extends string, TResult> {
   name: TName
   description: string
-  resolve: (hostWindow: NativeBridgeWindow | undefined) => NativeCapabilityResolution<TResult>
+  resolve: (hostWindow: NativeTransportWindow | undefined) => NativeCapabilityResolution<TResult>
 }
 
 function defineCapability<TName extends string, TResult>(
@@ -61,36 +42,18 @@ function unsupportedCapability(
   return { supported: false, code, message }
 }
 
-function supportedCapability<TResult>(
-  invoke: SupportedCapabilityResolution<TResult>['invoke'],
-): SupportedCapabilityResolution<TResult> {
-  return { supported: true, invoke }
-}
+const getLoginTokenTransport = createAndroidInjectedObjectTransport<void, unknown>({
+  objectName: 'androidBridge',
+  methodName: 'getLoginToken',
+  serializeArgs: () => [],
+})
 
 const capabilityRegistry = {
   getLoginToken: defineCapability<'getLoginToken', unknown>({
     name: 'getLoginToken',
     description: 'Read the current login token from the confirmed Android host bridge.',
     resolve(hostWindow) {
-      const bridge = hostWindow?.androidBridge
-      if (!bridge) {
-        return unsupportedCapability(
-          'bridge-unsupported',
-          'window.androidBridge is not available in the current host.',
-        )
-      }
-
-      const method = bridge.getLoginToken
-      if (typeof method !== 'function') {
-        return unsupportedCapability(
-          'capability-unsupported',
-          'androidBridge.getLoginToken is not available in the current host.',
-        )
-      }
-
-      // Resolve the bridge for each invocation and keep the injected object as the receiver.
-      // Both details are required by the real Android WebView integration evidence.
-      return supportedCapability(() => method.call(bridge))
+      return getLoginTokenTransport.resolve(hostWindow, undefined)
     },
   }),
   closeWebView: defineCapability<'closeWebView', never>({
@@ -130,9 +93,9 @@ export class NativeBridgeError extends Error {
 
 const DEFAULT_TIMEOUT_MS = 5_000
 
-function getHostWindow(): NativeBridgeWindow | undefined {
+function getHostWindow(): NativeTransportWindow | undefined {
   if (typeof window === 'undefined') return undefined
-  return window as NativeBridgeWindow
+  return window as NativeTransportWindow
 }
 
 function detectHost(hostWindow = getHostWindow()): NativeHost {
@@ -147,7 +110,11 @@ function ensureNativeMode(capability: string): void {
   throw new NativeBridgeError(
     'bridge-disabled',
     capability,
-    `Native capability "${capability}" requires VITE_BRIDGE_MODE=native; current mode is ${runtimePolicy.bridgeMode}.`,
+    'Native capability "' +
+      capability +
+      '" requires VITE_BRIDGE_MODE=native; current mode is ' +
+      runtimePolicy.bridgeMode +
+      '.',
   )
 }
 
@@ -157,7 +124,7 @@ function withTimeout<T>(promise: Promise<T>, capability: string, timeoutMs: numb
       new NativeBridgeError(
         'invocation-failed',
         capability,
-        `Native capability "${capability}" requires a positive finite timeout.`,
+        'Native capability "' + capability + '" requires a positive finite timeout.',
       ),
     )
   }
@@ -168,7 +135,7 @@ function withTimeout<T>(promise: Promise<T>, capability: string, timeoutMs: numb
         new NativeBridgeError(
           'invocation-timeout',
           capability,
-          `Native capability "${capability}" timed out after ${timeoutMs}ms.`,
+          'Native capability "' + capability + '" timed out after ' + timeoutMs + 'ms.',
         ),
       )
     }, timeoutMs)
@@ -199,7 +166,7 @@ async function invokeNativeCapability<TName extends string, TResult>(
     throw new NativeBridgeError(
       'invocation-failed',
       descriptor.name,
-      `Native capability "${descriptor.name}" failed during capability resolution.`,
+      'Native capability "' + descriptor.name + '" failed during capability resolution.',
       error,
     )
   }
@@ -219,7 +186,7 @@ async function invokeNativeCapability<TName extends string, TResult>(
     throw new NativeBridgeError(
       'invocation-failed',
       descriptor.name,
-      `Native capability "${descriptor.name}" threw during invocation.`,
+      'Native capability "' + descriptor.name + '" threw during invocation.',
       error,
     )
   }
@@ -236,7 +203,7 @@ async function invokeNativeCapability<TName extends string, TResult>(
     throw new NativeBridgeError(
       'invocation-failed',
       descriptor.name,
-      `Native capability "${descriptor.name}" rejected during invocation.`,
+      'Native capability "' + descriptor.name + '" rejected during invocation.',
       error,
     )
   }
@@ -244,7 +211,7 @@ async function invokeNativeCapability<TName extends string, TResult>(
 
 function isCapabilitySupported(
   descriptor: NativeCapabilityDescriptor<string, unknown>,
-  hostWindow: NativeBridgeWindow | undefined,
+  hostWindow: NativeTransportWindow | undefined,
 ): boolean {
   if (runtimePolicy.bridgeMode !== 'native') return false
 
@@ -257,7 +224,7 @@ function isCapabilitySupported(
 
 /**
  * Returns runtime-observable Bridge state without claiming a Native version contract that the host
- * has not provided. `hostVersion` therefore remains null until a real version API is confirmed.
+ * has not provided. hostVersion therefore remains null until a real version API is confirmed.
  */
 export function getNativeBridgeDiagnostics(): NativeBridgeDiagnostics {
   const hostWindow = getHostWindow()
@@ -280,12 +247,13 @@ export function getNativeBridgeDiagnostics(): NativeBridgeDiagnostics {
 }
 
 /**
- * H015's first confirmed production boundary, now executed through the shared capability runtime.
+ * H015's first confirmed production boundary, now executed through the shared capability runtime
+ * and H026's Android injected-object transport.
  *
- * The real Android WebView probe uses `window.androidBridge.getLoginToken()` with no arguments and
+ * The real Android WebView probe uses window.androidBridge.getLoginToken() with no arguments and
  * a synchronous host return. The adapter deliberately normalizes that return to a Promise so pages
  * never depend on Android's synchronous JavaScriptInterface behavior. The raw result remains
- * `unknown` until the Native response schema is explicitly confirmed.
+ * unknown until the Native response schema is explicitly confirmed.
  */
 export function getLoginToken(options: NativeInvocationOptions = {}): Promise<unknown> {
   return invokeNativeCapability(capabilityRegistry.getLoginToken, options)
