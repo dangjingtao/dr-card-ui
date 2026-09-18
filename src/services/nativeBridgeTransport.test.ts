@@ -406,6 +406,57 @@ describe('iOS-style messageHandler transport', () => {
     await expect(firstPromise).resolves.toBe(11)
   })
 
+  it('poisons a timed-out single-flight channel so a late callback cannot settle the next request', async () => {
+    vi.useFakeTimers()
+    bridgeWindow.webkit = {
+      messageHandlers: {
+        legacy: {
+          postMessage() {},
+        },
+      },
+    }
+
+    const transport = createIOSMessageHandlerTransport<number, number>({
+      handlerName: 'legacy',
+      correlation: 'single-flight',
+      serializeRequest: ({ input }) => input,
+      parseCallback: (payload) => payload as {
+        ok: true
+        payload: unknown
+      },
+      parseResult: (payload) => Number(payload),
+    })
+
+    const first = transport.resolve(bridgeWindow, 1, { timeoutMs: 25 })
+    if (!first.supported) throw new Error('Expected iOS transport to resolve.')
+    const firstPromise = Promise.resolve(first.invoke())
+    const timeoutRejection = expect(firstPromise).rejects.toMatchObject({
+      name: 'NativeTransportError',
+      code: 'callback-timeout',
+    } satisfies Partial<NativeTransportError>)
+
+    await vi.advanceTimersByTimeAsync(25)
+    await timeoutRejection
+    expect(transport.pendingCount()).toBe(0)
+
+    const second = transport.resolve(bridgeWindow, 2)
+    if (!second.supported) throw new Error('Expected iOS transport to resolve.')
+    await expect(Promise.resolve(second.invoke())).rejects.toMatchObject({
+      name: 'NativeTransportError',
+      code: 'callback-channel-unsafe',
+    } satisfies Partial<NativeTransportError>)
+
+    expect(transport.handleCallback({ ok: true, payload: 10 })).toBe(false)
+
+    transport.resetSingleFlightAfterHostRecovery()
+    const recovered = transport.resolve(bridgeWindow, 3)
+    if (!recovered.supported) throw new Error('Expected recovered iOS transport to resolve.')
+    const recoveredPromise = Promise.resolve(recovered.invoke())
+
+    expect(transport.handleCallback({ ok: true, payload: 30 })).toBe(true)
+    await expect(recoveredPromise).resolves.toBe(30)
+  })
+
   it('preserves messageHandler receiver binding and reports postMessage throws', async () => {
     const nativeFailure = new Error('postMessage exploded')
     const handler = {
