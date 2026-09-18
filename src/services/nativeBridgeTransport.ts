@@ -28,6 +28,7 @@ export type NativeTransportErrorCode =
   | 'callback-timeout'
   | 'callback-failed'
   | 'callback-concurrency-unsupported'
+  | 'callback-correlation-conflict'
   | 'post-message-failed'
 
 export class NativeTransportError extends Error {
@@ -318,6 +319,15 @@ export function createIOSMessageHandlerTransport<TInput, TResult>(
       config.correlation === 'request-id'
         ? (config.requestIdFactory ?? defaultRequestIdFactory)()
         : defaultRequestIdFactory()
+
+    if (pending.has(requestId)) {
+      return Promise.reject(
+        new NativeTransportError(
+          'callback-correlation-conflict',
+          'The iOS callback request id is already pending and cannot be reused.',
+        ),
+      )
+    }
 
     let payload: unknown
     try {
