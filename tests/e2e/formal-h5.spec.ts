@@ -109,3 +109,31 @@ test('@formal-h5 @business profile notification navigation remains inside formal
 
   expect(runtimeErrors, runtimeErrors.join('\n')).toEqual([])
 })
+
+
+test('@formal-h5 H021 active routes render as pure pages without simulated top shell', async ({ page }) => {
+  const runtimeErrors = collectRuntimeErrors(page)
+
+  for (const path of ['/?newcomer=off', '/notifications']) {
+    await page.goto(path, { waitUntil: 'domcontentloaded' })
+    await expectHealthyFormalRoute(page)
+    await expect(page.locator('[data-mobile-status-bar]')).toHaveCount(0)
+    await expect(page.locator('[data-title-bar]')).toHaveCount(0)
+  }
+
+  expect(runtimeErrors, runtimeErrors.join('\n')).toEqual([])
+})
+
+test('@formal-h5 H021 page-local actions survive shell removal', async ({ page }) => {
+  const runtimeErrors = collectRuntimeErrors(page)
+
+  await page.goto('/notifications', { waitUntil: 'domcontentloaded' })
+  await expectHealthyFormalRoute(page)
+  await expect(page.getByRole('button', { name: /一键已读|全部已读/ })).toBeVisible()
+
+  await page.goto('/service/chat', { waitUntil: 'domcontentloaded' })
+  await expectHealthyFormalRoute(page)
+  await expect(page.locator('[data-chat-wecom-entry]')).toBeVisible()
+
+  expect(runtimeErrors, runtimeErrors.join('\n')).toEqual([])
+})
