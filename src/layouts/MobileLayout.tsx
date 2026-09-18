@@ -120,6 +120,14 @@ export default function MobileLayout() {
   const titleBarMode = route?.titleBar ?? 'back'
   const fallbackTitle = location.pathname === '/tokens' ? '品牌 Token 展示' : '页面不存在'
   const title = route?.titleBarTitle ?? route?.title ?? fallbackTitle
+  const leadingAction =
+    titleBarMode === 'hidden'
+      ? 'none'
+      : activeFormalH5 && isFormalH5TabPath(location.pathname)
+        ? 'close'
+        : titleBarMode === 'back'
+          ? 'back'
+          : 'none'
   const isNotificationsPage = location.pathname === '/notifications'
   const allNotificationsRead = unreadCount === 0
 
@@ -202,7 +210,7 @@ export default function MobileLayout() {
         {titleBarMode !== 'hidden' && (
           <TitleBar
             title={title}
-            back={titleBarMode === 'back'}
+            leadingAction={leadingAction}
             onBack={route?.backTo ? () => navigateShell(route.backTo as string) : undefined}
             action={titleAction}
             actionWide={isNotificationsPage || location.pathname === '/service/chat'}
