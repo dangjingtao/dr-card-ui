@@ -7,13 +7,14 @@ import {
   useNavigationType,
   useViewTransitionState,
 } from 'react-router-dom'
-import { ChevronLeft } from 'lucide-react'
+import { Bell, MessageSquare, Settings } from 'lucide-react'
 import BottomNav from '../components/mobile/BottomNav'
 import TitleBar from '../components/mobile/TitleBar'
 import { findRouteByPathname, isLegacyTabPath } from '../app/router/routes'
 import { getRouteScope, isActiveFormalH5Route, isFormalH5TabPath } from '../app/router/routeScope'
 import { navigateWithH5ViewTransition } from '../app/router/h5Transition'
-import { protectedFixtureRedirect } from '../app/fixtures/useFixture'
+import { useNotifications } from '../app/state/notifications'
+import { protectedFixtureRedirect, useOverlay } from '../app/fixtures/useFixture'
 import H5ScrollRestoration from '../components/mobile/H5ScrollRestoration'
 
 type H5RouteTransitionKind = 'none' | 'tab' | 'forward' | 'back'
@@ -35,7 +36,6 @@ function H5RouteOutlet() {
   const pathnameChanged = previousPath !== location.pathname
   const currentRoute = findRouteByPathname(location.pathname)
   const previousRoute = findRouteByPathname(previousPath)
-  const activeFormalH5 = isActiveFormalH5Route(currentRoute)
   const activeTransition =
     pathnameChanged &&
     isActiveFormalH5Route(previousRoute) &&
@@ -80,21 +80,20 @@ function H5RouteOutlet() {
     <div
       key={location.pathname}
       className="h5-route-frame h-full min-h-full"
-      data-h5-route-active={activeFormalH5 ? 'true' : 'false'}
+      data-h5-route-active={isActiveFormalH5Route(currentRoute) ? 'true' : 'false'}
       data-h5-route-transition={transition}
     >
       <Outlet />
     </div>
   )
-
 }
 
 /**
- * WebView 页面壳层（T004 + H021）
- * - active formal H5 是 App WebView 内的纯页面：不模拟手机状态栏，也不渲染共享宿主标题栏
- * - 顶部 safe-area 仍保留为 WebView 兼容边界；是否由 Native 进一步接管要等真实宿主协议确认
- * - 页面只有一个纵向滚动区；正式 H5 的业务内容直接从该滚动区开始
- * - TabBar 是 H5 自身业务导航，位于壳层底部并负责底部安全区
+ * WebView 应用壳层（T004 + H021）
+ * - 不模拟手机系统状态栏；顶部只保留 H5 自身的 App 标准业务标题栏
+ * - 标题栏固定在页面滚动区之外：44px，高度、返回、居中标题与右侧动作按 App 导航栏结构统一
+ * - active formal H5 的标题栏与内容随 WebView 宽度铺满；Native reference/deferred 保留历史预览边界
+ * - TabBar 位于壳层底部，自身负责底部安全区，页面不再重复预留
  * - 二级页不显示底部导航，避免遮挡输入区/弹层
  * - /legacy-home 为独立入口，使用「首页 / 服务 / 我的」三项导航，与主入口五项 TabBar 并存
  * - H003：正式 H5 壳层不再从 Native reference mock 用户状态推断登录态，也不再把 `/`
@@ -109,6 +108,8 @@ export default function MobileLayout() {
   const navigate = useNavigate()
   const previousShellPathname = useRef(location.pathname)
   const scrollSourcePathname = previousShellPathname.current
+  const { unreadCount } = useNotifications()
+  const { open: openOverlay } = useOverlay()
   const showLegacyNav = isLegacyTabPath(location.pathname)
   const showNav = showLegacyNav || isFormalH5TabPath(location.pathname)
   const route = findRouteByPathname(location.pathname)
@@ -119,8 +120,8 @@ export default function MobileLayout() {
   const titleBarMode = route?.titleBar ?? 'back'
   const fallbackTitle = location.pathname === '/tokens' ? '品牌 Token 展示' : '页面不存在'
   const title = route?.titleBarTitle ?? route?.title ?? fallbackTitle
-  const showPageBack =
-    activeFormalH5 && !isFormalH5TabPath(location.pathname) && titleBarMode === 'back'
+  const isNotificationsPage = location.pathname === '/notifications'
+  const allNotificationsRead = unreadCount === 0
 
   useLayoutEffect(() => {
     previousShellPathname.current = location.pathname
@@ -131,46 +132,85 @@ export default function MobileLayout() {
   }
 
   const navigateShell = (target: string) => {
+    const targetRoute = findRouteByPathname(target)
+    if (isActiveFormalH5Route(route) && isActiveFormalH5Route(targetRoute)) {
+      navigateWithH5ViewTransition(navigate, target)
+      return
+    }
     navigate(target)
   }
 
-  const handlePageBack = () => {
-    if (route?.backTo) {
-      navigateWithH5ViewTransition(navigate, route.backTo)
-      return
-    }
-    navigate(-1)
+  const openMarkAllRead = () => {
+    openOverlay('clear')
   }
 
-  return (
-    <div className="app-background relative flex h-dvh flex-col overflow-hidden pt-[env(safe-area-inset-top)] text-text-primary">
-      {/* H021：active formal H5 不再模拟宿主顶部栏；Native reference / deferred / 工程兜底保持既有壳层。 */}
-      {!activeFormalH5 && (
-        <div className="min-w-0 shrink-0">
-          {titleBarMode !== 'hidden' && (
-            <TitleBar
-              title={title}
-              back={titleBarMode === 'back'}
-              onBack={route?.backTo ? () => navigateShell(route.backTo as string) : undefined}
-            />
-          )}
-        </div>
-      )}
-      {showPageBack && (
-        <button
-          type="button"
-          data-h5-back
-          aria-label="返回"
-          onClick={handlePageBack}
-          className="absolute left-2 top-[calc(env(safe-area-inset-top)+0.25rem)] z-50 flex h-10 w-10 items-center justify-center rounded-full bg-surface/90 text-text-primary shadow-sm backdrop-blur-sm active:bg-surface-pressed"
-        >
-          <ChevronLeft className="h-[22px] w-[22px] stroke-[2.2]" aria-hidden />
-        </button>
-      )}
-      <div
-        className={`min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain ${showPageBack ? 'pt-11' : ''}`}
-        data-page-scroll
+  const openWecom = () => {
+    navigate(
+      {
+        pathname: location.pathname,
+        search: location.search,
+        hash: '#wecom',
+      },
+      { replace: true, state: location.state },
+    )
+  }
+
+  const titleAction = isNotificationsPage
+    ? (
+      <button
+        type="button"
+        onClick={openMarkAllRead}
+        disabled={allNotificationsRead}
+        className="min-h-9 whitespace-nowrap rounded-control px-1.5 text-[13px] font-medium text-reward-strong transition active:bg-[rgba(89,55,15,0.06)] disabled:pointer-events-none disabled:text-text-disabled"
       >
+        {allNotificationsRead ? '全部已读' : '一键已读'}
+      </button>
+    )
+    : route?.titleBarAction === 'settings'
+      ? (
+        <button type="button" aria-label="设置" onClick={() => navigateShell('/settings')} className="flex h-9 w-9 items-center justify-center rounded-full text-text-primary active:bg-[rgba(89,55,15,0.06)]">
+          <Settings className="h-[22px] w-[22px]" />
+        </button>
+      )
+      : route?.titleBarAction === 'notifications'
+        ? (
+          <button type="button" aria-label="通知" onClick={() => navigateShell('/notifications')} className="flex h-9 w-9 items-center justify-center rounded-full text-text-primary active:bg-[rgba(89,55,15,0.06)]">
+            <Bell className="h-[22px] w-[22px]" />
+          </button>
+        )
+        : location.pathname === '/service/chat'
+          ? (
+            /* T013R5+R6：「企微客服」pill 回到壳层 TitleBar 右侧（与「< 智能客服」同右侧）；
+              * H016：hash 只表示当前页弹层状态，使用 replace 避免新增历史项和触发页面级滚动/过渡。
+              * T013R6：pill 不限制宽度、whitespace-nowrap，保证「企微客服」四个字自然横向不被换行或裁剪。 */
+            <button
+              type="button"
+              data-chat-wecom-entry
+              onClick={openWecom}
+              className="inline-flex min-h-9 items-center gap-1 whitespace-nowrap rounded-pill bg-surface px-3 text-[13px] font-medium text-text-brand shadow-sm active:bg-surface-selected"
+            >
+              <MessageSquare className="h-3.5 w-3.5" aria-hidden />
+              企微客服
+            </button>
+          )
+          : undefined
+
+  return (
+    <div className="app-background flex h-dvh flex-col overflow-hidden pt-[env(safe-area-inset-top)] text-text-primary">
+      {/* T013R7：min-w-0 防止 TitleBar 第三列 action 被撑大撑出页面右侧 */}
+      <div className="min-w-0 shrink-0">
+        {titleBarMode !== 'hidden' && (
+          <TitleBar
+            title={title}
+            back={titleBarMode === 'back'}
+            onBack={route?.backTo ? () => navigateShell(route.backTo as string) : undefined}
+            action={titleAction}
+            actionWide={isNotificationsPage || location.pathname === '/service/chat'}
+            fullWidth={activeFormalH5}
+          />
+        )}
+      </div>
+      <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain" data-page-scroll>
         {isActiveFormalH5Route(route) && (
           <H5ScrollRestoration previousPathname={scrollSourcePathname} />
         )}
