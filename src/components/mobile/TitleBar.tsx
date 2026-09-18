@@ -14,7 +14,8 @@ export interface TitleBarProps {
 }
 
 /**
- * 业务标题栏，样式以 reference 内已确认页面为准。
+ * 非 active-formal-H5 的兼容标题栏。
+ * H021 起正式 H5 不渲染共享宿主标题栏；本组件仅保留给 Native reference、deferred 路由与工程兜底页。
  * - 无返回：首页式 44px 居中标题栏，文字 18/24。
  * - 有返回：44px 三列标题栏；图标动作左右 36px，文本动作左右 72px，标题始终居中。
  * - 沉浸式页面（如扫码）由页面不渲染本组件。
@@ -40,7 +41,7 @@ export default function TitleBar({
   if (!back && !action) {
     return (
       <header className={`w-full bg-transparent ${className}`} data-title-bar="plain">
-        <div className="mx-auto flex h-11 w-full max-w-[480px] items-center justify-center px-3 text-center">
+        <div className="mx-auto flex h-11 w-full max-w-legacy-shell items-center justify-center px-3 text-center">
           <h1 className="m-0 text-[18px] font-semibold leading-6 text-text-primary">{title}</h1>
         </div>
       </header>
@@ -52,7 +53,7 @@ export default function TitleBar({
       className={`w-full min-w-0 overflow-hidden bg-transparent ${className}`}
       data-title-bar={back ? 'back' : 'action'}
     >
-      <div className={`mx-auto grid h-11 w-full min-w-0 max-w-[480px] items-center px-3 ${gridColumns}`}>
+      <div className={`mx-auto grid h-11 w-full min-w-0 max-w-legacy-shell items-center px-3 ${gridColumns}`}>
         {back ? (
           <div className="flex h-9 items-center justify-start">
             <button
