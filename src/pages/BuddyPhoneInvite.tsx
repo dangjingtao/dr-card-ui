@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { Loader2, Search, Send, UserRoundPlus } from 'lucide-react'
+import { Loader2, Send, UserRoundPlus } from 'lucide-react'
 import DebugPanel from '../components/mobile/DebugPanel'
 import PageContainer from '../components/mobile/PageContainer'
 import PromptOverlay from '../components/mobile/PromptOverlay'
-import { Button } from '../components/ui'
+import { Button, SearchField } from '../components/ui'
 import {
   BUDDY_INVITE_COPY,
   BUDDY_SEARCH_FEEDBACK,
@@ -108,23 +108,28 @@ export default function BuddyPhoneInvite() {
             }}
             className="flex items-center gap-2"
           >
-            <label className="flex h-11 min-w-0 flex-1 items-center gap-2 rounded-pill border border-border-subtle bg-surface px-4 shadow-sm">
-              <Search className="h-4 w-4 flex-none text-text-tertiary" aria-hidden />
-              <input
-                type="tel"
-                inputMode="tel"
-                aria-label="输入手机号搜索搭子"
-                placeholder={BUDDY_INVITE_COPY.phonePlaceholder}
-                value={phone}
-                onChange={(event) => {
-                  searchRequest.current += 1
-                  setPhone(event.target.value)
-                  setOutcome('idle')
-                  setRequestError(null)
-                }}
-                className="min-w-0 flex-1 bg-transparent text-sm text-text-primary outline-none placeholder:text-text-tertiary"
-              />
-            </label>
+            <SearchField
+              type="tel"
+              inputMode="tel"
+              aria-label="输入手机号搜索搭子"
+              placeholder={BUDDY_INVITE_COPY.phonePlaceholder}
+              value={phone}
+              variant="pill"
+              loading={outcome === 'searching'}
+              onChange={(event) => {
+                searchRequest.current += 1
+                setPhone(event.target.value)
+                setOutcome('idle')
+                setRequestError(null)
+              }}
+              onClear={() => {
+                searchRequest.current += 1
+                setPhone('')
+                setOutcome('idle')
+                setRequestError(null)
+              }}
+              className="min-w-0 flex-1"
+            />
             <Button type="submit" disabled={!phone.trim() || outcome === 'searching'} className="h-11 flex-none rounded-pill px-5">
               搜索
             </Button>
