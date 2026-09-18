@@ -111,20 +111,24 @@ test('@formal-h5 @business profile notification navigation remains inside formal
 })
 
 
-test('@formal-h5 H021 active routes render as pure pages without simulated top shell', async ({ page }) => {
+test('@formal-h5 H021 removes simulated status bar but keeps App-standard title bar', async ({ page }) => {
   const runtimeErrors = collectRuntimeErrors(page)
 
   for (const path of ['/?newcomer=off', '/notifications']) {
     await page.goto(path, { waitUntil: 'domcontentloaded' })
     await expectHealthyFormalRoute(page)
     await expect(page.locator('[data-mobile-status-bar]')).toHaveCount(0)
-    await expect(page.locator('[data-title-bar]')).toHaveCount(0)
+
+    const titleBar = page.locator('[data-title-bar]')
+    await expect(titleBar).toHaveCount(1)
+    const height = await titleBar.evaluate((node) => node.getBoundingClientRect().height)
+    expect(Math.round(height)).toBe(44)
   }
 
   expect(runtimeErrors, runtimeErrors.join('\n')).toEqual([])
 })
 
-test('@formal-h5 H021 page-local actions survive shell removal', async ({ page }) => {
+test('@formal-h5 H021 title-bar actions remain available', async ({ page }) => {
   const runtimeErrors = collectRuntimeErrors(page)
 
   await page.goto('/notifications', { waitUntil: 'domcontentloaded' })
@@ -150,22 +154,26 @@ test('@formal-h5 H021 active formal H5 fills a wide WebView', async ({ page }) =
     const scroll = document.querySelector('[data-page-scroll]') as HTMLElement | null
     const container = document.querySelector('[data-page-container]') as HTMLElement | null
     const nav = document.querySelector('nav[aria-label="主导航"]') as HTMLElement | null
-    if (!scroll || !container || !nav) throw new Error('H021 wide-layout evidence nodes missing')
+    const titleBar = document.querySelector('[data-title-bar] > div') as HTMLElement | null
+    if (!scroll || !container || !nav || !titleBar) throw new Error('H021 wide-layout evidence nodes missing')
     return {
       scroll: scroll.getBoundingClientRect().width,
       container: container.getBoundingClientRect().width,
       nav: nav.getBoundingClientRect().width,
+      titleBar: titleBar.getBoundingClientRect().width,
     }
   })
 
   expect(Math.abs(widths.container - widths.scroll)).toBeLessThanOrEqual(1)
   expect(Math.abs(widths.nav - widths.scroll)).toBeLessThanOrEqual(1)
+  expect(Math.abs(widths.titleBar - widths.scroll)).toBeLessThanOrEqual(1)
   expect(widths.container).toBeGreaterThan(480)
+  expect(widths.titleBar).toBeGreaterThan(480)
 
   expect(runtimeErrors, runtimeErrors.join('\n')).toEqual([])
 })
 
-test('@formal-h5 H021 page back stays reachable while content scrolls', async ({ page }) => {
+test('@formal-h5 H021 App title bar stays reachable while content scrolls', async ({ page }) => {
   const runtimeErrors = collectRuntimeErrors(page)
 
   await page.goto('/dearseed?picker=off', { waitUntil: 'domcontentloaded' })
@@ -174,9 +182,11 @@ test('@formal-h5 H021 page back stays reachable while content scrolls', async ({
   await expect(page).toHaveURL(/\/brand-culture$/)
   await expectHealthyFormalRoute(page)
 
-  const back = page.locator('[data-h5-back]')
+  const titleBar = page.locator('[data-title-bar="back"]')
+  const back = titleBar.getByRole('button', { name: '返回' })
+  await expect(titleBar).toBeVisible()
   await expect(back).toBeVisible()
-  const before = await back.boundingBox()
+  const before = await titleBar.boundingBox()
 
   await page.locator('[data-page-scroll]').evaluate((node) => {
     ;(node as HTMLElement).scrollTop = 700
@@ -185,8 +195,8 @@ test('@formal-h5 H021 page back stays reachable while content scrolls', async ({
     .poll(() => page.locator('[data-page-scroll]').evaluate((node) => (node as HTMLElement).scrollTop))
     .toBeGreaterThan(0)
 
-  await expect(back).toBeVisible()
-  const after = await back.boundingBox()
+  await expect(titleBar).toBeVisible()
+  const after = await titleBar.boundingBox()
   expect(before).not.toBeNull()
   expect(after).not.toBeNull()
   expect(Math.abs((after?.y ?? 0) - (before?.y ?? 0))).toBeLessThanOrEqual(1)
