@@ -14,7 +14,7 @@ import brandCultureLongPage from '../assets/brand/ip/brand-culture-longpage.webp
  * 不予继承，B-001 据此关闭。
  *
  * 实现约束：
- * - H021 后 H5 不再模拟宿主标题栏；浏览器预览仅由 MobileLayout 提供页面级返回按钮，页面本身不自造顶部栏目。
+ * - 返回栏由 MobileLayout 统一提供（routes.ts 默认 `back`，返回诗得丽专栏），页面不自造标题栏。
  * - 长图需全宽铺满，故 `PageContainer inset={false}`，不加 px-4 贴边。
  * - artboard 底色 rgb(252,250,246) 与项目 `--color-background`(#FCF8F1) 同属暖白，
  *   差值不可感知，故直接消费 `bg-background`，不为单页引入私有底色。
