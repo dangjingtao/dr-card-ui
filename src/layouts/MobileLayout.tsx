@@ -120,14 +120,17 @@ export default function MobileLayout() {
   const titleBarMode = route?.titleBar ?? 'back'
   const fallbackTitle = location.pathname === '/tokens' ? '品牌 Token 展示' : '页面不存在'
   const title = route?.titleBarTitle ?? route?.title ?? fallbackTitle
+  const requestedLeadingAction = route?.leadingAction ?? 'auto'
   const leadingAction =
     titleBarMode === 'hidden'
       ? 'none'
-      : activeFormalH5 && isFormalH5TabPath(location.pathname)
-        ? 'close'
-        : titleBarMode === 'back'
-          ? 'back'
-          : 'none'
+      : requestedLeadingAction !== 'auto'
+        ? requestedLeadingAction
+        : activeFormalH5 && isFormalH5TabPath(location.pathname)
+          ? 'close'
+          : titleBarMode === 'back'
+            ? 'back'
+            : 'none'
   const isNotificationsPage = location.pathname === '/notifications'
   const allNotificationsRead = unreadCount === 0
 
