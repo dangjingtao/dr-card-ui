@@ -13,6 +13,7 @@ export interface EmptyStateIconProps {
 export default function EmptyStateIcon({ icon: Icon, label }: EmptyStateIconProps) {
   return (
     <span
+      data-empty-state-icon
       role={label ? 'img' : undefined}
       aria-label={label}
       aria-hidden={label ? undefined : true}
