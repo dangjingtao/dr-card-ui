@@ -15,6 +15,23 @@ for (const path of searchConsumers) {
   assert.doesNotMatch(source, /<Search\b/, path + ' must not keep a page-local Search icon implementation')
 }
 
+const exchange = read('src/pages/Exchange.tsx')
+assert.match(exchange, /variant="pill"/, 'Exchange must keep pill SearchField presentation')
+assert.match(exchange, /size="compact"/, 'Exchange must keep compact SearchField sizing')
+assert.match(
+  exchange,
+  /rounded-pill bg-surface px-2\.5/,
+  'Exchange balance pill must keep the same effective surface background as SearchField',
+)
+
+const buddyPhoneInvite = read('src/pages/BuddyPhoneInvite.tsx')
+assert.match(buddyPhoneInvite, /variant="pill"/, 'BuddyPhoneInvite must keep pill SearchField presentation')
+assert.match(
+  buddyPhoneInvite,
+  /loading=\{outcome === 'searching'\}/,
+  'BuddyPhoneInvite must wire searching state into SearchField loading',
+)
+
 const searchField = read('src/components/ui/ComDesign.tsx')
 assert.match(searchField, /export interface SearchFieldProps/)
 assert.match(searchField, /data-search-field/)
