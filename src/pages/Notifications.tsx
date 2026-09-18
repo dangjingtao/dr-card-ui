@@ -67,9 +67,8 @@ export default function Notifications() {
   const navigate = useNavigate()
   const route = findRouteByPathname('/notifications')
   const { state } = useFixtureState(route)
-  const { overlay, open, close } = useOverlay()
+  const { overlay, close } = useOverlay()
   const { items, unreadCount } = useNotifications()
-  const allRead = unreadCount === 0
 
   const [tab, setTab] = useState<TabKey>(state?.key === 'unread' ? 'unread' : 'all')
   const [toast, setToast] = useState<string | null>(null)
@@ -118,19 +117,8 @@ export default function Notifications() {
 
   return (
     <PageContainer inset={false} className="pb-6">
-      {/* H021：一键已读是页面业务动作，不依赖宿主标题栏。 */}
-      <div className="flex justify-end px-4 pt-3">
-        <button
-          type="button"
-          onClick={() => open('clear')}
-          disabled={allRead}
-          className="min-h-9 rounded-control px-2 text-sm font-medium text-reward-strong disabled:pointer-events-none disabled:text-text-disabled"
-        >
-          {allRead ? '全部已读' : '一键已读'}
-        </button>
-      </div>
-
-      <div className="shrink-0 overflow-x-auto border-b border-border-subtle bg-surface px-4 pb-1 pt-2">
+      {/* Tab 切换（壳层 TitleBar 已展示标题，页面内不再重复金色标题块） */}
+      <div className="shrink-0 overflow-x-auto bg-white border-b border-divider px-4 pt-3 pb-1">
         <SegmentedControl items={tabs} value={tab} onChange={(value) => setTab(value as TabKey)} />
       </div>
 
