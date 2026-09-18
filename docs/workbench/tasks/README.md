@@ -9,6 +9,7 @@
 - `legacy-home*`、`legacy-service*`、`legacy-profile*` 以及按归属属于 Native reference 的 `/device/*`、`/vending/*`、`/signin*` 默认不施工、不重构、不纳入 H5 业务验收。
 - 商城当前暂不纳入本轮编码任务。
 - 历史 UI 卡、旧节点编号、旧 `PASS` 只作为证据，不作为当前产品事实源。
+- H019/H020 之后进入“功能页评估前收口 → 按功能页面/业务闭环施工”阶段，不再继续无边界横向铺基础设施卡。
 
 ## 卡片纪律
 
@@ -17,6 +18,19 @@
 - 不虚构后台 API、认证协议或 Native Bridge 能力。
 - 历史证据不删除；真正影响后续施工的结构债必须治理。
 - 只有用户可以把任务明确标记为 `Accepted`；若用户明确授权某张卡由 Agent 自验，则仅该张卡可按授权自验收口。
+- 自 H021 起，新工程卡以 GitHub Issue 作为工作项契约真相源；本 README 只保留索引与历史投影，不复制 Issue 正文或另造状态真相。
+
+
+## H019 后功能页评估原则
+
+- **同一功能不复制页面来模拟状态**：原型阶段若为成功/失败/空态等复制了同一套交互，正式工程应收敛为单一实现，由业务状态、参数或明确 fixture 驱动；合法 deep-link / 多入口可以保留，但不得复制业务实现。
+- **明显公共组件要抽，并且抽出来要精修**：只抽职责稳定、真实重复的模式；抽取后统一视觉、交互、状态和必要可访问性，不追求机械组件化。
+- **H5 是 App WebView 内的纯页面**：不模拟手机系统状态栏，也不把宿主顶部栏目当成 H5 原生壳层；业务内容自己的标题不受此规则影响。
+- **商城先封闭**：当前商城不纳入本阶段开放与精修范围，待后续单独评估后再处理。
+- **后台忙不构成前端停工理由**：只有已确认数据模型时，可以先定义最小 Mock API 契约并经 `service/adapter → HTTP → MSW` 跑通页面；不得退回页面内假网络。
+- **数据模型字段名原则上原样保留**：transport/API 边界不为了前端习惯擅自改名；UI 需要不同结构时在 adapter / view-model 层转换。
+- **前端可以协助定义接口，但必须标明事实与暂拟**：endpoint、method、参数、响应、分页、错误等可由前端基于已确认模型提出最小契约；未确认的认证、权限、审核、幂等和复杂状态机不得臆造。
+- **治理重复硬编码仍以 Tailwind 体系为主**：重复 arbitrary value（如 `max-w-[480px]`）要区分正式设计约束与原型设备壳遗产；前者语义化，后者删除，不为此另起一套 PostCSS 样式体系。
 
 ## 当前任务
 
@@ -59,6 +73,20 @@
 | H017 | Vitest + React Testing Library 基线 | Accepted |
 | H018 | Playwright / CI 正式 H5 基线 | Accepted |
 | H019 | 测试报告与 Cloudflare Pages 证据站 | Accepted |
+
+
+### E. 功能页评估前收口
+
+> H021 起 GitHub Issue 为工作项契约；以下仅作台账索引，不在 README 复制生命周期状态。
+
+| ID | 任务 | Issue |
+|---|---|---|
+| H021 | H5 宿主壳层与原型设备壳遗产收敛 | [#35](https://github.com/dangjingtao/dr-card-ui/issues/35) |
+| H022 | 重复路由与状态实现收敛 | [#36](https://github.com/dangjingtao/dr-card-ui/issues/36) |
+| H023 | 正式 H5 公共组件抽取与精修 | [#37](https://github.com/dangjingtao/dr-card-ui/issues/37) |
+| H024 | 数据模型驱动的 Mock API 契约基线 | [#38](https://github.com/dangjingtao/dr-card-ui/issues/38) |
+
+H021–H024 完成后，后续工作原则上按功能页面或可独立验收的业务闭环建卡，不再把通用原则拆成无限基础设施卡。
 
 ## 主要阻塞
 
