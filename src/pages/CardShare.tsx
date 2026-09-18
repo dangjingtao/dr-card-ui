@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Check, Search, ShoppingBag } from 'lucide-react'
+import { Check, ShoppingBag } from 'lucide-react'
 import PageContainer from '../components/mobile/PageContainer'
 import DebugPanel from '../components/mobile/DebugPanel'
-import { Button } from '../components/ui'
+import { Button, SearchField } from '../components/ui'
 import { useFixtureQueryControls, useFixtureState } from '../app/fixtures/useFixture'
 import { findRouteByPathname } from '../app/router/routes'
 import {
@@ -98,15 +98,12 @@ export default function CardShare() {
   return (
     <PageContainer className="flex min-h-full flex-col pb-6" inset>
       <div className="px-4 pt-3">
-        <label className="flex h-11 items-center gap-2 rounded-control bg-surface-subtle px-3 text-text-tertiary">
-          <Search className="h-4 w-4 flex-none" aria-hidden />
-          <input
-            value={keyword}
-            onChange={(event) => setKeyword(event.target.value)}
-            placeholder="搜索搭子"
-            className="min-w-0 flex-1 bg-transparent text-sm text-text-primary outline-none placeholder:text-text-tertiary"
-          />
-        </label>
+        <SearchField
+          value={keyword}
+          onChange={(event) => setKeyword(event.target.value)}
+          onClear={() => setKeyword('')}
+          placeholder="搜索搭子"
+        />
       </div>
 
       <section className="mt-5 px-4" aria-label="搭子列表">
