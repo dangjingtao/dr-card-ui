@@ -17,7 +17,7 @@ let mockServer
 try {
   const { handlers } = await vite.ssrLoadModule('/src/mocks/handlers/index.ts')
   const {
-    USER_POINTS_INDEX_PATH,
+    H024_USER_POINTS_LIST_PATH,
     listUserPointRecords,
   } = await vite.ssrLoadModule('/src/services/userPoints/index.ts')
   const { AppError } = await vite.ssrLoadModule('/src/services/http/appError.ts')
@@ -36,7 +36,7 @@ try {
   assert.equal(firstPage.records[0].kind, 'income')
   assert.equal(firstPage.records[0].title, '任务泡泡值')
 
-  const defaultResponse = await fetch('https://h024.mock.invalid' + USER_POINTS_INDEX_PATH)
+  const defaultResponse = await fetch('https://h024.mock.invalid' + H024_USER_POINTS_LIST_PATH)
   const defaultPayload = await defaultResponse.json()
   assert.equal(defaultPayload.data.current_page, 1)
   assert.equal(defaultPayload.data.per_page, 15)
@@ -46,7 +46,7 @@ try {
   assert.equal(emptyPage.pagination.page, 2)
 
   mockServer.use(
-    http.get(`*${USER_POINTS_INDEX_PATH}`, () =>
+    http.get(`*${H024_USER_POINTS_LIST_PATH}`, () =>
       HttpResponse.json({
         code: 200,
         msg: 'success',
@@ -87,7 +87,13 @@ try {
   assert.doesNotMatch(contractSource, /userId:/)
 
   const serviceSource = fs.readFileSync('src/services/userPoints/index.ts', 'utf8')
-  assert.match(serviceSource, /\/api\/userpoints\/index/)
+  assert.match(serviceSource, /\/__h024\/user-points/)
+  assert.match(serviceSource, /\/api\/userpoints\/index/, 'service must document why raw CRUD is not promoted')
+  assert.doesNotMatch(
+    serviceSource,
+    /url:\s*['"]\/api\/userpoints\/index['"]/,
+    'formal H5 must not directly call raw UserPoints CRUD before auth/business API are confirmed',
+  )
   assert.doesNotMatch(serviceSource, /runtimePolicy|VITE_DATA_MODE|mockScenario|Authorization/)
 
   const pageSource = fs.readFileSync('src/pages/PointsDetail.tsx', 'utf8')
@@ -95,7 +101,7 @@ try {
   assert.doesNotMatch(pageSource, /filterBubbleRecords|BUBBLE_RECORDS|setTimeout/)
 
   console.log(
-    'H024 PASS: PointsDetail uses model contract → service/adapter → HTTP → MSW, success and empty pagination are deterministic, malformed renamed transport fields fail contract validation, and the page has no Mock/API branch.',
+    'H024 PASS: PointsDetail uses model contract → proposed service seam → HTTP → MSW, raw backend CRUD is not promoted before auth is confirmed, pagination is deterministic, malformed renamed fields fail contract validation, and the page has no Mock/API branch.',
   )
 } finally {
   mockServer?.close()
