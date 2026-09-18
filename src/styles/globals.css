@@ -56,6 +56,13 @@ button {
   view-transition-name: h5-route-content;
 }
 
+/* H021：PageContainer 仍给 Native reference 保留兼容宽度；active formal H5 在 WebView 中必须真正铺满。 */
+.h5-route-frame[data-h5-route-active='true'] [data-page-container] {
+  max-width: none;
+  margin-left: 0;
+  margin-right: 0;
+}
+
 @keyframes h5-route-tab-enter {
   from { opacity: 0.94; }
   to { opacity: 1; }
