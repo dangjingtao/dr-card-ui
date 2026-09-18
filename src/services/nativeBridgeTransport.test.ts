@@ -46,6 +46,32 @@ describe('Android injected-object transport', () => {
     await expect(Promise.resolve(resolution.invoke())).resolves.toBe('native-host')
   })
 
+  it('passes object arguments through when a confirmed host protocol accepts objects', async () => {
+    const received: unknown[] = []
+    bridgeWindow.androidBridge = {
+      acceptObject(payload: unknown) {
+        received.push(payload)
+        return { accepted: true }
+      },
+    }
+
+    const transport = createAndroidInjectedObjectTransport<
+      { orderId: number },
+      { accepted: boolean }
+    >({
+      objectName: 'androidBridge',
+      methodName: 'acceptObject',
+      serializeArgs: (input) => [input],
+      parseResult: (payload) => payload as { accepted: boolean },
+    })
+    const input = { orderId: 9 }
+    const resolution = transport.resolve(bridgeWindow, input)
+    if (!resolution.supported) throw new Error('Expected Android transport to resolve.')
+
+    await expect(Promise.resolve(resolution.invoke())).resolves.toEqual({ accepted: true })
+    expect(received).toEqual([input])
+  })
+
   it('normalizes method lookup failure without inventing a host capability', () => {
     bridgeWindow.androidBridge = {}
     const transport = createAndroidInjectedObjectTransport<void, unknown>({
@@ -202,6 +228,50 @@ describe('iOS-style messageHandler transport', () => {
 
     await expect(firstPromise).resolves.toBe(10)
     await expect(secondPromise).resolves.toBe(20)
+    expect(transport.pendingCount()).toBe(0)
+  })
+
+  it('rejects a duplicate request id without orphaning the first pending callback', async () => {
+    bridgeWindow.webkit = {
+      messageHandlers: {
+        bridge: {
+          postMessage() {},
+        },
+      },
+    }
+
+    const transport = createIOSMessageHandlerTransport<number, number>({
+      handlerName: 'bridge',
+      correlation: 'request-id',
+      requestIdFactory: () => 'same-request',
+      serializeRequest: ({ requestId, input }) => ({ requestId, input }),
+      parseCallback: (payload) => payload as {
+        requestId: string
+        ok: true
+        payload: unknown
+      },
+      parseResult: (payload) => Number(payload),
+    })
+
+    const first = transport.resolve(bridgeWindow, 1)
+    const second = transport.resolve(bridgeWindow, 2)
+    if (!first.supported || !second.supported) throw new Error('Expected iOS transport to resolve.')
+
+    const firstPromise = Promise.resolve(first.invoke())
+    await expect(Promise.resolve(second.invoke())).rejects.toMatchObject({
+      name: 'NativeTransportError',
+      code: 'callback-correlation-conflict',
+    } satisfies Partial<NativeTransportError>)
+    expect(transport.pendingCount()).toBe(1)
+
+    expect(
+      transport.handleCallback({
+        requestId: 'same-request',
+        ok: true,
+        payload: 10,
+      }),
+    ).toBe(true)
+    await expect(firstPromise).resolves.toBe(10)
     expect(transport.pendingCount()).toBe(0)
   })
 
