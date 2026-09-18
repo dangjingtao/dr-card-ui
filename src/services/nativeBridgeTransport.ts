@@ -29,6 +29,7 @@ export type NativeTransportErrorCode =
   | 'callback-failed'
   | 'callback-concurrency-unsupported'
   | 'callback-correlation-conflict'
+  | 'callback-channel-unsafe'
   | 'post-message-failed'
 
 export class NativeTransportError extends Error {
@@ -248,6 +249,7 @@ export function createIOSMessageHandlerTransport<TInput, TResult>(
   const parseResult = config.parseResult ?? identityResultParser<TResult>
   const pending = new Map<string, PendingCallback<TResult>>()
   let singleFlightRequestId: string | undefined
+  let singleFlightChannelUnsafe = false
 
   function cleanup(requestId: string): PendingCallback<TResult> | undefined {
     const entry = pending.get(requestId)
@@ -306,13 +308,24 @@ export function createIOSMessageHandlerTransport<TInput, TResult>(
       return Promise.reject(error)
     }
 
-    if (config.correlation === 'single-flight' && singleFlightRequestId) {
-      return Promise.reject(
-        new NativeTransportError(
-          'callback-concurrency-unsupported',
-          'This iOS host protocol cannot safely correlate concurrent callbacks.',
-        ),
-      )
+    if (config.correlation === 'single-flight') {
+      if (singleFlightChannelUnsafe) {
+        return Promise.reject(
+          new NativeTransportError(
+            'callback-channel-unsafe',
+            'This iOS single-flight callback channel timed out without a correlated callback and must be explicitly reset after host recovery before it can be reused.',
+          ),
+        )
+      }
+
+      if (singleFlightRequestId) {
+        return Promise.reject(
+          new NativeTransportError(
+            'callback-concurrency-unsupported',
+            'This iOS host protocol cannot safely correlate concurrent callbacks.',
+          ),
+        )
+      }
     }
 
     const requestId =
@@ -353,7 +366,10 @@ export function createIOSMessageHandlerTransport<TInput, TResult>(
         if (!entry) return
 
         pending.delete(requestId)
-        if (singleFlightRequestId === requestId) singleFlightRequestId = undefined
+        if (singleFlightRequestId === requestId) {
+          singleFlightRequestId = undefined
+          if (config.correlation === 'single-flight') singleFlightChannelUnsafe = true
+        }
         entry.reject(
           new NativeTransportError(
             'callback-timeout',
@@ -444,6 +460,24 @@ export function createIOSMessageHandlerTransport<TInput, TResult>(
 
     pendingCount(): number {
       return pending.size
+    },
+
+    /**
+     * A single-flight protocol cannot distinguish a stale callback from the next request after a
+     * timeout. Reuse therefore stays fail-closed until the host has been recovered/recreated or the
+     * caller otherwise knows that the stale callback can no longer arrive.
+     */
+    resetSingleFlightAfterHostRecovery(): void {
+      if (config.correlation !== 'single-flight') return
+
+      if (singleFlightRequestId || pending.size > 0) {
+        throw new NativeTransportError(
+          'callback-concurrency-unsupported',
+          'Cannot reset a single-flight callback channel while a request is still pending.',
+        )
+      }
+
+      singleFlightChannelUnsafe = false
     },
   }
 }
