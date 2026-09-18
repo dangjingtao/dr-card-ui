@@ -40,6 +40,7 @@ window.androidBridge.getLoginToken()
 - Browser/H5 不返回伪造成功结果；
 - `hostVersion` 明确为 `null`，直到 Native 提供真实版本协议；
 - iOS 可被 diagnostics 识别，但未确认能力不会被错误标记为已支持。
+- H021 额外加入 H5 概念能力 `closeWebView`，当前明确为 `false`，并提供只会返回 `capability-unsupported` 的 adapter seam；它不映射任何未确认的 Android / iOS 方法，只为后续宿主协议提供稳定接入点。
 
 ## 3. 自动验证
 
