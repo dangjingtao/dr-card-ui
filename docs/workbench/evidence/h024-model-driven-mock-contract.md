@@ -5,7 +5,7 @@
 ```text
 PointsDetail
   → listUserPointRecords()
-  → GET /api/userpoints/index
+  → GET /__h024/user-points        # frontend proposal
   → httpClient
   → MSW userPointsHandlers（Mock mode）
     / real HTTP（API mode）
@@ -21,7 +21,9 @@ PointsDetail
 - `docs/api/dearseed-openapi.json`
 - `docs/api/dearseed-api.md`
 
-本卡直接复用已经存在的 `GET /api/userpoints/index`，不是自行创造 endpoint。
+DearSeed OpenAPI 已确认存在 raw CRUD `GET /api/userpoints/index`，但它要求全局 authorization，而具体 auth 机制仍未知；同时模型 CRUD 不等于最终 H5 业务 API。
+
+因此 H024 **不让正式页面直接调用 raw CRUD**。页面 service 暂用 `GET /__h024/user-points` 作为显式 frontend-proposed seam，只用于验证未来业务 API 的分层/网络边界。正式 endpoint/auth 到位后替换 service transport mapping。
 
 Transport contract 保留 backend 字段：
 
@@ -65,6 +67,7 @@ Transport contract 保留 backend 字段：
 
 ## Mock boundary
 
+- Proposed endpoint：`GET /__h024/user-points?page&pageSize`；它不是 backend confirmed endpoint。
 - Raw Mock rows 位于 `src/mocks/fixtures/h024UserPoints.ts`。
 - 字段使用 backend snake_case。
 - Handler 位于 `src/mocks/handlers/userPoints.ts`。
@@ -90,6 +93,8 @@ H024：
 
 - 不注入 Authorization；
 - 不伪造登录 token；
+- 不让页面直连要求未知 authorization 的 `/api/userpoints/index`；
+- 不宣布 proposed `/__h024/user-points` 已被后台实现；
 - 不宣布真实 API 已打通；
 - H008 的真实联调阻塞不因 MSW 成功而被视为解除。
 
@@ -106,6 +111,6 @@ H024：
 
 Formal H5 E2E 另验证：
 
-- `/points/detail` 实际发出 `/api/userpoints/index` 请求并渲染 adapter 结果；
+- `/points/detail` 实际发出 `/__h024/user-points` 请求并渲染 adapter 结果；
 - Tab 仍可筛收入/消耗；
 - empty fixture UI 仍可复现。
