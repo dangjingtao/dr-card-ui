@@ -53,7 +53,7 @@ Core catalog (33): Button, IconButton, Input, Textarea, Select, Checkbox, Radio,
 | ProgressIndicator | ✅ | — | n/a | — | — | ✅ | ✅ | n/a | `role="progressbar"` + `aria-valuemin/max/now/text` |
 | Stepper | ✅ | — | n/a | — | ✅ | — | ✅ | n/a | `ol/li`，当前步 `aria-current="step"` |
 | Timeline | ✅ | — | n/a | — | — | — | ✅ | n/a | `ol/li` |
-| SearchField | ✅ | ✅ | ✅ | ✅ | — | ✅ | ✅ | compact 40 / regular 44，清除 40 | `subtle` / `pill`；placeholder 自动补可访问名称；loading → `aria-busy`；仅有 `onClear` 时渲染清除键 |
+| SearchField | ✅ | ✅ | ✅ | ✅ | — | ✅ | ✅ | compact 40 / regular 44，清除 40 | `subtle` / `pill`；placeholder 自动补可访问名称；loading → `aria-busy`；仅有 `onClear` 时渲染清除键；`inputClassName` 仅用于保留已确认的输入 token 差异 |
 | Menu | ✅ | — | ✅ | — | — | — | ✅ | n/a | `role="menu"`、Esc 关闭、纵向漫游焦点 |
 | MenuItem | ✅ | ✅ | ✅ | ✅ | — | — | — | 48 | `role="menuitem"`、`aria-current` |
 
