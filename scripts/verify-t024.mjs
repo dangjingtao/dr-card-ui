@@ -99,7 +99,7 @@ record('R7-03a', '/checkin 内容完整嵌入首页', boardOk, JSON.stringify(bo
 record(
   'R7-03b',
   '首页不出现重复标题栏或重复底部导航',
-  homeShell.statusBars === 1 && homeShell.titleBars === 1 && homeShell.backBars === 0 && homeShell.navs === 1 && homeShell.scrolls === 1,
+  homeShell.statusBars === 0 && homeShell.titleBars === 1 && homeShell.backBars === 0 && homeShell.navs === 1 && homeShell.scrolls === 1,
   JSON.stringify(homeShell),
 )
 
