@@ -262,11 +262,11 @@ test('@formal-h5 H022 legal multi-URL entries reuse one implementation', async (
 test('@formal-h5 H022 shared claim-success implementation keeps route variants deterministic', async ({ page }) => {
   const runtimeErrors = collectRuntimeErrors(page)
 
-  await page.goto('/claim/success?from=campaign&picker=off', { waitUntil: 'domcontentloaded' })
+  await page.goto('/claim/success?picker=off', { waitUntil: 'domcontentloaded' })
   await expectHealthyFormalRoute(page)
   await expect(page.getByRole('dialog', { name: '领取成功' })).toBeVisible()
 
-  await page.goto('/onboarding/success?from=onboarding&picker=off', { waitUntil: 'domcontentloaded' })
+  await page.goto('/onboarding/success?picker=off', { waitUntil: 'domcontentloaded' })
   await expectHealthyFormalRoute(page)
   await expect(page.getByRole('dialog', { name: '填写完成后领取成功' })).toBeVisible()
 
