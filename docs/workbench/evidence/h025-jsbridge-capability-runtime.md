@@ -20,9 +20,12 @@ H025 只把正式 H5 的 `src/services/nativeBridge.ts` 从按能力手写 invoc
 `nativeBridge.ts` 现在包含单一 capability registry。每个 capability 只描述：
 
 1. capability 名称与用途；
-2. 如何在“本次 invocation”解析当前宿主对象；
-3. 当前是否支持；
-4. 真正调用宿主方法的最小 closure。
+2. 输入 / 返回值类型；
+3. 如何在“本次 invocation”解析当前宿主对象；
+4. 当前是否支持；
+5. 真正调用宿主方法的最小 closure。
+
+Runtime 的泛型边界显式包含 `TInput`：support resolution 仍只依赖当前 host window，真正执行时再把本次 invocation input 传给 `invoke(input)`。因此后续带参数 capability 可以复用同一 invocation lifecycle，而不需要再次修改核心调度器；当前无参数 `getLoginToken()` 以 `void / undefined` 接入，真实 Android 协议不变。
 
 统一 runtime 负责：
 
@@ -33,7 +36,7 @@ H025 只把正式 H5 的 `src/services/nativeBridge.ts` 从按能力手写 invoc
 - throw/reject normalization；
 - diagnostics。
 
-因此新增 capability 不需要复制一套 mode/error/timeout/invocation 逻辑；Native 协议差异继续留在 capability resolver 内消化。
+因此新增 capability（包括未来带 string / JSON string / object 输入的能力）不需要复制或改写 mode/error/timeout/invocation 核心逻辑；Native 协议差异继续留在 capability resolver / 后续 transport 层消化。
 
 ## 3. 自动验证
 
