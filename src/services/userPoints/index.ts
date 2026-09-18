@@ -7,13 +7,17 @@ import {
 } from './contracts'
 
 /**
- * Confirmed current backend CRUD endpoint from DearSeed OpenAPI.
+ * H024 frontend-proposed transport seam.
  *
- * H024 uses it as a temporary read transport for the formal H5 points-detail page. This does not
- * assert that raw CRUD is the final product API, and it does not invent auth headers. H008 remains
- * blocked until the real backend base URL/auth/product endpoint contract is confirmed.
+ * DearSeed confirms the UserPoints model and a raw CRUD endpoint, but its auth mechanism and the
+ * final H5 business API are still unknown. Do not wire the formal H5 page directly to
+ * /api/userpoints/index: that would promote an admin/model CRUD surface into a production contract
+ * before authentication and product semantics are confirmed.
+ *
+ * Mock and future real HTTP use this same page/service seam. Once backend confirms the real H5
+ * endpoint/auth contract, replace this mapping here without changing the page.
  */
-export const USER_POINTS_INDEX_PATH = '/api/userpoints/index'
+export const H024_USER_POINTS_LIST_PATH = '/__h024/user-points'
 
 export interface UserPointsPage {
   records: UserPointRecordViewModel[]
@@ -33,7 +37,7 @@ export async function listUserPointRecords(
 
   const payload = await httpClient.request<unknown>({
     method: 'GET',
-    url: USER_POINTS_INDEX_PATH,
+    url: H024_USER_POINTS_LIST_PATH,
     params: { page, pageSize },
   })
 
