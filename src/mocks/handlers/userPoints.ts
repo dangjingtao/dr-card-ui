@@ -4,6 +4,7 @@ import { USER_POINTS_INDEX_PATH } from '../../services/userPoints'
 import { H024_USER_POINT_ROWS } from '../fixtures/h024UserPoints'
 
 function positiveInt(raw: string | null, fallback: number, max?: number) {
+  if (raw == null || raw.trim() === '') return fallback
   const parsed = Number(raw)
   if (!Number.isFinite(parsed)) return fallback
   const value = Math.max(1, Math.floor(parsed))
