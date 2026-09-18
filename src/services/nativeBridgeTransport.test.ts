@@ -149,6 +149,13 @@ describe('iOS-style messageHandler transport', () => {
 
     await expect(promise).resolves.toEqual({ value: 8 })
     expect(transport.pendingCount()).toBe(0)
+    expect(
+      transport.handleCallback({
+        requestId: 'req-1',
+        ok: true,
+        payload: '{"value":99}',
+      }),
+    ).toBe(false)
   })
 
   it('correlates concurrent callbacks even when Native completes them out of order', async () => {
@@ -221,6 +228,12 @@ describe('iOS-style messageHandler transport', () => {
     if (!resolution.supported) throw new Error('Expected iOS transport to resolve.')
     const promise = Promise.resolve(resolution.invoke())
 
+    const rejection = expect(promise).rejects.toMatchObject({
+      name: 'NativeTransportError',
+      code: 'callback-failed',
+      cause: nativeFailure,
+    } satisfies Partial<NativeTransportError>)
+
     expect(
       transport.handleCallback({
         requestId: 'req-fail',
@@ -229,11 +242,7 @@ describe('iOS-style messageHandler transport', () => {
       }),
     ).toBe(true)
 
-    await expect(promise).rejects.toMatchObject({
-      name: 'NativeTransportError',
-      code: 'callback-failed',
-      cause: nativeFailure,
-    } satisfies Partial<NativeTransportError>)
+    await rejection
     expect(transport.pendingCount()).toBe(0)
   })
 
@@ -265,12 +274,13 @@ describe('iOS-style messageHandler transport', () => {
     const promise = Promise.resolve(resolution.invoke())
 
     expect(transport.pendingCount()).toBe(1)
-    await vi.advanceTimersByTimeAsync(25)
-
-    await expect(promise).rejects.toMatchObject({
+    const timeoutRejection = expect(promise).rejects.toMatchObject({
       name: 'NativeTransportError',
       code: 'callback-timeout',
     } satisfies Partial<NativeTransportError>)
+
+    await vi.advanceTimersByTimeAsync(25)
+    await timeoutRejection
     expect(transport.pendingCount()).toBe(0)
 
     expect(
@@ -363,6 +373,28 @@ describe('iOS-style messageHandler transport', () => {
 })
 
 describe('serializer / parser contract', () => {
+  it('can preserve a raw string protocol through a capability serializer', async () => {
+    const received: unknown[] = []
+    bridgeWindow.androidBridge = {
+      echo(payload: unknown) {
+        received.push(payload)
+        return payload
+      },
+    }
+
+    const transport = createAndroidInjectedObjectTransport<string, string>({
+      objectName: 'androidBridge',
+      methodName: 'echo',
+      serializeArgs: (input) => [input],
+      parseResult: (payload) => String(payload),
+    })
+    const resolution = transport.resolve(bridgeWindow, 'raw-token')
+    if (!resolution.supported) throw new Error('Expected Android transport to resolve.')
+
+    await expect(Promise.resolve(resolution.invoke())).resolves.toBe('raw-token')
+    expect(received).toEqual(['raw-token'])
+  })
+
   it('serializes object payloads as JSON strings', () => {
     expect(serializeJsonValue({ hello: 'world' })).toBe('{"hello":"world"}')
   })
