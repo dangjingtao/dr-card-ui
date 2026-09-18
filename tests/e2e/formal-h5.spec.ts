@@ -242,3 +242,56 @@ test('@formal-h5 H021 first-level tabs use close while child pages use back', as
 
   expect(runtimeErrors, runtimeErrors.join('\n')).toEqual([])
 })
+
+
+test('@formal-h5 H022 legal multi-URL entries reuse one implementation', async ({ page }) => {
+  const runtimeErrors = collectRuntimeErrors(page)
+
+  await page.goto('/membership', { waitUntil: 'domcontentloaded' })
+  await expectHealthyFormalRoute(page)
+  const canonical = await page.locator('[data-page-container]').innerText()
+
+  await page.goto('/dearseed/membership', { waitUntil: 'domcontentloaded' })
+  await expectHealthyFormalRoute(page)
+  const alias = await page.locator('[data-page-container]').innerText()
+
+  expect(alias).toBe(canonical)
+  expect(runtimeErrors, runtimeErrors.join('\n')).toEqual([])
+})
+
+test('@formal-h5 H022 shared claim-success implementation keeps route variants deterministic', async ({ page }) => {
+  const runtimeErrors = collectRuntimeErrors(page)
+
+  await page.goto('/claim/success?from=campaign&picker=off', { waitUntil: 'domcontentloaded' })
+  await expectHealthyFormalRoute(page)
+  await expect(page.getByRole('dialog', { name: '领取成功' })).toBeVisible()
+
+  await page.goto('/onboarding/success?from=onboarding&picker=off', { waitUntil: 'domcontentloaded' })
+  await expectHealthyFormalRoute(page)
+  await expect(page.getByRole('dialog', { name: '填写完成后领取成功' })).toBeVisible()
+
+  expect(runtimeErrors, runtimeErrors.join('\n')).toEqual([])
+})
+
+test('@formal-h5 H022 prototype states stay on one route implementation', async ({ page }) => {
+  const runtimeErrors = collectRuntimeErrors(page)
+
+  await page.goto('/card/share', { waitUntil: 'domcontentloaded' })
+  await expectHealthyFormalRoute(page)
+  await expect(page).toHaveURL(/\/card\/share$/)
+
+  await page.goto('/card/share?state=success', { waitUntil: 'domcontentloaded' })
+  await expectHealthyFormalRoute(page)
+  await expect(page).toHaveURL(/\/card\/share\?state=success$/)
+  await expect(page.getByText('分享成功', { exact: true })).toBeVisible()
+
+  await page.goto('/service/chat/human?state=queuing', { waitUntil: 'domcontentloaded' })
+  await expectHealthyFormalRoute(page)
+  await expect(page.locator('[data-queue-state]')).toHaveAttribute('data-queue-state', 'queuing')
+
+  await page.goto('/service/chat/human?state=connected', { waitUntil: 'domcontentloaded' })
+  await expectHealthyFormalRoute(page)
+  await expect(page.locator('[data-queue-state]')).toHaveAttribute('data-queue-state', 'connected')
+
+  expect(runtimeErrors, runtimeErrors.join('\n')).toEqual([])
+})
