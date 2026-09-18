@@ -1,6 +1,7 @@
 import { Fragment, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
+  Bell,
   ChevronRight,
   ClipboardList,
   Crown,
@@ -100,14 +101,24 @@ export default function Profile() {
             </div>
             <p className="mt-1 text-xs tracking-wide text-[#6B4A12]/85">ID 80012345</p>
           </div>
-          <button
-            type="button"
-            aria-label="编辑资料"
-            onClick={() => navigate('/settings')}
-            className="flex h-7 w-7 flex-none items-center justify-center rounded-md text-[#6B4A12]/80"
-          >
-            <Pencil className="h-[18px] w-[18px]" />
-          </button>
+          <div className="flex flex-none items-center gap-1">
+            <button
+              type="button"
+              aria-label="通知"
+              onClick={() => navigate('/notifications')}
+              className="flex h-7 w-7 items-center justify-center rounded-md text-[#6B4A12]/80"
+            >
+              <Bell className="h-[18px] w-[18px]" />
+            </button>
+            <button
+              type="button"
+              aria-label="编辑资料"
+              onClick={() => navigate('/settings')}
+              className="flex h-7 w-7 items-center justify-center rounded-md text-[#6B4A12]/80"
+            >
+              <Pencil className="h-[18px] w-[18px]" />
+            </button>
+          </div>
         </div>
 
         <div className="relative mt-4">
