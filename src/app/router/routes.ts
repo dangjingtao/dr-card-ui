@@ -22,6 +22,7 @@ import { CircleDot, Headset, Home, QrCode, UserRound } from 'lucide-react'
  */
 
 export type OverlayType = 'dialog' | 'sheet'
+export type RouteLeadingAction = 'auto' | 'back' | 'close' | 'none'
 
 export interface RouteState {
   /** URL `?state=` 取值 */
@@ -58,6 +59,12 @@ export interface RouteMeta {
   titleBar?: 'plain' | 'back' | 'hidden'
   /** 标题栏展示文案与页面业务标题不同时单独指定 */
   titleBarTitle?: string
+  /**
+   * App 标题栏左侧动作。
+   * auto：active formal H5 一级 Tab → close；二级 back 标题栏 → back；plain/hidden → none。
+   * close 只表达“退出当前 WebView”意图，真实宿主能力仍由 JSBridge adapter 决定。
+   */
+  leadingAction?: RouteLeadingAction
   /** 标题栏右侧动作 */
   titleBarAction?: 'settings' | 'notifications'
   /** 本路由承载的实施节点 */
