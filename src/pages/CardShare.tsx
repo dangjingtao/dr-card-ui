@@ -103,6 +103,7 @@ export default function CardShare() {
           onChange={(event) => setKeyword(event.target.value)}
           onClear={() => setKeyword('')}
           placeholder="搜索搭子"
+          inputClassName="placeholder:text-text-tertiary"
         />
       </div>
 
