@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw'
 
-import { USER_POINTS_INDEX_PATH } from '../../services/userPoints'
+import { H024_USER_POINTS_LIST_PATH } from '../../services/userPoints'
 import { H024_USER_POINT_ROWS } from '../fixtures/h024UserPoints'
 
 function positiveInt(raw: string | null, fallback: number, max?: number) {
@@ -12,11 +12,12 @@ function positiveInt(raw: string | null, fallback: number, max?: number) {
 }
 
 /**
- * Mirrors the confirmed generic CRUD index envelope/pagination shape.
- * It does not model auth: DearSeed auth remains unconfirmed and H024 must not invent it.
+ * Implements the H024 frontend-proposed endpoint while mirroring the confirmed UserPoints model
+ * fields and generic CRUD envelope/pagination shape. It does not model auth: DearSeed auth remains
+ * unconfirmed and H024 must not invent it.
  */
 export const userPointsHandlers = [
-  http.get(`*${USER_POINTS_INDEX_PATH}`, ({ request }) => {
+  http.get(`*${H024_USER_POINTS_LIST_PATH}`, ({ request }) => {
     const url = new URL(request.url)
     const page = positiveInt(url.searchParams.get('page'), 1)
     const pageSize = positiveInt(url.searchParams.get('pageSize'), 15, 100)
