@@ -34,6 +34,7 @@ type NativeCapabilityResolution<TInput, TResult> =
 interface NativeCapabilityDescriptor<TName extends string, TInput, TResult> {
   name: TName
   description: string
+  sensitiveResult?: boolean
   resolve: (
     hostWindow: NativeTransportWindow | undefined,
   ) => NativeCapabilityResolution<TInput, TResult>
@@ -68,6 +69,7 @@ const capabilityRegistry = {
   getLoginToken: defineCapability<'getLoginToken', void, unknown>({
     name: 'getLoginToken',
     description: 'Read the current login token from the confirmed Android host bridge.',
+    sensitiveResult: true,
     resolve(hostWindow) {
       const transportResolution = getLoginTokenTransport.resolve(hostWindow, undefined)
       if (!transportResolution.supported) return transportResolution
@@ -79,6 +81,7 @@ const capabilityRegistry = {
     name: 'closeWebView',
     description:
       'H5 close intent only; the Native close-WebView protocol is intentionally still unconfirmed.',
+    sensitiveResult: false,
     resolve() {
       return unsupportedCapability(
         'capability-unsupported',
@@ -89,6 +92,13 @@ const capabilityRegistry = {
 } as const
 
 export type NativeCapabilityName = keyof typeof capabilityRegistry
+
+export interface NativeCapabilityCatalogItem {
+  name: NativeCapabilityName
+  description: string
+  supported: boolean
+  sensitiveResult: boolean
+}
 
 export interface NativeBridgeDiagnostics {
   mode: typeof runtimePolicy.bridgeMode
@@ -236,6 +246,51 @@ function isCapabilitySupported(
   } catch {
     return false
   }
+}
+
+/** Registry-backed metadata for Bridge Lab; this does not promote unsupported host protocols. */
+export function getNativeBridgeCapabilityCatalog(): NativeCapabilityCatalogItem[] {
+  const hostWindow = getHostWindow()
+
+  return Object.values(capabilityRegistry).map((descriptor) => ({
+    name: descriptor.name,
+    description: descriptor.description,
+    supported: isCapabilitySupported(
+      descriptor as NativeCapabilityDescriptor<string, never, unknown>,
+      hostWindow,
+    ),
+    sensitiveResult: descriptor.sensitiveResult === true,
+  })) as NativeCapabilityCatalogItem[]
+}
+
+/**
+ * Bridge Lab-only generic invocation seam.
+ *
+ * Business pages should continue using typed capability facades such as getLoginToken(). This
+ * function exists so the debug Lab can enumerate and invoke the registry without hard-coding one
+ * top-level button per capability.
+ */
+export function invokeRegisteredNativeCapabilityForDebug(
+  name: NativeCapabilityName,
+  input: unknown = undefined,
+  options: NativeInvocationOptions = {},
+): Promise<unknown> {
+  if (!runtimePolicy.bridgeLabEnabled) {
+    return Promise.reject(
+      new NativeBridgeError(
+        'bridge-disabled',
+        name,
+        `Native capability debug invocation is disabled in ${runtimePolicy.appEnvironment} runtime.`,
+      ),
+    )
+  }
+
+  const descriptor = capabilityRegistry[name] as NativeCapabilityDescriptor<
+    NativeCapabilityName,
+    unknown,
+    unknown
+  >
+  return invokeNativeCapability(descriptor, input, options)
 }
 
 /**

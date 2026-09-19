@@ -149,6 +149,24 @@ jobs:
           cat /tmp/dr-card-playwright-preview.log
           exit 1
 
+      - name: H027 Bridge Lab browser smoke
+        shell: bash
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
+        run: |
+          npm run preview -- --port 4173 --strictPort > /tmp/dr-card-bridge-lab-preview.log 2>&1 &
+          PREVIEW_PID=$!
+          trap 'kill $PREVIEW_PID || true' EXIT
+          for attempt in {1..20}; do
+            if curl --fail --silent --show-error http://127.0.0.1:4173/build-meta.json > /dev/null; then
+              npm run test:e2e:bridge-lab
+              exit $?
+            fi
+            sleep 1
+          done
+          cat /tmp/dr-card-bridge-lab-preview.log
+          exit 1
+
       - name: Verify H019 evidence assembler
         if: always() && steps.formal-e2e.outcome != 'skipped'
         env:
@@ -192,6 +210,22 @@ jobs:
         run: |
           node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('dist/build-meta.json','utf8'));if(m.appEnvironment!=='prod'||m.dataMode!=='api'||m.build.sha!==process.env.GITHUB_SHA)process.exit(1)"
           test ! -f dist/mockServiceWorker.js
+
+      - name: Verify production excludes Bridge Lab
+        shell: bash
+        run: |
+          if grep -R --binary-files=text -F '__debug/bridge-lab' dist; then
+            echo 'Production bundle must not contain the Bridge Lab route.'
+            exit 1
+          fi
+          if grep -R --binary-files=text -F 'Android Raw Probe' dist; then
+            echo 'Production bundle must not contain Bridge Lab Raw Probe code.'
+            exit 1
+          fi
+          if grep -R --binary-files=text -F 'Run iOS Probe' dist; then
+            echo 'Production bundle must not contain Bridge Lab Raw Probe UI.'
+            exit 1
+          fi
 
       - name: Verify Cloudflare SPA fallback asset
         run: test -f dist/_redirects && grep -F '/* /index.html 200' dist/_redirects

@@ -224,7 +224,21 @@ const customPages: Record<string, ReactElement> = {
   '/signin/detail': <PointsPage />,
 }
 
+const bridgeLabRoutes =
+  import.meta.env.MODE === 'production'
+    ? []
+    : [
+        {
+          path: '/__debug/bridge-lab',
+          lazy: async () => {
+            const { default: Component } = await import('../../pages/BridgeLab')
+            return { Component }
+          },
+        },
+      ]
+
 export const router = createBrowserRouter([
+  ...bridgeLabRoutes,
   {
     element: <MobileLayout />,
     children: [
