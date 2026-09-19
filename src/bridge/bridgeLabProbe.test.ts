@@ -12,7 +12,7 @@ type LabWindow = Window & Record<string, unknown> & {
   }
 }
 
-const labWindow = window as LabWindow
+const labWindow = window as unknown as LabWindow
 
 afterEach(() => {
   delete labWindow.androidBridge
