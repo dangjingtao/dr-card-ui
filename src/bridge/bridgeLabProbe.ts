@@ -257,23 +257,22 @@ export async function runIOSRawProbe(request: IOSRawProbeRequest): Promise<unkno
 }
 
 
-export function resetIOSRawProbeChannel(handlerNameValue: string, callbackNameValue: string): boolean {
+export interface IOSRawProbeChannelResetResult {
+  reset: boolean
+  handlerName?: string
+}
+
+export function resetIOSRawProbeChannel(
+  callbackNameValue: string,
+): IOSRawProbeChannelResetResult {
   ensureBridgeLabEnabled()
-  const handlerName = assertPropertyName(handlerNameValue, 'iOS handler name')
   const callbackName = assertPropertyName(callbackNameValue, 'H5 callback name')
   const channel = iosRawProbeChannels.get(callbackName)
-  if (!channel) return false
-
-  if (channel.handlerName !== handlerName) {
-    throw new BridgeLabProbeError(
-      'callback-conflict',
-      `window.${callbackName} is bound to iOS handler ${channel.handlerName}, not ${handlerName}.`,
-    )
-  }
+  if (!channel) return { reset: false }
 
   channel.transport.resetSingleFlightAfterHostRecovery()
   iosRawProbeChannels.delete(callbackName)
-  return true
+  return { reset: true, handlerName: channel.handlerName }
 }
 
 export function isSensitiveBridgeName(value: string): boolean {
