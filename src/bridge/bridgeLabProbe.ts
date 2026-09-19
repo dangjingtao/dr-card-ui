@@ -52,6 +52,48 @@ const SENSITIVE_NAME = /(token|authorization|cookie|password|secret|session|cred
 
 type ProbeWindow = NativeTransportWindow & Record<string, unknown>
 
+type IOSRawProbeTransport = ReturnType<typeof createIOSMessageHandlerTransport<unknown, unknown>>
+
+type IOSRawProbeChannel = {
+  handlerName: string
+  transport: IOSRawProbeTransport
+}
+
+const iosRawProbeChannels = new Map<string, IOSRawProbeChannel>()
+
+function createIOSRawProbeChannel(handlerName: string): IOSRawProbeChannel {
+  return {
+    handlerName,
+    transport: createIOSMessageHandlerTransport<unknown, unknown>({
+      handlerName,
+      correlation: 'single-flight',
+      callbackCardinality: 'at-most-one',
+      serializeRequest: ({ input }) => input,
+      parseCallback: (callbackPayload) => ({
+        ok: true,
+        payload: callbackPayload,
+      }),
+    }),
+  }
+}
+
+function getIOSRawProbeChannel(handlerName: string, callbackName: string): IOSRawProbeChannel {
+  const existing = iosRawProbeChannels.get(callbackName)
+  if (existing) {
+    if (existing.handlerName !== handlerName) {
+      throw new BridgeLabProbeError(
+        'callback-conflict',
+        `window.${callbackName} is already bound to iOS handler ${existing.handlerName}; reset the channel after host recovery before reusing that callback name with another handler.`,
+      )
+    }
+    return existing
+  }
+
+  const channel = createIOSRawProbeChannel(handlerName)
+  iosRawProbeChannels.set(callbackName, channel)
+  return channel
+}
+
 function ensureBridgeLabEnabled(): void {
   if (runtimePolicy.bridgeLabEnabled) return
   throw new BridgeLabProbeError(
@@ -191,18 +233,7 @@ export async function runIOSRawProbe(request: IOSRawProbeRequest): Promise<unkno
     )
   }
 
-  const transport = createIOSMessageHandlerTransport<unknown, unknown>({
-    handlerName,
-    correlation: 'single-flight',
-    callbackCardinality: 'at-most-one',
-    timeoutMs: request.timeoutMs,
-    serializeRequest: () => payload,
-    parseCallback: (callbackPayload) => ({
-      ok: true,
-      payload: callbackPayload,
-    }),
-  })
-
+  const { transport } = getIOSRawProbeChannel(handlerName, callbackName)
   const resolution = transport.resolve(hostWindow, payload, { timeoutMs: request.timeoutMs })
   if (!resolution.supported) {
     throw new BridgeLabProbeError(
@@ -223,6 +254,26 @@ export async function runIOSRawProbe(request: IOSRawProbeRequest): Promise<unkno
   } finally {
     if (callbackHost[callbackName] === callback) delete callbackHost[callbackName]
   }
+}
+
+
+export function resetIOSRawProbeChannel(handlerNameValue: string, callbackNameValue: string): boolean {
+  ensureBridgeLabEnabled()
+  const handlerName = assertPropertyName(handlerNameValue, 'iOS handler name')
+  const callbackName = assertPropertyName(callbackNameValue, 'H5 callback name')
+  const channel = iosRawProbeChannels.get(callbackName)
+  if (!channel) return false
+
+  if (channel.handlerName !== handlerName) {
+    throw new BridgeLabProbeError(
+      'callback-conflict',
+      `window.${callbackName} is bound to iOS handler ${channel.handlerName}, not ${handlerName}.`,
+    )
+  }
+
+  channel.transport.resetSingleFlightAfterHostRecovery()
+  iosRawProbeChannels.delete(callbackName)
+  return true
 }
 
 export function isSensitiveBridgeName(value: string): boolean {
