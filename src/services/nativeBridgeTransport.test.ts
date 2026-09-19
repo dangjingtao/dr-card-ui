@@ -144,11 +144,9 @@ describe('iOS-style messageHandler transport', () => {
       },
     }
 
-    let sequence = 0
     const transport = createIOSMessageHandlerTransport<{ value: number }, { value: number }>({
       handlerName: 'bridge',
       correlation: 'request-id',
-      requestIdFactory: () => 'req-' + ++sequence,
       serializeRequest: ({ requestId, input }) => ({ requestId, input }),
       parseCallback: (payload) => payload as {
         requestId: string
@@ -162,12 +160,14 @@ describe('iOS-style messageHandler transport', () => {
     if (!resolution.supported) throw new Error('Expected iOS transport to resolve.')
 
     const promise = Promise.resolve(resolution.invoke())
-    expect(posted).toEqual([{ requestId: 'req-1', input: { value: 7 } }])
+    expect(posted).toHaveLength(1)
+    const requestId = (posted[0] as { requestId: string; input: { value: number } }).requestId
+    expect(posted[0]).toEqual({ requestId, input: { value: 7 } })
     expect(transport.pendingCount()).toBe(1)
 
     expect(
       transport.handleCallback({
-        requestId: 'req-1',
+        requestId,
         ok: true,
         payload: '{"value":8}',
       }),
@@ -177,7 +177,7 @@ describe('iOS-style messageHandler transport', () => {
     expect(transport.pendingCount()).toBe(0)
     expect(
       transport.handleCallback({
-        requestId: 'req-1',
+        requestId,
         ok: true,
         payload: '{"value":99}',
       }),
@@ -196,11 +196,9 @@ describe('iOS-style messageHandler transport', () => {
       },
     }
 
-    let sequence = 0
     const transport = createIOSMessageHandlerTransport<number, number>({
       handlerName: 'bridge',
       correlation: 'request-id',
-      requestIdFactory: () => 'req-' + ++sequence,
       serializeRequest: ({ requestId, input }) => ({ requestId, input }),
       parseCallback: (payload) => payload as {
         requestId: string
@@ -217,25 +215,33 @@ describe('iOS-style messageHandler transport', () => {
     const firstPromise = Promise.resolve(first.invoke())
     const secondPromise = Promise.resolve(second.invoke())
 
+    expect(posted).toHaveLength(2)
+    const firstRequestId = posted[0].requestId
+    const secondRequestId = posted[1].requestId
+    expect(firstRequestId).not.toBe(secondRequestId)
     expect(posted).toEqual([
-      { requestId: 'req-1', input: 1 },
-      { requestId: 'req-2', input: 2 },
+      { requestId: firstRequestId, input: 1 },
+      { requestId: secondRequestId, input: 2 },
     ])
     expect(transport.pendingCount()).toBe(2)
 
-    transport.handleCallback({ requestId: 'req-2', ok: true, payload: 20 })
-    transport.handleCallback({ requestId: 'req-1', ok: true, payload: 10 })
+    transport.handleCallback({ requestId: secondRequestId, ok: true, payload: 20 })
+    transport.handleCallback({ requestId: firstRequestId, ok: true, payload: 10 })
 
     await expect(firstPromise).resolves.toBe(10)
     await expect(secondPromise).resolves.toBe(20)
     expect(transport.pendingCount()).toBe(0)
   })
 
-  it('rejects a duplicate request id without orphaning the first pending callback', async () => {
+  it('never reuses a runtime-owned request id after timeout, so stale callbacks stay isolated', async () => {
+    vi.useFakeTimers()
+    const posted: Array<{ requestId: string; input: number }> = []
     bridgeWindow.webkit = {
       messageHandlers: {
         bridge: {
-          postMessage() {},
+          postMessage(payload) {
+            posted.push(payload as { requestId: string; input: number })
+          },
         },
       },
     }
@@ -243,7 +249,6 @@ describe('iOS-style messageHandler transport', () => {
     const transport = createIOSMessageHandlerTransport<number, number>({
       handlerName: 'bridge',
       correlation: 'request-id',
-      requestIdFactory: () => 'same-request',
       serializeRequest: ({ requestId, input }) => ({ requestId, input }),
       parseCallback: (payload) => payload as {
         requestId: string
@@ -253,33 +258,51 @@ describe('iOS-style messageHandler transport', () => {
       parseResult: (payload) => Number(payload),
     })
 
-    const first = transport.resolve(bridgeWindow, 1)
-    const second = transport.resolve(bridgeWindow, 2)
-    if (!first.supported || !second.supported) throw new Error('Expected iOS transport to resolve.')
-
+    const first = transport.resolve(bridgeWindow, 1, { timeoutMs: 25 })
+    if (!first.supported) throw new Error('Expected iOS transport to resolve.')
     const firstPromise = Promise.resolve(first.invoke())
-    await expect(Promise.resolve(second.invoke())).rejects.toMatchObject({
-      name: 'NativeTransportError',
-      code: 'callback-correlation-conflict',
-    } satisfies Partial<NativeTransportError>)
-    expect(transport.pendingCount()).toBe(1)
+    const firstRequestId = posted[0].requestId
 
+    const firstTimeout = expect(firstPromise).rejects.toMatchObject({
+      name: 'NativeTransportError',
+      code: 'callback-timeout',
+    } satisfies Partial<NativeTransportError>)
+    await vi.advanceTimersByTimeAsync(25)
+    await firstTimeout
+
+    const second = transport.resolve(bridgeWindow, 2, { timeoutMs: 25 })
+    if (!second.supported) throw new Error('Expected iOS transport to resolve.')
+    const secondPromise = Promise.resolve(second.invoke())
+    const secondRequestId = posted[1].requestId
+
+    expect(secondRequestId).not.toBe(firstRequestId)
     expect(
       transport.handleCallback({
-        requestId: 'same-request',
+        requestId: firstRequestId,
         ok: true,
         payload: 10,
       }),
+    ).toBe(false)
+    expect(
+      transport.handleCallback({
+        requestId: secondRequestId,
+        ok: true,
+        payload: 20,
+      }),
     ).toBe(true)
-    await expect(firstPromise).resolves.toBe(10)
+
+    await expect(secondPromise).resolves.toBe(20)
     expect(transport.pendingCount()).toBe(0)
   })
 
   it('rejects a Native callback failure and cleans the pending request', async () => {
+    const posted: unknown[] = []
     bridgeWindow.webkit = {
       messageHandlers: {
         bridge: {
-          postMessage() {},
+          postMessage(payload) {
+            posted.push(payload)
+          },
         },
       },
     }
@@ -288,7 +311,6 @@ describe('iOS-style messageHandler transport', () => {
     const transport = createIOSMessageHandlerTransport<void, unknown>({
       handlerName: 'bridge',
       correlation: 'request-id',
-      requestIdFactory: () => 'req-fail',
       serializeRequest: ({ requestId }) => ({ requestId }),
       parseCallback: (payload) => payload as {
         requestId: string
@@ -300,6 +322,7 @@ describe('iOS-style messageHandler transport', () => {
     const resolution = transport.resolve(bridgeWindow, undefined)
     if (!resolution.supported) throw new Error('Expected iOS transport to resolve.')
     const promise = Promise.resolve(resolution.invoke())
+    const requestId = (posted[0] as { requestId: string }).requestId
 
     const rejection = expect(promise).rejects.toMatchObject({
       name: 'NativeTransportError',
@@ -309,7 +332,7 @@ describe('iOS-style messageHandler transport', () => {
 
     expect(
       transport.handleCallback({
-        requestId: 'req-fail',
+        requestId,
         ok: false,
         error: nativeFailure,
       }),
@@ -321,10 +344,13 @@ describe('iOS-style messageHandler transport', () => {
 
   it('times out and ignores duplicate or late callbacks after cleanup', async () => {
     vi.useFakeTimers()
+    const posted: unknown[] = []
     bridgeWindow.webkit = {
       messageHandlers: {
         bridge: {
-          postMessage() {},
+          postMessage(payload) {
+            posted.push(payload)
+          },
         },
       },
     }
@@ -332,7 +358,6 @@ describe('iOS-style messageHandler transport', () => {
     const transport = createIOSMessageHandlerTransport<void, string>({
       handlerName: 'bridge',
       correlation: 'request-id',
-      requestIdFactory: () => 'req-timeout',
       serializeRequest: ({ requestId }) => ({ requestId }),
       parseCallback: (payload) => payload as {
         requestId: string
@@ -345,6 +370,7 @@ describe('iOS-style messageHandler transport', () => {
     const resolution = transport.resolve(bridgeWindow, undefined, { timeoutMs: 25 })
     if (!resolution.supported) throw new Error('Expected iOS transport to resolve.')
     const promise = Promise.resolve(resolution.invoke())
+    const requestId = (posted[0] as { requestId: string }).requestId
 
     expect(transport.pendingCount()).toBe(1)
     const timeoutRejection = expect(promise).rejects.toMatchObject({
@@ -358,14 +384,14 @@ describe('iOS-style messageHandler transport', () => {
 
     expect(
       transport.handleCallback({
-        requestId: 'req-timeout',
+        requestId,
         ok: true,
         payload: 'late',
       }),
     ).toBe(false)
     expect(
       transport.handleCallback({
-        requestId: 'req-timeout',
+        requestId,
         ok: true,
         payload: 'duplicate',
       }),
@@ -475,7 +501,6 @@ describe('iOS-style messageHandler transport', () => {
     const transport = createIOSMessageHandlerTransport<void, unknown>({
       handlerName: 'bridge',
       correlation: 'request-id',
-      requestIdFactory: () => 'req-post',
       serializeRequest: ({ requestId }) => ({ requestId }),
       parseCallback: (payload) => payload as {
         requestId: string
