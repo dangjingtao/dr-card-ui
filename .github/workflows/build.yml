@@ -149,6 +149,24 @@ jobs:
           cat /tmp/dr-card-playwright-preview.log
           exit 1
 
+      - name: H027 Bridge Lab browser smoke
+        shell: bash
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
+        run: |
+          npm run preview -- --port 4173 --strictPort > /tmp/dr-card-bridge-lab-preview.log 2>&1 &
+          PREVIEW_PID=$!
+          trap 'kill $PREVIEW_PID || true' EXIT
+          for attempt in {1..20}; do
+            if curl --fail --silent --show-error http://127.0.0.1:4173/build-meta.json > /dev/null; then
+              npm run test:e2e:bridge-lab
+              exit $?
+            fi
+            sleep 1
+          done
+          cat /tmp/dr-card-bridge-lab-preview.log
+          exit 1
+
       - name: Verify H019 evidence assembler
         if: always() && steps.formal-e2e.outcome != 'skipped'
         env:
