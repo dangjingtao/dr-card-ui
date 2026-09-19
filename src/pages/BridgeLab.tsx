@@ -255,7 +255,7 @@ export default function BridgeLab() {
           <ShieldAlert className="h-5 w-5 text-text-secondary" />
           <h1 className="mt-3 text-lg font-semibold">Bridge Lab 不可用</h1>
           <p className="mt-2 text-sm leading-6 text-text-secondary">
-            当前运行环境禁止 Raw Probe。Bridge Lab 仅在 dev/test runtime 注册。
+            当前运行环境禁止 Raw Probe。Bridge Lab 不在 production runtime 注册。
           </p>
         </div>
       </main>
