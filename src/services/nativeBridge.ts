@@ -81,6 +81,7 @@ const capabilityRegistry = {
     name: 'closeWebView',
     description:
       'H5 close intent only; the Native close-WebView protocol is intentionally still unconfirmed.',
+    sensitiveResult: false,
     resolve() {
       return unsupportedCapability(
         'capability-unsupported',
