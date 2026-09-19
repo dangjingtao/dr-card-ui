@@ -206,7 +206,6 @@ export type IOSRequestIdTransportConfig<TInput, TResult> =
     correlation: 'request-id'
     serializeRequest: (context: { requestId: string; input: TInput }) => unknown
     parseCallback: (payload: unknown) => IOSRequestIdCallbackOutcome
-    requestIdFactory?: () => string
   }
 
 export type IOSSingleFlightTransportConfig<TInput, TResult> =
@@ -328,10 +327,9 @@ export function createIOSMessageHandlerTransport<TInput, TResult>(
       }
     }
 
-    const requestId =
-      config.correlation === 'request-id'
-        ? (config.requestIdFactory ?? defaultRequestIdFactory)()
-        : defaultRequestIdFactory()
+    // Request ids are runtime-owned. Do not allow capability-specific factories to reuse an id
+    // after timeout, where a stale Native callback could otherwise settle a newer request.
+    const requestId = defaultRequestIdFactory()
 
     if (pending.has(requestId)) {
       return Promise.reject(
