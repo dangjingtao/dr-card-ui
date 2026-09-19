@@ -2,9 +2,9 @@
 
 ## 1. 依赖与施工基线
 
-H026 施工基于 H025 / PR #47 的稳定 Capability Runtime HEAD `0eb0e212c13df7ca9109d073ea8b741aa0db920d`。
+H026 最初施工基于 H025 / PR #47 的稳定 Capability Runtime；H025 随后已合入 `dev`。
 
-H025 当前已进入 Ready for acceptance，但尚未合入 `dev`。因此 H026 使用 stacked branch：从 H025 分支继续施工，PR 仍以 `dev` 为 base，并明确依赖 #47 先完成验收/合并。
+H026 分支已同步到 `dev@deaf5a3d4782dcb1beea8cbcdc428a5abe2ac807`，当前不再依赖 stacked merge 顺序，并保留 H025 最终合入的 input-capable runtime boundary。
 
 本卡不复制 H025 的 mode gate、capability registry、Promise normalization、timeout/error normalization；只在其下方新增宿主协议 transport/driver 机制。
 
@@ -28,12 +28,12 @@ H025 当前已进入 Ready for acceptance，但尚未合入 `dev`。因此 H026 
 机制支持：
 
 - `window.webkit.messageHandlers.<handler>.postMessage(payload)`；
-- request-id correlation，可并发并允许乱序完成；
+- request-id correlation，可并发并允许乱序完成；request id 由 transport runtime 内部生成，不开放 capability 自定义 factory，避免 timeout 后 id 复用让旧 callback 误命中新请求；
 - single-flight 模式，用于无法携带 request id 的祖传 callback 协议；第二个并发请求会明确失败，不允许靠覆盖单个 global callback 蒙混；
 - single-flight 若发生无关联 timeout，通道会 fail-closed 标记为 unsafe：后续请求继续拒绝，迟到 callback 不会被绑定给新请求；只有宿主恢复/重建或调用方能够确认旧 callback 不再可能到达后，才允许显式 reset；
 - 每个 pending callback 有统一 resolver / rejector / timeout 生命周期；
 - timeout 后清理 pending；
-- duplicate / late callback 返回未处理，不会二次完成 Promise；
+- duplicate / late callback 返回未处理，不会二次完成 Promise；request-id timeout 后下一次调用使用新的 runtime-owned id，旧 callback 不会命中新请求；
 - Native failure callback 统一进入 transport error；
 - postMessage throw 会清理 pending；
 - serializer / parser 可吸收 string / JSON string / object 差异。
@@ -70,6 +70,7 @@ raw string 协议不强制 JSON 化；capability 可使用 identity parser 或�
 - async callback success；
 - callback failure；
 - request-id correlation；
+- runtime-owned request id 在 timeout 后不复用；
 - concurrent requests / out-of-order completion；
 - single-flight 并发限制；
 - timeout cleanup；
