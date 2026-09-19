@@ -22,7 +22,7 @@
     "build:cf": "npm run typecheck && npm run verify:images && node scripts/build-h5.mjs cf",
     "preview": "vite preview --host 0.0.0.0",
     "test:e2e": "npm run test:e2e:formal",
-    "test:e2e:formal": "playwright test tests/e2e/formal-h5.spec.ts",
+    "test:e2e:formal": "playwright test tests/e2e/formal-h5.spec.ts tests/e2e/h024-model-contract.spec.ts",
     "test:e2e:test-gate": "playwright test tests/e2e/test-gate.spec.ts",
     "test:e2e:ui": "playwright test tests/e2e/formal-h5.spec.ts --ui",
     "report:evidence": "node scripts/build-test-evidence.mjs",
@@ -38,7 +38,8 @@
     "verify:h014": "node scripts/verify-h014-mock-scenarios.mjs",
     "verify:h015": "node scripts/verify-h015-jsbridge.mjs",
     "verify:h022": "node scripts/verify-h022-route-state-convergence.mjs",
-    "verify:h023": "node scripts/verify-h023-shared-components.mjs"
+    "verify:h023": "node scripts/verify-h023-shared-components.mjs",
+    "verify:h024": "node scripts/verify-h024-model-contract.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "5.9.1",

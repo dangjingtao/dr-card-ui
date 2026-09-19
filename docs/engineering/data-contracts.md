@@ -71,6 +71,13 @@ code = CONTRACT_VALIDATION_FAILED
 
 目标仍然只有一个：不要让“生成 TS 类型”和“手写 schema/interface”分别演化成两套互相漂移的真值。
 
+## 5.1 模型已确认、业务 API 未定稿时
+
+当后台已经提供数据模型 / CRUD 包装器，但产品业务 API 尚未定稿时，按
+[`model-driven-api-contracts.md`](./model-driven-api-contracts.md) 执行：明确 backend fact 与 frontend proposal，
+transport 保留后端字段名，UI 转换只发生在 adapter / view-model 层，并通过同一 service 走 HTTP → MSW / real API。
+
+
 ## 6. H009 验证样例
 
 `src/services/contracts/h009MockExample.ts` 是 Foundation 阶段的 Mock 契约探针，用来证明：
