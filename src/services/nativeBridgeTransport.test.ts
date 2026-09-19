@@ -410,6 +410,7 @@ describe('iOS-style messageHandler transport', () => {
     const transport = createIOSMessageHandlerTransport<number, number>({
       handlerName: 'legacy',
       correlation: 'single-flight',
+      callbackCardinality: 'at-most-one',
       serializeRequest: ({ input }) => input,
       parseCallback: (payload) => payload as {
         ok: true
@@ -445,6 +446,7 @@ describe('iOS-style messageHandler transport', () => {
     const transport = createIOSMessageHandlerTransport<number, number>({
       handlerName: 'legacy',
       correlation: 'single-flight',
+      callbackCardinality: 'at-most-one',
       serializeRequest: ({ input }) => input,
       parseCallback: (payload) => payload as {
         ok: true
