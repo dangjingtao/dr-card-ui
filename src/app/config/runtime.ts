@@ -118,6 +118,7 @@ if (configErrors.length > 0) {
 }
 
 const fixtureEnvironment = dataMode === 'mock' && isDevLike
+const bridgeLabEnabled = appEnvironment === 'dev' || appEnvironment === 'test'
 
 /**
  * Single runtime truth for the embedded H5.
@@ -138,5 +139,6 @@ export const runtimePolicy = Object.freeze({
   isProdLike,
   fixtureQueriesEnabled: fixtureEnvironment,
   debugPanelEnabled: fixtureEnvironment,
+  bridgeLabEnabled,
   build,
 })
