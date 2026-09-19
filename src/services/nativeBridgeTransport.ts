@@ -211,6 +211,12 @@ export type IOSRequestIdTransportConfig<TInput, TResult> =
 export type IOSSingleFlightTransportConfig<TInput, TResult> =
   IOSMessageHandlerTransportBase<TResult> & {
     correlation: 'single-flight'
+    /**
+     * Required host-protocol guarantee: after a request settles successfully or with Native failure,
+     * Native will not emit a second callback for that invocation. Without request ids, a duplicate
+     * callback cannot be distinguished from the callback for the next request.
+     */
+    callbackCardinality: 'at-most-one'
     serializeRequest: (context: { input: TInput }) => unknown
     parseCallback: (payload: unknown) => IOSCallbackOutcome
   }
