@@ -64,7 +64,7 @@ function getProbeWindow(): ProbeWindow {
   if (typeof window === 'undefined') {
     throw new BridgeLabProbeError('bridge-unavailable', 'window is not available in this runtime.')
   }
-  return window as ProbeWindow
+  return window as unknown as ProbeWindow
 }
 
 function assertPropertyName(value: string, label: string): string {
