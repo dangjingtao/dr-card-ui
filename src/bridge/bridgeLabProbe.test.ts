@@ -168,7 +168,10 @@ describe('Bridge Lab iOS Raw Probe', () => {
     })
     expect(posted).toEqual([{ attempt: 1 }])
 
-    expect(resetIOSRawProbeChannel('labCallback')).toBe(true)
+    expect(resetIOSRawProbeChannel('labCallback')).toEqual({
+      reset: true,
+      handlerName: 'demoHandler',
+    })
 
     const recovered = runIOSRawProbe({
       handlerName: 'demoHandler',
