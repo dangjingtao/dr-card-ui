@@ -17,7 +17,6 @@ describe('Bridge Lab page', () => {
     render(<BridgeLab />)
 
     expect(screen.getByRole('heading', { name: 'Bridge Lab' })).toBeTruthy()
-    expect(screen.getByTestId ? true : true).toBe(true)
     expect(document.querySelector('[data-capability-name="getLoginToken"]')).not.toBeNull()
     expect(document.querySelector('[data-capability-name="closeWebView"]')).not.toBeNull()
     expect(screen.getByRole('button', { name: /调用 getLoginToken/i })).toBeTruthy()
