@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   BridgeLabProbeError,
   redactBridgeValue,
+  resetIOSRawProbeChannel,
   runAndroidRawProbe,
   runIOSRawProbe,
 } from './bridgeLabProbe'
@@ -15,6 +16,11 @@ type LabWindow = Window & Record<string, unknown> & {
 const labWindow = window as unknown as LabWindow
 
 afterEach(() => {
+  try {
+    resetIOSRawProbeChannel('demoHandler', 'labCallback')
+  } catch {
+    // Individual tests await their probe; this is only a best-effort test isolation fallback.
+  }
   delete labWindow.androidBridge
   delete labWindow.webkit
   delete labWindow.labCallback
@@ -117,6 +123,64 @@ describe('Bridge Lab iOS Raw Probe', () => {
     await vi.advanceTimersByTimeAsync(25)
     await rejection
     expect(labWindow.labCallback).toBeUndefined()
+  })
+
+  it('keeps a timed-out single-flight channel poisoned until explicit host recovery reset', async () => {
+    vi.useFakeTimers()
+    const posted: unknown[] = []
+    labWindow.webkit = {
+      messageHandlers: {
+        demoHandler: {
+          postMessage(payload) {
+            posted.push(payload)
+          },
+        },
+      },
+    }
+
+    const first = runIOSRawProbe({
+      handlerName: 'demoHandler',
+      payloadMode: 'json',
+      payloadText: '{"attempt":1}',
+      receiveMode: 'global-callback',
+      callbackName: 'labCallback',
+      timeoutMs: 25,
+    })
+    const firstRejection = expect(first).rejects.toMatchObject({
+      name: 'NativeTransportError',
+      code: 'callback-timeout',
+    })
+    await vi.advanceTimersByTimeAsync(25)
+    await firstRejection
+
+    await expect(
+      runIOSRawProbe({
+        handlerName: 'demoHandler',
+        payloadMode: 'json',
+        payloadText: '{"attempt":2}',
+        receiveMode: 'global-callback',
+        callbackName: 'labCallback',
+        timeoutMs: 25,
+      }),
+    ).rejects.toMatchObject({
+      name: 'NativeTransportError',
+      code: 'callback-channel-unsafe',
+    })
+    expect(posted).toEqual([{ attempt: 1 }])
+
+    expect(resetIOSRawProbeChannel('demoHandler', 'labCallback')).toBe(true)
+
+    const recovered = runIOSRawProbe({
+      handlerName: 'demoHandler',
+      payloadMode: 'json',
+      payloadText: '{"attempt":3}',
+      receiveMode: 'global-callback',
+      callbackName: 'labCallback',
+      timeoutMs: 25,
+    })
+    expect(posted).toEqual([{ attempt: 1 }, { attempt: 3 }])
+    ;(labWindow.labCallback as (...args: unknown[]) => unknown)('recovered')
+    await expect(recovered).resolves.toBe('recovered')
   })
 
   it('refuses to overwrite an existing callback', async () => {
