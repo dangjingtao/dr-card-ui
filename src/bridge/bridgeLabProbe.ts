@@ -56,7 +56,7 @@ function ensureBridgeLabEnabled(): void {
   if (runtimePolicy.bridgeLabEnabled) return
   throw new BridgeLabProbeError(
     'lab-disabled',
-    'Bridge Lab raw probes are available only in dev/test runtime.',
+    'Bridge Lab raw probes are unavailable in production runtime.',
   )
 }
 
