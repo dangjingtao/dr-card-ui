@@ -213,7 +213,7 @@ export async function runIOSRawProbe(request: IOSRawProbeRequest): Promise<unkno
 
   const callback = (...args: unknown[]) => {
     const callbackPayload = args.length <= 1 ? args[0] : args
-    return transport.handleCallback({ ok: true, payload: callbackPayload })
+    return transport.handleCallback(callbackPayload)
   }
 
   callbackHost[callbackName] = callback
