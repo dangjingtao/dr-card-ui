@@ -90,11 +90,13 @@ H021–H024 完成后，后续工作原则上按功能页面或可独立验收�
 
 ### F. JSBridge 与宿主能力收口
 
-| ID | 任务 | Issue |
+> H027 按 2026-09-19 当前用户指令继续使用旧式仓库任务卡作为施工契约；#45 仅保留为兼容跟踪，完成后关闭。其它卡的既有记录本轮不顺手改写。
+
+| ID | 任务 | Issue / 状态 |
 |---|---|---|
 | H025 | JSBridge Capability Runtime 可扩展内核 | [#43](https://github.com/dangjingtao/dr-card-ui/issues/43) |
 | H026 | Android / iOS Transport 与回调适配机制 | [#44](https://github.com/dangjingtao/dr-card-ui/issues/44) |
-| H027 | Bridge Lab 真机联调页升级 | [#45](https://github.com/dangjingtao/dr-card-ui/issues/45) |
+| H027 | [Bridge Lab 真机联调页升级](./H027-bridge-lab.md) | User Review（#45 仅兼容跟踪） |
 | H028 | 正式 H5 Native 能力盘点与接口征集清单 | [#46](https://github.com/dangjingtao/dr-card-ui/issues/46) |
 
 H025–H028 继续沿用本仓库 H021 起的 GitHub Issue 工作项契约 + 本 README 索引模式；不接入 Mira Organization Project/Issue Fields，也不引入第二套任务编号。
