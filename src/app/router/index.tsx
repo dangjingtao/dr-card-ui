@@ -88,8 +88,6 @@ import SchoolRefundPage from '../../pages/legacy/SchoolRefundPage'
 import SignInPage from '../../pages/legacy/SignInPage'
 import PointsPage from '../../pages/legacy/PointsPage'
 import NotFound from '../../pages/NotFound'
-import BridgeLab from '../../pages/BridgeLab'
-import { runtimePolicy } from '../config/runtime'
 import { ROUTES } from './routes'
 import type { RouteMeta } from './routes'
 import type { ReactElement } from 'react'
@@ -226,10 +224,21 @@ const customPages: Record<string, ReactElement> = {
   '/signin/detail': <PointsPage />,
 }
 
+const bridgeLabRoutes =
+  import.meta.env.MODE === 'production'
+    ? []
+    : [
+        {
+          path: '/__debug/bridge-lab',
+          lazy: async () => {
+            const { default: Component } = await import('../../pages/BridgeLab')
+            return { Component }
+          },
+        },
+      ]
+
 export const router = createBrowserRouter([
-  ...(runtimePolicy.bridgeLabEnabled
-    ? [{ path: '/__debug/bridge-lab', element: <BridgeLab /> }]
-    : []),
+  ...bridgeLabRoutes,
   {
     element: <MobileLayout />,
     children: [
