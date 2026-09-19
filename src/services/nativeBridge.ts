@@ -248,10 +248,7 @@ function isCapabilitySupported(
   }
 }
 
-/**
- * Returns runtime-observable Bridge state without claiming a Native version contract that the host
- * has not provided. `hostVersion` therefore remains null until a real version API is confirmed.
- */
+/** Registry-backed metadata for Bridge Lab; this does not promote unsupported host protocols. */
 export function getNativeBridgeCapabilityCatalog(): NativeCapabilityCatalogItem[] {
   const hostWindow = getHostWindow()
 
@@ -278,6 +275,16 @@ export function invokeRegisteredNativeCapabilityForDebug(
   input: unknown = undefined,
   options: NativeInvocationOptions = {},
 ): Promise<unknown> {
+  if (!runtimePolicy.bridgeLabEnabled) {
+    return Promise.reject(
+      new NativeBridgeError(
+        'bridge-disabled',
+        name,
+        `Native capability debug invocation is disabled in ${runtimePolicy.appEnvironment} runtime.`,
+      ),
+    )
+  }
+
   const descriptor = capabilityRegistry[name] as NativeCapabilityDescriptor<
     NativeCapabilityName,
     unknown,
@@ -286,6 +293,10 @@ export function invokeRegisteredNativeCapabilityForDebug(
   return invokeNativeCapability(descriptor, input, options)
 }
 
+/**
+ * Returns runtime-observable Bridge state without claiming a Native version contract that the host
+ * has not provided. `hostVersion` therefore remains null until a real version API is confirmed.
+ */
 export function getNativeBridgeDiagnostics(): NativeBridgeDiagnostics {
   const hostWindow = getHostWindow()
   const capabilities = Object.fromEntries(
