@@ -211,6 +211,22 @@ jobs:
           node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('dist/build-meta.json','utf8'));if(m.appEnvironment!=='prod'||m.dataMode!=='api'||m.build.sha!==process.env.GITHUB_SHA)process.exit(1)"
           test ! -f dist/mockServiceWorker.js
 
+      - name: Verify production excludes Bridge Lab
+        shell: bash
+        run: |
+          if grep -R --binary-files=text -F '__debug/bridge-lab' dist; then
+            echo 'Production bundle must not contain the Bridge Lab route.'
+            exit 1
+          fi
+          if grep -R --binary-files=text -F 'Android Raw Probe' dist; then
+            echo 'Production bundle must not contain Bridge Lab Raw Probe code.'
+            exit 1
+          fi
+          if grep -R --binary-files=text -F 'Run iOS Probe' dist; then
+            echo 'Production bundle must not contain Bridge Lab Raw Probe UI.'
+            exit 1
+          fi
+
       - name: Verify Cloudflare SPA fallback asset
         run: test -f dist/_redirects && grep -F '/* /index.html 200' dist/_redirects
 
