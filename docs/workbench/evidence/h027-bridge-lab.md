@@ -120,7 +120,7 @@ H027 新增：
 
 ### H027 当前仍待真人验证
 
-Issue #45 明确要求 Android App WebView：
+H027 任务卡要求 Android App WebView：
 1. 通过 Bridge Lab 的 registered capability runner 调用正式 `getLoginToken`；
 2. 至少执行一次 Android Raw Probe。
 
