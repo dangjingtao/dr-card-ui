@@ -16,7 +16,7 @@ const vite = await createViteServer({
 const originalWindow = globalThis.window
 
 // H002/AGENTS §3.4: these top-level page modules belong exclusively to Native-reference routes.
-// `src/pages/legacy/**` is excluded separately below. H015 must not make Native reference code an
+// src/pages/legacy/** is excluded separately below. H015 must not make Native reference code an
 // H5 acceptance gate, even though those pages may intentionally demonstrate direct host calls.
 const NATIVE_REFERENCE_TOP_LEVEL_PAGES = new Set([
   'LegacyHome.tsx',
@@ -152,17 +152,19 @@ try {
     assert.doesNotMatch(
       source,
       /\b(?:window\s*\.\s*androidBridge|androidBridge\s*\.|webkit\s*\??\.\s*messageHandlers)\b/,
-      `${file} is a formal H5 page and must not access Native host globals directly`,
+      file + ' is a formal H5 page and must not access Native host globals directly',
     )
   }
 
   const adapterSource = fs.readFileSync('src/services/nativeBridge.ts', 'utf8')
-  assert.match(adapterSource, /method\.call\(bridge\)/)
+  const transportSource = fs.readFileSync('src/services/nativeBridgeTransport.ts', 'utf8')
+  assert.match(adapterSource, /createAndroidInjectedObjectTransport/)
+  assert.match(transportSource, /method\.call\(bridge,\s*\.\.\.args\)/)
   assert.match(adapterSource, /runtimePolicy\.bridgeMode === 'native'/)
-  assert.doesNotMatch(adapterSource, /mockToken|fakeToken|fallbackToken/)
+  assert.doesNotMatch(adapterSource + transportSource, /mockToken|fakeToken|fallbackToken/)
 
   console.log(
-    'H015 PASS: Android getLoginToken is centralized, closeWebView remains explicitly unsupported without inventing a host protocol, late injection and receiver binding are preserved, Promise/timeout/error semantics are deterministic, iOS is not falsely unified, and formal H5 pages do not access host globals directly.',
+    'H015 PASS: Android getLoginToken remains centralized through the capability runtime and injected-object transport, closeWebView remains explicitly unsupported without inventing a host protocol, late injection and receiver binding are preserved, Promise/timeout/error semantics are deterministic, iOS is not falsely unified, and formal H5 pages do not access host globals directly.',
   )
 } finally {
   if (originalWindow === undefined) delete globalThis.window

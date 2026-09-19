@@ -1,4 +1,9 @@
 import { runtimePolicy } from '../app/config/runtime'
+import {
+  createAndroidInjectedObjectTransport,
+  type NativeTransportResolution,
+  type NativeTransportWindow,
+} from './nativeBridgeTransport'
 
 export type NativeHost = 'android' | 'ios' | 'browser'
 export type NativeBridgeErrorCode =
@@ -8,30 +13,14 @@ export type NativeBridgeErrorCode =
   | 'invocation-failed'
   | 'invocation-timeout'
 
-type AndroidBridge = {
-  getLoginToken?: () => unknown
-}
-
-type IOSMessageHandler = {
-  postMessage: (payload: unknown) => void
-}
-
-type NativeBridgeWindow = Window & {
-  androidBridge?: AndroidBridge
-  webkit?: {
-    messageHandlers?: Record<string, IOSMessageHandler | undefined>
-  }
-}
-
 type NativeInvocationOptions = {
   timeoutMs?: number
 }
 
-type UnsupportedCapabilityResolution = {
-  supported: false
-  code: Extract<NativeBridgeErrorCode, 'bridge-unsupported' | 'capability-unsupported'>
-  message: string
-}
+type UnsupportedCapabilityResolution = Extract<
+  NativeTransportResolution<never>,
+  { supported: false }
+>
 
 type SupportedCapabilityResolution<TInput, TResult> = {
   supported: true
@@ -46,7 +35,7 @@ interface NativeCapabilityDescriptor<TName extends string, TInput, TResult> {
   name: TName
   description: string
   resolve: (
-    hostWindow: NativeBridgeWindow | undefined,
+    hostWindow: NativeTransportWindow | undefined,
   ) => NativeCapabilityResolution<TInput, TResult>
 }
 
@@ -69,30 +58,21 @@ function supportedCapability<TInput, TResult>(
   return { supported: true, invoke }
 }
 
+const getLoginTokenTransport = createAndroidInjectedObjectTransport<void, unknown>({
+  objectName: 'androidBridge',
+  methodName: 'getLoginToken',
+  serializeArgs: () => [],
+})
+
 const capabilityRegistry = {
   getLoginToken: defineCapability<'getLoginToken', void, unknown>({
     name: 'getLoginToken',
     description: 'Read the current login token from the confirmed Android host bridge.',
     resolve(hostWindow) {
-      const bridge = hostWindow?.androidBridge
-      if (!bridge) {
-        return unsupportedCapability(
-          'bridge-unsupported',
-          'window.androidBridge is not available in the current host.',
-        )
-      }
+      const transportResolution = getLoginTokenTransport.resolve(hostWindow, undefined)
+      if (!transportResolution.supported) return transportResolution
 
-      const method = bridge.getLoginToken
-      if (typeof method !== 'function') {
-        return unsupportedCapability(
-          'capability-unsupported',
-          'androidBridge.getLoginToken is not available in the current host.',
-        )
-      }
-
-      // Resolve the bridge for each invocation and keep the injected object as the receiver.
-      // Both details are required by the real Android WebView integration evidence.
-      return supportedCapability<void, unknown>(() => method.call(bridge))
+      return supportedCapability<void, unknown>(() => transportResolution.invoke())
     },
   }),
   closeWebView: defineCapability<'closeWebView', void, never>({
@@ -132,9 +112,9 @@ export class NativeBridgeError extends Error {
 
 const DEFAULT_TIMEOUT_MS = 5_000
 
-function getHostWindow(): NativeBridgeWindow | undefined {
+function getHostWindow(): NativeTransportWindow | undefined {
   if (typeof window === 'undefined') return undefined
-  return window as NativeBridgeWindow
+  return window as NativeTransportWindow
 }
 
 function detectHost(hostWindow = getHostWindow()): NativeHost {
@@ -247,7 +227,7 @@ async function invokeNativeCapability<TName extends string, TInput, TResult>(
 
 function isCapabilitySupported(
   descriptor: NativeCapabilityDescriptor<string, never, unknown>,
-  hostWindow: NativeBridgeWindow | undefined,
+  hostWindow: NativeTransportWindow | undefined,
 ): boolean {
   if (runtimePolicy.bridgeMode !== 'native') return false
 
@@ -283,7 +263,8 @@ export function getNativeBridgeDiagnostics(): NativeBridgeDiagnostics {
 }
 
 /**
- * H015's first confirmed production boundary, now executed through the shared capability runtime.
+ * H015's first confirmed production boundary, now executed through the shared capability runtime
+ * and H026's Android injected-object transport.
  *
  * The real Android WebView probe uses `window.androidBridge.getLoginToken()` with no arguments and
  * a synchronous host return. The adapter deliberately normalizes that return to a Promise so pages
