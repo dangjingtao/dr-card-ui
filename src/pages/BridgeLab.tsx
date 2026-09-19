@@ -18,7 +18,6 @@ import {
   type NativeCapabilityName,
 } from '../services/nativeBridge'
 import {
-  BridgeLabProbeError,
   isSensitiveBridgeName,
   redactBridgeValue,
   runAndroidRawProbe,
