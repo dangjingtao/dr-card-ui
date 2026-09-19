@@ -118,7 +118,7 @@ if (configErrors.length > 0) {
 }
 
 const fixtureEnvironment = dataMode === 'mock' && isDevLike
-const bridgeLabEnabled = appEnvironment === 'dev' || appEnvironment === 'test'
+const bridgeLabEnabled = appEnvironment !== 'prod'
 
 /**
  * Single runtime truth for the embedded H5.
