@@ -204,13 +204,13 @@ export default function BridgeLab() {
 
   const resetIOSChannel = () => {
     try {
-      const reset = resetIOSRawProbeChannel(iosHandler, iosCallback)
+      const result = resetIOSRawProbeChannel(iosCallback)
       appendLog('result', 'iOS callback channel reset', {
         value: {
-          reset,
-          note: reset
+          ...result,
+          note: result.reset
             ? 'Only reset after host recovery or after confirming the stale callback can no longer arrive.'
-            : 'No persisted callback channel existed for this handler/callback pair.',
+            : 'No persisted callback channel existed for this callback name.',
         },
       })
     } catch (error) {
