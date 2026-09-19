@@ -20,6 +20,7 @@ import {
 import {
   isSensitiveBridgeName,
   redactBridgeValue,
+  resetIOSRawProbeChannel,
   runAndroidRawProbe,
   runIOSRawProbe,
   type AndroidArgumentMode,
@@ -198,6 +199,22 @@ export default function BridgeLab() {
         value: errorValue(error),
         durationMs: Math.round(performance.now() - startedAt),
       })
+    }
+  }
+
+  const resetIOSChannel = () => {
+    try {
+      const reset = resetIOSRawProbeChannel(iosHandler, iosCallback)
+      appendLog('result', 'iOS callback channel reset', {
+        value: {
+          reset,
+          note: reset
+            ? 'Only reset after host recovery or after confirming the stale callback can no longer arrive.'
+            : 'No persisted callback channel existed for this handler/callback pair.',
+        },
+      })
+    } catch (error) {
+      appendLog('error', 'iOS callback channel reset', { value: errorValue(error) })
     }
   }
 
@@ -500,14 +517,26 @@ export default function BridgeLab() {
               className={`mt-3 ${textareaClassName()}`}
             />
           )}
-          <button
-            type="button"
-            onClick={runIOS}
-            className="mt-3 inline-flex h-10 items-center gap-2 rounded-button border border-border bg-surface px-4 text-sm font-semibold active:bg-surface-selected"
-          >
-            <Play className="h-4 w-4" aria-hidden />
-            Run iOS Probe
-          </button>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={runIOS}
+              className="inline-flex h-10 items-center gap-2 rounded-button border border-border bg-surface px-4 text-sm font-semibold active:bg-surface-selected"
+            >
+              <Play className="h-4 w-4" aria-hidden />
+              Run iOS Probe
+            </button>
+            {iosReceiveMode === 'global-callback' && (
+              <button
+                type="button"
+                onClick={resetIOSChannel}
+                title="仅在宿主恢复或确认旧 callback 不会再到达后使用"
+                className="inline-flex h-10 items-center gap-2 rounded-button border border-border bg-surface-subtle px-4 text-sm font-medium text-text-secondary active:bg-surface-selected"
+              >
+                Reset callback channel
+              </button>
+            )}
+          </div>
         </section>
 
         <section className="mt-4 overflow-hidden rounded-container border border-border bg-surface">
