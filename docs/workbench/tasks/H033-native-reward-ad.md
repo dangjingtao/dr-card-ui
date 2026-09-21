@@ -1,6 +1,6 @@
 # H033｜激励广告 Native 能力接线
 
-**Status:** Ready  
+**Status:** In Review  
 **Phase:** Host Integration / Checkin  
 **Depends on:** H029
 
@@ -50,8 +50,17 @@ Native 当前回填状态：两端均“否”；最低版本目标 2.13。
 
 ## 验收标准
 
-- [ ] DemoAdPlayer 不再作为生产完成信号；
-- [ ] 只有 `completed` 能触发补签后续；
-- [ ] 其它状态不误发奖励；
-- [ ] method 缺失 / 非法 status 明确失败；
+- [x] DemoAdPlayer 不再作为生产完成信号；
+- [x] 只有 `completed` 能触发补签后续；
+- [x] 其它状态不误发奖励；
+- [x] method 缺失 / 非法 status 明确失败；
 - [ ] 真机广告联调后才最终 Accepted。
+
+
+## 当前验证状态
+
+- H5 capability、Checkin 补签判定与 Bridge Lab 接线已完成；
+- DemoAdPlayer 已退出 production 完成信号；
+- Native 当前仍标记 Android / iOS `showRewardAd` 尚未实现；
+- 自动验证覆盖四种 status、非法 payload、unsupported 与重复触发；
+- 双端真实 App WebView / 广告 SDK smoke 仍是最终 Accepted 门槛。

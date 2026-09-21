@@ -9,6 +9,7 @@ type InjectedBridgeProbe = {
   chooseImage?: (payload: unknown) => unknown
   saveImageToAlbum?: (payload: unknown) => unknown
   copyText?: (payload: unknown) => unknown
+  showRewardAd?: (payload: unknown) => unknown
 }
 
 type BridgeProbeWindow = Window & {
@@ -234,6 +235,7 @@ describe('JSBridge capability runtime', () => {
         chooseImage: false,
         saveImageToAlbum: false,
         copyText: false,
+        showRewardAd: false,
       },
     })
 
@@ -255,6 +257,7 @@ describe('JSBridge capability runtime', () => {
         chooseImage: false,
         saveImageToAlbum: false,
         copyText: false,
+        showRewardAd: false,
       },
     })
   })
@@ -281,6 +284,7 @@ describe('JSBridge capability runtime', () => {
         chooseImage: false,
         saveImageToAlbum: false,
         copyText: false,
+        showRewardAd: false,
       },
     })
     await expect(getLoginToken()).rejects.toMatchObject({
@@ -313,6 +317,7 @@ describe('JSBridge capability runtime', () => {
         chooseImage: false,
         saveImageToAlbum: false,
         copyText: false,
+        showRewardAd: false,
       },
     })
 
@@ -600,6 +605,75 @@ describe('JSBridge capability runtime', () => {
       name: 'NativeBridgeError',
       code: 'invocation-failed',
       capability: 'saveImageToAlbum',
+      cause: expect.objectContaining({ code: 'payload-invalid' }),
+    })
+  })
+
+  it('serializes showRewardAd with the confirmed scene and accepts only known statuses', async () => {
+    const { showRewardAd, getNativeBridgeDiagnostics } = await loadBridge()
+    const received: unknown[] = []
+    const androidBridge = {
+      showRewardAd(payload: unknown) {
+        expect(this).toBe(androidBridge)
+        received.push(payload)
+        return '{"status":"completed"}'
+      },
+    }
+    bridgeWindow.androidBridge = androidBridge
+
+    expect(getNativeBridgeDiagnostics().capabilities.showRewardAd).toBe(true)
+    await expect(showRewardAd()).resolves.toEqual({ status: 'completed' })
+    expect(received).toEqual(['{"scene":"h5CheckinResign"}'])
+  })
+
+  it('supports all four iOS reward-ad statuses without renaming values', async () => {
+    const { showRewardAd } = await loadBridge()
+    const statuses = ['completed', 'closed', 'failed', 'no_fill'] as const
+    let index = 0
+    bridgeWindow.iosBridge = {
+      showRewardAd(payload: unknown) {
+        expect(payload).toBe('{"scene":"h5CheckinResign"}')
+        const status = statuses[index]
+        index += 1
+        return JSON.stringify({ status })
+      },
+    }
+
+    for (const status of statuses) {
+      await expect(showRewardAd()).resolves.toEqual({ status })
+    }
+  })
+
+  it('rejects missing showRewardAd methods, invalid scenes, and unknown statuses', async () => {
+    const bridge = await loadBridge()
+
+    bridgeWindow.androidBridge = {}
+    await expect(bridge.showRewardAd()).rejects.toMatchObject({
+      name: 'NativeBridgeError',
+      code: 'capability-unsupported',
+      capability: 'showRewardAd',
+    })
+
+    bridgeWindow.androidBridge = {
+      showRewardAd() {
+        return '{"status":"rewarded"}'
+      },
+    }
+    await expect(bridge.showRewardAd()).rejects.toMatchObject({
+      name: 'NativeBridgeError',
+      code: 'invocation-failed',
+      capability: 'showRewardAd',
+      cause: expect.objectContaining({ code: 'payload-invalid' }),
+    })
+
+    await expect(
+      bridge.invokeRegisteredNativeCapabilityForDebug('showRewardAd', {
+        scene: 'otherScene',
+      }),
+    ).rejects.toMatchObject({
+      name: 'NativeBridgeError',
+      code: 'invocation-failed',
+      capability: 'showRewardAd',
       cause: expect.objectContaining({ code: 'payload-invalid' }),
     })
   })

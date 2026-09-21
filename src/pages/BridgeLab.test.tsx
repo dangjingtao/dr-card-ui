@@ -41,6 +41,7 @@ describe('Bridge Lab page', () => {
     expect(document.querySelector('[data-capability-name="chooseImage"]')).not.toBeNull()
     expect(document.querySelector('[data-capability-name="saveImageToAlbum"]')).not.toBeNull()
     expect(document.querySelector('[data-capability-name="copyText"]')).not.toBeNull()
+    expect(document.querySelector('[data-capability-name="showRewardAd"]')).not.toBeNull()
     expect(document.querySelector('[data-android-raw-probe]')).not.toBeNull()
     expect(document.querySelector('[data-ios-raw-probe]')).toBeNull()
     expect(screen.getByLabelText('input JSON')).toBeTruthy()
@@ -74,6 +75,7 @@ describe('Bridge Lab page', () => {
     expect(document.querySelector('[data-capability-name="chooseImage"]')).not.toBeNull()
     expect(document.querySelector('[data-capability-name="saveImageToAlbum"]')).not.toBeNull()
     expect(document.querySelector('[data-capability-name="copyText"]')).not.toBeNull()
+    expect(document.querySelector('[data-capability-name="showRewardAd"]')).not.toBeNull()
     expect(screen.getByLabelText('input JSON')).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'iOS preset getAuthorizationInfo' }))
@@ -158,6 +160,30 @@ describe('Bridge Lab page', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/"success": true/)).toBeTruthy()
+    })
+  })
+
+  it('can invoke registered showRewardAd with the confirmed check-in scene', async () => {
+    usePlatform('android')
+    labWindow.androidBridge = {
+      showRewardAd(payload: unknown) {
+        expect(payload).toBe('{"scene":"h5CheckinResign"}')
+        return '{"status":"completed"}'
+      },
+    }
+
+    render(<BridgeLab />)
+
+    fireEvent.click(
+      document.querySelector('[data-capability-name="showRewardAd"]') as HTMLButtonElement,
+    )
+    fireEvent.change(screen.getByLabelText('input JSON'), {
+      target: { value: '{"scene":"h5CheckinResign"}' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: '调用 showRewardAd' }))
+
+    await waitFor(() => {
+      expect(screen.getByText(/"status": "completed"/)).toBeTruthy()
     })
   })
 

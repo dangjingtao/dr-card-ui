@@ -102,7 +102,7 @@ H021–H024 完成后，后续工作原则上按功能页面或可独立验收�
 | H030 | [关闭 WebView Native 能力接线](./H030-native-close-webview.md) | In Review |
 | H031 | [扫码核销 Native 能力接线](./H031-native-scan-code.md) | In Review |
 | H032 | [图片与剪贴板 Native 能力接线](./H032-native-media-share.md) | In Review |
-| H033 | [激励广告 Native 能力接线](./H033-native-reward-ad.md) | Ready |
+| H033 | [激励广告 Native 能力接线](./H033-native-reward-ad.md) | In Review |
 | H034 | [APP 唤起与应用商店承接 Native 能力接线](./H034-native-open-app.md) | Ready |
 
 H029 是 H030–H034 的公共协议前置；H029 合入后，H030–H034 可独立并行。H029–H034 以对应仓库任务卡为施工契约真相源，不另开 GitHub Issue。
