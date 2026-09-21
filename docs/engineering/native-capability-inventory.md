@@ -240,3 +240,37 @@ iOS:
 - 未新增或虚构任何未知 Native 方法名、callback 名或 payload schema。
 
 H028 到此只完成“盘点与接口征集清单”职责；真实能力实现由后续获得 Native 协议后分别建卡接入。
+
+
+## 9. Native 团队回填后的协议更新
+
+H028 征集完成后，Native 团队已回填新的双端统一约定。该回填覆盖本文早期“iOS auth 尚未统一”的状态。
+
+### 9.1 双端 object 与序列化
+
+- Android：`window.androidBridge`
+- iOS：`window.iosBridge`
+- 两端方法名 / JSON 字段统一；
+- 有参方法入参为 JSON string；
+- Native 回填中的返回均按同步 JSON string 定义；
+- 最低 App 版本目标统一写为 2.13，但除登录外其余能力当前仍标记“是否已有：否”。
+
+### 9.2 AUTH-01 已更新
+
+正式目标改为：
+
+```text
+Android: window.androidBridge.getLoginToken()
+iOS:     window.iosBridge.getLoginToken()
+args:    none
+return:  synchronous JSON string
+         {"token":"..."}
+```
+
+旧 iOS `getAuthorizationInfo/onToken` 仅保留为历史联调 / Raw Probe 证据，不再是 production AUTH-01。
+
+### 9.3 其余能力
+
+Native 已回填 `closeWebView / scanCode / takePhoto / chooseImage / saveImageToAlbum / copyText / showRewardAd / openApp` 的双端 target contract，但当前均标记“是否已有：否”。
+
+因此 H5 可以据此建立后续 contract 与 adapter，但在对应 Native 方法真实注入前仍必须保持 unsupported / fail-closed。后续施工拆分为 H030–H034。

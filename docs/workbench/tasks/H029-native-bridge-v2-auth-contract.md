@@ -1,6 +1,6 @@
 # H029｜Native Bridge v2 协议基线与双端登录能力对齐
 
-**Status:** Ready  
+**Status:** In Review  
 **Phase:** Host Integration / Contract Alignment  
 **Depends on:** H025, H026, H028
 
@@ -47,12 +47,12 @@ Native 回填明确：
 
 ## 验收标准
 
-- [ ] Android / iOS `getLoginToken` 均通过统一 production capability 调用；
-- [ ] iOS 正式路径不再依赖 `getAuthorizationInfo/onToken`；
-- [ ] JSON string 返回可安全解析，非法 JSON 明确失败；
-- [ ] Bridge Lab Android / iOS 各自显示对应 registered login capability；
-- [ ] 旧 iOS 联调协议仍可在 Raw Probe 使用；
-- [ ] browser / bridge 缺失时 fail-closed；
+- [x] Android / iOS `getLoginToken` 均通过统一 production capability 调用；
+- [x] iOS 正式路径不再依赖 `getAuthorizationInfo/onToken`；
+- [x] JSON string 返回可安全解析，非法 JSON 明确失败；
+- [x] Bridge Lab Android / iOS 各自显示对应 registered login capability；
+- [x] 旧 iOS 联调协议仍可在 Raw Probe 使用；
+- [x] browser / bridge 缺失时 fail-closed；
 - [ ] 双端真实 App WebView smoke 作为最终验收证据。
 
 ## 自动验证
@@ -65,3 +65,11 @@ Native 回填明确：
 - JSON string result parse
 - malformed result
 - Bridge Lab platform filtering
+
+
+## 当前验证状态
+
+- PR：#53
+- Cloudflare Pages 对代码 HEAD `10c3fd0` 构建成功，包含 `npm run typecheck`；
+- GitHub Actions Build / OpenCode Review 当前均在 runner 启动前失败（`runner_id=0`、`steps=[]`），无代码 finding；
+- 双端当前 App WebView smoke 尚待执行，因此本卡不标记 Accepted。

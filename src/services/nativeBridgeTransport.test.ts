@@ -3,8 +3,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   NativeTransportError,
   createAndroidInjectedObjectTransport,
+  createInjectedObjectTransport,
   createIOSMessageHandlerTransport,
   parseJsonPayload,
+  parseJsonStringPayload,
   serializeJsonValue,
   type NativeTransportWindow,
 } from './nativeBridgeTransport'
@@ -13,6 +15,7 @@ const bridgeWindow = window as NativeTransportWindow
 
 afterEach(() => {
   delete bridgeWindow.androidBridge
+  delete bridgeWindow.iosBridge
   delete bridgeWindow.webkit
   vi.useRealTimers()
 })
@@ -128,6 +131,40 @@ describe('Android injected-object transport', () => {
 
     await expect(Promise.resolve(resolution.invoke())).resolves.toEqual({ accepted: true })
     expect(received).toEqual(['{"orderId":42}'])
+  })
+})
+
+describe('cross-platform injected-object transport', () => {
+  it('uses the same receiver-safe transport for the iOS iosBridge object', async () => {
+    const iosBridge = {
+      marker: 'ios-host',
+      getLoginToken() {
+        expect(this).toBe(iosBridge)
+        return '{"token":"ios-token"}'
+      },
+    }
+    bridgeWindow.iosBridge = iosBridge
+
+    const transport = createInjectedObjectTransport<void, { token: string }>({
+      objectName: 'iosBridge',
+      methodName: 'getLoginToken',
+      serializeArgs: () => [],
+      parseResult: parseJsonStringPayload,
+    })
+
+    const resolution = transport.resolve(bridgeWindow, undefined)
+    if (!resolution.supported) throw new Error('Expected iOS injected-object transport to resolve.')
+
+    await expect(Promise.resolve(resolution.invoke())).resolves.toEqual({ token: 'ios-token' })
+  })
+
+  it('rejects non-string results when the confirmed contract requires a JSON string', () => {
+    expect(() => parseJsonStringPayload({ token: 'not-a-string-payload' })).toThrowError(
+      expect.objectContaining({
+        name: 'NativeTransportError',
+        code: 'payload-invalid',
+      }),
+    )
   })
 })
 
