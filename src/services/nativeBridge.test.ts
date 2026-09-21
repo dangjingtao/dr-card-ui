@@ -195,7 +195,7 @@ describe('JSBridge capability runtime', () => {
     })
   })
 
-  it('derives diagnostics from the capability registry without promoting iOS debug evidence', async () => {
+  it('derives diagnostics from the capability registry for confirmed Android and iOS protocols', async () => {
     const { getNativeBridgeDiagnostics } = await loadBridge()
     bridgeWindow.androidBridge = {
       getLoginToken() {
@@ -229,7 +229,7 @@ describe('JSBridge capability runtime', () => {
       hostVersion: null,
       capabilities: {
         getLoginToken: false,
-        getAuthorizationInfo: false,
+        getAuthorizationInfo: true,
         closeWebView: false,
       },
     })
