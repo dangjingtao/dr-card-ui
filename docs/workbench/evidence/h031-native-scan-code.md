@@ -109,11 +109,12 @@ H031 后：
 - 不跳确认页；
 - 不使用 Web camera fallback。
 
-Native 调用失败时：
+Native 统一失败语义已补充确认：
 
-- 留在扫码页；
-- 显示“扫码失败，请重试”；
-- 不把失败解释为“用户取消”“权限不足”等未确认语义。
+- `{"error":"cancel"}` → Bridge `native-cancelled` → 页面显示“已取消扫码”；
+- `{"error":"permission_denied"}` → Bridge `native-permission-denied` → 页面显示“请允许相机权限后重试”；
+- `{"error":"fail"}` → Bridge `native-failed` → 页面显示“扫码失败，请重试”；
+- 以上情况均留在扫码页，不进入确认核销。
 
 ## 5. Bridge Lab
 
@@ -164,4 +165,4 @@ Native 当前回填仍是“双端尚未实现”。因此最终 Accepted 需要
 - 返回结构一致；
 - H5 自动进入确认核销页。
 
-取消、权限拒绝、系统扫码失败等语义待 Native 真机联调后按实际协议补齐，不提前虚构。
+取消、权限拒绝、普通失败的返回 envelope 已确认；真机仍需验证实际系统扫码页是否在对应场景稳定返回上述 error 值。
