@@ -1,7 +1,8 @@
 import { runtimePolicy } from '../app/config/runtime'
 import {
-  createAndroidInjectedObjectTransport,
-  createIOSMessageHandlerTransport,
+  createInjectedObjectTransport,
+  NativeTransportError,
+  parseJsonStringPayload,
   type NativeTransportResolution,
   type NativeTransportWindow,
 } from './nativeBridgeTransport'
@@ -63,83 +64,70 @@ function supportedCapability<TInput, TResult>(
   return { supported: true, invoke }
 }
 
-const getLoginTokenTransport = createAndroidInjectedObjectTransport<void, unknown>({
+export interface NativeLoginToken {
+  token: string
+}
+
+function parseLoginTokenPayload(payload: unknown): NativeLoginToken {
+  const parsed = parseJsonStringPayload<unknown>(payload)
+  if (
+    parsed === null ||
+    typeof parsed !== 'object' ||
+    typeof (parsed as { token?: unknown }).token !== 'string'
+  ) {
+    throw new NativeTransportError(
+      'payload-invalid',
+      'Native getLoginToken() result must be a JSON string with a string token field.',
+    )
+  }
+
+  return { token: (parsed as { token: string }).token }
+}
+
+const androidGetLoginTokenTransport = createInjectedObjectTransport<void, NativeLoginToken>({
   objectName: 'androidBridge',
   methodName: 'getLoginToken',
   serializeArgs: () => [],
+  parseResult: parseLoginTokenPayload,
 })
 
-const getAuthorizationInfoTransport = createIOSMessageHandlerTransport<void, unknown>({
-  handlerName: 'getAuthorizationInfo',
-  correlation: 'single-flight',
-  callbackCardinality: 'at-most-one',
-  serializeRequest: () => ({}),
-  parseCallback: (payload) => ({ ok: true, payload }),
+const iosGetLoginTokenTransport = createInjectedObjectTransport<void, NativeLoginToken>({
+  objectName: 'iosBridge',
+  methodName: 'getLoginToken',
+  serializeArgs: () => [],
+  parseResult: parseLoginTokenPayload,
 })
 
-type IOSAuthorizationWindow = NativeTransportWindow & {
-  onToken?: (token: unknown) => unknown
+function resolveLoginTokenTransport(
+  hostWindow: NativeTransportWindow | undefined,
+): NativeCapabilityResolution<void, NativeLoginToken> {
+  if (hostWindow?.androidBridge) {
+    const resolution = androidGetLoginTokenTransport.resolve(hostWindow, undefined)
+    if (!resolution.supported) return resolution
+    return supportedCapability<void, NativeLoginToken>(() => resolution.invoke())
+  }
+
+  if (hostWindow?.iosBridge) {
+    const resolution = iosGetLoginTokenTransport.resolve(hostWindow, undefined)
+    if (!resolution.supported) return resolution
+    return supportedCapability<void, NativeLoginToken>(() => resolution.invoke())
+  }
+
+  return unsupportedCapability(
+    'bridge-unsupported',
+    'Neither window.androidBridge nor window.iosBridge is available in the current host.',
+  )
 }
 
 const capabilityRegistry = {
-  getLoginToken: defineCapability<'getLoginToken', void, unknown>({
+  getLoginToken: defineCapability<'getLoginToken', void, NativeLoginToken>({
     name: 'getLoginToken',
-    description: 'Read the current login token from the confirmed Android host bridge.',
-    platforms: ['android'],
-    sensitiveResult: true,
-    resolve(hostWindow) {
-      const transportResolution = getLoginTokenTransport.resolve(hostWindow, undefined)
-      if (!transportResolution.supported) return transportResolution
-
-      return supportedCapability<void, unknown>(() => transportResolution.invoke())
-    },
-  }),
-  getAuthorizationInfo: defineCapability<'getAuthorizationInfo', void, unknown>({
-    name: 'getAuthorizationInfo',
     description:
-      'Read iOS authorization info through the confirmed getAuthorizationInfo/onToken host protocol.',
-    platforms: ['ios'],
+      'Read the current login token from the confirmed Android/iOS injected-object bridge.',
+    platforms: ['android', 'ios'],
     sensitiveResult: true,
     resolve(hostWindow) {
-      const transportResolution = getAuthorizationInfoTransport.resolve(hostWindow, undefined)
-      if (!transportResolution.supported) return transportResolution
-
-      return supportedCapability<void, unknown>(() => {
-        const callbackHost = hostWindow as IOSAuthorizationWindow
-        const previousOnToken = callbackHost.onToken
-        const onToken = (token: unknown) => {
-          const handled = getAuthorizationInfoTransport.handleCallback(token)
-
-          if (previousOnToken && previousOnToken !== onToken) {
-            try {
-              previousOnToken(token)
-            } catch {
-              // Preserve the confirmed host callback result even if an older H5 observer fails.
-            }
-          }
-
-          return handled
-        }
-
-        callbackHost.onToken = onToken
-
-        let invocation: unknown
-        try {
-          invocation = transportResolution.invoke()
-        } catch (error) {
-          if (callbackHost.onToken === onToken) {
-            if (previousOnToken) callbackHost.onToken = previousOnToken
-            else delete callbackHost.onToken
-          }
-          throw error
-        }
-
-        return Promise.resolve(invocation).finally(() => {
-          if (callbackHost.onToken !== onToken) return
-          if (previousOnToken) callbackHost.onToken = previousOnToken
-          else delete callbackHost.onToken
-        })
-      })
+      return resolveLoginTokenTransport(hostWindow)
     },
   }),
   closeWebView: defineCapability<'closeWebView', void, never>({
@@ -196,7 +184,7 @@ function getHostWindow(): NativeTransportWindow | undefined {
 
 function detectHost(hostWindow = getHostWindow()): NativeHost {
   if (hostWindow?.androidBridge) return 'android'
-  if (hostWindow?.webkit?.messageHandlers) return 'ios'
+  if (hostWindow?.iosBridge || hostWindow?.webkit?.messageHandlers) return 'ios'
   return 'browser'
 }
 
@@ -389,31 +377,17 @@ export function getNativeBridgeDiagnostics(): NativeBridgeDiagnostics {
 }
 
 /**
- * H015's first confirmed production boundary, now executed through the shared capability runtime
- * and H026's Android injected-object transport.
+ * H029 confirmed production login boundary, executed through the shared capability runtime.
  *
- * The real Android WebView probe uses `window.androidBridge.getLoginToken()` with no arguments and
- * a synchronous host return. The adapter deliberately normalizes that return to a Promise so pages
- * never depend on Android's synchronous JavaScriptInterface behavior. The raw result remains
- * `unknown` until the Native response schema is explicitly confirmed.
+ * Android uses `window.androidBridge.getLoginToken()`; iOS uses
+ * `window.iosBridge.getLoginToken()`. Both take no arguments and synchronously return a JSON
+ * string with a `token` field. H5 normalizes the synchronous host return to a Promise and validates
+ * the returned payload before exposing it to callers.
  */
-export function getLoginToken(options: NativeInvocationOptions = {}): Promise<unknown> {
-  return invokeNativeCapability(capabilityRegistry.getLoginToken, undefined, options)
-}
-
-/**
- * Confirmed iOS authorization-info boundary from the historical Native integration document.
- *
- * Native entry: window.webkit.messageHandlers.getAuthorizationInfo.postMessage({})
- * Native result: window.onToken(token)
- *
- * The callback is mounted only for the lifetime of the invocation and an existing H5 observer is
- * restored afterwards. The raw result remains unknown until Native confirms a stable DTO.
- */
-export function getAuthorizationInfo(
+export function getLoginToken(
   options: NativeInvocationOptions = {},
-): Promise<unknown> {
-  return invokeNativeCapability(capabilityRegistry.getAuthorizationInfo, undefined, options)
+): Promise<NativeLoginToken> {
+  return invokeNativeCapability(capabilityRegistry.getLoginToken, undefined, options)
 }
 
 /**
