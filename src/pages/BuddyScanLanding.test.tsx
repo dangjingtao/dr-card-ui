@@ -111,6 +111,44 @@ describe('BuddyScanLanding H034 Native App handoff', () => {
     expect(screen.queryByRole('dialog')).toBeNull()
   })
 
+  it('re-detects after returning from the store without reopening the store automatically', async () => {
+    mocks.getNativeBridgeDiagnostics.mockReturnValue({
+      capabilities: { openApp: true },
+    })
+    mocks.detectInstalledApp
+      .mockResolvedValueOnce({
+        success: true,
+        installed: false,
+      })
+      .mockResolvedValueOnce({
+        success: true,
+        installed: true,
+      })
+    mocks.openNativeAppStore.mockResolvedValue({
+      success: true,
+      installed: false,
+    })
+
+    render(<BuddyScanLanding />)
+
+    await waitFor(() => {
+      expect(mocks.openNativeAppStore).toHaveBeenCalledTimes(1)
+    })
+
+    fireEvent(window, new Event('focus'))
+
+    await waitFor(() => {
+      expect(mocks.detectInstalledApp).toHaveBeenCalledTimes(2)
+      expect(screen.getByRole('dialog')).toBeTruthy()
+    })
+    expect(mocks.openNativeAppStore).toHaveBeenCalledTimes(1)
+    expect(
+      screen.getByRole('region', { name: '应用商店 H5 承接边界' }).getAttribute(
+        'data-native-installed',
+      ),
+    ).toBe('true')
+  })
+
   it('does not treat detect success=false as an installed-state answer', async () => {
     mocks.getNativeBridgeDiagnostics.mockReturnValue({
       capabilities: { openApp: true },
