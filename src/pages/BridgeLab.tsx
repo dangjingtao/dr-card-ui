@@ -162,20 +162,17 @@ export default function BridgeLab() {
       const redaction = redactBridgeValue(params)
       const id = `${Date.now()}-${sequence.current}`
 
-      setLogs((current) =>
-        [
-          {
-            id,
-            time: new Date().toLocaleTimeString(),
-            level: 'callback',
-            title: 'window.testFunc(params)',
-            displayValue: redaction.value,
-            rawValue: params,
-            redacted: redaction.redacted,
-          },
-          ...current,
-        ].slice(0, 50),
-      )
+      const callbackLog: LabLog = {
+        id,
+        time: new Date().toLocaleTimeString(),
+        level: 'callback',
+        title: 'window.testFunc(params)',
+        displayValue: redaction.value,
+        rawValue: params,
+        redacted: redaction.redacted,
+      }
+
+      setLogs((current) => [callbackLog, ...current].slice(0, 50))
 
       return 'h5 处理完成'
     }
