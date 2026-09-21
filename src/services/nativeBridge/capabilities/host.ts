@@ -2,7 +2,11 @@ import {
   createInjectedObjectTransport,
   type NativeTransportWindow,
 } from '../../nativeBridgeTransport'
-import { defineCapability, resolveDualInjectedCapability } from '../core'
+import {
+  defineCapability,
+  supportedCapability,
+  unsupportedCapability,
+} from '../core'
 
 const androidTransport = createInjectedObjectTransport<void, void>({
   objectName: 'androidBridge',
@@ -19,12 +23,21 @@ const iosTransport = createInjectedObjectTransport<void, void>({
 })
 
 function resolveTransport(hostWindow: NativeTransportWindow | undefined) {
-  return resolveDualInjectedCapability<void, void>(
-    hostWindow,
-    'closeWebView',
-    undefined,
-    (input) => androidTransport.resolve(hostWindow!, input),
-    (input) => iosTransport.resolve(hostWindow!, input),
+  if (hostWindow?.androidBridge) {
+    const resolution = androidTransport.resolve(hostWindow, undefined)
+    if (!resolution.supported) return resolution
+    return supportedCapability<void, void>(() => resolution.invoke())
+  }
+
+  if (hostWindow?.iosBridge) {
+    const resolution = iosTransport.resolve(hostWindow, undefined)
+    if (!resolution.supported) return resolution
+    return supportedCapability<void, void>(() => resolution.invoke())
+  }
+
+  return unsupportedCapability(
+    'bridge-unsupported',
+    'Neither window.androidBridge nor window.iosBridge is available in the current host.',
   )
 }
 
