@@ -1,6 +1,6 @@
 # H032｜图片与剪贴板 Native 能力接线
 
-**Status:** Ready  
+**Status:** In Review  
 **Phase:** Host Integration / Media & Share  
 **Depends on:** H029
 
@@ -92,8 +92,17 @@
 
 ## 验收标准
 
-- [ ] 4 个 capability 都走统一 transport；
-- [ ] 图片 Base64 / mimeType 能被 H5 正确解析；
-- [ ] 分享 adapter 不再恒定成功；
-- [ ] method 缺失时明确 unsupported；
+- [x] 4 个 capability 都走统一 transport；
+- [x] 图片 Base64 / mimeType 能被 H5 正确解析；
+- [x] 分享 adapter 不再恒定成功；
+- [x] method 缺失时明确 unsupported；
 - [ ] 真机 smoke 后补权限/取消语义。
+
+
+## 当前验证状态
+
+- H5 runtime、Settings、buddyShare 与 Bridge Lab 接线已完成；
+- 当前 Native 四项仍未实现；
+- 当前真实邀请海报 payload / 正式 invite URL 也尚未提供，adapter 对缺失业务 payload 明确失败；
+- 自动验证覆盖双端协议、Base64 解析、分享成败映射与页面入口；
+- 真机 smoke 后再补权限 / 取消语义并标记 Accepted。
