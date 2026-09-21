@@ -101,7 +101,7 @@ H021–H024 完成后，后续工作原则上按功能页面或可独立验收�
 | H029 | [Native Bridge v2 协议基线与双端登录能力对齐](./H029-native-bridge-v2-auth-contract.md) | In Review |
 | H030 | [关闭 WebView Native 能力接线](./H030-native-close-webview.md) | In Review |
 | H031 | [扫码核销 Native 能力接线](./H031-native-scan-code.md) | In Review |
-| H032 | [图片与剪贴板 Native 能力接线](./H032-native-media-share.md) | Ready |
+| H032 | [图片与剪贴板 Native 能力接线](./H032-native-media-share.md) | In Review |
 | H033 | [激励广告 Native 能力接线](./H033-native-reward-ad.md) | Ready |
 | H034 | [APP 唤起与应用商店承接 Native 能力接线](./H034-native-open-app.md) | Ready |
 
