@@ -14,6 +14,9 @@ export type NativeBridgeErrorCode =
   | 'bridge-disabled'
   | 'bridge-unsupported'
   | 'capability-unsupported'
+  | 'native-cancelled'
+  | 'native-permission-denied'
+  | 'native-failed'
   | 'invocation-failed'
   | 'invocation-timeout'
 
@@ -134,6 +137,47 @@ export interface NativeOpenAppResult {
   installed: boolean
 }
 
+export type NativeFailurePayloadCode = 'cancel' | 'permission_denied' | 'fail'
+
+const NATIVE_FAILURE_CODE_MAP: Record<NativeFailurePayloadCode, NativeBridgeErrorCode> = {
+  cancel: 'native-cancelled',
+  permission_denied: 'native-permission-denied',
+  fail: 'native-failed',
+}
+
+function parseConfirmedNativeResult(payload: unknown): unknown {
+  const parsed = parseConfirmedNativeResult(payload)
+
+  if (parsed !== null && typeof parsed === 'object' && 'error' in parsed) {
+    const error = (parsed as { error?: unknown }).error
+    if (error === 'cancel') {
+      throw new NativeTransportError(
+        'native-cancelled',
+        'Native invocation was cancelled by the user.',
+      )
+    }
+    if (error === 'permission_denied') {
+      throw new NativeTransportError(
+        'native-permission-denied',
+        'Native invocation was denied by system permission.',
+      )
+    }
+    if (error === 'fail') {
+      throw new NativeTransportError(
+        'native-failed',
+        'Native invocation reported a generic failure.',
+      )
+    }
+
+    throw new NativeTransportError(
+      'payload-invalid',
+      'Native invocation returned an unknown error code.',
+    )
+  }
+
+  return parsed
+}
+
 function isFiniteNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value)
 }
@@ -199,7 +243,7 @@ function validateCopyTextInput(input: NativeCopyTextInput): NativeCopyTextInput 
 }
 
 function parseNativeImagePayload(payload: unknown): NativeImageResult {
-  const parsed = parseJsonStringPayload<unknown>(payload)
+  const parsed = parseConfirmedNativeResult(payload)
   if (
     parsed === null ||
     typeof parsed !== 'object' ||
@@ -219,7 +263,7 @@ function parseNativeImagePayload(payload: unknown): NativeImageResult {
 }
 
 function parseNativeSuccessPayload(payload: unknown): NativeSuccessResult {
-  const parsed = parseJsonStringPayload<unknown>(payload)
+  const parsed = parseConfirmedNativeResult(payload)
   if (
     parsed === null ||
     typeof parsed !== 'object' ||
@@ -250,7 +294,7 @@ function validateRewardAdInput(input: NativeRewardAdInput): NativeRewardAdInput 
 }
 
 function parseRewardAdPayload(payload: unknown): NativeRewardAdResult {
-  const parsed = parseJsonStringPayload<unknown>(payload)
+  const parsed = parseConfirmedNativeResult(payload)
   const status =
     parsed !== null && typeof parsed === 'object'
       ? (parsed as { status?: unknown }).status
@@ -284,7 +328,7 @@ function validateOpenAppInput(input: NativeOpenAppInput): NativeOpenAppInput {
 }
 
 function parseOpenAppPayload(payload: unknown): NativeOpenAppResult {
-  const parsed = parseJsonStringPayload<unknown>(payload)
+  const parsed = parseConfirmedNativeResult(payload)
   if (
     parsed === null ||
     typeof parsed !== 'object' ||
@@ -319,7 +363,7 @@ function validateScanCodeInput(input: NativeScanCodeInput): NativeScanCodeInput 
 }
 
 function parseScanCodePayload(payload: unknown): NativeScanCodeResult {
-  const parsed = parseJsonStringPayload<unknown>(payload)
+  const parsed = parseConfirmedNativeResult(payload)
   if (
     parsed === null ||
     typeof parsed !== 'object' ||
@@ -335,7 +379,7 @@ function parseScanCodePayload(payload: unknown): NativeScanCodeResult {
 }
 
 function parseLoginTokenPayload(payload: unknown): NativeLoginToken {
-  const parsed = parseJsonStringPayload<unknown>(payload)
+  const parsed = parseConfirmedNativeResult(payload)
   if (
     parsed === null ||
     typeof parsed !== 'object' ||
@@ -871,6 +915,37 @@ export class NativeBridgeError extends Error {
 
 const DEFAULT_TIMEOUT_MS = 5_000
 
+function mapNativeTransportErrorCode(
+  code: NativeTransportError['code'],
+): NativeBridgeErrorCode | null {
+  if (code === 'native-cancelled') return NATIVE_FAILURE_CODE_MAP.cancel
+  if (code === 'native-permission-denied') return NATIVE_FAILURE_CODE_MAP.permission_denied
+  if (code === 'native-failed') return NATIVE_FAILURE_CODE_MAP.fail
+  return null
+}
+
+function toInvocationBridgeError(
+  error: unknown,
+  capability: string,
+  phase: 'threw' | 'rejected',
+): NativeBridgeError {
+  if (error instanceof NativeBridgeError) return error
+
+  if (error instanceof NativeTransportError) {
+    const mappedCode = mapNativeTransportErrorCode(error.code)
+    if (mappedCode) {
+      return new NativeBridgeError(mappedCode, capability, error.message, error)
+    }
+  }
+
+  return new NativeBridgeError(
+    'invocation-failed',
+    capability,
+    `Native capability "${capability}" ${phase} during invocation.`,
+    error,
+  )
+}
+
 function getHostWindow(): NativeTransportWindow | undefined {
   if (typeof window === 'undefined') return undefined
   return window as NativeTransportWindow
@@ -959,12 +1034,7 @@ async function invokeNativeCapability<TName extends string, TInput, TResult>(
   try {
     invocation = Promise.resolve(resolution.invoke(input))
   } catch (error) {
-    throw new NativeBridgeError(
-      'invocation-failed',
-      descriptor.name,
-      `Native capability "${descriptor.name}" threw during invocation.`,
-      error,
-    )
+    throw toInvocationBridgeError(error, descriptor.name, 'threw')
   }
 
   try {
@@ -974,14 +1044,7 @@ async function invokeNativeCapability<TName extends string, TInput, TResult>(
       options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
     )
   } catch (error) {
-    if (error instanceof NativeBridgeError) throw error
-
-    throw new NativeBridgeError(
-      'invocation-failed',
-      descriptor.name,
-      `Native capability "${descriptor.name}" rejected during invocation.`,
-      error,
-    )
+    throw toInvocationBridgeError(error, descriptor.name, 'rejected')
   }
 }
 
