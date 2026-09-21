@@ -184,3 +184,14 @@ BASE_URL=http://127.0.0.1:5173 node scripts/capture-t011.mjs
 | 补接后需同步 | 本节、[evidence-matrix.md](../evidence-matrix.md) #20 行证据列 |
 
 注：地址到位前**不要**先填一个临时或猜测的 URL。那会让当前明确的占位提示退化成一个看似可用、实则走错地方的假跳转，比现在更难被发现。
+
+
+## H034 后续覆盖（2026-09-21）
+
+T011 的历史 `Accepted` 结论不变；#20 APP 弹窗的“下载链接”技术阻塞已由 Native 回填的新契约覆盖：
+
+- 点击“下载链接”现在调用 Native `openApp({action:"store", inviteCode:"", fallbackUrl:""})`；
+- 不再依赖产品先提供硬编码商店地址；
+- H5 不自造 scheme / Universal Link / App Store / 应用市场 URL；
+- Native 当前尚未实现 `openApp` 时明确显示不支持；
+- 真实商店分流、fallback 与当前 build 行为待 H034 双端真机 smoke。

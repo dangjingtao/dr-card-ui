@@ -121,6 +121,19 @@ export interface NativeRewardAdResult {
   status: NativeRewardAdStatus
 }
 
+export type NativeOpenAppAction = 'open' | 'store' | 'detect'
+
+export interface NativeOpenAppInput {
+  action: NativeOpenAppAction
+  inviteCode: string
+  fallbackUrl: string
+}
+
+export interface NativeOpenAppResult {
+  success: boolean
+  installed: boolean
+}
+
 function isFiniteNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value)
 }
@@ -251,6 +264,43 @@ function parseRewardAdPayload(payload: unknown): NativeRewardAdResult {
   }
 
   return { status: status as NativeRewardAdStatus }
+}
+
+function validateOpenAppInput(input: NativeOpenAppInput): NativeOpenAppInput {
+  if (
+    input === null ||
+    typeof input !== 'object' ||
+    !['open', 'store', 'detect'].includes((input as { action?: unknown }).action as string) ||
+    typeof (input as { inviteCode?: unknown }).inviteCode !== 'string' ||
+    typeof (input as { fallbackUrl?: unknown }).fallbackUrl !== 'string'
+  ) {
+    throw new NativeTransportError(
+      'payload-invalid',
+      'Native openApp() input requires action=open|store|detect plus string inviteCode and fallbackUrl fields.',
+    )
+  }
+
+  return input
+}
+
+function parseOpenAppPayload(payload: unknown): NativeOpenAppResult {
+  const parsed = parseJsonStringPayload<unknown>(payload)
+  if (
+    parsed === null ||
+    typeof parsed !== 'object' ||
+    typeof (parsed as { success?: unknown }).success !== 'boolean' ||
+    typeof (parsed as { installed?: unknown }).installed !== 'boolean'
+  ) {
+    throw new NativeTransportError(
+      'payload-invalid',
+      'Native openApp() result must be a JSON string with boolean success and installed fields.',
+    )
+  }
+
+  return {
+    success: (parsed as { success: boolean }).success,
+    installed: (parsed as { installed: boolean }).installed,
+  }
 }
 
 function validateScanCodeInput(input: NativeScanCodeInput): NativeScanCodeInput {
@@ -446,6 +496,26 @@ const iosRewardAdTransport = createInjectedObjectTransport<
   methodName: 'showRewardAd',
   serializeArgs: (input) => [serializeJsonValue(validateRewardAdInput(input))],
   parseResult: parseRewardAdPayload,
+})
+
+const androidOpenAppTransport = createInjectedObjectTransport<
+  NativeOpenAppInput,
+  NativeOpenAppResult
+>({
+  objectName: 'androidBridge',
+  methodName: 'openApp',
+  serializeArgs: (input) => [serializeJsonValue(validateOpenAppInput(input))],
+  parseResult: parseOpenAppPayload,
+})
+
+const iosOpenAppTransport = createInjectedObjectTransport<
+  NativeOpenAppInput,
+  NativeOpenAppResult
+>({
+  objectName: 'iosBridge',
+  methodName: 'openApp',
+  serializeArgs: (input) => [serializeJsonValue(validateOpenAppInput(input))],
+  parseResult: parseOpenAppPayload,
 })
 
 function resolveLoginTokenTransport(
@@ -648,6 +718,23 @@ function resolveRewardAdTransport(
   )
 }
 
+function resolveOpenAppTransport(
+  hostWindow: NativeTransportWindow | undefined,
+): NativeCapabilityResolution<NativeOpenAppInput, NativeOpenAppResult> {
+  const sample: NativeOpenAppInput = {
+    action: 'detect',
+    inviteCode: '',
+    fallbackUrl: '',
+  }
+  return resolveDualInjectedCapability(
+    hostWindow,
+    'openApp',
+    sample,
+    (input) => androidOpenAppTransport.resolve(hostWindow!, input),
+    (input) => iosOpenAppTransport.resolve(hostWindow!, input),
+  )
+}
+
 const capabilityRegistry = {
   getLoginToken: defineCapability<'getLoginToken', void, NativeLoginToken>({
     name: 'getLoginToken',
@@ -738,6 +825,16 @@ const capabilityRegistry = {
     sensitiveResult: false,
     resolve(hostWindow) {
       return resolveRewardAdTransport(hostWindow)
+    },
+  }),
+  openApp: defineCapability<'openApp', NativeOpenAppInput, NativeOpenAppResult>({
+    name: 'openApp',
+    platforms: ['android', 'ios'],
+    description:
+      'Detect, open, or route to the App store through the confirmed Android/iOS injected-object contract.',
+    sensitiveResult: false,
+    resolve(hostWindow) {
+      return resolveOpenAppTransport(hostWindow)
     },
   }),
 } as const
@@ -1051,4 +1148,17 @@ export function showRewardAd(
   options: NativeInvocationOptions = {},
 ): Promise<NativeRewardAdResult> {
   return invokeNativeCapability(capabilityRegistry.showRewardAd, input, options)
+}
+
+/**
+ * H034 App launch / store boundary.
+ *
+ * Native owns installed-state detection, App launch mechanics, and store routing. H5 supplies only
+ * the confirmed action plus inviteCode/fallbackUrl strings and never invents schemes or store URLs.
+ */
+export function openApp(
+  input: NativeOpenAppInput,
+  options: NativeInvocationOptions = {},
+): Promise<NativeOpenAppResult> {
+  return invokeNativeCapability(capabilityRegistry.openApp, input, options)
 }

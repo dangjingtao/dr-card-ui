@@ -42,6 +42,7 @@ describe('Bridge Lab page', () => {
     expect(document.querySelector('[data-capability-name="saveImageToAlbum"]')).not.toBeNull()
     expect(document.querySelector('[data-capability-name="copyText"]')).not.toBeNull()
     expect(document.querySelector('[data-capability-name="showRewardAd"]')).not.toBeNull()
+    expect(document.querySelector('[data-capability-name="openApp"]')).not.toBeNull()
     expect(document.querySelector('[data-android-raw-probe]')).not.toBeNull()
     expect(document.querySelector('[data-ios-raw-probe]')).toBeNull()
     expect(screen.getByLabelText('input JSON')).toBeTruthy()
@@ -76,6 +77,7 @@ describe('Bridge Lab page', () => {
     expect(document.querySelector('[data-capability-name="saveImageToAlbum"]')).not.toBeNull()
     expect(document.querySelector('[data-capability-name="copyText"]')).not.toBeNull()
     expect(document.querySelector('[data-capability-name="showRewardAd"]')).not.toBeNull()
+    expect(document.querySelector('[data-capability-name="openApp"]')).not.toBeNull()
     expect(screen.getByLabelText('input JSON')).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'iOS preset getAuthorizationInfo' }))
@@ -184,6 +186,32 @@ describe('Bridge Lab page', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/"status": "completed"/)).toBeTruthy()
+    })
+  })
+
+  it('can invoke registered openApp with an explicit action payload', async () => {
+    usePlatform('android')
+    labWindow.androidBridge = {
+      openApp(payload: unknown) {
+        expect(payload).toBe('{"action":"detect","inviteCode":"","fallbackUrl":""}')
+        return '{"success":true,"installed":false}'
+      },
+    }
+
+    render(<BridgeLab />)
+
+    fireEvent.click(
+      document.querySelector('[data-capability-name="openApp"]') as HTMLButtonElement,
+    )
+    fireEvent.change(screen.getByLabelText('input JSON'), {
+      target: {
+        value: '{"action":"detect","inviteCode":"","fallbackUrl":""}',
+      },
+    })
+    fireEvent.click(screen.getByRole('button', { name: '调用 openApp' }))
+
+    await waitFor(() => {
+      expect(screen.getByText(/"installed": false/)).toBeTruthy()
     })
   })
 

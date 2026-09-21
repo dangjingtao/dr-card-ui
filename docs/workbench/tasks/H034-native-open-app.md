@@ -1,6 +1,6 @@
 # H034｜APP 唤起与应用商店承接 Native 能力接线
 
-**Status:** Ready  
+**Status:** In Review  
 **Phase:** Host Integration / App Boundary  
 **Depends on:** H029
 
@@ -51,8 +51,17 @@ Native 当前回填状态：两端均“否”；最低版本目标 2.13。
 
 ## 验收标准
 
-- [ ] installed 状态来自 Native 返回；
-- [ ] open / store / detect 三种 action 不混用；
-- [ ] Native 不支持时明确失败；
-- [ ] APP 引导不再用假 H5 内跳转冒充唤起；
+- [x] installed 状态来自 Native 返回；
+- [x] open / store / detect 三种 action 不混用；
+- [x] Native 不支持时明确失败；
+- [x] APP 引导不再用假 H5 内跳转冒充唤起；
 - [ ] 双端真机验证后补齐 fallback 细节。
+
+
+## 当前验证状态
+
+- H5 runtime、appOpen adapter、搭子扫码承接、现有 APP 引导弹窗与 Bridge Lab 接线已完成；
+- `?state=no-app|has-app` 已退出 production installed-state 判定；
+- Native 当前仍标记 Android / iOS `openApp` 尚未实现；
+- 真实 inviteCode / fallbackUrl 与 open→fallback 细节仍待业务/Native 真机联调；
+- 双端真机 smoke 后再标记 Accepted。

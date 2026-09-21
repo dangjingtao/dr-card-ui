@@ -12,6 +12,7 @@ import IdentityPickerSheet, { type PickerIdentity } from '../components/coupon/I
 import NewcomerGiftSheet from '../components/coupon/NewcomerGiftSheet'
 import { Button, ProgressIndicator } from '../components/ui'
 import { findRouteByPathname } from '../app/router/routes'
+import { openNativeAppStore } from '../app/adapters/appOpen'
 import { useFixtureState, useOverlay } from '../app/fixtures/useFixture'
 import {
   APP_GUIDE_FIXTURE,
@@ -55,6 +56,7 @@ export default function DearseedColumn() {
   const { state } = useFixtureState(route)
   const { overlay, open, close } = useOverlay()
   const [downloadHint, setDownloadHint] = useState<string | undefined>(undefined)
+  const [downloadPending, setDownloadPending] = useState(false)
   /* T043｜专栏入口三级弹窗状态。
    * 流程：进入 /dearseed 页面 → pickerOpen 弹身份选择 → 选择身份
    *   - 'new'（诗得丽新增用户）→ couponOpen 弹 NewcomerCouponDialog（洗发水体验券）
@@ -92,6 +94,25 @@ export default function DearseedColumn() {
   const closeAppGuide = () => {
     setDownloadHint(undefined)
     close()
+  }
+
+  const handleAppStoreDownload = async () => {
+    if (downloadPending) return
+
+    setDownloadPending(true)
+    setDownloadHint(undefined)
+    try {
+      const result = await openNativeAppStore()
+      setDownloadHint(
+        result.success
+          ? '已交由系统打开应用商店'
+          : '应用商店打开失败，请稍后重试',
+      )
+    } catch {
+      setDownloadHint('当前 App 版本暂不支持应用商店跳转')
+    } finally {
+      setDownloadPending(false)
+    }
   }
 
   /* T043｜身份选择回调：关闭选择器，按身份打开对应二级弹窗 */
@@ -306,7 +327,15 @@ export default function DearseedColumn() {
       </PromptOverlay>
 
       <NewcomerDialog open={overlay === 'newcomer'} onComplete={() => navigate(NEWCOMER_FIXTURE.ctaTo)} onBody={() => open(NEWCOMER_FIXTURE.bodyToOverlay)} onDismiss={close} />
-      <AppPromptDialog open={overlay === 'app-guide'} variant="guide" message={APP_GUIDE_FIXTURE.message} onAcknowledge={closeAppGuide} onDownload={() => setDownloadHint(APP_GUIDE_FIXTURE.downloadHint)} downloadHint={downloadHint} />
+      <AppPromptDialog
+        open={overlay === 'app-guide'}
+        variant="guide"
+        message={APP_GUIDE_FIXTURE.message}
+        onAcknowledge={closeAppGuide}
+        onDownload={() => void handleAppStoreDownload()}
+        downloadHint={downloadHint}
+        downloadPending={downloadPending}
+      />
 
       {/* T043｜专栏入口三级弹窗流程：
        *  1. IdentityPickerSheet（身份选择，先弹）

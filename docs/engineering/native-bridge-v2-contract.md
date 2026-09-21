@@ -156,3 +156,20 @@ H5 已注册双端 `showRewardAd(json)` target contract：
 - `closed / failed / no_fill` 均保持补签未完成。
 
 Native 回填仍标记 Android / iOS 当前均“否”，因此这里只表示 H5 contract 与业务判定已就绪。
+
+
+## 10. H034 H5 APP 唤起与商店承接状态
+
+H5 已注册双端 `openApp(json)` target contract：
+
+- Android：`window.androidBridge.openApp(json)`
+- iOS：`window.iosBridge.openApp(json)`
+- action 仅允许 `open | store | detect`；
+- `inviteCode` / `fallbackUrl` 保留 Native 原字段；
+- 返回严格解析 `success:boolean + installed:boolean`；
+- `/buddy/invite/scan` 的 installed 状态不再来自 `?state=` fixture，只信 Native detect；
+- 打开 APP 不再以内跳 `/buddy/accept` 冒充唤起；
+- 现有 APP 引导弹窗的“下载链接”改为 Native store action；
+- H5 不自造 scheme / Universal Link / 商店 URL。
+
+Native 回填仍标记 Android / iOS 当前均“否”，所以这里只表示 H5 contract 与业务接线已就绪。
