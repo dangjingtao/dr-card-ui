@@ -8,6 +8,7 @@ test.describe('H027 Bridge Lab', () => {
     await expect(page.locator('[data-bridge-lab]')).toHaveAttribute('data-lab-platform', 'android')
     await expect(page.locator('[data-capability-name="getLoginToken"]')).toBeVisible()
     await expect(page.locator('[data-capability-name="closeWebView"]')).toBeVisible()
+    await expect(page.locator('[data-capability-name="scanCode"]')).toBeVisible()
     await expect(page.locator('[data-android-raw-probe]')).toBeVisible()
     await expect(page.locator('[data-ios-raw-probe]')).toHaveCount(0)
 
@@ -95,6 +96,7 @@ test.describe('H027 Bridge Lab', () => {
     await expect(page.locator('[data-capability-name="getLoginToken"]')).toBeVisible()
     await expect(page.locator('[data-capability-name="getAuthorizationInfo"]')).toHaveCount(0)
     await expect(page.locator('[data-capability-name="closeWebView"]')).toBeVisible()
+    await expect(page.locator('[data-capability-name="scanCode"]')).toBeVisible()
 
     const registered = page.locator('[data-capability-name="getLoginToken"]')
     await registered.click()

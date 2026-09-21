@@ -4,6 +4,7 @@ type InjectedBridgeProbe = {
   marker?: string
   getLoginToken?: () => unknown
   closeWebView?: () => unknown
+  scanCode?: (payload: unknown) => unknown
 }
 
 type BridgeProbeWindow = Window & {
@@ -224,6 +225,7 @@ describe('JSBridge capability runtime', () => {
       capabilities: {
         getLoginToken: true,
         closeWebView: false,
+        scanCode: false,
       },
     })
 
@@ -240,6 +242,7 @@ describe('JSBridge capability runtime', () => {
       capabilities: {
         getLoginToken: true,
         closeWebView: false,
+        scanCode: false,
       },
     })
   })
@@ -261,6 +264,7 @@ describe('JSBridge capability runtime', () => {
       capabilities: {
         getLoginToken: false,
         closeWebView: false,
+        scanCode: false,
       },
     })
     await expect(getLoginToken()).rejects.toMatchObject({
@@ -288,6 +292,7 @@ describe('JSBridge capability runtime', () => {
       capabilities: {
         getLoginToken: false,
         closeWebView: false,
+        scanCode: false,
       },
     })
 
@@ -347,5 +352,110 @@ describe('JSBridge capability runtime', () => {
       code: 'capability-unsupported',
       capability: 'closeWebView',
     })
+  })
+
+
+  it('serializes Android scanCode input as the confirmed JSON string and parses the code result', async () => {
+    const { scanCode, getNativeBridgeDiagnostics } = await loadBridge()
+    const received: unknown[] = []
+    const androidBridge = {
+      scanCode(payload: unknown) {
+        expect(this).toBe(androidBridge)
+        received.push(payload)
+        return '{"code":"QR-ANDROID-001"}'
+      },
+    }
+    bridgeWindow.androidBridge = androidBridge
+
+    expect(getNativeBridgeDiagnostics().capabilities.scanCode).toBe(true)
+    await expect(scanCode({ scanType: 'all' })).resolves.toEqual({
+      code: 'QR-ANDROID-001',
+    })
+    expect(received).toEqual(['{"scanType":"all"}'])
+  })
+
+  it('supports qr/bar/all scanType values on iOS without changing the field name', async () => {
+    const { scanCode } = await loadBridge()
+    const received: unknown[] = []
+    bridgeWindow.iosBridge = {
+      scanCode(payload: unknown) {
+        received.push(payload)
+        return '{"code":"IOS-CODE"}'
+      },
+    }
+
+    await expect(scanCode({ scanType: 'qr' })).resolves.toEqual({ code: 'IOS-CODE' })
+    await expect(scanCode({ scanType: 'bar' })).resolves.toEqual({ code: 'IOS-CODE' })
+    await expect(scanCode({ scanType: 'all' })).resolves.toEqual({ code: 'IOS-CODE' })
+    expect(received).toEqual([
+      '{"scanType":"qr"}',
+      '{"scanType":"bar"}',
+      '{"scanType":"all"}',
+    ])
+  })
+
+  it('keeps scanCode fail-closed for missing method and invalid Native results', async () => {
+    const { scanCode } = await loadBridge()
+
+    bridgeWindow.androidBridge = {}
+    await expect(scanCode({ scanType: 'all' })).rejects.toMatchObject({
+      name: 'NativeBridgeError',
+      code: 'capability-unsupported',
+      capability: 'scanCode',
+    })
+
+    bridgeWindow.androidBridge = {
+      scanCode() {
+        return '{broken'
+      },
+    }
+    await expect(scanCode({ scanType: 'all' })).rejects.toMatchObject({
+      name: 'NativeBridgeError',
+      code: 'invocation-failed',
+      capability: 'scanCode',
+      cause: expect.objectContaining({
+        name: 'NativeTransportError',
+        code: 'payload-invalid',
+      }),
+    })
+
+    bridgeWindow.androidBridge = {
+      scanCode() {
+        return '{"code":123}'
+      },
+    }
+    await expect(scanCode({ scanType: 'all' })).rejects.toMatchObject({
+      name: 'NativeBridgeError',
+      code: 'invocation-failed',
+      capability: 'scanCode',
+      cause: expect.objectContaining({
+        name: 'NativeTransportError',
+        code: 'payload-invalid',
+      }),
+    })
+  })
+
+  it('rejects invalid debug scanType instead of forwarding an invented Native request', async () => {
+    const bridge = await loadBridge('disabled')
+    const received: unknown[] = []
+    bridgeWindow.androidBridge = {
+      scanCode(payload: unknown) {
+        received.push(payload)
+        return '{"code":"should-not-run"}'
+      },
+    }
+
+    await expect(
+      bridge.invokeRegisteredNativeCapabilityForDebug('scanCode', { scanType: 'camera' }),
+    ).rejects.toMatchObject({
+      name: 'NativeBridgeError',
+      code: 'invocation-failed',
+      capability: 'scanCode',
+      cause: expect.objectContaining({
+        name: 'NativeTransportError',
+        code: 'payload-invalid',
+      }),
+    })
+    expect(received).toEqual([])
   })
 })

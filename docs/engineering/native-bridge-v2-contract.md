@@ -111,3 +111,19 @@ H5 已把双端 `closeWebView()` target contract 注册进 Capability Runtime：
 - Bridge Lab Android / iOS 均可查看该 registered capability。
 
 Native 回填仍标记 Android / iOS 当前均“否”，所以这里仅表示 **H5 contract 已就绪**，不表示当前 APK / IPA 已支持。
+
+
+## 7. H031 H5 扫码接线状态
+
+H5 已把双端 `scanCode(json)` target contract 注册进 Capability Runtime：
+
+- Android：`window.androidBridge.scanCode(json)`
+- iOS：`window.iosBridge.scanCode(json)`
+- 入参统一 JSON string；
+- `scanType` 保留 Native 原字段和值：`qr | bar | all`；
+- 返回严格解析为 JSON string `{"code":"..."}`；
+- 扫码原始内容按敏感结果处理，Bridge Lab 默认脱敏；
+- `/card/verify` 已去掉“点击即模拟成功”，成功结果通过 route state 进入确认核销页；
+- method 缺失时保持 unsupported，不启用 Web camera fallback。
+
+Native 回填仍标记 Android / iOS 当前均“否”，因此这里仍只表示 **H5 contract 与业务接线已就绪**。

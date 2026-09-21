@@ -36,6 +36,7 @@ describe('Bridge Lab page', () => {
     expect(screen.getByRole('heading', { name: 'Bridge Lab' })).toBeTruthy()
     expect(document.querySelector('[data-capability-name="getLoginToken"]')).not.toBeNull()
     expect(document.querySelector('[data-capability-name="closeWebView"]')).not.toBeNull()
+    expect(document.querySelector('[data-capability-name="scanCode"]')).not.toBeNull()
     expect(document.querySelector('[data-android-raw-probe]')).not.toBeNull()
     expect(document.querySelector('[data-ios-raw-probe]')).toBeNull()
     expect(screen.getByLabelText('input JSON')).toBeTruthy()
@@ -64,6 +65,7 @@ describe('Bridge Lab page', () => {
     expect(document.querySelector('[data-capability-name="getLoginToken"]')).not.toBeNull()
     expect(document.querySelector('[data-capability-name="getAuthorizationInfo"]')).toBeNull()
     expect(document.querySelector('[data-capability-name="closeWebView"]')).not.toBeNull()
+    expect(document.querySelector('[data-capability-name="scanCode"]')).not.toBeNull()
     expect(screen.getByLabelText('input JSON')).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'iOS preset getAuthorizationInfo' }))
@@ -100,6 +102,31 @@ describe('Bridge Lab page', () => {
       expect(screen.getByText('[REDACTED]')).toBeTruthy()
     })
     expect(screen.queryByText('ios-preview-token')).toBeNull()
+  })
+
+  it('can run registered scanCode with editable JSON input on Android', async () => {
+    usePlatform('android')
+    labWindow.androidBridge = {
+      scanCode(payload: unknown) {
+        expect(payload).toBe('{"scanType":"all"}')
+        return '{"code":"bridge-lab-scan"}'
+      },
+    }
+
+    render(<BridgeLab />)
+
+    fireEvent.click(
+      document.querySelector('[data-capability-name="scanCode"]') as HTMLButtonElement,
+    )
+    fireEvent.change(screen.getByLabelText('input JSON'), {
+      target: { value: '{"scanType":"all"}' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: '调用 scanCode' }))
+
+    await waitFor(() => {
+      expect(screen.getByText('[REDACTED]')).toBeTruthy()
+    })
+    expect(screen.queryByText(/bridge-lab-scan/)).toBeNull()
   })
 
   it('shows neither Native Raw Probe when osType is not selected', () => {
