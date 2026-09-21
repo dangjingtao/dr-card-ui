@@ -131,3 +131,20 @@ H029 仍需当前 App build 的双端 WebView smoke：
 5. 默认日志不泄露 token。
 
 未完成双端当前 App WebView smoke 前，不把 H029 标记 Accepted。
+
+
+## 8. Native 统一失败语义补充
+
+2026-09-21 Native 团队补充确认通用失败返回：
+
+- `{"error":"cancel"}` → 用户取消；
+- `{"error":"permission_denied"}` → 权限拒绝；
+- `{"error":"fail"}` → 普通失败。
+
+Bridge Runtime 已把三种 envelope 提升为结构化错误：
+
+- `native-cancelled`
+- `native-permission-denied`
+- `native-failed`
+
+该解析发生在各 capability 成功 DTO 校验之前；未知 error 值继续 fail-closed，不自行扩展协议。

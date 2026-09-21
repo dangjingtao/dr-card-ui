@@ -49,6 +49,8 @@ Native 当前回填状态：Android / iOS 均“否”，最低版本目标 2.13
 
 H5 不新增 placement id、广告供应商字段或其它 scene。
 
+Native 通用 error envelope 也适用于 invocation-level 失败：`cancel / permission_denied / fail` 会分别映射为结构化 Bridge error；广告自身 `closed / failed / no_fill` 仍保留为广告业务 status，不混用。
+
 ## 3. 补签主链
 
 H033 前：

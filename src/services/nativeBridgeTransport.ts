@@ -26,6 +26,9 @@ export type NativeTransportWindow = Window & {
 export type NativeTransportErrorCode =
   | 'serialization-failed'
   | 'payload-invalid'
+  | 'native-cancelled'
+  | 'native-permission-denied'
+  | 'native-failed'
   | 'callback-timeout'
   | 'callback-failed'
   | 'callback-concurrency-unsupported'

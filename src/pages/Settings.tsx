@@ -93,11 +93,16 @@ export default function Settings() {
       flashToast('已选择头像')
       close()
     } catch (error) {
-      if (
-        error instanceof NativeBridgeError &&
-        ['bridge-disabled', 'bridge-unsupported', 'capability-unsupported'].includes(error.code)
-      ) {
-        setAvatarError('当前 App 版本暂不支持该图片能力')
+      if (error instanceof NativeBridgeError) {
+        if (['bridge-disabled', 'bridge-unsupported', 'capability-unsupported'].includes(error.code)) {
+          setAvatarError('当前 App 版本暂不支持该图片能力')
+        } else if (error.code === 'native-cancelled') {
+          setAvatarError('已取消图片选择')
+        } else if (error.code === 'native-permission-denied') {
+          setAvatarError(source === 'photo' ? '请允许相机权限后重试' : '请允许相册权限后重试')
+        } else {
+          setAvatarError('头像更新失败，请重试')
+        }
       } else {
         setAvatarError('头像更新失败，请重试')
       }

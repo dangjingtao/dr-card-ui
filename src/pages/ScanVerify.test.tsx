@@ -16,11 +16,20 @@ vi.mock('react-router-dom', async (importOriginal) => {
   }
 })
 
-vi.mock('../services/nativeBridge', () => ({
-  scanCode: mocks.scanCode,
-  getNativeBridgeDiagnostics: mocks.getNativeBridgeDiagnostics,
-  closeWebView: mocks.closeWebView,
-}))
+vi.mock('../services/nativeBridge', () => {
+  class NativeBridgeError extends Error {
+    constructor(readonly code: string) {
+      super(code)
+    }
+  }
+
+  return {
+    NativeBridgeError,
+    scanCode: mocks.scanCode,
+    getNativeBridgeDiagnostics: mocks.getNativeBridgeDiagnostics,
+    closeWebView: mocks.closeWebView,
+  }
+})
 
 import ScanVerify from './ScanVerify'
 
@@ -104,7 +113,7 @@ describe('ScanVerify', () => {
     })
   })
 
-  it('keeps a Native failure on the scan page without inventing cancel or permission semantics', async () => {
+  it('keeps an unknown Native failure on the scan page', async () => {
     mocks.getNativeBridgeDiagnostics.mockReturnValue({
       capabilities: {
         scanCode: true,
@@ -119,6 +128,30 @@ describe('ScanVerify', () => {
 
     await waitFor(() => {
       expect(screen.getByText('扫码失败，请重试')).toBeTruthy()
+    })
+    expect(mocks.navigate).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    ['native-cancelled', '已取消扫码'],
+    ['native-permission-denied', '请允许相机权限后重试'],
+  ] as const)('shows confirmed %s semantics without navigating', async (code, message) => {
+    mocks.getNativeBridgeDiagnostics.mockReturnValue({
+      capabilities: {
+        scanCode: true,
+        closeWebView: false,
+      },
+    })
+    const { NativeBridgeError } = await import('../services/nativeBridge')
+    mocks.scanCode.mockRejectedValue(
+      new NativeBridgeError(code, 'scanCode', 'confirmed Native failure'),
+    )
+
+    render(<ScanVerify />)
+    fireEvent.click(screen.getByRole('button', { name: '开始扫码核销' }))
+
+    await waitFor(() => {
+      expect(screen.getByText(message)).toBeTruthy()
     })
     expect(mocks.navigate).not.toHaveBeenCalled()
   })
