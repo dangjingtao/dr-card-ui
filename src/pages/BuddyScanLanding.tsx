@@ -27,6 +27,7 @@ export default function BuddyScanLanding() {
     () => getNativeBridgeDiagnostics().capabilities.openApp,
   )
   const [installed, setInstalled] = useState<boolean | null>(null)
+  const [openPrompt, setOpenPrompt] = useState(false)
   const [pending, setPending] = useState<'detect' | 'open' | 'store' | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const detected = useRef(false)
@@ -65,6 +66,7 @@ export default function BuddyScanLanding() {
         }
 
         setInstalled(result.installed)
+        setOpenPrompt(result.installed)
 
         if (!result.installed) {
           setPending('store')
@@ -102,7 +104,7 @@ export default function BuddyScanLanding() {
   }
 
   const close = () => {
-    setInstalled(false)
+    setOpenPrompt(false)
     setMessage(null)
   }
 
@@ -134,7 +136,7 @@ export default function BuddyScanLanding() {
       </PageContainer>
 
       <PromptOverlay
-        open={installed === true}
+        open={openPrompt}
         label="打开卡博士 APP"
         onDismiss={close}
         className="border border-border-subtle bg-surface px-6 pb-6 pt-7 text-center shadow-modal"
