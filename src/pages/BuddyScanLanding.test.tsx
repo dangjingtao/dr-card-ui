@@ -44,6 +44,11 @@ describe('BuddyScanLanding H034 Native App handoff', () => {
     render(<BuddyScanLanding />)
 
     expect(screen.getByText('当前环境暂不支持 APP 唤起能力')).toBeTruthy()
+    expect(
+      screen.getByRole('region', { name: '应用商店 H5 承接边界' }).getAttribute(
+        'data-native-installed',
+      ),
+    ).toBe('unknown')
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(mocks.detectInstalledApp).not.toHaveBeenCalled()
   })
@@ -66,6 +71,11 @@ describe('BuddyScanLanding H034 Native App handoff', () => {
     await waitFor(() => {
       expect(screen.getByRole('dialog')).toBeTruthy()
     })
+    expect(
+      screen.getByRole('region', { name: '应用商店 H5 承接边界' }).getAttribute(
+        'data-native-installed',
+      ),
+    ).toBe('true')
     expect(mocks.detectInstalledApp).toHaveBeenCalledTimes(1)
 
     fireEvent.click(screen.getByRole('button', { name: '打开 APP' }))
@@ -93,6 +103,11 @@ describe('BuddyScanLanding H034 Native App handoff', () => {
     await waitFor(() => {
       expect(mocks.openNativeAppStore).toHaveBeenCalledTimes(1)
     })
+    expect(
+      screen.getByRole('region', { name: '应用商店 H5 承接边界' }).getAttribute(
+        'data-native-installed',
+      ),
+    ).toBe('false')
     expect(screen.queryByRole('dialog')).toBeNull()
   })
 
