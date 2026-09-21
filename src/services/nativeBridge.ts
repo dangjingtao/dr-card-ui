@@ -1,6 +1,7 @@
 import { runtimePolicy } from '../app/config/runtime'
 import {
   createAndroidInjectedObjectTransport,
+  createIOSMessageHandlerTransport,
   type NativeTransportResolution,
   type NativeTransportWindow,
 } from './nativeBridgeTransport'
@@ -68,6 +69,18 @@ const getLoginTokenTransport = createAndroidInjectedObjectTransport<void, unknow
   serializeArgs: () => [],
 })
 
+const getAuthorizationInfoTransport = createIOSMessageHandlerTransport<void, unknown>({
+  handlerName: 'getAuthorizationInfo',
+  correlation: 'single-flight',
+  callbackCardinality: 'at-most-one',
+  serializeRequest: () => ({}),
+  parseCallback: (payload) => ({ ok: true, payload }),
+})
+
+type IOSAuthorizationWindow = NativeTransportWindow & {
+  onToken?: (token: unknown) => unknown
+}
+
 const capabilityRegistry = {
   getLoginToken: defineCapability<'getLoginToken', void, unknown>({
     name: 'getLoginToken',
@@ -79,6 +92,54 @@ const capabilityRegistry = {
       if (!transportResolution.supported) return transportResolution
 
       return supportedCapability<void, unknown>(() => transportResolution.invoke())
+    },
+  }),
+  getAuthorizationInfo: defineCapability<'getAuthorizationInfo', void, unknown>({
+    name: 'getAuthorizationInfo',
+    description:
+      'Read iOS authorization info through the confirmed getAuthorizationInfo/onToken host protocol.',
+    platforms: ['ios'],
+    sensitiveResult: true,
+    resolve(hostWindow) {
+      const transportResolution = getAuthorizationInfoTransport.resolve(hostWindow, undefined)
+      if (!transportResolution.supported) return transportResolution
+
+      return supportedCapability<void, unknown>(() => {
+        const callbackHost = hostWindow as IOSAuthorizationWindow
+        const previousOnToken = callbackHost.onToken
+        const onToken = (token: unknown) => {
+          const handled = getAuthorizationInfoTransport.handleCallback(token)
+
+          if (previousOnToken && previousOnToken !== onToken) {
+            try {
+              previousOnToken(token)
+            } catch {
+              // Preserve the confirmed host callback result even if an older H5 observer fails.
+            }
+          }
+
+          return handled
+        }
+
+        callbackHost.onToken = onToken
+
+        let invocation: unknown
+        try {
+          invocation = transportResolution.invoke()
+        } catch (error) {
+          if (callbackHost.onToken === onToken) {
+            if (previousOnToken) callbackHost.onToken = previousOnToken
+            else delete callbackHost.onToken
+          }
+          throw error
+        }
+
+        return Promise.resolve(invocation).finally(() => {
+          if (callbackHost.onToken !== onToken) return
+          if (previousOnToken) callbackHost.onToken = previousOnToken
+          else delete callbackHost.onToken
+        })
+      })
     },
   }),
   closeWebView: defineCapability<'closeWebView', void, never>({
@@ -335,6 +396,21 @@ export function getNativeBridgeDiagnostics(): NativeBridgeDiagnostics {
  */
 export function getLoginToken(options: NativeInvocationOptions = {}): Promise<unknown> {
   return invokeNativeCapability(capabilityRegistry.getLoginToken, undefined, options)
+}
+
+/**
+ * Confirmed iOS authorization-info boundary from the historical Native integration document.
+ *
+ * Native entry: window.webkit.messageHandlers.getAuthorizationInfo.postMessage({})
+ * Native result: window.onToken(token)
+ *
+ * The callback is mounted only for the lifetime of the invocation and an existing H5 observer is
+ * restored afterwards. The raw result remains unknown until Native confirms a stable DTO.
+ */
+export function getAuthorizationInfo(
+  options: NativeInvocationOptions = {},
+): Promise<unknown> {
+  return invokeNativeCapability(capabilityRegistry.getAuthorizationInfo, undefined, options)
 }
 
 /**
