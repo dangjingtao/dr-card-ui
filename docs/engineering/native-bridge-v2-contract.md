@@ -127,3 +127,17 @@ H5 已把双端 `scanCode(json)` target contract 注册进 Capability Runtime：
 - method 缺失时保持 unsupported，不启用 Web camera fallback。
 
 Native 回填仍标记 Android / iOS 当前均“否”，因此这里仍只表示 **H5 contract 与业务接线已就绪**。
+
+
+## 8. H032 H5 图片与剪贴板接线状态
+
+H5 已注册 `takePhoto / chooseImage / saveImageToAlbum / copyText` 的 Android / iOS target contract：
+
+- 有参方法统一传 JSON string；
+- 图片返回严格解析 `mimeType + imageBase64`，并按敏感结果处理；
+- 保存图片 / 复制文本严格解析 `success:boolean`；
+- Settings 头像入口已接 `takePhoto / chooseImage`；
+- buddyShare adapter 已接 `saveImageToAlbum / copyText`，不再恒定成功；
+- 当前邀请海报 bytes / 正式 invite URL 尚未有业务来源，因此页面不会伪造 poster/link payload。
+
+Native 回填仍标记四项当前均“否”，所以这里只表示 H5 contract 与调用链已就绪。
