@@ -1,11 +1,13 @@
 import { runtimePolicy } from '../app/config/runtime'
 import {
   createAndroidInjectedObjectTransport,
+  createIOSMessageHandlerTransport,
   type NativeTransportResolution,
   type NativeTransportWindow,
 } from './nativeBridgeTransport'
 
 export type NativeHost = 'android' | 'ios' | 'browser'
+export type NativeCapabilityPlatform = Exclude<NativeHost, 'browser'>
 export type NativeBridgeErrorCode =
   | 'bridge-disabled'
   | 'bridge-unsupported'
@@ -34,6 +36,8 @@ type NativeCapabilityResolution<TInput, TResult> =
 interface NativeCapabilityDescriptor<TName extends string, TInput, TResult> {
   name: TName
   description: string
+  /** Platforms with a confirmed production implementation for this capability. */
+  platforms: readonly NativeCapabilityPlatform[]
   sensitiveResult?: boolean
   resolve: (
     hostWindow: NativeTransportWindow | undefined,
@@ -65,10 +69,23 @@ const getLoginTokenTransport = createAndroidInjectedObjectTransport<void, unknow
   serializeArgs: () => [],
 })
 
+const getAuthorizationInfoTransport = createIOSMessageHandlerTransport<void, unknown>({
+  handlerName: 'getAuthorizationInfo',
+  correlation: 'single-flight',
+  callbackCardinality: 'at-most-one',
+  serializeRequest: () => ({}),
+  parseCallback: (payload) => ({ ok: true, payload }),
+})
+
+type IOSAuthorizationWindow = NativeTransportWindow & {
+  onToken?: (token: unknown) => unknown
+}
+
 const capabilityRegistry = {
   getLoginToken: defineCapability<'getLoginToken', void, unknown>({
     name: 'getLoginToken',
     description: 'Read the current login token from the confirmed Android host bridge.',
+    platforms: ['android'],
     sensitiveResult: true,
     resolve(hostWindow) {
       const transportResolution = getLoginTokenTransport.resolve(hostWindow, undefined)
@@ -77,8 +94,57 @@ const capabilityRegistry = {
       return supportedCapability<void, unknown>(() => transportResolution.invoke())
     },
   }),
+  getAuthorizationInfo: defineCapability<'getAuthorizationInfo', void, unknown>({
+    name: 'getAuthorizationInfo',
+    description:
+      'Read iOS authorization info through the confirmed getAuthorizationInfo/onToken host protocol.',
+    platforms: ['ios'],
+    sensitiveResult: true,
+    resolve(hostWindow) {
+      const transportResolution = getAuthorizationInfoTransport.resolve(hostWindow, undefined)
+      if (!transportResolution.supported) return transportResolution
+
+      return supportedCapability<void, unknown>(() => {
+        const callbackHost = hostWindow as IOSAuthorizationWindow
+        const previousOnToken = callbackHost.onToken
+        const onToken = (token: unknown) => {
+          const handled = getAuthorizationInfoTransport.handleCallback(token)
+
+          if (previousOnToken && previousOnToken !== onToken) {
+            try {
+              previousOnToken(token)
+            } catch {
+              // Preserve the confirmed host callback result even if an older H5 observer fails.
+            }
+          }
+
+          return handled
+        }
+
+        callbackHost.onToken = onToken
+
+        let invocation: unknown
+        try {
+          invocation = transportResolution.invoke()
+        } catch (error) {
+          if (callbackHost.onToken === onToken) {
+            if (previousOnToken) callbackHost.onToken = previousOnToken
+            else delete callbackHost.onToken
+          }
+          throw error
+        }
+
+        return Promise.resolve(invocation).finally(() => {
+          if (callbackHost.onToken !== onToken) return
+          if (previousOnToken) callbackHost.onToken = previousOnToken
+          else delete callbackHost.onToken
+        })
+      })
+    },
+  }),
   closeWebView: defineCapability<'closeWebView', void, never>({
     name: 'closeWebView',
+    platforms: [],
     description:
       'H5 close intent only; the Native close-WebView protocol is intentionally still unconfirmed.',
     sensitiveResult: false,
@@ -96,6 +162,7 @@ export type NativeCapabilityName = keyof typeof capabilityRegistry
 export interface NativeCapabilityCatalogItem {
   name: NativeCapabilityName
   description: string
+  platforms: readonly NativeCapabilityPlatform[]
   supported: boolean
   sensitiveResult: boolean
 }
@@ -182,8 +249,9 @@ async function invokeNativeCapability<TName extends string, TInput, TResult>(
   descriptor: NativeCapabilityDescriptor<TName, TInput, TResult>,
   input: TInput,
   options: NativeInvocationOptions = {},
+  allowDisabledBridgeMode = false,
 ): Promise<TResult> {
-  ensureNativeMode(descriptor.name)
+  if (!allowDisabledBridgeMode) ensureNativeMode(descriptor.name)
 
   let resolution: NativeCapabilityResolution<TInput, TResult>
   try {
@@ -238,8 +306,9 @@ async function invokeNativeCapability<TName extends string, TInput, TResult>(
 function isCapabilitySupported(
   descriptor: NativeCapabilityDescriptor<string, never, unknown>,
   hostWindow: NativeTransportWindow | undefined,
+  allowDisabledBridgeMode = false,
 ): boolean {
-  if (runtimePolicy.bridgeMode !== 'native') return false
+  if (!allowDisabledBridgeMode && runtimePolicy.bridgeMode !== 'native') return false
 
   try {
     return descriptor.resolve(hostWindow).supported
@@ -255,9 +324,11 @@ export function getNativeBridgeCapabilityCatalog(): NativeCapabilityCatalogItem[
   return Object.values(capabilityRegistry).map((descriptor) => ({
     name: descriptor.name,
     description: descriptor.description,
+    platforms: descriptor.platforms,
     supported: isCapabilitySupported(
       descriptor as NativeCapabilityDescriptor<string, never, unknown>,
       hostWindow,
+      runtimePolicy.bridgeLabEnabled,
     ),
     sensitiveResult: descriptor.sensitiveResult === true,
   })) as NativeCapabilityCatalogItem[]
@@ -290,7 +361,7 @@ export function invokeRegisteredNativeCapabilityForDebug(
     unknown,
     unknown
   >
-  return invokeNativeCapability(descriptor, input, options)
+  return invokeNativeCapability(descriptor, input, options, true)
 }
 
 /**
@@ -328,6 +399,21 @@ export function getNativeBridgeDiagnostics(): NativeBridgeDiagnostics {
  */
 export function getLoginToken(options: NativeInvocationOptions = {}): Promise<unknown> {
   return invokeNativeCapability(capabilityRegistry.getLoginToken, undefined, options)
+}
+
+/**
+ * Confirmed iOS authorization-info boundary from the historical Native integration document.
+ *
+ * Native entry: window.webkit.messageHandlers.getAuthorizationInfo.postMessage({})
+ * Native result: window.onToken(token)
+ *
+ * The callback is mounted only for the lifetime of the invocation and an existing H5 observer is
+ * restored afterwards. The raw result remains unknown until Native confirms a stable DTO.
+ */
+export function getAuthorizationInfo(
+  options: NativeInvocationOptions = {},
+): Promise<unknown> {
+  return invokeNativeCapability(capabilityRegistry.getAuthorizationInfo, undefined, options)
 }
 
 /**

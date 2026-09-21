@@ -9,6 +9,7 @@ type BridgeProbeWindow = Window & {
   webkit?: {
     messageHandlers?: Record<string, { postMessage(payload: unknown): void } | undefined>
   }
+  onToken?: (token: unknown) => unknown
 }
 
 const bridgeWindow = window as BridgeProbeWindow
@@ -22,6 +23,7 @@ async function loadBridge(mode: 'disabled' | 'native' = 'native') {
 afterEach(() => {
   delete bridgeWindow.androidBridge
   delete bridgeWindow.webkit
+  delete bridgeWindow.onToken
   vi.unstubAllEnvs()
   vi.resetModules()
 })
@@ -151,6 +153,38 @@ describe('JSBridge capability runtime', () => {
     })
   })
 
+  it('keeps business bridge disabled while allowing Bridge Lab debug invocation in non-prod', async () => {
+    const bridge = await loadBridge('disabled')
+    bridgeWindow.webkit = {
+      messageHandlers: {
+        getAuthorizationInfo: {
+          postMessage() {
+            setTimeout(() => bridgeWindow.onToken?.('ios-debug-token'), 0)
+          },
+        },
+      },
+    }
+
+    await expect(bridge.getAuthorizationInfo()).rejects.toMatchObject({
+      name: 'NativeBridgeError',
+      code: 'bridge-disabled',
+      capability: 'getAuthorizationInfo',
+    })
+
+    expect(
+      bridge.getNativeBridgeCapabilityCatalog().find(
+        (item) => item.name === 'getAuthorizationInfo',
+      ),
+    ).toMatchObject({
+      platforms: ['ios'],
+      supported: true,
+      sensitiveResult: true,
+    })
+
+    const invocation = bridge.invokeRegisteredNativeCapabilityForDebug('getAuthorizationInfo')
+    await expect(invocation).resolves.toBe('ios-debug-token')
+  })
+
   it('keeps disabled mode distinct from a browser without a Native bridge', async () => {
     bridgeWindow.androidBridge = {
       getLoginToken() {
@@ -168,6 +202,7 @@ describe('JSBridge capability runtime', () => {
       mode: 'disabled',
       capabilities: {
         getLoginToken: false,
+        getAuthorizationInfo: false,
         closeWebView: false,
       },
     })
@@ -186,12 +221,13 @@ describe('JSBridge capability runtime', () => {
       hostVersion: null,
       capabilities: {
         getLoginToken: false,
+        getAuthorizationInfo: false,
         closeWebView: false,
       },
     })
   })
 
-  it('derives diagnostics from the capability registry without promoting iOS debug evidence', async () => {
+  it('derives diagnostics from the capability registry for confirmed Android and iOS protocols', async () => {
     const { getNativeBridgeDiagnostics } = await loadBridge()
     bridgeWindow.androidBridge = {
       getLoginToken() {
@@ -205,6 +241,7 @@ describe('JSBridge capability runtime', () => {
       hostVersion: null,
       capabilities: {
         getLoginToken: true,
+        getAuthorizationInfo: false,
         closeWebView: false,
       },
     })
@@ -224,9 +261,33 @@ describe('JSBridge capability runtime', () => {
       hostVersion: null,
       capabilities: {
         getLoginToken: false,
+        getAuthorizationInfo: true,
         closeWebView: false,
       },
     })
+  })
+
+  it('uses the confirmed iOS getAuthorizationInfo/onToken protocol and restores the callback', async () => {
+    const { getAuthorizationInfo } = await loadBridge()
+    const observed: unknown[] = []
+    const previousOnToken = (token: unknown) => {
+      observed.push(token)
+    }
+    bridgeWindow.onToken = previousOnToken
+    bridgeWindow.webkit = {
+      messageHandlers: {
+        getAuthorizationInfo: {
+          postMessage(payload) {
+            expect(payload).toEqual({})
+            setTimeout(() => bridgeWindow.onToken?.('ios-token'), 0)
+          },
+        },
+      },
+    }
+
+    await expect(getAuthorizationInfo()).resolves.toBe('ios-token')
+    expect(observed).toEqual(['ios-token'])
+    expect(bridgeWindow.onToken).toBe(previousOnToken)
   })
 
   it('keeps closeWebView explicitly unsupported until Native confirms a protocol', async () => {

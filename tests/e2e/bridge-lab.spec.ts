@@ -1,12 +1,15 @@
 import { expect, test } from '@playwright/test'
 
 test.describe('H027 Bridge Lab', () => {
-  test('lists registered capabilities and reports missing browser host explicitly', async ({ page }) => {
-    await page.goto('/__debug/bridge-lab', { waitUntil: 'domcontentloaded' })
+  test('scopes registered capabilities and Raw Probe by osType=android', async ({ page }) => {
+    await page.goto('/__debug/bridge-lab?osType=android', { waitUntil: 'domcontentloaded' })
 
     await expect(page.locator('[data-bridge-lab]')).toBeVisible()
+    await expect(page.locator('[data-bridge-lab]')).toHaveAttribute('data-lab-platform', 'android')
     await expect(page.locator('[data-capability-name="getLoginToken"]')).toBeVisible()
-    await expect(page.locator('[data-capability-name="closeWebView"]')).toBeVisible()
+    await expect(page.locator('[data-capability-name="closeWebView"]')).toHaveCount(0)
+    await expect(page.locator('[data-android-raw-probe]')).toBeVisible()
+    await expect(page.locator('[data-ios-raw-probe]')).toHaveCount(0)
 
     await page.getByLabel('Android method').fill('missingMethod')
     await page.getByRole('button', { name: 'Run Android Probe' }).click()
@@ -16,7 +19,23 @@ test.describe('H027 Bridge Lab', () => {
     )
   })
 
-  test('Android Raw Probe preserves receiver and masks a token result by default', async ({ page }) => {
+  test('Native can still call the legacy window.testFunc endpoint', async ({ page }) => {
+    await page.goto('/__debug/bridge-lab?osType=android', { waitUntil: 'domcontentloaded' })
+
+    const result = await page.evaluate(() => {
+      const host = window as unknown as {
+        testFunc?: (params: unknown) => string
+      }
+      return host.testFunc?.({ from: 'android-native', value: 7 })
+    })
+
+    expect(result).toBe('h5 处理完成')
+    await expect(page.locator('[data-h5-callback-endpoints]')).toBeVisible()
+    await expect(page.locator('[data-bridge-lab-logs]')).toContainText('window.testFunc(params)')
+    await expect(page.locator('[data-bridge-lab-logs]')).toContainText('android-native')
+  })
+
+  test('Android bridge preset preserves receiver and masks a token result by default', async ({ page }) => {
     await page.addInitScript(() => {
       const bridge = {
         marker: 'real-receiver',
@@ -27,8 +46,8 @@ test.describe('H027 Bridge Lab', () => {
       ;(window as unknown as { androidBridge: typeof bridge }).androidBridge = bridge
     })
 
-    await page.goto('/__debug/bridge-lab', { waitUntil: 'domcontentloaded' })
-    await page.getByLabel('Android method').fill('getLoginToken')
+    await page.goto('/__debug/bridge-lab?osType=android', { waitUntil: 'domcontentloaded' })
+    await page.getByRole('button', { name: 'Android preset getLoginToken' }).click()
     await page.getByRole('button', { name: 'Run Android Probe' }).click()
 
     const logs = page.locator('[data-bridge-lab-logs]')
@@ -40,33 +59,52 @@ test.describe('H027 Bridge Lab', () => {
     await expect(logs).not.toContainText('wrong-receiver')
   })
 
-  test('iOS Raw Probe posts payload and captures a temporary global callback', async ({ page }) => {
+  test('iOS preset posts payload and captures the existing global callback shape', async ({ page }) => {
     await page.addInitScript(() => {
       const host = window as unknown as {
         webkit?: {
           messageHandlers?: Record<string, { postMessage(payload: unknown): void }>
         }
-        labCallback?: (payload: unknown) => void
+        onToken?: (payload: unknown) => void
       }
       host.webkit = {
         messageHandlers: {
-          demoHandler: {
+          getAuthorizationInfo: {
             postMessage(payload) {
-              setTimeout(() => host.labCallback?.({ token: 'ios-secret', echo: payload }), 0)
+              setTimeout(() => host.onToken?.({ token: 'ios-secret', echo: payload }), 0)
             },
           },
         },
       }
     })
 
-    await page.goto('/__debug/bridge-lab', { waitUntil: 'domcontentloaded' })
-    await page.getByLabel('iOS message handler').fill('demoHandler')
-    await page.getByLabel('iOS callback').fill('labCallback')
+    await page.goto('/__debug/bridge-lab?osType=ios', { waitUntil: 'domcontentloaded' })
+    await expect(page.locator('[data-bridge-lab]')).toHaveAttribute('data-lab-platform', 'iOS')
+    await expect(page.locator('[data-ios-raw-probe]')).toBeVisible()
+    await expect(page.locator('[data-android-raw-probe]')).toHaveCount(0)
+    await expect(page.locator('[data-capability-name="getLoginToken"]')).toHaveCount(0)
+    await expect(page.locator('[data-capability-name="getAuthorizationInfo"]')).toBeVisible()
+
+    const registered = page.locator('[data-capability-name="getAuthorizationInfo"]')
+    await registered.click()
+    await expect(page.getByRole('button', { name: '调用 getAuthorizationInfo' })).toBeEnabled()
+
+    await page.getByRole('button', { name: 'iOS preset getAuthorizationInfo' }).click()
     await page.getByRole('button', { name: 'Run iOS Probe' }).click()
 
     const logs = page.locator('[data-bridge-lab-logs]')
-    await expect(logs).toContainText('iOS Raw · demoHandler')
+    await expect(logs).toContainText('iOS Raw · getAuthorizationInfo')
     await expect(logs).toContainText('[REDACTED]')
     await expect(logs).not.toContainText('ios-secret')
+  })
+
+  test('web mode does not expose either platform Raw Probe', async ({ page }) => {
+    await page.goto('/__debug/bridge-lab', { waitUntil: 'domcontentloaded' })
+
+    await expect(page.locator('[data-bridge-lab]')).toHaveAttribute('data-lab-platform', 'web')
+    await expect(page.locator('[data-android-raw-probe]')).toHaveCount(0)
+    await expect(page.locator('[data-ios-raw-probe]')).toHaveCount(0)
+    await expect(page.locator('[data-web-platform-hint]')).toContainText('?osType=android')
+    await expect(page.locator('[data-web-platform-hint]')).toContainText('?osType=iOS')
   })
 })
