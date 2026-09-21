@@ -40,7 +40,9 @@ test.describe('H027 Bridge Lab', () => {
       const bridge = {
         marker: 'real-receiver',
         getLoginToken() {
-          return this.marker === 'real-receiver' ? 'e2e-secret-token' : 'wrong-receiver'
+          return this.marker === 'real-receiver'
+            ? '{"token":"e2e-secret-token"}'
+            : '{"token":"wrong-receiver"}'
         },
       }
       ;(window as unknown as { androidBridge: typeof bridge }).androidBridge = bridge
@@ -59,19 +61,27 @@ test.describe('H027 Bridge Lab', () => {
     await expect(logs).not.toContainText('wrong-receiver')
   })
 
-  test('iOS preset posts payload and captures the existing global callback shape', async ({ page }) => {
+  test('iOS uses registered iosBridge.getLoginToken while keeping the old callback protocol as Raw Probe', async ({ page }) => {
     await page.addInitScript(() => {
       const host = window as unknown as {
+        iosBridge?: {
+          getLoginToken(): string
+        }
         webkit?: {
           messageHandlers?: Record<string, { postMessage(payload: unknown): void }>
         }
         onToken?: (payload: unknown) => void
       }
+      host.iosBridge = {
+        getLoginToken() {
+          return '{"token":"ios-registered-secret"}'
+        },
+      }
       host.webkit = {
         messageHandlers: {
           getAuthorizationInfo: {
             postMessage(payload) {
-              setTimeout(() => host.onToken?.({ token: 'ios-secret', echo: payload }), 0)
+              setTimeout(() => host.onToken?.({ token: 'ios-legacy-secret', echo: payload }), 0)
             },
           },
         },
@@ -82,20 +92,24 @@ test.describe('H027 Bridge Lab', () => {
     await expect(page.locator('[data-bridge-lab]')).toHaveAttribute('data-lab-platform', 'iOS')
     await expect(page.locator('[data-ios-raw-probe]')).toBeVisible()
     await expect(page.locator('[data-android-raw-probe]')).toHaveCount(0)
-    await expect(page.locator('[data-capability-name="getLoginToken"]')).toHaveCount(0)
-    await expect(page.locator('[data-capability-name="getAuthorizationInfo"]')).toBeVisible()
+    await expect(page.locator('[data-capability-name="getLoginToken"]')).toBeVisible()
+    await expect(page.locator('[data-capability-name="getAuthorizationInfo"]')).toHaveCount(0)
 
-    const registered = page.locator('[data-capability-name="getAuthorizationInfo"]')
+    const registered = page.locator('[data-capability-name="getLoginToken"]')
     await registered.click()
-    await expect(page.getByRole('button', { name: '调用 getAuthorizationInfo' })).toBeEnabled()
+    await expect(page.getByRole('button', { name: '调用 getLoginToken' })).toBeEnabled()
+    await page.getByRole('button', { name: '调用 getLoginToken' }).click()
+
+    const logs = page.locator('[data-bridge-lab-logs]')
+    await expect(logs).toContainText('capability · getLoginToken')
+    await expect(logs).toContainText('[REDACTED]')
+    await expect(logs).not.toContainText('ios-registered-secret')
 
     await page.getByRole('button', { name: 'iOS preset getAuthorizationInfo' }).click()
     await page.getByRole('button', { name: 'Run iOS Probe' }).click()
 
-    const logs = page.locator('[data-bridge-lab-logs]')
     await expect(logs).toContainText('iOS Raw · getAuthorizationInfo')
-    await expect(logs).toContainText('[REDACTED]')
-    await expect(logs).not.toContainText('ios-secret')
+    await expect(logs).not.toContainText('ios-legacy-secret')
   })
 
   test('web mode does not expose either platform Raw Probe', async ({ page }) => {
