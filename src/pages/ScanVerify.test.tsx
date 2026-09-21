@@ -143,7 +143,9 @@ describe('ScanVerify', () => {
       },
     })
     const { NativeBridgeError } = await import('../services/nativeBridge')
-    mocks.scanCode.mockRejectedValue(new NativeBridgeError(code))
+    mocks.scanCode.mockRejectedValue(
+      new NativeBridgeError(code, 'scanCode', 'confirmed Native failure'),
+    )
 
     render(<ScanVerify />)
     fireEvent.click(screen.getByRole('button', { name: '开始扫码核销' }))
