@@ -2,7 +2,11 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ScanLine } from 'lucide-react'
 import HostCloseButton from '../components/mobile/HostCloseButton'
-import { getNativeBridgeDiagnostics, scanCode } from '../services/nativeBridge'
+import {
+  getNativeBridgeDiagnostics,
+  NativeBridgeError,
+  scanCode,
+} from '../services/nativeBridge'
 
 export interface ScanVerifyNavigationState {
   nativeScanCode: string
@@ -44,8 +48,18 @@ export default function ScanVerify() {
       const result = await scanCode({ scanType: 'all' })
       const state: ScanVerifyNavigationState = { nativeScanCode: result.code }
       navigate('/card/verify/confirm', { state })
-    } catch {
-      setError('扫码失败，请重试')
+    } catch (error) {
+      if (error instanceof NativeBridgeError) {
+        if (error.code === 'native-cancelled') {
+          setError('已取消扫码')
+        } else if (error.code === 'native-permission-denied') {
+          setError('请允许相机权限后重试')
+        } else {
+          setError('扫码失败，请重试')
+        }
+      } else {
+        setError('扫码失败，请重试')
+      }
       setScanning(false)
     }
   }
