@@ -19,6 +19,44 @@ Native 团队确认：
 - 回填中统一写明最低 App 版本目标为 **2.13**；
 - “最低版本 2.13”不等于方法已经实现，能力是否可用仍以“是否已有”和真机注入结果为准。
 
+## 1.1 Native 统一失败返回
+
+2026-09-21 Native 团队补充确认：对于有 JSON 结果返回的 Bridge 调用，通用失败 envelope 为：
+
+```json
+{"error":"cancel"}
+```
+
+表示用户取消。
+
+```json
+{"error":"permission_denied"}
+```
+
+表示系统权限拒绝。
+
+```json
+{"error":"fail"}
+```
+
+表示 Native / SDK 普通失败。
+
+H5 Runtime 统一映射为：
+
+| Native error | `NativeBridgeError.code` |
+|---|---|
+| `cancel` | `native-cancelled` |
+| `permission_denied` | `native-permission-denied` |
+| `fail` | `native-failed` |
+
+约束：
+
+- 不新增其它 error code；
+- 未知 `error` 值视为协议非法，按 `invocation-failed` 处理，并保留 `payload-invalid` cause；
+- 该 envelope 在 capability 自身成功 DTO 解析之前识别；
+- `showRewardAd` 的 `completed | closed | failed | no_fill` 仍是广告业务结果；若 Native 直接返回通用 `{"error":"..."}`，则按 invocation-level failure 处理；
+- `closeWebView()` 当前合同定义为“无返回”，因此不假设它也会返回该 JSON envelope；若 Native 后续需要失败回传，应另行确认返回契约。
+
 ## 2. 当前已注入：登录凭证
 
 两端均已注入 `getLoginToken()`，Native 仍需把内部实现改为读取真实登录态。
