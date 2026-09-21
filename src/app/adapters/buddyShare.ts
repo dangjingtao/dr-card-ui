@@ -1,48 +1,51 @@
 /**
- * 分享适配层（T007）
- * -------------------------------------------------------------
- * 背景：摹客 #34「保存到本地」要求把二维码生成海报并写入相册，#35「复制链接」要求
- * 写入系统粘贴板。这两件事依赖真实端能力（相册写入权限、Clipboard），任务卡明确
- * 「不实现真实通讯录、短信、系统分享或下载能力；用明确适配层模拟结果」。
+ * 搭子分享宿主适配层。
  *
- * 因此本模块只保留分享/宿主能力出口。手机号搜索与发送邀请已在 H014 迁到
- * service → HTTP → MSW/真实 API 网络边界，不再由本适配层模拟请求。
+ * H032 起，相册写入与剪贴板不再恒定模拟成功；正式 H5 只通过 Native Bridge 调用。
+ * 页面仍只消费 BuddyShareFeedback，不直接接触 window.androidBridge / window.iosBridge。
  *
- * 确定性约定（D-056，用户 2026-08-24 定案「失败态只用 ?state= 驱动」）：
- * - 页面内的真实分享操作**永不失败**，恒定返回成功分支；
- * - 失败态（poster-failed / link-failed）只能由 URL `?state=` 复现，
- *   不做关键字判定、不做随机失败、不做次数计数；
- * - 「进行中」用固定时长模拟一次宿主能力往返（非 HTTP 网络请求），保证截图与 Playwright 可复现。
+ * 注意：当前邀请二维码仍是明确的 placeholder，仓库没有真实邀请海报 bytes / URL。
+ * 因此 saveInvitePoster() 只有在上游提供真实 poster payload 时才调用 Native，
+ * 否则返回既有 poster-failed 反馈，避免拿伪造图片冒充真实海报。
  */
 import { BUDDY_INVITE_LINK, BUDDY_SHARE_FEEDBACK, type BuddyShareFeedback } from '../fixtures'
+import {
+  copyText,
+  saveImageToAlbum,
+  type NativeSaveImageToAlbumInput,
+} from '../../services/nativeBridge'
 
-/** 模拟一次端能力往返的固定时长（ms）；固定值以保证可复现 */
-export const SHARE_LATENCY = 600
+export type InvitePosterPayload = NativeSaveImageToAlbumInput
 
-function delay<T>(value: T, ms: number): Promise<T> {
-  return new Promise((resolve) => {
-    window.setTimeout(() => resolve(value), ms)
-  })
+/** 保存真实邀请海报到系统相册。没有真实 poster payload 时明确失败，不伪造内容。 */
+export async function saveInvitePoster(
+  poster?: InvitePosterPayload,
+): Promise<BuddyShareFeedback> {
+  if (!poster) return BUDDY_SHARE_FEEDBACK['poster-failed']
+
+  try {
+    const result = await saveImageToAlbum(poster)
+    return result.success
+      ? BUDDY_SHARE_FEEDBACK['poster-saved']
+      : BUDDY_SHARE_FEEDBACK['poster-failed']
+  } catch {
+    return BUDDY_SHARE_FEEDBACK['poster-failed']
+  }
 }
 
-/**
- * 保存邀请海报到本地相册（摹客 #34）
- * ⚠️ 适配层：不写相册、不下载文件，仅返回成功反馈供弹窗展示。
- */
-export function saveInvitePoster(): Promise<BuddyShareFeedback> {
-  return delay(BUDDY_SHARE_FEEDBACK['poster-saved'], SHARE_LATENCY)
+/** 通过 Native copyText 写入系统剪贴板；Bridge 不可用或 Native 返回 false 时进入失败态。 */
+export async function copyInviteLink(): Promise<BuddyShareFeedback> {
+  try {
+    const result = await copyText({ text: BUDDY_INVITE_LINK })
+    return result.success
+      ? BUDDY_SHARE_FEEDBACK['link-copied']
+      : BUDDY_SHARE_FEEDBACK['link-failed']
+  } catch {
+    return BUDDY_SHARE_FEEDBACK['link-failed']
+  }
 }
 
-/**
- * 复制邀请链接到粘贴板（摹客 #35）
- * ⚠️ 适配层：不调用 navigator.clipboard（夹具环境下受权限与 https 限制，
- *    且失败与否会变得不可复现），仅返回成功反馈供 Toast 展示。
- */
-export function copyInviteLink(): Promise<BuddyShareFeedback> {
-  return delay(BUDDY_SHARE_FEEDBACK['link-copied'], SHARE_LATENCY)
-}
-
-/** 邀请链接文本（#35 展示/复制的内容，来自夹具，非真实域名） */
+/** 邀请链接文本（#35 展示/复制内容；真实域名仍待业务 contract）。 */
 export function getInviteLink(): string {
   return BUDDY_INVITE_LINK
 }
