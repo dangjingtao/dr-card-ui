@@ -306,6 +306,86 @@ const iosScanCodeTransport = createInjectedObjectTransport<
   parseResult: parseScanCodePayload,
 })
 
+const androidTakePhotoTransport = createInjectedObjectTransport<
+  NativeTakePhotoInput,
+  NativeImageResult
+>({
+  objectName: 'androidBridge',
+  methodName: 'takePhoto',
+  serializeArgs: (input) => [serializeJsonValue(validateTakePhotoInput(input))],
+  parseResult: parseNativeImagePayload,
+})
+
+const iosTakePhotoTransport = createInjectedObjectTransport<
+  NativeTakePhotoInput,
+  NativeImageResult
+>({
+  objectName: 'iosBridge',
+  methodName: 'takePhoto',
+  serializeArgs: (input) => [serializeJsonValue(validateTakePhotoInput(input))],
+  parseResult: parseNativeImagePayload,
+})
+
+const androidChooseImageTransport = createInjectedObjectTransport<
+  NativeChooseImageInput,
+  NativeImageResult
+>({
+  objectName: 'androidBridge',
+  methodName: 'chooseImage',
+  serializeArgs: (input) => [serializeJsonValue(validateChooseImageInput(input))],
+  parseResult: parseNativeImagePayload,
+})
+
+const iosChooseImageTransport = createInjectedObjectTransport<
+  NativeChooseImageInput,
+  NativeImageResult
+>({
+  objectName: 'iosBridge',
+  methodName: 'chooseImage',
+  serializeArgs: (input) => [serializeJsonValue(validateChooseImageInput(input))],
+  parseResult: parseNativeImagePayload,
+})
+
+const androidSaveImageToAlbumTransport = createInjectedObjectTransport<
+  NativeSaveImageToAlbumInput,
+  NativeSuccessResult
+>({
+  objectName: 'androidBridge',
+  methodName: 'saveImageToAlbum',
+  serializeArgs: (input) => [serializeJsonValue(validateSaveImageInput(input))],
+  parseResult: parseNativeSuccessPayload,
+})
+
+const iosSaveImageToAlbumTransport = createInjectedObjectTransport<
+  NativeSaveImageToAlbumInput,
+  NativeSuccessResult
+>({
+  objectName: 'iosBridge',
+  methodName: 'saveImageToAlbum',
+  serializeArgs: (input) => [serializeJsonValue(validateSaveImageInput(input))],
+  parseResult: parseNativeSuccessPayload,
+})
+
+const androidCopyTextTransport = createInjectedObjectTransport<
+  NativeCopyTextInput,
+  NativeSuccessResult
+>({
+  objectName: 'androidBridge',
+  methodName: 'copyText',
+  serializeArgs: (input) => [serializeJsonValue(validateCopyTextInput(input))],
+  parseResult: parseNativeSuccessPayload,
+})
+
+const iosCopyTextTransport = createInjectedObjectTransport<
+  NativeCopyTextInput,
+  NativeSuccessResult
+>({
+  objectName: 'iosBridge',
+  methodName: 'copyText',
+  serializeArgs: (input) => [serializeJsonValue(validateCopyTextInput(input))],
+  parseResult: parseNativeSuccessPayload,
+})
+
 function resolveLoginTokenTransport(
   hostWindow: NativeTransportWindow | undefined,
 ): NativeCapabilityResolution<void, NativeLoginToken> {
