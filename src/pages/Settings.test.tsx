@@ -87,6 +87,36 @@ describe('Settings Native avatar integration', () => {
     expect(screen.getByText('已选择头像')).toBeTruthy()
   })
 
+  it('shows confirmed Native cancellation without treating it as an unknown failure', async () => {
+    const { NativeBridgeError } = await import('../services/nativeBridge')
+    mocks.takePhoto.mockRejectedValue(new NativeBridgeError('native-cancelled'))
+
+    render(<Settings />)
+    openAvatarSheet()
+    fireEvent.click(screen.getByRole('button', { name: '拍照' }))
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toContain('已取消图片选择')
+    })
+  })
+
+  it('shows source-specific permission guidance for Native media denial', async () => {
+    const { NativeBridgeError } = await import('../services/nativeBridge')
+    mocks.chooseImage.mockRejectedValue(
+      new NativeBridgeError('native-permission-denied'),
+    )
+
+    render(<Settings />)
+    openAvatarSheet()
+    fireEvent.click(screen.getByRole('button', { name: '从相册选择' }))
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toContain(
+        '请允许相册权限后重试',
+      )
+    })
+  })
+
   it('uses chooseImage for the album entry', async () => {
     mocks.chooseImage.mockResolvedValue({
       mimeType: 'image/png',
