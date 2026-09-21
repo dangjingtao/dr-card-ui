@@ -83,8 +83,8 @@ const IOS_RAW_PRESETS = [
 
 function getLabPlatform(): LabPlatform {
   if (typeof window === 'undefined') return 'web'
-  const osType = new URLSearchParams(window.location.search).get('osType')
-  if (osType === 'iOS') return 'iOS'
+  const osType = new URLSearchParams(window.location.search).get('osType')?.trim().toLowerCase()
+  if (osType === 'ios') return 'iOS'
   if (osType === 'android') return 'android'
   return 'web'
 }
