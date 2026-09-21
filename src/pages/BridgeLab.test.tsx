@@ -35,7 +35,7 @@ describe('Bridge Lab page', () => {
 
     expect(screen.getByRole('heading', { name: 'Bridge Lab' })).toBeTruthy()
     expect(document.querySelector('[data-capability-name="getLoginToken"]')).not.toBeNull()
-    expect(document.querySelector('[data-capability-name="closeWebView"]')).toBeNull()
+    expect(document.querySelector('[data-capability-name="closeWebView"]')).not.toBeNull()
     expect(document.querySelector('[data-android-raw-probe]')).not.toBeNull()
     expect(document.querySelector('[data-ios-raw-probe]')).toBeNull()
     expect(screen.getByLabelText('input JSON')).toBeTruthy()
@@ -63,6 +63,7 @@ describe('Bridge Lab page', () => {
     expect(document.querySelector('[data-ios-raw-probe]')).not.toBeNull()
     expect(document.querySelector('[data-capability-name="getLoginToken"]')).not.toBeNull()
     expect(document.querySelector('[data-capability-name="getAuthorizationInfo"]')).toBeNull()
+    expect(document.querySelector('[data-capability-name="closeWebView"]')).not.toBeNull()
     expect(screen.getByLabelText('input JSON')).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'iOS preset getAuthorizationInfo' }))
