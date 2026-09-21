@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ExternalLink, Smartphone } from 'lucide-react'
 import DebugPanel from '../components/mobile/DebugPanel'
 import PageContainer from '../components/mobile/PageContainer'
@@ -30,7 +30,6 @@ export default function BuddyScanLanding() {
   const [openPrompt, setOpenPrompt] = useState(false)
   const [pending, setPending] = useState<'detect' | 'open' | 'store' | null>(null)
   const [message, setMessage] = useState<string | null>(null)
-  const detected = useRef(false)
 
   useEffect(() => {
     if (capabilityReady) return
@@ -51,16 +50,27 @@ export default function BuddyScanLanding() {
   }, [capabilityReady])
 
   useEffect(() => {
-    if (!capabilityReady || detected.current) return
-    detected.current = true
+    if (!capabilityReady) return
 
-    const detect = async () => {
-      setPending('detect')
-      setMessage(null)
+    let disposed = false
+    let running = false
+
+    const detect = async (allowStore: boolean) => {
+      if (running) return
+      running = true
+
+      if (!disposed) {
+        setPending('detect')
+        setMessage(null)
+      }
+
       try {
         const result = await detectInstalledApp()
+        if (disposed) return
+
         if (!result.success) {
           setInstalled(null)
+          setOpenPrompt(false)
           setMessage('无法确认 APP 安装状态，请稍后重试')
           return
         }
@@ -68,22 +78,38 @@ export default function BuddyScanLanding() {
         setInstalled(result.installed)
         setOpenPrompt(result.installed)
 
-        if (!result.installed) {
+        if (!result.installed && allowStore) {
           setPending('store')
           const storeResult = await openNativeAppStore()
+          if (disposed) return
           if (!storeResult.success) {
             setMessage('应用商店打开失败，请稍后重试')
           }
         }
       } catch {
+        if (disposed) return
         setInstalled(null)
+        setOpenPrompt(false)
         setMessage('当前环境暂不支持 APP 唤起能力')
       } finally {
-        setPending(null)
+        running = false
+        if (!disposed) setPending(null)
       }
     }
 
-    void detect()
+    const refreshAfterReturn = () => {
+      void detect(false)
+    }
+
+    void detect(true)
+    window.addEventListener('focus', refreshAfterReturn)
+    window.addEventListener('pageshow', refreshAfterReturn)
+
+    return () => {
+      disposed = true
+      window.removeEventListener('focus', refreshAfterReturn)
+      window.removeEventListener('pageshow', refreshAfterReturn)
+    }
   }, [capabilityReady])
 
   const handleOpenApp = async () => {
