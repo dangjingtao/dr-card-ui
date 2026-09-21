@@ -210,9 +210,9 @@ export const CHECKIN_RULE_STATUS = {
     note: '原型 §6/§7 仅确认「漏签显示补签」与「补打卡成功」，补签消耗、次数上限与不可补签判定未确认，此处仅作隔离演示。',
   },
   makeupAd: {
-    confirmed: false,
-    blocker: 'B-021',
-    note: '原型 §7 另画有广告 30s 与关闭倒计时，广告来源与倒计时规则未确认，此处不实现广告位。',
+    confirmed: true,
+    blocker: null,
+    note: 'H033 已接 Native showRewardAd({scene:"h5CheckinResign"})；只有 status=completed 才进入补签成功，closed/failed/no_fill 均不发放补签完成信号。',
   },
 } as const
 
