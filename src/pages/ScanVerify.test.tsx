@@ -51,6 +51,38 @@ describe('ScanVerify', () => {
     expect(mocks.scanCode).not.toHaveBeenCalled()
   })
 
+  it('refreshes scan support after late bridge injection', async () => {
+    mocks.getNativeBridgeDiagnostics
+      .mockReturnValueOnce({
+        capabilities: {
+          scanCode: false,
+          closeWebView: false,
+        },
+      })
+      .mockReturnValue({
+        capabilities: {
+          scanCode: true,
+          closeWebView: false,
+        },
+      })
+
+    render(<ScanVerify />)
+
+    expect(
+      (screen.getByRole('button', {
+        name: '当前 App 版本暂不支持扫码',
+      }) as HTMLButtonElement).disabled,
+    ).toBe(true)
+
+    fireEvent(window, new Event('focus'))
+
+    await waitFor(() => {
+      expect(
+        (screen.getByRole('button', { name: '开始扫码核销' }) as HTMLButtonElement).disabled,
+      ).toBe(false)
+    })
+  })
+
   it('calls scanCode(all) and carries the real code into the confirmation route state', async () => {
     mocks.getNativeBridgeDiagnostics.mockReturnValue({
       capabilities: {
