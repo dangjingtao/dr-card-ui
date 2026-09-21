@@ -8,21 +8,72 @@ type AndroidLabWindow = Window & {
 
 const labWindow = window as AndroidLabWindow
 
+function usePlatform(osType?: 'android' | 'iOS') {
+  const suffix = osType ? `?osType=${osType}` : ''
+  window.history.replaceState({}, '', `/__debug/bridge-lab${suffix}`)
+}
+
 afterEach(() => {
   delete labWindow.androidBridge
+  usePlatform()
 })
 
 describe('Bridge Lab page', () => {
-  it('renders the capability registry without fixed per-capability top-level actions', () => {
+  it('uses osType to scope registered capabilities and Raw Probe to Android', () => {
+    usePlatform('android')
     render(<BridgeLab />)
 
     expect(screen.getByRole('heading', { name: 'Bridge Lab' })).toBeTruthy()
     expect(document.querySelector('[data-capability-name="getLoginToken"]')).not.toBeNull()
-    expect(document.querySelector('[data-capability-name="closeWebView"]')).not.toBeNull()
-    expect(screen.getByRole('button', { name: /调用 getLoginToken/i })).toBeTruthy()
+    expect(document.querySelector('[data-capability-name="closeWebView"]')).toBeNull()
+    expect(document.querySelector('[data-android-raw-probe]')).not.toBeNull()
+    expect(document.querySelector('[data-ios-raw-probe]')).toBeNull()
+    expect(screen.getByLabelText('input JSON')).toBeTruthy()
+  })
+
+  it('keeps bridge-branch Android calls as editable Raw Probe presets', () => {
+    usePlatform('android')
+    render(<BridgeLab />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'submitOrder' }))
+
+    expect((screen.getByLabelText('Android object') as HTMLInputElement).value).toBe('androidBridge')
+    expect((screen.getByLabelText('Android method') as HTMLInputElement).value).toBe('submitOrder')
+    expect((screen.getByLabelText('Android 参数模式') as HTMLSelectElement).value).toBe('string')
+    expect((screen.getByLabelText('Android 参数') as HTMLTextAreaElement).value).toBe(
+      '{"orderId":1001,"money":99}',
+    )
+  })
+
+  it('uses osType to show only the iOS Raw Probe and its historical preset', () => {
+    usePlatform('iOS')
+    render(<BridgeLab />)
+
+    expect(document.querySelector('[data-android-raw-probe]')).toBeNull()
+    expect(document.querySelector('[data-ios-raw-probe]')).not.toBeNull()
+    expect(document.querySelector('[data-capability-name="getLoginToken"]')).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: 'getAuthorizationInfo' }))
+    expect((screen.getByLabelText('iOS message handler') as HTMLInputElement).value).toBe(
+      'getAuthorizationInfo',
+    )
+    expect((screen.getByLabelText('iOS payload 模式') as HTMLSelectElement).value).toBe(
+      'empty-object',
+    )
+    expect((screen.getByLabelText('iOS callback') as HTMLInputElement).value).toBe('onToken')
+  })
+
+  it('shows neither Native Raw Probe when osType is not selected', () => {
+    usePlatform()
+    render(<BridgeLab />)
+
+    expect(document.querySelector('[data-android-raw-probe]')).toBeNull()
+    expect(document.querySelector('[data-ios-raw-probe]')).toBeNull()
+    expect(document.querySelector('[data-web-platform-hint]')).not.toBeNull()
   })
 
   it('redacts a sensitive Android Raw Probe result until explicit reveal', async () => {
+    usePlatform('android')
     labWindow.androidBridge = {
       getLoginToken() {
         return 'super-secret-token'
@@ -30,9 +81,7 @@ describe('Bridge Lab page', () => {
     }
 
     render(<BridgeLab />)
-    fireEvent.change(screen.getByLabelText('Android method'), {
-      target: { value: 'getLoginToken' },
-    })
+    fireEvent.click(screen.getByRole('button', { name: 'getLoginToken' }))
     fireEvent.click(screen.getByRole('button', { name: 'Run Android Probe' }))
 
     await waitFor(() => {
@@ -45,6 +94,7 @@ describe('Bridge Lab page', () => {
   })
 
   it('shows browser/host absence as an explicit error instead of fake success', async () => {
+    usePlatform('android')
     render(<BridgeLab />)
     fireEvent.change(screen.getByLabelText('Android method'), {
       target: { value: 'missingMethod' },
