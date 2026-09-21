@@ -1,0 +1,58 @@
+# H031｜扫码核销 Native 能力接线
+
+**Status:** Ready  
+**Phase:** Host Integration / Card Verify  
+**Depends on:** H029
+
+## 目标
+
+把 `/card/verify` 当前模拟扫码改为真实 Native 扫码 capability。
+
+## Native 目标协议
+
+双端同名：
+
+```text
+Android: window.androidBridge.scanCode(json)
+iOS:     window.iosBridge.scanCode(json)
+```
+
+输入 JSON 字符串：
+
+```json
+{"scanType":"all"}
+```
+
+`scanType: qr | bar | all`
+
+同步返回 JSON 字符串：
+
+```json
+{"code":"扫码原始内容"}
+```
+
+Native 当前回填状态：两端均“否”；最低版本目标 2.13。
+
+## 范围
+
+- 注册 `scanCode` capability；
+- 定义输入 / 输出解析；
+- `ScanVerify` 去掉“点击即模拟成功”主路径；
+- 成功后把真实扫码结果进入现有确认流程；
+- 缺方法 / 非法返回 / Native throw 明确失败；
+- Bridge Lab 可按平台直接测试。
+
+## 不做
+
+- 不决定 Native 扫码 UI；
+- 不自行实现 Web camera scanner；
+- 不扩展码制字段；
+- 不虚构取消/权限错误码，Native 未提供前保持通用失败。
+
+## 验收标准
+
+- [ ] H5 不再用固定模拟结果冒充扫码；
+- [ ] qr / bar / all 入参保持原字段；
+- [ ] 真实 code 能进入核销确认链；
+- [ ] method 缺失时 fail-closed；
+- [ ] 真机联调后补齐取消/权限语义。
