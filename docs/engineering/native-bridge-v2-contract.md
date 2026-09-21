@@ -97,3 +97,17 @@ H029 起该协议降级为 **历史联调证据 / Bridge Lab Raw Probe preset**�
 - Bridge Lab 可枚举 registered capabilities，并保留 Raw Probe；
 - 浏览器、旧 App 或方法未注入时必须明确 unsupported；
 - 真机 WebView smoke 才能把“契约已实现”升级为“当前 App build 已可用”。
+
+
+## 6. H030 H5 接线状态
+
+H5 已把双端 `closeWebView()` target contract 注册进 Capability Runtime：
+
+- Android：`window.androidBridge.closeWebView()`
+- iOS：`window.iosBridge.closeWebView()`
+- 无参数、无结果 payload；
+- 宿主 method 缺失时保持 unsupported；
+- `HostCloseButton`、一级 TitleBar 与沉浸页关闭入口统一使用该 capability；
+- Bridge Lab Android / iOS 均可查看该 registered capability。
+
+Native 回填仍标记 Android / iOS 当前均“否”，所以这里仅表示 **H5 contract 已就绪**，不表示当前 APK / IPA 已支持。
