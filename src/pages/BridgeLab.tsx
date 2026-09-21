@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Bug,
   Eye,
@@ -29,6 +29,9 @@ import {
 } from '../bridge/bridgeLabProbe'
 
 type LabPlatform = 'iOS' | 'android' | 'web'
+type BridgeLabCallbackWindow = Window & {
+  testFunc?: (params: unknown) => string
+}
 type LogLevel = 'call' | 'result' | 'callback' | 'error'
 
 type LabLog = {
@@ -149,6 +152,42 @@ export default function BridgeLab() {
   const [revealed, setRevealed] = useState<Set<string>>(() => new Set())
   const sequence = useRef(0)
 
+  useEffect(() => {
+    if (labPlatform === 'web') return
+
+    const hostWindow = window as BridgeLabCallbackWindow
+    const previousTestFunc = hostWindow.testFunc
+    const testFunc = (params: unknown) => {
+      sequence.current += 1
+      const redaction = redactBridgeValue(params)
+      const id = `${Date.now()}-${sequence.current}`
+
+      setLogs((current) =>
+        [
+          {
+            id,
+            time: new Date().toLocaleTimeString(),
+            level: 'callback',
+            title: 'window.testFunc(params)',
+            displayValue: redaction.value,
+            rawValue: params,
+            redacted: redaction.redacted,
+          },
+          ...current,
+        ].slice(0, 50),
+      )
+
+      return 'h5 处理完成'
+    }
+
+    hostWindow.testFunc = testFunc
+    return () => {
+      if (hostWindow.testFunc !== testFunc) return
+      if (previousTestFunc) hostWindow.testFunc = previousTestFunc
+      else delete hostWindow.testFunc
+    }
+  }, [labPlatform])
+
   const currentCapability = useMemo(
     () => platformCatalog.find((item) => item.name === selectedCapability),
     [platformCatalog, selectedCapability],
@@ -241,7 +280,7 @@ export default function BridgeLab() {
   }
 
   const runAndroid = async () => {
-    appendLog('call', `Android Raw · ${androidObject || '?' }.${androidMethod || '?'}`)
+    appendLog('call', `Android Raw · ${androidObject || '?'}.${androidMethod || '?'}`)
     const startedAt = performance.now()
     try {
       const result = await runAndroidRawProbe({
@@ -667,6 +706,28 @@ export default function BridgeLab() {
             <p className="mt-2 text-xs leading-5 text-text-secondary">
               当前没有指定 Native 联调平台。请使用 <code>?osType=android</code> 或 <code>?osType=iOS</code>；平台选择只由该参数决定，不根据 UA 自动切换。
             </p>
+          </section>
+        )}
+
+        {labPlatform !== 'web' && (
+          <section
+            className="mt-4 rounded-container border border-border bg-surface p-4"
+            data-h5-callback-endpoints
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-semibold">Native → H5 callback endpoints</h2>
+                <p className="mt-1 text-xs leading-5 text-text-tertiary">
+                  沿用旧 bridge 联调入口，供 Native 直接 evaluateJavascript 调用。
+                </p>
+              </div>
+              <span className="rounded-pill bg-success-bg px-2.5 py-1 text-[10px] font-medium text-success-text">
+                mounted
+              </span>
+            </div>
+            <pre className="mt-3 whitespace-pre-wrap rounded-control bg-surface-subtle p-3 font-mono text-xs leading-5 text-text-secondary">
+              window.testFunc(params) → "h5 处理完成"
+            </pre>
           </section>
         )}
 
