@@ -122,6 +122,9 @@ export default function BuddyScanLanding() {
         <section
           className="w-full rounded-container border border-border-subtle bg-surface px-6 py-10 text-center shadow-card"
           aria-label="应用商店 H5 承接边界"
+          data-native-installed={
+            installed === null ? 'unknown' : installed ? 'true' : 'false'
+          }
         >
           <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-buddy-surface text-buddy-accent">
             <ExternalLink className="h-7 w-7" aria-hidden />
