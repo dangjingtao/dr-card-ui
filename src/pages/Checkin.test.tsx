@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import type { ReactNode } from 'react'
 
 const mocks = vi.hoisted(() => ({
   showRewardAd: vi.fn(),
@@ -56,11 +57,11 @@ vi.mock('../components/mobile/DebugPanel', () => ({
 }))
 
 vi.mock('../components/mobile/PageContainer', () => ({
-  default: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  default: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }))
 
 vi.mock('../components/mobile/PromptOverlay', () => ({
-  default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  default: ({ children }: { children: ReactNode }) => <>{children}</>,
 }))
 
 import Checkin from './Checkin'
