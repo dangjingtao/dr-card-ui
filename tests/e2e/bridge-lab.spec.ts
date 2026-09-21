@@ -78,12 +78,16 @@ test.describe('H027 Bridge Lab', () => {
       }
     })
 
-    await page.goto('/__debug/bridge-lab?osType=iOS', { waitUntil: 'domcontentloaded' })
+    await page.goto('/__debug/bridge-lab?osType=ios', { waitUntil: 'domcontentloaded' })
     await expect(page.locator('[data-bridge-lab]')).toHaveAttribute('data-lab-platform', 'iOS')
     await expect(page.locator('[data-ios-raw-probe]')).toBeVisible()
     await expect(page.locator('[data-android-raw-probe]')).toHaveCount(0)
     await expect(page.locator('[data-capability-name="getLoginToken"]')).toHaveCount(0)
     await expect(page.locator('[data-capability-name="getAuthorizationInfo"]')).toBeVisible()
+
+    const registered = page.locator('[data-capability-name="getAuthorizationInfo"]')
+    await registered.click()
+    await expect(page.getByRole('button', { name: '调用 getAuthorizationInfo' })).toBeEnabled()
 
     await page.getByRole('button', { name: 'iOS preset getAuthorizationInfo' }).click()
     await page.getByRole('button', { name: 'Run iOS Probe' }).click()
