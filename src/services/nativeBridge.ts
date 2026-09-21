@@ -6,6 +6,7 @@ import {
 } from './nativeBridgeTransport'
 
 export type NativeHost = 'android' | 'ios' | 'browser'
+export type NativeCapabilityPlatform = Exclude<NativeHost, 'browser'>
 export type NativeBridgeErrorCode =
   | 'bridge-disabled'
   | 'bridge-unsupported'
@@ -34,6 +35,8 @@ type NativeCapabilityResolution<TInput, TResult> =
 interface NativeCapabilityDescriptor<TName extends string, TInput, TResult> {
   name: TName
   description: string
+  /** Platforms with a confirmed production implementation for this capability. */
+  platforms: readonly NativeCapabilityPlatform[]
   sensitiveResult?: boolean
   resolve: (
     hostWindow: NativeTransportWindow | undefined,
@@ -69,6 +72,7 @@ const capabilityRegistry = {
   getLoginToken: defineCapability<'getLoginToken', void, unknown>({
     name: 'getLoginToken',
     description: 'Read the current login token from the confirmed Android host bridge.',
+    platforms: ['android'],
     sensitiveResult: true,
     resolve(hostWindow) {
       const transportResolution = getLoginTokenTransport.resolve(hostWindow, undefined)
@@ -79,6 +83,7 @@ const capabilityRegistry = {
   }),
   closeWebView: defineCapability<'closeWebView', void, never>({
     name: 'closeWebView',
+    platforms: [],
     description:
       'H5 close intent only; the Native close-WebView protocol is intentionally still unconfirmed.',
     sensitiveResult: false,
@@ -96,6 +101,7 @@ export type NativeCapabilityName = keyof typeof capabilityRegistry
 export interface NativeCapabilityCatalogItem {
   name: NativeCapabilityName
   description: string
+  platforms: readonly NativeCapabilityPlatform[]
   supported: boolean
   sensitiveResult: boolean
 }
@@ -255,6 +261,7 @@ export function getNativeBridgeCapabilityCatalog(): NativeCapabilityCatalogItem[
   return Object.values(capabilityRegistry).map((descriptor) => ({
     name: descriptor.name,
     description: descriptor.description,
+    platforms: descriptor.platforms,
     supported: isCapabilitySupported(
       descriptor as NativeCapabilityDescriptor<string, never, unknown>,
       hostWindow,
