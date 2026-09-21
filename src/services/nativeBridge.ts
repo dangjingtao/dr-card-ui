@@ -471,6 +471,108 @@ function resolveScanCodeTransport(
   )
 }
 
+function resolveDualInjectedCapability<TInput, TResult>(
+  hostWindow: NativeTransportWindow | undefined,
+  capability: string,
+  sampleInput: TInput,
+  resolveAndroid: (input: TInput) => NativeTransportResolution<TResult>,
+  resolveIOS: (input: TInput) => NativeTransportResolution<TResult>,
+): NativeCapabilityResolution<TInput, TResult> {
+  if (hostWindow?.androidBridge) {
+    const probe = resolveAndroid(sampleInput)
+    if (!probe.supported) return probe
+    return supportedCapability((input) => {
+      const resolution = resolveAndroid(input)
+      if (!resolution.supported) {
+        throw new NativeBridgeError(resolution.code, capability, resolution.message)
+      }
+      return resolution.invoke()
+    })
+  }
+
+  if (hostWindow?.iosBridge) {
+    const probe = resolveIOS(sampleInput)
+    if (!probe.supported) return probe
+    return supportedCapability((input) => {
+      const resolution = resolveIOS(input)
+      if (!resolution.supported) {
+        throw new NativeBridgeError(resolution.code, capability, resolution.message)
+      }
+      return resolution.invoke()
+    })
+  }
+
+  return unsupportedCapability(
+    'bridge-unsupported',
+    'Neither window.androidBridge nor window.iosBridge is available in the current host.',
+  )
+}
+
+const DEFAULT_IMAGE_INPUT: NativeTakePhotoInput = {
+  crop: true,
+  maxWidth: 1080,
+  maxHeight: 1080,
+  quality: 0.8,
+}
+
+const DEFAULT_CHOOSE_IMAGE_INPUT: NativeChooseImageInput = {
+  ...DEFAULT_IMAGE_INPUT,
+  count: 1,
+}
+
+function resolveTakePhotoTransport(
+  hostWindow: NativeTransportWindow | undefined,
+): NativeCapabilityResolution<NativeTakePhotoInput, NativeImageResult> {
+  return resolveDualInjectedCapability(
+    hostWindow,
+    'takePhoto',
+    DEFAULT_IMAGE_INPUT,
+    (input) => androidTakePhotoTransport.resolve(hostWindow!, input),
+    (input) => iosTakePhotoTransport.resolve(hostWindow!, input),
+  )
+}
+
+function resolveChooseImageTransport(
+  hostWindow: NativeTransportWindow | undefined,
+): NativeCapabilityResolution<NativeChooseImageInput, NativeImageResult> {
+  return resolveDualInjectedCapability(
+    hostWindow,
+    'chooseImage',
+    DEFAULT_CHOOSE_IMAGE_INPUT,
+    (input) => androidChooseImageTransport.resolve(hostWindow!, input),
+    (input) => iosChooseImageTransport.resolve(hostWindow!, input),
+  )
+}
+
+function resolveSaveImageToAlbumTransport(
+  hostWindow: NativeTransportWindow | undefined,
+): NativeCapabilityResolution<NativeSaveImageToAlbumInput, NativeSuccessResult> {
+  const sample: NativeSaveImageToAlbumInput = {
+    imageType: 'base64',
+    imageData: '',
+    fileName: 'kaboshi-invite.png',
+  }
+  return resolveDualInjectedCapability(
+    hostWindow,
+    'saveImageToAlbum',
+    sample,
+    (input) => androidSaveImageToAlbumTransport.resolve(hostWindow!, input),
+    (input) => iosSaveImageToAlbumTransport.resolve(hostWindow!, input),
+  )
+}
+
+function resolveCopyTextTransport(
+  hostWindow: NativeTransportWindow | undefined,
+): NativeCapabilityResolution<NativeCopyTextInput, NativeSuccessResult> {
+  return resolveDualInjectedCapability(
+    hostWindow,
+    'copyText',
+    { text: '' },
+    (input) => androidCopyTextTransport.resolve(hostWindow!, input),
+    (input) => iosCopyTextTransport.resolve(hostWindow!, input),
+  )
+}
+
 const capabilityRegistry = {
   getLoginToken: defineCapability<'getLoginToken', void, NativeLoginToken>({
     name: 'getLoginToken',
