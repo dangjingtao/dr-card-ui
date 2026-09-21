@@ -107,7 +107,11 @@ describe('Checkin H033 rewarded-ad flow', () => {
   it('keeps unsupported Native hosts fail-closed', async () => {
     const { NativeBridgeError } = await import('../services/nativeBridge')
     mocks.showRewardAd.mockRejectedValue(
-      new NativeBridgeError('capability-unsupported', 'showRewardAd'),
+      new NativeBridgeError(
+        'capability-unsupported',
+        'showRewardAd',
+        'showRewardAd is unavailable in this host.',
+      ),
     )
 
     render(<Checkin />)
