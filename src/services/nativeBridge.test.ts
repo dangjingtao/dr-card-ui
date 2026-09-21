@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 type InjectedBridgeProbe = {
   marker?: string
   getLoginToken?: () => unknown
+  closeWebView?: () => unknown
 }
 
 type BridgeProbeWindow = Window & {
@@ -299,14 +300,48 @@ describe('JSBridge capability runtime', () => {
     })
   })
 
-  it('keeps closeWebView explicitly unsupported until Native implements the target method', async () => {
-    const { closeWebView } = await loadBridge()
+  it('invokes Android closeWebView with the injected object as receiver', async () => {
+    const { closeWebView, getNativeBridgeDiagnostics } = await loadBridge()
+    let calls = 0
+    const androidBridge = {
+      marker: 'android-host',
+      closeWebView() {
+        expect(this).toBe(androidBridge)
+        calls += 1
+      },
+    }
+    bridgeWindow.androidBridge = androidBridge
+
+    expect(getNativeBridgeDiagnostics().capabilities.closeWebView).toBe(true)
+    await expect(closeWebView()).resolves.toBeUndefined()
+    expect(calls).toBe(1)
+  })
+
+  it('invokes iOS closeWebView through iosBridge with no arguments', async () => {
+    const { closeWebView, getNativeBridgeDiagnostics } = await loadBridge()
+    const received: unknown[][] = []
+    const iosBridge = {
+      closeWebView(...args: unknown[]) {
+        expect(this).toBe(iosBridge)
+        received.push(args)
+      },
+    }
+    bridgeWindow.iosBridge = iosBridge
+
+    expect(getNativeBridgeDiagnostics().capabilities.closeWebView).toBe(true)
+    await expect(closeWebView()).resolves.toBeUndefined()
+    expect(received).toEqual([[]])
+  })
+
+  it('keeps closeWebView fail-closed when the current host has not implemented the method', async () => {
+    const { closeWebView, getNativeBridgeDiagnostics } = await loadBridge()
     bridgeWindow.androidBridge = {
       getLoginToken() {
         return '{"token":"android-token"}'
       },
     }
 
+    expect(getNativeBridgeDiagnostics().capabilities.closeWebView).toBe(false)
     await expect(closeWebView()).rejects.toMatchObject({
       name: 'NativeBridgeError',
       code: 'capability-unsupported',

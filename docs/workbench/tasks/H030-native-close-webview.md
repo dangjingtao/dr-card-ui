@@ -1,6 +1,6 @@
 # H030｜关闭 WebView Native 能力接线
 
-**Status:** Ready  
+**Status:** In Review  
 **Phase:** Host Integration / Navigation  
 **Depends on:** H029
 
@@ -43,7 +43,15 @@ window.iosBridge.closeWebView()
 
 ## 验收标准
 
-- [ ] 方法存在时可调用；
-- [ ] 方法缺失时 UI 明确 unsupported；
-- [ ] 一级 H5 / 沉浸页关闭入口共用同一 capability；
+- [x] 方法存在时可调用；
+- [x] 方法缺失时 UI 明确 unsupported；
+- [x] 一级 H5 / 沉浸页关闭入口共用同一 capability；
 - [ ] Android / iOS 分别真机 smoke 后才可最终 Accepted。
+
+
+## 当前验证状态
+
+- H5 contract / runtime / UI 接线已完成；
+- Native 回填仍标记 Android / iOS `closeWebView` 尚未实现；
+- 自动测试覆盖双端 invocation、unsupported 与 HostCloseButton；
+- 双端真实 App WebView smoke 仍是最终 Accepted 门槛。

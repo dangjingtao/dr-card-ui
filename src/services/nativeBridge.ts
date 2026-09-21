@@ -98,6 +98,20 @@ const iosGetLoginTokenTransport = createInjectedObjectTransport<void, NativeLogi
   parseResult: parseLoginTokenPayload,
 })
 
+const androidCloseWebViewTransport = createInjectedObjectTransport<void, void>({
+  objectName: 'androidBridge',
+  methodName: 'closeWebView',
+  serializeArgs: () => [],
+  parseResult: () => undefined,
+})
+
+const iosCloseWebViewTransport = createInjectedObjectTransport<void, void>({
+  objectName: 'iosBridge',
+  methodName: 'closeWebView',
+  serializeArgs: () => [],
+  parseResult: () => undefined,
+})
+
 function resolveLoginTokenTransport(
   hostWindow: NativeTransportWindow | undefined,
 ): NativeCapabilityResolution<void, NativeLoginToken> {
@@ -119,6 +133,27 @@ function resolveLoginTokenTransport(
   )
 }
 
+function resolveCloseWebViewTransport(
+  hostWindow: NativeTransportWindow | undefined,
+): NativeCapabilityResolution<void, void> {
+  if (hostWindow?.androidBridge) {
+    const resolution = androidCloseWebViewTransport.resolve(hostWindow, undefined)
+    if (!resolution.supported) return resolution
+    return supportedCapability<void, void>(() => resolution.invoke())
+  }
+
+  if (hostWindow?.iosBridge) {
+    const resolution = iosCloseWebViewTransport.resolve(hostWindow, undefined)
+    if (!resolution.supported) return resolution
+    return supportedCapability<void, void>(() => resolution.invoke())
+  }
+
+  return unsupportedCapability(
+    'bridge-unsupported',
+    'Neither window.androidBridge nor window.iosBridge is available in the current host.',
+  )
+}
+
 const capabilityRegistry = {
   getLoginToken: defineCapability<'getLoginToken', void, NativeLoginToken>({
     name: 'getLoginToken',
@@ -130,17 +165,14 @@ const capabilityRegistry = {
       return resolveLoginTokenTransport(hostWindow)
     },
   }),
-  closeWebView: defineCapability<'closeWebView', void, never>({
+  closeWebView: defineCapability<'closeWebView', void, void>({
     name: 'closeWebView',
-    platforms: [],
+    platforms: ['android', 'ios'],
     description:
-      'H5 close intent only; the Native close-WebView protocol is intentionally still unconfirmed.',
+      'Close the current App WebView through the confirmed Android/iOS injected-object contract.',
     sensitiveResult: false,
-    resolve() {
-      return unsupportedCapability(
-        'capability-unsupported',
-        'The App host has not confirmed a close-WebView JSBridge protocol yet.',
-      )
+    resolve(hostWindow) {
+      return resolveCloseWebViewTransport(hostWindow)
     },
   }),
 } as const
@@ -391,12 +423,12 @@ export function getLoginToken(
 }
 
 /**
- * H5-facing close intent.
+ * H030 confirmed App-WebView close boundary.
  *
- * H021 needs a stable App-title-bar contract before the Native close protocol exists. The capability
- * is registered so detection/invocation share the same runtime lifecycle, but its resolver remains
- * explicitly unsupported until the host team confirms a real Android/iOS protocol.
+ * Android uses `window.androidBridge.closeWebView()`; iOS uses
+ * `window.iosBridge.closeWebView()`. The method takes no arguments and has no result payload.
+ * Hosts that have not implemented the method remain capability-unsupported.
  */
-export function closeWebView(): Promise<never> {
-  return invokeNativeCapability(capabilityRegistry.closeWebView, undefined)
+export function closeWebView(options: NativeInvocationOptions = {}): Promise<void> {
+  return invokeNativeCapability(capabilityRegistry.closeWebView, undefined, options)
 }
