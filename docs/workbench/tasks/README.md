@@ -90,7 +90,7 @@ H021–H024 完成后，后续工作原则上按功能页面或可独立验收�
 
 ### F. JSBridge 与宿主能力收口
 
-> H027 按 2026-09-19 当前用户指令继续使用旧式仓库任务卡作为施工契约；#45 仅保留为兼容跟踪，完成后关闭。其它卡的既有记录本轮不顺手改写。
+> H027 按 2026-09-19 用户指令使用旧式仓库任务卡作为施工契约；H029–H034 按 2026-09-21 用户指令继续使用 H 体系旧台账，不创建 GitHub Issue。H025/H026/H028 的既有 Issue 记录不回写、不迁移。
 
 | ID | 任务 | Issue / 状态 |
 |---|---|---|
@@ -98,10 +98,16 @@ H021–H024 完成后，后续工作原则上按功能页面或可独立验收�
 | H026 | Android / iOS Transport 与回调适配机制 | [#44](https://github.com/dangjingtao/dr-card-ui/issues/44) |
 | H027 | [Bridge Lab 真机联调页升级](./H027-bridge-lab.md) | User Review（#45 仅兼容跟踪） |
 | H028 | 正式 H5 Native 能力盘点与接口征集清单 | [#46](https://github.com/dangjingtao/dr-card-ui/issues/46) |
+| H029 | [Native Bridge v2 协议基线与双端登录能力对齐](./H029-native-bridge-v2-auth-contract.md) | Ready |
+| H030 | [关闭 WebView Native 能力接线](./H030-native-close-webview.md) | Ready |
+| H031 | [扫码核销 Native 能力接线](./H031-native-scan-code.md) | Ready |
+| H032 | [图片与剪贴板 Native 能力接线](./H032-native-media-share.md) | Ready |
+| H033 | [激励广告 Native 能力接线](./H033-native-reward-ad.md) | Ready |
+| H034 | [APP 唤起与应用商店承接 Native 能力接线](./H034-native-open-app.md) | Ready |
 
-H025–H028 继续沿用本仓库 H021 起的 GitHub Issue 工作项契约 + 本 README 索引模式；不接入 Mira Organization Project/Issue Fields，也不引入第二套任务编号。
+H029 是 H030–H034 的公共协议前置；H029 合入后，H030–H034 可独立并行。H029–H034 以对应仓库任务卡为施工契约真相源，不另开 GitHub Issue。
 
 ## 主要阻塞
 
 - H008：真实 backend base URL、认证方式、核心接口契约尚未确认；禁止为完成任务自行发明协议。
-- H015：Native JSBridge 的真实能力与协议尚未提供；在协议确认前不伪造扫码、相册、导航等宿主方法。
+- H015：Native 已回填双端 Bridge v2 目标协议；当前仅登录能力标记为已注入，其余 close / scan / media / clipboard / reward-ad / open-app 方法仍待 Native 实现与真机联调。
