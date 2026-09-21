@@ -124,8 +124,9 @@ describe('Bridge Lab page', () => {
     fireEvent.click(screen.getByRole('button', { name: '调用 scanCode' }))
 
     await waitFor(() => {
-      expect(screen.getByText(/bridge-lab-scan/)).toBeTruthy()
+      expect(screen.getByText('[REDACTED]')).toBeTruthy()
     })
+    expect(screen.queryByText(/bridge-lab-scan/)).toBeNull()
   })
 
   it('shows neither Native Raw Probe when osType is not selected', () => {
