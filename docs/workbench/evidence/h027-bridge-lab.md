@@ -127,3 +127,27 @@ H027 任务卡要求 Android App WebView：
 当前自动化只能证明浏览器/stub-host 机制和构建边界。上述 H027 当前页面的真机 WebView smoke 尚无本轮证据，必须作为验收 validation gap 保留，不能用旧 H015 证据冒充。
 
 iOS 仍没有 production handler / callback / payload schema 或真实设备接通证据。
+
+
+## 8. 2026-09-21 联调返工：按 Native 现状选择平台
+
+本轮根据实际 Native 联调资料与已通过的历史 `bridge` 分支收敛 Bridge Lab，原则是 **H5 接住 Native 已有协议，不要求 Native 为调试页改协议**。
+
+- 平台选择继续沿用历史联调契约的 URL query：
+  - `?osType=android`
+  - `?osType=iOS`
+  - 未指定时为 `web`
+- `osType` 决定 Lab 展示哪个平台的 Registered capabilities 与 Raw Probe；runtime 的宿主自动检测只作为 diagnostics，不覆盖联调人员显式选择。
+- Android Raw Probe 只在 `osType=android` 展示，并提供历史 `bridge` 分支已使用过的可编辑预设：
+  - `androidBridge.showToast(string)`
+  - `androidBridge.getLoginToken()`
+  - `androidBridge.submitOrder(JSON.stringify(data))`
+- iOS Raw Probe 只在 `osType=iOS` 展示，并提供历史联调预设：
+  - `webkit.messageHandlers.getAuthorizationInfo.postMessage({})`
+  - 临时接收 `window.onToken(token)`
+- 上述 Raw Probe preset 只负责回填旧联调协议，不把 `showToast`、`submitOrder` 或 iOS `getAuthorizationInfo` 自动升级为 production capability。
+- production capability catalog 增加已确认平台 metadata；当前 `getLoginToken` 只登记 Android，`closeWebView` 尚无已确认 Native 实现，因此不归属任何平台。
+- Bridge Lab 恢复旧联调页的 Native → H5 测试入口 `window.testFunc(params)`，Native 可继续通过 `evaluateJavascript` 调用；H5 记录 callback 日志并返回 `"h5 处理完成"`。
+- Registered capability 的 JSON 输入区保留，Raw Probe 的 object/method/payload/callback/timeout 继续可编辑；本页保持工程师联调工具定位，不产品化协议输入。
+
+自动验证补充覆盖 Android / iOS / web 三种 `osType`、平台互斥 Raw Probe、历史 preset 回填、Android receiver + 敏感结果脱敏、iOS callback 以及 Native → H5 `testFunc`。
