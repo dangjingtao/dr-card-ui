@@ -511,6 +511,8 @@ export default function BridgeLab() {
                     setAndroidMode(preset.argumentMode)
                     setAndroidArgs(preset.argumentText)
                   }}
+                  aria-label={`Android preset ${preset.label}`}
+                  aria-label={`iOS preset ${preset.label}`}
                   className="h-8 rounded-button border border-border bg-surface-subtle px-3 font-mono text-xs active:bg-surface-selected"
                 >
                   {preset.label}
