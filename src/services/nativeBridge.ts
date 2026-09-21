@@ -79,6 +79,138 @@ export interface NativeScanCodeResult {
   code: string
 }
 
+export interface NativeTakePhotoInput {
+  crop: boolean
+  maxWidth: number
+  maxHeight: number
+  quality: number
+}
+
+export interface NativeChooseImageInput extends NativeTakePhotoInput {
+  count: number
+}
+
+export interface NativeImageResult {
+  mimeType: string
+  imageBase64: string
+}
+
+export type NativeSavedImageType = 'base64' | 'url'
+
+export interface NativeSaveImageToAlbumInput {
+  imageType: NativeSavedImageType
+  imageData: string
+  fileName: string
+}
+
+export interface NativeCopyTextInput {
+  text: string
+}
+
+export interface NativeSuccessResult {
+  success: boolean
+}
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value)
+}
+
+function validateTakePhotoInput(input: NativeTakePhotoInput): NativeTakePhotoInput {
+  if (
+    input === null ||
+    typeof input !== 'object' ||
+    typeof (input as { crop?: unknown }).crop !== 'boolean' ||
+    !isFiniteNumber((input as { maxWidth?: unknown }).maxWidth) ||
+    !isFiniteNumber((input as { maxHeight?: unknown }).maxHeight) ||
+    !isFiniteNumber((input as { quality?: unknown }).quality)
+  ) {
+    throw new NativeTransportError(
+      'payload-invalid',
+      'Native takePhoto() input requires crop, maxWidth, maxHeight, and quality fields.',
+    )
+  }
+  return input
+}
+
+function validateChooseImageInput(input: NativeChooseImageInput): NativeChooseImageInput {
+  validateTakePhotoInput(input)
+  if (!isFiniteNumber((input as { count?: unknown }).count)) {
+    throw new NativeTransportError(
+      'payload-invalid',
+      'Native chooseImage() input requires a numeric count field.',
+    )
+  }
+  return input
+}
+
+function validateSaveImageInput(
+  input: NativeSaveImageToAlbumInput,
+): NativeSaveImageToAlbumInput {
+  if (
+    input === null ||
+    typeof input !== 'object' ||
+    !['base64', 'url'].includes((input as { imageType?: unknown }).imageType as string) ||
+    typeof (input as { imageData?: unknown }).imageData !== 'string' ||
+    typeof (input as { fileName?: unknown }).fileName !== 'string'
+  ) {
+    throw new NativeTransportError(
+      'payload-invalid',
+      'Native saveImageToAlbum() input requires imageType, imageData, and fileName fields.',
+    )
+  }
+  return input
+}
+
+function validateCopyTextInput(input: NativeCopyTextInput): NativeCopyTextInput {
+  if (
+    input === null ||
+    typeof input !== 'object' ||
+    typeof (input as { text?: unknown }).text !== 'string'
+  ) {
+    throw new NativeTransportError(
+      'payload-invalid',
+      'Native copyText() input requires a string text field.',
+    )
+  }
+  return input
+}
+
+function parseNativeImagePayload(payload: unknown): NativeImageResult {
+  const parsed = parseJsonStringPayload<unknown>(payload)
+  if (
+    parsed === null ||
+    typeof parsed !== 'object' ||
+    typeof (parsed as { mimeType?: unknown }).mimeType !== 'string' ||
+    typeof (parsed as { imageBase64?: unknown }).imageBase64 !== 'string'
+  ) {
+    throw new NativeTransportError(
+      'payload-invalid',
+      'Native image result must be a JSON string with mimeType and imageBase64 strings.',
+    )
+  }
+
+  return {
+    mimeType: (parsed as { mimeType: string }).mimeType,
+    imageBase64: (parsed as { imageBase64: string }).imageBase64,
+  }
+}
+
+function parseNativeSuccessPayload(payload: unknown): NativeSuccessResult {
+  const parsed = parseJsonStringPayload<unknown>(payload)
+  if (
+    parsed === null ||
+    typeof parsed !== 'object' ||
+    typeof (parsed as { success?: unknown }).success !== 'boolean'
+  ) {
+    throw new NativeTransportError(
+      'payload-invalid',
+      'Native success result must be a JSON string with a boolean success field.',
+    )
+  }
+
+  return { success: (parsed as { success: boolean }).success }
+}
+
 function validateScanCodeInput(input: NativeScanCodeInput): NativeScanCodeInput {
   if (
     input === null ||
