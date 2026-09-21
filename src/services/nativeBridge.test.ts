@@ -1,15 +1,16 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-type AndroidBridgeProbe = {
+type InjectedBridgeProbe = {
+  marker?: string
   getLoginToken?: () => unknown
 }
 
 type BridgeProbeWindow = Window & {
-  androidBridge?: AndroidBridgeProbe
+  androidBridge?: InjectedBridgeProbe
+  iosBridge?: InjectedBridgeProbe
   webkit?: {
     messageHandlers?: Record<string, { postMessage(payload: unknown): void } | undefined>
   }
-  onToken?: (token: unknown) => unknown
 }
 
 const bridgeWindow = window as BridgeProbeWindow
@@ -22,14 +23,14 @@ async function loadBridge(mode: 'disabled' | 'native' = 'native') {
 
 afterEach(() => {
   delete bridgeWindow.androidBridge
+  delete bridgeWindow.iosBridge
   delete bridgeWindow.webkit
-  delete bridgeWindow.onToken
   vi.unstubAllEnvs()
   vi.resetModules()
 })
 
 describe('JSBridge capability runtime', () => {
-  it('supports late Android bridge injection', async () => {
+  it('supports late Android bridge injection and parses the confirmed JSON-string token DTO', async () => {
     const { getLoginToken, NativeBridgeError } = await loadBridge()
 
     await expect(getLoginToken()).rejects.toMatchObject({
@@ -40,63 +41,112 @@ describe('JSBridge capability runtime', () => {
 
     bridgeWindow.androidBridge = {
       getLoginToken() {
-        return 'late-token'
+        return '{"token":"late-token"}'
       },
     }
 
-    await expect(getLoginToken()).resolves.toBe('late-token')
+    await expect(getLoginToken()).resolves.toEqual({ token: 'late-token' })
   })
 
-  it('resolves a replacement bridge instance for the next invocation', async () => {
+  it('uses the confirmed iOS iosBridge.getLoginToken() contract', async () => {
+    const { getLoginToken } = await loadBridge()
+    const iosBridge = {
+      marker: 'ios-host',
+      getLoginToken() {
+        expect(this).toBe(iosBridge)
+        return '{"token":"ios-token"}'
+      },
+    }
+    bridgeWindow.iosBridge = iosBridge
+
+    await expect(getLoginToken()).resolves.toEqual({ token: 'ios-token' })
+  })
+
+  it('resolves replacement injected-object instances on later invocations', async () => {
     const { getLoginToken } = await loadBridge()
     const firstBridge = {
       getLoginToken() {
-        return 'first-token'
+        return '{"token":"first-token"}'
       },
     }
     const secondBridge = {
       getLoginToken() {
-        return 'second-token'
+        return '{"token":"second-token"}'
       },
     }
 
     bridgeWindow.androidBridge = firstBridge
-    await expect(getLoginToken()).resolves.toBe('first-token')
+    await expect(getLoginToken()).resolves.toEqual({ token: 'first-token' })
 
     bridgeWindow.androidBridge = secondBridge
-    await expect(getLoginToken()).resolves.toBe('second-token')
+    await expect(getLoginToken()).resolves.toEqual({ token: 'second-token' })
   })
 
-  it('preserves receiver binding for confirmed Android methods', async () => {
+  it('preserves receiver binding for Android injected-object methods', async () => {
     const { getLoginToken } = await loadBridge()
     const injectedBridge = {
       marker: 'bound-host',
       getLoginToken() {
         expect(this).toBe(injectedBridge)
-        return this.marker
+        return JSON.stringify({ token: this.marker })
       },
     }
 
     bridgeWindow.androidBridge = injectedBridge
 
-    await expect(getLoginToken()).resolves.toBe('bound-host')
+    await expect(getLoginToken()).resolves.toEqual({ token: 'bound-host' })
   })
 
-  it('normalizes a synchronous host return to a Promise', async () => {
+  it('rejects malformed JSON and invalid token DTOs instead of passing opaque Native results through', async () => {
     const { getLoginToken } = await loadBridge()
+
     bridgeWindow.androidBridge = {
       getLoginToken() {
-        return { opaque: true }
+        return '{broken'
       },
     }
+    await expect(getLoginToken()).rejects.toMatchObject({
+      name: 'NativeBridgeError',
+      code: 'invocation-failed',
+      capability: 'getLoginToken',
+      cause: expect.objectContaining({
+        name: 'NativeTransportError',
+        code: 'payload-invalid',
+      }),
+    })
 
-    const invocation = getLoginToken()
+    bridgeWindow.androidBridge = {
+      getLoginToken() {
+        return '{"token":123}'
+      },
+    }
+    await expect(getLoginToken()).rejects.toMatchObject({
+      name: 'NativeBridgeError',
+      code: 'invocation-failed',
+      capability: 'getLoginToken',
+      cause: expect.objectContaining({
+        name: 'NativeTransportError',
+        code: 'payload-invalid',
+      }),
+    })
 
-    expect(invocation).toBeInstanceOf(Promise)
-    await expect(invocation).resolves.toEqual({ opaque: true })
+    bridgeWindow.androidBridge = {
+      getLoginToken() {
+        return { token: 'object-is-not-the-contract' }
+      },
+    }
+    await expect(getLoginToken()).rejects.toMatchObject({
+      name: 'NativeBridgeError',
+      code: 'invocation-failed',
+      capability: 'getLoginToken',
+      cause: expect.objectContaining({
+        name: 'NativeTransportError',
+        code: 'payload-invalid',
+      }),
+    })
   })
 
-  it('distinguishes a missing capability from a missing bridge', async () => {
+  it('distinguishes a missing method from a missing bridge', async () => {
     const { getLoginToken } = await loadBridge()
     bridgeWindow.androidBridge = {}
 
@@ -105,12 +155,19 @@ describe('JSBridge capability runtime', () => {
       code: 'capability-unsupported',
       capability: 'getLoginToken',
     })
+
+    delete bridgeWindow.androidBridge
+    await expect(getLoginToken()).rejects.toMatchObject({
+      name: 'NativeBridgeError',
+      code: 'bridge-unsupported',
+      capability: 'getLoginToken',
+    })
   })
 
-  it('normalizes synchronous throws and async rejections', async () => {
+  it('normalizes synchronous Native throws', async () => {
     const { getLoginToken } = await loadBridge()
     const thrown = new Error('native threw')
-    bridgeWindow.androidBridge = {
+    bridgeWindow.iosBridge = {
       getLoginToken() {
         throw thrown
       },
@@ -122,131 +179,72 @@ describe('JSBridge capability runtime', () => {
       capability: 'getLoginToken',
       cause: thrown,
     })
-
-    const rejected = new Error('native rejected')
-    bridgeWindow.androidBridge = {
-      getLoginToken() {
-        return Promise.reject(rejected)
-      },
-    }
-
-    await expect(getLoginToken()).rejects.toMatchObject({
-      name: 'NativeBridgeError',
-      code: 'invocation-failed',
-      capability: 'getLoginToken',
-      cause: rejected,
-    })
-  })
-
-  it('times out an invocation through the shared lifecycle', async () => {
-    const { getLoginToken } = await loadBridge()
-    bridgeWindow.androidBridge = {
-      getLoginToken() {
-        return new Promise(() => {})
-      },
-    }
-
-    await expect(getLoginToken({ timeoutMs: 10 })).rejects.toMatchObject({
-      name: 'NativeBridgeError',
-      code: 'invocation-timeout',
-      capability: 'getLoginToken',
-    })
   })
 
   it('keeps business bridge disabled while allowing Bridge Lab debug invocation in non-prod', async () => {
     const bridge = await loadBridge('disabled')
-    bridgeWindow.webkit = {
-      messageHandlers: {
-        getAuthorizationInfo: {
-          postMessage() {
-            setTimeout(() => bridgeWindow.onToken?.('ios-debug-token'), 0)
-          },
-        },
+    bridgeWindow.iosBridge = {
+      getLoginToken() {
+        return '{"token":"ios-debug-token"}'
       },
     }
 
-    await expect(bridge.getAuthorizationInfo()).rejects.toMatchObject({
+    await expect(bridge.getLoginToken()).rejects.toMatchObject({
       name: 'NativeBridgeError',
       code: 'bridge-disabled',
-      capability: 'getAuthorizationInfo',
+      capability: 'getLoginToken',
     })
 
     expect(
-      bridge.getNativeBridgeCapabilityCatalog().find(
-        (item) => item.name === 'getAuthorizationInfo',
-      ),
+      bridge.getNativeBridgeCapabilityCatalog().find((item) => item.name === 'getLoginToken'),
     ).toMatchObject({
-      platforms: ['ios'],
+      platforms: ['android', 'ios'],
       supported: true,
       sensitiveResult: true,
     })
 
-    const invocation = bridge.invokeRegisteredNativeCapabilityForDebug('getAuthorizationInfo')
-    await expect(invocation).resolves.toBe('ios-debug-token')
+    await expect(
+      bridge.invokeRegisteredNativeCapabilityForDebug('getLoginToken'),
+    ).resolves.toEqual({ token: 'ios-debug-token' })
   })
 
-  it('keeps disabled mode distinct from a browser without a Native bridge', async () => {
-    bridgeWindow.androidBridge = {
-      getLoginToken() {
-        return 'must-not-run'
-      },
-    }
-    const disabledBridge = await loadBridge('disabled')
-
-    await expect(disabledBridge.getLoginToken()).rejects.toMatchObject({
-      name: 'NativeBridgeError',
-      code: 'bridge-disabled',
-      capability: 'getLoginToken',
-    })
-    expect(disabledBridge.getNativeBridgeDiagnostics()).toMatchObject({
-      mode: 'disabled',
-      capabilities: {
-        getLoginToken: false,
-        getAuthorizationInfo: false,
-        closeWebView: false,
-      },
-    })
-
-    delete bridgeWindow.androidBridge
-    const nativeBridge = await loadBridge('native')
-
-    await expect(nativeBridge.getLoginToken()).rejects.toMatchObject({
-      name: 'NativeBridgeError',
-      code: 'bridge-unsupported',
-      capability: 'getLoginToken',
-    })
-    expect(nativeBridge.getNativeBridgeDiagnostics()).toEqual({
-      mode: 'native',
-      host: 'browser',
-      hostVersion: null,
-      capabilities: {
-        getLoginToken: false,
-        getAuthorizationInfo: false,
-        closeWebView: false,
-      },
-    })
-  })
-
-  it('derives diagnostics from the capability registry for confirmed Android and iOS protocols', async () => {
+  it('derives diagnostics from the confirmed Android and iOS injected objects', async () => {
     const { getNativeBridgeDiagnostics } = await loadBridge()
+
     bridgeWindow.androidBridge = {
       getLoginToken() {
-        return 'android-token'
+        return '{"token":"android-token"}'
       },
     }
-
     expect(getNativeBridgeDiagnostics()).toEqual({
       mode: 'native',
       host: 'android',
       hostVersion: null,
       capabilities: {
         getLoginToken: true,
-        getAuthorizationInfo: false,
         closeWebView: false,
       },
     })
 
     delete bridgeWindow.androidBridge
+    bridgeWindow.iosBridge = {
+      getLoginToken() {
+        return '{"token":"ios-token"}'
+      },
+    }
+    expect(getNativeBridgeDiagnostics()).toEqual({
+      mode: 'native',
+      host: 'ios',
+      hostVersion: null,
+      capabilities: {
+        getLoginToken: true,
+        closeWebView: false,
+      },
+    })
+  })
+
+  it('keeps legacy iOS messageHandlers as host diagnostics without promoting the old auth method', async () => {
+    const { getLoginToken, getNativeBridgeDiagnostics } = await loadBridge()
     bridgeWindow.webkit = {
       messageHandlers: {
         getAuthorizationInfo: {
@@ -261,40 +259,51 @@ describe('JSBridge capability runtime', () => {
       hostVersion: null,
       capabilities: {
         getLoginToken: false,
-        getAuthorizationInfo: true,
         closeWebView: false,
       },
     })
+    await expect(getLoginToken()).rejects.toMatchObject({
+      name: 'NativeBridgeError',
+      code: 'bridge-unsupported',
+      capability: 'getLoginToken',
+    })
   })
 
-  it('uses the confirmed iOS getAuthorizationInfo/onToken protocol and restores the callback', async () => {
-    const { getAuthorizationInfo } = await loadBridge()
-    const observed: unknown[] = []
-    const previousOnToken = (token: unknown) => {
-      observed.push(token)
-    }
-    bridgeWindow.onToken = previousOnToken
-    bridgeWindow.webkit = {
-      messageHandlers: {
-        getAuthorizationInfo: {
-          postMessage(payload) {
-            expect(payload).toEqual({})
-            setTimeout(() => bridgeWindow.onToken?.('ios-token'), 0)
-          },
-        },
+  it('keeps disabled mode distinct from a browser without a Native bridge', async () => {
+    bridgeWindow.androidBridge = {
+      getLoginToken() {
+        return '{"token":"must-not-run"}'
       },
     }
+    const disabledBridge = await loadBridge('disabled')
 
-    await expect(getAuthorizationInfo()).resolves.toBe('ios-token')
-    expect(observed).toEqual(['ios-token'])
-    expect(bridgeWindow.onToken).toBe(previousOnToken)
+    await expect(disabledBridge.getLoginToken()).rejects.toMatchObject({
+      name: 'NativeBridgeError',
+      code: 'bridge-disabled',
+      capability: 'getLoginToken',
+    })
+    expect(disabledBridge.getNativeBridgeDiagnostics()).toMatchObject({
+      mode: 'disabled',
+      capabilities: {
+        getLoginToken: false,
+        closeWebView: false,
+      },
+    })
+
+    delete bridgeWindow.androidBridge
+    const nativeBridge = await loadBridge('native')
+    await expect(nativeBridge.getLoginToken()).rejects.toMatchObject({
+      name: 'NativeBridgeError',
+      code: 'bridge-unsupported',
+      capability: 'getLoginToken',
+    })
   })
 
-  it('keeps closeWebView explicitly unsupported until Native confirms a protocol', async () => {
+  it('keeps closeWebView explicitly unsupported until Native implements the target method', async () => {
     const { closeWebView } = await loadBridge()
     bridgeWindow.androidBridge = {
       getLoginToken() {
-        return 'android-token'
+        return '{"token":"android-token"}'
       },
     }
 
