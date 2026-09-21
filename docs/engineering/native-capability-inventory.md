@@ -14,10 +14,15 @@
 - **历史调试证据**：只能证明某种 transport/回调形态曾被尝试，不能升级为 production 方法名或 schema。
 - **候选实现方式**：例如 Web API、JSBridge、外部 link/scheme、SDK；只有 Native/产品确认后才进入正式契约。
 
-当前唯一已确认的具体 Native 方法仍是 Android：
+当前已确认并有明确宿主调用形态的鉴权能力包括：
 
 ```text
+Android:
 window.androidBridge.getLoginToken()
+
+iOS:
+window.webkit.messageHandlers.getAuthorizationInfo.postMessage({})
+→ window.onToken(token)
 ```
 
 其余条目即使使用了 H5 内部 capability 名，也**不代表 Native 端已存在同名方法**。
@@ -89,7 +94,7 @@ window.androidBridge.getLoginToken()
 
 | ID | 当前用户动作与代码依据 | 分类 | 当前实现 | 输入需求 | 输出需求 | 取消 / 失败 / timeout | 权限 / 系统 UI | Android 已知事实 | iOS 已知事实 | 需要 Native 团队确认 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| AUTH-01 | H5 获取当前登录凭证；`src/services/nativeBridge.ts`、H015/H025/H026 evidence | **必须由 Native/JSBridge 提供** | Capability Runtime 已接 Android transport；返回保持 `unknown` | 无参数（Android 已确认） | 当前登录凭证；**DTO/schema 未确认** | 未登录、bridge 缺失、调用异常、timeout 必须可区分；无用户取消语义 | 无额外系统权限事实 | **已确认** `window.androidBridge.getLoginToken()`；同步 return；每次调用重新解析；receiver binding | 只有古老 `webkit.messageHandlers.*` + callback 调试形态证据；无正式协议 | iOS 等价能力是否存在；Android 返回格式/空值语义；凭证过期/未登录如何表达；iOS handler/callback 与返回格式；是否需要最小 App 版本 |
+| AUTH-01 | H5 获取当前登录凭证；`src/services/nativeBridge.ts`、H015/H025/H026 evidence | **必须由 Native/JSBridge 提供** | Capability Runtime 已接 Android `getLoginToken` 与 iOS `getAuthorizationInfo` transport；返回均保持 `unknown` | Android 无参数；iOS `postMessage({})` | 当前登录/授权凭证；**DTO/schema 未确认** | 未登录、bridge 缺失、调用异常、timeout 必须可区分；iOS 当前文档未给失败/取消回调结构 | 无额外系统权限事实 | **已确认** `window.androidBridge.getLoginToken()`；同步 return；每次调用重新解析；receiver binding | **已确认** `window.webkit.messageHandlers.getAuthorizationInfo.postMessage({})`；无同步返回；Native 通过 `window.onToken(token)` 回传 | Android/iOS 返回格式与空值语义；凭证过期/未登录如何表达；iOS 失败/取消语义；最低 App 版本 |
 | HOST-01 | 一级 active formal H5 左上关闭；沉浸扫码页关闭；`TitleBar.tsx`、`HostCloseButton.tsx` | **必须由 Native/JSBridge 提供** | H5 已定义语义 capability `closeWebView`，但始终 unsupported；按钮因此禁用 | 无业务参数 | 成功关闭当前 H5 WebView 容器；是否有返回值待定 | 若宿主拒绝/无法关闭，应有明确失败；通常无 timeout 长任务；不能用 `history.back()` / `window.close()` 冒充 | 无权限预期 | 未确认具体方法 | 未确认具体方法 | Android/iOS 实际关闭协议；同步/异步；是否允许宿主拦截；失败如何反馈；关闭是否携带 result 给上一 Native 页面 |
 | SCAN-01 | `/card/verify` 扫二维码/条形码核销；`src/pages/ScanVerify.tsx` | **Native/JSBridge 征集项**；若 Native 决定走 Web camera，则需另确认 WebView 策略 | 当前扫描框点击后直接 `navigate('/card/verify/confirm')`，只是模拟识别 | 需要启动扫码；支持的码制/业务约束尚未确认，不在 H5 侧先定 | 至少需要扫码结果原文；是否返回码类型/识别来源待确认 | 用户取消、相机拒绝、无结果、识别失败、能力不支持、timeout/页面退出后的回调必须可区分 | 相机权限；系统权限弹窗归属需确认 | 无正式扫码协议 | 无正式扫码协议 | Native 是否已有统一扫码页/SDK；Android/iOS 方法与 callback；结果字段；取消/拒绝/失败定义；页面退出后 callback 生命周期；若改用 Web API，WebView 是否开放 camera/getUserMedia 与权限 |
 | MEDIA-01 | `/settings` → 修改头像 → “拍照”；`src/pages/Settings.tsx` | **标准 Web 能力候选，需确认 WebView；必要时 Native/JSBridge** | 点击“拍照”当前直接执行 H5 `save()`，没有相机/文件结果 | 请求拍照；图片尺寸/压缩/裁剪规则当前未定义 | 可供后续头像上传/预览的图片引用或数据；具体表示由最终方案决定 | 用户取消、相机权限拒绝、拍照失败、WebView/宿主不支持 | 相机权限、系统相机 UI | 无协议 | 无协议 | 是否允许 H5 使用 file input/capture；WebView 文件 chooser/camera 是否完整；若走 Native，返回 URI/file/base64 哪种；权限由谁申请；取消如何表达 |
@@ -103,7 +108,7 @@ window.androidBridge.getLoginToken()
 
 ### 4.1 AUTH-01 登录凭证
 
-正式 H5 已经具备 Capability Runtime 和 Android injected-object transport，因此后续**不要**再在页面散落访问 `window.androidBridge`。
+正式 H5 已经具备 Capability Runtime，并接住 Android injected-object 与 iOS messageHandler/global-callback 两种已确认鉴权协议，因此后续**不要**再在页面散落访问宿主全局对象。
 
 Android 当前真实事实只有：
 
@@ -114,7 +119,7 @@ args: none
 return: synchronous, schema unknown
 ```
 
-iOS 古老调试页出现过 `window.webkit.messageHandlers.*.postMessage(...)` 与 H5 global callback，这只证明 H026 的 iOS-style transport 形态有现实来源，**不能**把历史 handler/callback 名直接作为 AUTH-01 的正式 iOS 协议。
+iOS Native 联调文档已明确给出现有模块：`window.webkit.messageHandlers.getAuthorizationInfo.postMessage({})`，原生通过 `window.onToken(token)` 回传授权 token。该方法名与 callback 可作为 AUTH-01 的正式 iOS 协议；但 token DTO、失败/取消语义和最低 App 版本仍未确认。
 
 ### 4.2 HOST-01 关闭 WebView
 
@@ -215,7 +220,7 @@ iOS:
 
 ## 7. 后续落地规则
 
-1. **不从本文直接生成 Native 方法名。** 除 `getLoginToken` 外，其余都只是 H5 语义需求。
+1. **不从本文直接生成 Native 方法名。** 当前明确例外只有已确认的 Android `getLoginToken` 与 iOS `getAuthorizationInfo` / `onToken`；其余仍只是 H5 语义需求。
 2. Native 一旦确认某项协议，应在对应 capability contract / evidence 中追加“已确认事实”，不要改写本次盘点时的未知状态。
 3. Android 与 iOS 分开确认；一端接通不等于跨平台支持。
 4. Browser stub、Bridge Lab Raw Probe、Playwright 都不能冒充真实 App WebView 证据。
@@ -229,7 +234,7 @@ iOS:
 - 完整扫描 active formal H5 39 条路由；
 - 以真实源码/原型边界识别 9 类宿主/设备能力需求；
 - 覆盖 Issue #46 指定的关闭 WebView、扫码、拍照、相册选图、保存图片/海报、剪贴板、激励广告、登录凭证、APP 唤起/应用商店边界；
-- 明确区分 Android 已确认事实、iOS 未确认、历史 debug 证据和候选实现方式；
+- 明确区分 Android/iOS 已确认鉴权事实、其余未确认协议、历史 debug 证据和候选实现方式；
 - 明确排除 Native reference、商城 deferred 与无需宿主能力的 H5 行为；
 - 给出可直接交给 Native 团队回填的字段模板；
 - 未新增或虚构任何未知 Native 方法名、callback 名或 payload schema。
