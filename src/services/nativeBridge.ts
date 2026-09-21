@@ -3,6 +3,7 @@ import {
   createInjectedObjectTransport,
   NativeTransportError,
   parseJsonStringPayload,
+  serializeJsonValue,
   type NativeTransportResolution,
   type NativeTransportWindow,
 } from './nativeBridgeTransport'
@@ -68,6 +69,47 @@ export interface NativeLoginToken {
   token: string
 }
 
+export type NativeScanType = 'qr' | 'bar' | 'all'
+
+export interface NativeScanCodeInput {
+  scanType: NativeScanType
+}
+
+export interface NativeScanCodeResult {
+  code: string
+}
+
+function validateScanCodeInput(input: NativeScanCodeInput): NativeScanCodeInput {
+  if (
+    input === null ||
+    typeof input !== 'object' ||
+    !['qr', 'bar', 'all'].includes((input as { scanType?: unknown }).scanType as string)
+  ) {
+    throw new NativeTransportError(
+      'payload-invalid',
+      'Native scanCode() input requires scanType to be qr, bar, or all.',
+    )
+  }
+
+  return input
+}
+
+function parseScanCodePayload(payload: unknown): NativeScanCodeResult {
+  const parsed = parseJsonStringPayload<unknown>(payload)
+  if (
+    parsed === null ||
+    typeof parsed !== 'object' ||
+    typeof (parsed as { code?: unknown }).code !== 'string'
+  ) {
+    throw new NativeTransportError(
+      'payload-invalid',
+      'Native scanCode() result must be a JSON string with a string code field.',
+    )
+  }
+
+  return { code: (parsed as { code: string }).code }
+}
+
 function parseLoginTokenPayload(payload: unknown): NativeLoginToken {
   const parsed = parseJsonStringPayload<unknown>(payload)
   if (
@@ -112,6 +154,26 @@ const iosCloseWebViewTransport = createInjectedObjectTransport<void, void>({
   parseResult: () => undefined,
 })
 
+const androidScanCodeTransport = createInjectedObjectTransport<
+  NativeScanCodeInput,
+  NativeScanCodeResult
+>({
+  objectName: 'androidBridge',
+  methodName: 'scanCode',
+  serializeArgs: (input) => [serializeJsonValue(validateScanCodeInput(input))],
+  parseResult: parseScanCodePayload,
+})
+
+const iosScanCodeTransport = createInjectedObjectTransport<
+  NativeScanCodeInput,
+  NativeScanCodeResult
+>({
+  objectName: 'iosBridge',
+  methodName: 'scanCode',
+  serializeArgs: (input) => [serializeJsonValue(validateScanCodeInput(input))],
+  parseResult: parseScanCodePayload,
+})
+
 function resolveLoginTokenTransport(
   hostWindow: NativeTransportWindow | undefined,
 ): NativeCapabilityResolution<void, NativeLoginToken> {
@@ -154,6 +216,49 @@ function resolveCloseWebViewTransport(
   )
 }
 
+function resolveScanCodeTransport(
+  hostWindow: NativeTransportWindow | undefined,
+): NativeCapabilityResolution<NativeScanCodeInput, NativeScanCodeResult> {
+  if (hostWindow?.androidBridge) {
+    return {
+      supported: true,
+      invoke: (input) => {
+        const resolution = androidScanCodeTransport.resolve(hostWindow, input)
+        if (!resolution.supported) {
+          throw new NativeBridgeError(
+            resolution.code,
+            'scanCode',
+            resolution.message,
+          )
+        }
+        return resolution.invoke()
+      },
+    }
+  }
+
+  if (hostWindow?.iosBridge) {
+    return {
+      supported: true,
+      invoke: (input) => {
+        const resolution = iosScanCodeTransport.resolve(hostWindow, input)
+        if (!resolution.supported) {
+          throw new NativeBridgeError(
+            resolution.code,
+            'scanCode',
+            resolution.message,
+          )
+        }
+        return resolution.invoke()
+      },
+    }
+  }
+
+  return unsupportedCapability(
+    'bridge-unsupported',
+    'Neither window.androidBridge nor window.iosBridge is available in the current host.',
+  )
+}
+
 const capabilityRegistry = {
   getLoginToken: defineCapability<'getLoginToken', void, NativeLoginToken>({
     name: 'getLoginToken',
@@ -173,6 +278,23 @@ const capabilityRegistry = {
     sensitiveResult: false,
     resolve(hostWindow) {
       return resolveCloseWebViewTransport(hostWindow)
+    },
+  }),
+  scanCode: defineCapability<'scanCode', NativeScanCodeInput, NativeScanCodeResult>({
+    name: 'scanCode',
+    platforms: ['android', 'ios'],
+    description:
+      'Scan a QR code, barcode, or either through the confirmed Android/iOS injected-object contract.',
+    sensitiveResult: false,
+    resolve(hostWindow) {
+      if (hostWindow?.androidBridge) {
+        const probe = androidScanCodeTransport.resolve(hostWindow, { scanType: 'all' })
+        if (!probe.supported) return probe
+      } else if (hostWindow?.iosBridge) {
+        const probe = iosScanCodeTransport.resolve(hostWindow, { scanType: 'all' })
+        if (!probe.supported) return probe
+      }
+      return resolveScanCodeTransport(hostWindow)
     },
   }),
 } as const
@@ -431,4 +553,18 @@ export function getLoginToken(
  */
 export function closeWebView(options: NativeInvocationOptions = {}): Promise<void> {
   return invokeNativeCapability(capabilityRegistry.closeWebView, undefined, options)
+}
+
+/**
+ * H031 confirmed Native scanner boundary.
+ *
+ * Android uses `window.androidBridge.scanCode(json)`; iOS uses
+ * `window.iosBridge.scanCode(json)`. The input is serialized as a JSON string with
+ * `scanType: qr | bar | all`; Native synchronously returns a JSON string with `code`.
+ */
+export function scanCode(
+  input: NativeScanCodeInput,
+  options: NativeInvocationOptions = {},
+): Promise<NativeScanCodeResult> {
+  return invokeNativeCapability(capabilityRegistry.scanCode, input, options)
 }
