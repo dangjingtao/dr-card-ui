@@ -10,6 +10,7 @@ type InjectedBridgeProbe = {
   saveImageToAlbum?: (payload: unknown) => unknown
   copyText?: (payload: unknown) => unknown
   showRewardAd?: (payload: unknown) => unknown
+  openApp?: (payload: unknown) => unknown
 }
 
 type BridgeProbeWindow = Window & {
@@ -236,6 +237,7 @@ describe('JSBridge capability runtime', () => {
         saveImageToAlbum: false,
         copyText: false,
         showRewardAd: false,
+        openApp: false,
       },
     })
 
@@ -258,6 +260,7 @@ describe('JSBridge capability runtime', () => {
         saveImageToAlbum: false,
         copyText: false,
         showRewardAd: false,
+        openApp: false,
       },
     })
   })
@@ -285,6 +288,7 @@ describe('JSBridge capability runtime', () => {
         saveImageToAlbum: false,
         copyText: false,
         showRewardAd: false,
+        openApp: false,
       },
     })
     await expect(getLoginToken()).rejects.toMatchObject({
@@ -318,6 +322,7 @@ describe('JSBridge capability runtime', () => {
         saveImageToAlbum: false,
         copyText: false,
         showRewardAd: false,
+        openApp: false,
       },
     })
 
@@ -674,6 +679,114 @@ describe('JSBridge capability runtime', () => {
       name: 'NativeBridgeError',
       code: 'invocation-failed',
       capability: 'showRewardAd',
+      cause: expect.objectContaining({ code: 'payload-invalid' }),
+    })
+  })
+
+  it('serializes openApp detect/open/store actions without inventing URLs', async () => {
+    const { openApp, getNativeBridgeDiagnostics } = await loadBridge()
+    const received: unknown[] = []
+    const androidBridge = {
+      openApp(payload: unknown) {
+        expect(this).toBe(androidBridge)
+        received.push(payload)
+        return '{"success":true,"installed":true}'
+      },
+    }
+    bridgeWindow.androidBridge = androidBridge
+
+    expect(getNativeBridgeDiagnostics().capabilities.openApp).toBe(true)
+
+    for (const action of ['detect', 'open', 'store'] as const) {
+      await expect(
+        openApp({
+          action,
+          inviteCode: '',
+          fallbackUrl: '',
+        }),
+      ).resolves.toEqual({
+        success: true,
+        installed: true,
+      })
+    }
+
+    expect(received).toEqual([
+      '{"action":"detect","inviteCode":"","fallbackUrl":""}',
+      '{"action":"open","inviteCode":"","fallbackUrl":""}',
+      '{"action":"store","inviteCode":"","fallbackUrl":""}',
+    ])
+  })
+
+  it('preserves inviteCode/fallbackUrl strings on iOS and parses both result booleans', async () => {
+    const { openApp } = await loadBridge()
+    const received: unknown[] = []
+    bridgeWindow.iosBridge = {
+      openApp(payload: unknown) {
+        received.push(payload)
+        return '{"success":false,"installed":false}'
+      },
+    }
+
+    await expect(
+      openApp({
+        action: 'open',
+        inviteCode: 'invite-123',
+        fallbackUrl: 'https://example.com/fallback',
+      }),
+    ).resolves.toEqual({
+      success: false,
+      installed: false,
+    })
+
+    expect(received).toEqual([
+      '{"action":"open","inviteCode":"invite-123","fallbackUrl":"https://example.com/fallback"}',
+    ])
+  })
+
+  it('rejects missing openApp methods, invalid actions, and malformed result booleans', async () => {
+    const bridge = await loadBridge()
+
+    bridgeWindow.androidBridge = {}
+    await expect(
+      bridge.openApp({
+        action: 'detect',
+        inviteCode: '',
+        fallbackUrl: '',
+      }),
+    ).rejects.toMatchObject({
+      name: 'NativeBridgeError',
+      code: 'capability-unsupported',
+      capability: 'openApp',
+    })
+
+    bridgeWindow.androidBridge = {
+      openApp() {
+        return '{"success":"yes","installed":true}'
+      },
+    }
+    await expect(
+      bridge.openApp({
+        action: 'detect',
+        inviteCode: '',
+        fallbackUrl: '',
+      }),
+    ).rejects.toMatchObject({
+      name: 'NativeBridgeError',
+      code: 'invocation-failed',
+      capability: 'openApp',
+      cause: expect.objectContaining({ code: 'payload-invalid' }),
+    })
+
+    await expect(
+      bridge.invokeRegisteredNativeCapabilityForDebug('openApp', {
+        action: 'scheme',
+        inviteCode: '',
+        fallbackUrl: '',
+      }),
+    ).rejects.toMatchObject({
+      name: 'NativeBridgeError',
+      code: 'invocation-failed',
+      capability: 'openApp',
       cause: expect.objectContaining({ code: 'payload-invalid' }),
     })
   })
