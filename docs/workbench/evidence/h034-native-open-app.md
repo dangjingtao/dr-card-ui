@@ -92,7 +92,8 @@ openApp({action:"detect"})
 - “打开 APP”不再跳 H5 `/buddy/accept` 冒充真实 App 唤起；
 - 未安装时由 Native store action 决定商店承接；
 - H5 仍保留原 WebView 边界视觉，不伪造 App Store / 应用市场页面；
-- capability late injection 时页面会重新探测，避免首屏过早判 unsupported。
+- capability late injection 时页面会重新探测，避免首屏过早判 unsupported；
+- 未安装进入商店后，H5 在 focus/pageshow 时重新 detect；后续重检不会自动重复拉起商店。
 
 ## 5. 现有 APP 引导弹窗
 
@@ -137,6 +138,7 @@ Android / iOS Registered capability catalog 均展示 `openApp`。
 - Native detect installed=true 才显示打开 APP 弹窗；
 - installed=false 进入 Native store action；
 - detect success=false 不把 installed 当真实结论；
+- 从商店返回后重新 detect，且不会循环重复触发 store；
 - Bridge Lab 可见并可编辑调用 `openApp`。
 
 ## 8. 待真人验证
