@@ -99,7 +99,7 @@ describe('Checkin H033 rewarded-ad flow', () => {
     fireEvent.click(screen.getByRole('button', { name: '补签' }))
 
     await waitFor(() => {
-      expect(screen.getByRole('alert')).toHaveTextContent(message)
+      expect(screen.getByRole('alert').textContent).toContain(message)
     })
     expect(mocks.open).not.toHaveBeenCalledWith('make-up-success')
   })
@@ -114,7 +114,7 @@ describe('Checkin H033 rewarded-ad flow', () => {
     fireEvent.click(screen.getByRole('button', { name: '补签' }))
 
     await waitFor(() => {
-      expect(screen.getByRole('alert')).toHaveTextContent(
+      expect(screen.getByRole('alert').textContent).toContain(
         '当前 App 版本暂不支持激励广告补签',
       )
     })
@@ -139,7 +139,7 @@ describe('Checkin H033 rewarded-ad flow', () => {
 
     resolveAd?.({ status: 'closed' })
     await waitFor(() => {
-      expect(screen.getByRole('alert')).toHaveTextContent('补签未完成')
+      expect(screen.getByRole('alert').textContent).toContain('补签未完成')
     })
   })
 })
