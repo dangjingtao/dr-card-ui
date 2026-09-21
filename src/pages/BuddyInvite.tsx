@@ -17,7 +17,7 @@ import buddyAvatarSelf from '../assets/brand/buddy/buddy-avatar-self.webp'
  * ⚠️ 历史稿 T06 的 200×200 QR 卡片、金色高亮话术与北极熊剪影属二次视觉设计，未采用（见文档 §3 警示）。
  * ⚠️ 二维码为占位图形，不伪造可扫码内容（B-005 / BUDDY_RULE_STATUS.shareCapability）。
  * 分享结果统一由 app/adapters/buddyShare 返回，本页不直接触碰相册与剪贴板；
- * 成功反馈落到 /buddy/invite/qrcode 的 #34 / #35 两个状态（D-056：失败态只由 fixture state 复现）。
+ * H032 起真实 Native 成败会进入既有 #34 / #35 成功/失败结果态，不再恒定模拟成功。
  *
  * 本路由在 routes.ts 未登记 states，因此不渲染 DebugPanel（D-064）。
  */
@@ -44,11 +44,11 @@ export default function BuddyInvite() {
     void task.then((feedback) => {
       if (!alive.current) return
       setPending(null)
-      const state = feedback.outcome === 'poster-saved' ? 'saved' : 'link-copied'
-      fixtureNavigate(
-        '/buddy/invite/qrcode',
-        { state, debug: debug ? '1' : null },
-      )
+      const state = feedback.outcome === 'poster-saved' ? 'saved' : feedback.outcome
+      fixtureNavigate('/buddy/invite/qrcode', {
+        state,
+        debug: debug ? '1' : null,
+      })
     })
   }
 

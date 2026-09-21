@@ -79,6 +79,138 @@ export interface NativeScanCodeResult {
   code: string
 }
 
+export interface NativeTakePhotoInput {
+  crop: boolean
+  maxWidth: number
+  maxHeight: number
+  quality: number
+}
+
+export interface NativeChooseImageInput extends NativeTakePhotoInput {
+  count: number
+}
+
+export interface NativeImageResult {
+  mimeType: string
+  imageBase64: string
+}
+
+export type NativeSavedImageType = 'base64' | 'url'
+
+export interface NativeSaveImageToAlbumInput {
+  imageType: NativeSavedImageType
+  imageData: string
+  fileName: string
+}
+
+export interface NativeCopyTextInput {
+  text: string
+}
+
+export interface NativeSuccessResult {
+  success: boolean
+}
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value)
+}
+
+function validateTakePhotoInput(input: NativeTakePhotoInput): NativeTakePhotoInput {
+  if (
+    input === null ||
+    typeof input !== 'object' ||
+    typeof (input as { crop?: unknown }).crop !== 'boolean' ||
+    !isFiniteNumber((input as { maxWidth?: unknown }).maxWidth) ||
+    !isFiniteNumber((input as { maxHeight?: unknown }).maxHeight) ||
+    !isFiniteNumber((input as { quality?: unknown }).quality)
+  ) {
+    throw new NativeTransportError(
+      'payload-invalid',
+      'Native takePhoto() input requires crop, maxWidth, maxHeight, and quality fields.',
+    )
+  }
+  return input
+}
+
+function validateChooseImageInput(input: NativeChooseImageInput): NativeChooseImageInput {
+  validateTakePhotoInput(input)
+  if (!isFiniteNumber((input as { count?: unknown }).count)) {
+    throw new NativeTransportError(
+      'payload-invalid',
+      'Native chooseImage() input requires a numeric count field.',
+    )
+  }
+  return input
+}
+
+function validateSaveImageInput(
+  input: NativeSaveImageToAlbumInput,
+): NativeSaveImageToAlbumInput {
+  if (
+    input === null ||
+    typeof input !== 'object' ||
+    !['base64', 'url'].includes((input as { imageType?: unknown }).imageType as string) ||
+    typeof (input as { imageData?: unknown }).imageData !== 'string' ||
+    typeof (input as { fileName?: unknown }).fileName !== 'string'
+  ) {
+    throw new NativeTransportError(
+      'payload-invalid',
+      'Native saveImageToAlbum() input requires imageType, imageData, and fileName fields.',
+    )
+  }
+  return input
+}
+
+function validateCopyTextInput(input: NativeCopyTextInput): NativeCopyTextInput {
+  if (
+    input === null ||
+    typeof input !== 'object' ||
+    typeof (input as { text?: unknown }).text !== 'string'
+  ) {
+    throw new NativeTransportError(
+      'payload-invalid',
+      'Native copyText() input requires a string text field.',
+    )
+  }
+  return input
+}
+
+function parseNativeImagePayload(payload: unknown): NativeImageResult {
+  const parsed = parseJsonStringPayload<unknown>(payload)
+  if (
+    parsed === null ||
+    typeof parsed !== 'object' ||
+    typeof (parsed as { mimeType?: unknown }).mimeType !== 'string' ||
+    typeof (parsed as { imageBase64?: unknown }).imageBase64 !== 'string'
+  ) {
+    throw new NativeTransportError(
+      'payload-invalid',
+      'Native image result must be a JSON string with mimeType and imageBase64 strings.',
+    )
+  }
+
+  return {
+    mimeType: (parsed as { mimeType: string }).mimeType,
+    imageBase64: (parsed as { imageBase64: string }).imageBase64,
+  }
+}
+
+function parseNativeSuccessPayload(payload: unknown): NativeSuccessResult {
+  const parsed = parseJsonStringPayload<unknown>(payload)
+  if (
+    parsed === null ||
+    typeof parsed !== 'object' ||
+    typeof (parsed as { success?: unknown }).success !== 'boolean'
+  ) {
+    throw new NativeTransportError(
+      'payload-invalid',
+      'Native success result must be a JSON string with a boolean success field.',
+    )
+  }
+
+  return { success: (parsed as { success: boolean }).success }
+}
+
 function validateScanCodeInput(input: NativeScanCodeInput): NativeScanCodeInput {
   if (
     input === null ||
@@ -174,6 +306,86 @@ const iosScanCodeTransport = createInjectedObjectTransport<
   parseResult: parseScanCodePayload,
 })
 
+const androidTakePhotoTransport = createInjectedObjectTransport<
+  NativeTakePhotoInput,
+  NativeImageResult
+>({
+  objectName: 'androidBridge',
+  methodName: 'takePhoto',
+  serializeArgs: (input) => [serializeJsonValue(validateTakePhotoInput(input))],
+  parseResult: parseNativeImagePayload,
+})
+
+const iosTakePhotoTransport = createInjectedObjectTransport<
+  NativeTakePhotoInput,
+  NativeImageResult
+>({
+  objectName: 'iosBridge',
+  methodName: 'takePhoto',
+  serializeArgs: (input) => [serializeJsonValue(validateTakePhotoInput(input))],
+  parseResult: parseNativeImagePayload,
+})
+
+const androidChooseImageTransport = createInjectedObjectTransport<
+  NativeChooseImageInput,
+  NativeImageResult
+>({
+  objectName: 'androidBridge',
+  methodName: 'chooseImage',
+  serializeArgs: (input) => [serializeJsonValue(validateChooseImageInput(input))],
+  parseResult: parseNativeImagePayload,
+})
+
+const iosChooseImageTransport = createInjectedObjectTransport<
+  NativeChooseImageInput,
+  NativeImageResult
+>({
+  objectName: 'iosBridge',
+  methodName: 'chooseImage',
+  serializeArgs: (input) => [serializeJsonValue(validateChooseImageInput(input))],
+  parseResult: parseNativeImagePayload,
+})
+
+const androidSaveImageToAlbumTransport = createInjectedObjectTransport<
+  NativeSaveImageToAlbumInput,
+  NativeSuccessResult
+>({
+  objectName: 'androidBridge',
+  methodName: 'saveImageToAlbum',
+  serializeArgs: (input) => [serializeJsonValue(validateSaveImageInput(input))],
+  parseResult: parseNativeSuccessPayload,
+})
+
+const iosSaveImageToAlbumTransport = createInjectedObjectTransport<
+  NativeSaveImageToAlbumInput,
+  NativeSuccessResult
+>({
+  objectName: 'iosBridge',
+  methodName: 'saveImageToAlbum',
+  serializeArgs: (input) => [serializeJsonValue(validateSaveImageInput(input))],
+  parseResult: parseNativeSuccessPayload,
+})
+
+const androidCopyTextTransport = createInjectedObjectTransport<
+  NativeCopyTextInput,
+  NativeSuccessResult
+>({
+  objectName: 'androidBridge',
+  methodName: 'copyText',
+  serializeArgs: (input) => [serializeJsonValue(validateCopyTextInput(input))],
+  parseResult: parseNativeSuccessPayload,
+})
+
+const iosCopyTextTransport = createInjectedObjectTransport<
+  NativeCopyTextInput,
+  NativeSuccessResult
+>({
+  objectName: 'iosBridge',
+  methodName: 'copyText',
+  serializeArgs: (input) => [serializeJsonValue(validateCopyTextInput(input))],
+  parseResult: parseNativeSuccessPayload,
+})
+
 function resolveLoginTokenTransport(
   hostWindow: NativeTransportWindow | undefined,
 ): NativeCapabilityResolution<void, NativeLoginToken> {
@@ -259,6 +471,108 @@ function resolveScanCodeTransport(
   )
 }
 
+function resolveDualInjectedCapability<TInput, TResult>(
+  hostWindow: NativeTransportWindow | undefined,
+  capability: string,
+  sampleInput: TInput,
+  resolveAndroid: (input: TInput) => NativeTransportResolution<TResult>,
+  resolveIOS: (input: TInput) => NativeTransportResolution<TResult>,
+): NativeCapabilityResolution<TInput, TResult> {
+  if (hostWindow?.androidBridge) {
+    const probe = resolveAndroid(sampleInput)
+    if (!probe.supported) return probe
+    return supportedCapability((input) => {
+      const resolution = resolveAndroid(input)
+      if (!resolution.supported) {
+        throw new NativeBridgeError(resolution.code, capability, resolution.message)
+      }
+      return resolution.invoke()
+    })
+  }
+
+  if (hostWindow?.iosBridge) {
+    const probe = resolveIOS(sampleInput)
+    if (!probe.supported) return probe
+    return supportedCapability((input) => {
+      const resolution = resolveIOS(input)
+      if (!resolution.supported) {
+        throw new NativeBridgeError(resolution.code, capability, resolution.message)
+      }
+      return resolution.invoke()
+    })
+  }
+
+  return unsupportedCapability(
+    'bridge-unsupported',
+    'Neither window.androidBridge nor window.iosBridge is available in the current host.',
+  )
+}
+
+const DEFAULT_IMAGE_INPUT: NativeTakePhotoInput = {
+  crop: true,
+  maxWidth: 1080,
+  maxHeight: 1080,
+  quality: 0.8,
+}
+
+const DEFAULT_CHOOSE_IMAGE_INPUT: NativeChooseImageInput = {
+  ...DEFAULT_IMAGE_INPUT,
+  count: 1,
+}
+
+function resolveTakePhotoTransport(
+  hostWindow: NativeTransportWindow | undefined,
+): NativeCapabilityResolution<NativeTakePhotoInput, NativeImageResult> {
+  return resolveDualInjectedCapability(
+    hostWindow,
+    'takePhoto',
+    DEFAULT_IMAGE_INPUT,
+    (input) => androidTakePhotoTransport.resolve(hostWindow!, input),
+    (input) => iosTakePhotoTransport.resolve(hostWindow!, input),
+  )
+}
+
+function resolveChooseImageTransport(
+  hostWindow: NativeTransportWindow | undefined,
+): NativeCapabilityResolution<NativeChooseImageInput, NativeImageResult> {
+  return resolveDualInjectedCapability(
+    hostWindow,
+    'chooseImage',
+    DEFAULT_CHOOSE_IMAGE_INPUT,
+    (input) => androidChooseImageTransport.resolve(hostWindow!, input),
+    (input) => iosChooseImageTransport.resolve(hostWindow!, input),
+  )
+}
+
+function resolveSaveImageToAlbumTransport(
+  hostWindow: NativeTransportWindow | undefined,
+): NativeCapabilityResolution<NativeSaveImageToAlbumInput, NativeSuccessResult> {
+  const sample: NativeSaveImageToAlbumInput = {
+    imageType: 'base64',
+    imageData: '',
+    fileName: 'kaboshi-invite.png',
+  }
+  return resolveDualInjectedCapability(
+    hostWindow,
+    'saveImageToAlbum',
+    sample,
+    (input) => androidSaveImageToAlbumTransport.resolve(hostWindow!, input),
+    (input) => iosSaveImageToAlbumTransport.resolve(hostWindow!, input),
+  )
+}
+
+function resolveCopyTextTransport(
+  hostWindow: NativeTransportWindow | undefined,
+): NativeCapabilityResolution<NativeCopyTextInput, NativeSuccessResult> {
+  return resolveDualInjectedCapability(
+    hostWindow,
+    'copyText',
+    { text: '' },
+    (input) => androidCopyTextTransport.resolve(hostWindow!, input),
+    (input) => iosCopyTextTransport.resolve(hostWindow!, input),
+  )
+}
+
 const capabilityRegistry = {
   getLoginToken: defineCapability<'getLoginToken', void, NativeLoginToken>({
     name: 'getLoginToken',
@@ -295,6 +609,50 @@ const capabilityRegistry = {
         if (!probe.supported) return probe
       }
       return resolveScanCodeTransport(hostWindow)
+    },
+  }),
+  takePhoto: defineCapability<'takePhoto', NativeTakePhotoInput, NativeImageResult>({
+    name: 'takePhoto',
+    platforms: ['android', 'ios'],
+    description:
+      'Capture one image through the confirmed Android/iOS injected-object contract.',
+    sensitiveResult: true,
+    resolve(hostWindow) {
+      return resolveTakePhotoTransport(hostWindow)
+    },
+  }),
+  chooseImage: defineCapability<'chooseImage', NativeChooseImageInput, NativeImageResult>({
+    name: 'chooseImage',
+    platforms: ['android', 'ios'],
+    description:
+      'Choose one image through the confirmed Android/iOS injected-object contract.',
+    sensitiveResult: true,
+    resolve(hostWindow) {
+      return resolveChooseImageTransport(hostWindow)
+    },
+  }),
+  saveImageToAlbum: defineCapability<
+    'saveImageToAlbum',
+    NativeSaveImageToAlbumInput,
+    NativeSuccessResult
+  >({
+    name: 'saveImageToAlbum',
+    platforms: ['android', 'ios'],
+    description:
+      'Save an existing base64 image or HTTPS image URL to the system album.',
+    sensitiveResult: false,
+    resolve(hostWindow) {
+      return resolveSaveImageToAlbumTransport(hostWindow)
+    },
+  }),
+  copyText: defineCapability<'copyText', NativeCopyTextInput, NativeSuccessResult>({
+    name: 'copyText',
+    platforms: ['android', 'ios'],
+    description:
+      'Copy text through the confirmed Android/iOS injected-object contract.',
+    sensitiveResult: false,
+    resolve(hostWindow) {
+      return resolveCopyTextTransport(hostWindow)
     },
   }),
 } as const
@@ -567,4 +925,32 @@ export function scanCode(
   options: NativeInvocationOptions = {},
 ): Promise<NativeScanCodeResult> {
   return invokeNativeCapability(capabilityRegistry.scanCode, input, options)
+}
+
+export function takePhoto(
+  input: NativeTakePhotoInput = DEFAULT_IMAGE_INPUT,
+  options: NativeInvocationOptions = {},
+): Promise<NativeImageResult> {
+  return invokeNativeCapability(capabilityRegistry.takePhoto, input, options)
+}
+
+export function chooseImage(
+  input: NativeChooseImageInput = DEFAULT_CHOOSE_IMAGE_INPUT,
+  options: NativeInvocationOptions = {},
+): Promise<NativeImageResult> {
+  return invokeNativeCapability(capabilityRegistry.chooseImage, input, options)
+}
+
+export function saveImageToAlbum(
+  input: NativeSaveImageToAlbumInput,
+  options: NativeInvocationOptions = {},
+): Promise<NativeSuccessResult> {
+  return invokeNativeCapability(capabilityRegistry.saveImageToAlbum, input, options)
+}
+
+export function copyText(
+  input: NativeCopyTextInput,
+  options: NativeInvocationOptions = {},
+): Promise<NativeSuccessResult> {
+  return invokeNativeCapability(capabilityRegistry.copyText, input, options)
 }

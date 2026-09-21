@@ -37,6 +37,10 @@ describe('Bridge Lab page', () => {
     expect(document.querySelector('[data-capability-name="getLoginToken"]')).not.toBeNull()
     expect(document.querySelector('[data-capability-name="closeWebView"]')).not.toBeNull()
     expect(document.querySelector('[data-capability-name="scanCode"]')).not.toBeNull()
+    expect(document.querySelector('[data-capability-name="takePhoto"]')).not.toBeNull()
+    expect(document.querySelector('[data-capability-name="chooseImage"]')).not.toBeNull()
+    expect(document.querySelector('[data-capability-name="saveImageToAlbum"]')).not.toBeNull()
+    expect(document.querySelector('[data-capability-name="copyText"]')).not.toBeNull()
     expect(document.querySelector('[data-android-raw-probe]')).not.toBeNull()
     expect(document.querySelector('[data-ios-raw-probe]')).toBeNull()
     expect(screen.getByLabelText('input JSON')).toBeTruthy()
@@ -66,6 +70,10 @@ describe('Bridge Lab page', () => {
     expect(document.querySelector('[data-capability-name="getAuthorizationInfo"]')).toBeNull()
     expect(document.querySelector('[data-capability-name="closeWebView"]')).not.toBeNull()
     expect(document.querySelector('[data-capability-name="scanCode"]')).not.toBeNull()
+    expect(document.querySelector('[data-capability-name="takePhoto"]')).not.toBeNull()
+    expect(document.querySelector('[data-capability-name="chooseImage"]')).not.toBeNull()
+    expect(document.querySelector('[data-capability-name="saveImageToAlbum"]')).not.toBeNull()
+    expect(document.querySelector('[data-capability-name="copyText"]')).not.toBeNull()
     expect(screen.getByLabelText('input JSON')).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'iOS preset getAuthorizationInfo' }))
@@ -127,6 +135,30 @@ describe('Bridge Lab page', () => {
       expect(screen.getByText('[REDACTED]')).toBeTruthy()
     })
     expect(screen.queryByText(/bridge-lab-scan/)).toBeNull()
+  })
+
+  it('can invoke a registered H032 capability with editable JSON input', async () => {
+    usePlatform('android')
+    labWindow.androidBridge = {
+      copyText(payload: unknown) {
+        expect(payload).toBe('{"text":"hello"}')
+        return '{"success":true}'
+      },
+    }
+
+    render(<BridgeLab />)
+
+    fireEvent.click(
+      document.querySelector('[data-capability-name="copyText"]') as HTMLButtonElement,
+    )
+    fireEvent.change(screen.getByLabelText('input JSON'), {
+      target: { value: '{"text":"hello"}' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: '调用 copyText' }))
+
+    await waitFor(() => {
+      expect(screen.getByText(/"success": true/)).toBeTruthy()
+    })
   })
 
   it('shows neither Native Raw Probe when osType is not selected', () => {
