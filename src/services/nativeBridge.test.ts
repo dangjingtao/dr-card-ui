@@ -791,6 +791,98 @@ describe('JSBridge capability runtime', () => {
     })
   })
 
+  it.each([
+    ['cancel', 'native-cancelled'],
+    ['permission_denied', 'native-permission-denied'],
+    ['fail', 'native-failed'],
+  ] as const)(
+    'maps confirmed Native error %s to structured Bridge error %s',
+    async (nativeError, bridgeCode) => {
+      const { scanCode } = await loadBridge()
+      bridgeWindow.androidBridge = {
+        scanCode() {
+          return JSON.stringify({ error: nativeError })
+        },
+      }
+
+      await expect(scanCode({ scanType: 'all' })).rejects.toMatchObject({
+        name: 'NativeBridgeError',
+        code: bridgeCode,
+        capability: 'scanCode',
+        cause: expect.objectContaining({
+          name: 'NativeTransportError',
+        }),
+      })
+    },
+  )
+
+  it('rejects unknown Native error payloads as invalid protocol data', async () => {
+    const { takePhoto } = await loadBridge()
+    bridgeWindow.iosBridge = {
+      takePhoto() {
+        return '{"error":"something_new"}'
+      },
+    }
+
+    await expect(takePhoto()).rejects.toMatchObject({
+      name: 'NativeBridgeError',
+      code: 'invocation-failed',
+      capability: 'takePhoto',
+      cause: expect.objectContaining({
+        name: 'NativeTransportError',
+        code: 'payload-invalid',
+      }),
+    })
+  })
+
+  it('applies the same Native error payload semantics across result shapes', async () => {
+    const bridge = await loadBridge()
+    bridgeWindow.androidBridge = {
+      getLoginToken() {
+        return '{"error":"fail"}'
+      },
+      chooseImage() {
+        return '{"error":"permission_denied"}'
+      },
+      copyText() {
+        return '{"error":"cancel"}'
+      },
+      showRewardAd() {
+        return '{"error":"fail"}'
+      },
+      openApp() {
+        return '{"error":"permission_denied"}'
+      },
+    }
+
+    await expect(bridge.getLoginToken()).rejects.toMatchObject({
+      code: 'native-failed',
+      capability: 'getLoginToken',
+    })
+    await expect(bridge.chooseImage()).rejects.toMatchObject({
+      code: 'native-permission-denied',
+      capability: 'chooseImage',
+    })
+    await expect(bridge.copyText({ text: 'invite' })).rejects.toMatchObject({
+      code: 'native-cancelled',
+      capability: 'copyText',
+    })
+    await expect(bridge.showRewardAd()).rejects.toMatchObject({
+      code: 'native-failed',
+      capability: 'showRewardAd',
+    })
+    await expect(
+      bridge.openApp({
+        action: 'detect',
+        inviteCode: '',
+        fallbackUrl: '',
+      }),
+    ).rejects.toMatchObject({
+      code: 'native-permission-denied',
+      capability: 'openApp',
+    })
+  })
+
   it('marks photo results sensitive but keeps boolean utility results visible in Bridge Lab catalog', async () => {
     const bridge = await loadBridge('disabled')
     bridgeWindow.androidBridge = {
