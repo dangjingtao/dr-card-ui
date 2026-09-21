@@ -139,6 +139,7 @@ Android / iOS Registered capabilities 均展示 `scanCode`。
 - missing method；
 - 非法 scanType 不发送给 Native；
 - ScanVerify unsupported 状态；
+- ScanVerify 初始 unsupported 后 late bridge injection 可恢复为 supported；
 - ScanVerify 成功调用 `scanCode({scanType:'all'})`；
 - Native code 通过 route state 进入确认流程；
 - Native failure 不跳转；
