@@ -151,3 +151,14 @@ iOS 已有文档确认的 `getAuthorizationInfo → window.onToken(token)` 协�
 - Registered capability 的 JSON 输入区保留，Raw Probe 的 object/method/payload/callback/timeout 继续可编辑；本页保持工程师联调工具定位，不产品化协议输入。
 
 自动验证补充覆盖 Android / iOS / web 三种 `osType`、平台互斥 Raw Probe、历史 preset 回填、Android receiver + 敏感结果脱敏、iOS callback 以及 Native → H5 `testFunc`。
+
+
+## 9. 2026-09-21 联调可用性修正
+
+根据实际预览页验证，Bridge Lab 进一步修正两点：
+
+- `osType` 参数按大小写不敏感解析，`ios` / `iOS` / `IOS` 均进入 iOS 联调视图，`android` / `Android` 同理；不再因参数大小写掉回 `web`。
+- Cloudflare feature preview 默认业务 `VITE_BRIDGE_MODE=disabled`。这不能阻断 Bridge Lab 真机联调，否则把 preview URL 放进 App WebView 后 registered capability 永远不可调用。
+- 因此 production/business facade 继续遵守 `bridgeMode`；只有 `bridgeLabEnabled` 的非 prod Bridge Lab debug invocation 可以直接按当前宿主解析并调用已注册 transport。
+- production 仍不注册 Bridge Lab，不能借此绕过正式运行时边界。
+- capability catalog 在 Bridge Lab 中按真实宿主 transport 可用性显示 `supported`；业务 diagnostics 仍按正式 `bridgeMode` 计算，不改变业务行为。
