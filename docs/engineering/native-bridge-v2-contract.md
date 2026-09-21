@@ -141,3 +141,18 @@ H5 已注册 `takePhoto / chooseImage / saveImageToAlbum / copyText` 的 Android
 - 当前邀请海报 bytes / 正式 invite URL 尚未有业务来源，因此页面不会伪造 poster/link payload。
 
 Native 回填仍标记四项当前均“否”，所以这里只表示 H5 contract 与调用链已就绪。
+
+
+## 9. H033 H5 激励广告接线状态
+
+H5 已注册双端 `showRewardAd(json)` target contract：
+
+- Android：`window.androidBridge.showRewardAd(json)`
+- iOS：`window.iosBridge.showRewardAd(json)`
+- 当前仅开放 scene `h5CheckinResign`；
+- 返回 status 仅接受 `completed | closed | failed | no_fill`；
+- `/checkin` 只有 `completed` 能进入 `make-up-success`；
+- H5 的 5 秒 `DemoAdPlayer` 已退出正式补签完成链路；
+- `closed / failed / no_fill` 均保持补签未完成。
+
+Native 回填仍标记 Android / iOS 当前均“否”，因此这里只表示 H5 contract 与业务判定已就绪。
