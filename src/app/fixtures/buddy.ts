@@ -67,6 +67,6 @@ export const BUDDY_INVITE_LINK = 'https://drcard.example/buddy/accept?from=xiaom
 export const BUDDY_RULE_STATUS = {
   buddyCount: { confirmed: false, blocker: 'B-004', note: '#28 画了 4 行完全相同的「小美」，未说明搭子数量上限、排序口径与解绑方式；此处只按原型字段（头像 + 昵称）建模，多搭子夹具沿用原型昵称，不编造人物与等级。' },
   mutualValue: { confirmed: false, blocker: 'B-006', note: '#31 默契值明确「先不做」（T014）。#27/#28 说明卡里的「默契升级」只保留原型文案，不提供任何默契值入口、数值或进度视觉；Token 仅预留命名。' },
-  shareCapability: { confirmed: false, blocker: 'B-005', note: '原型只画了保存成功（#34）与复制成功（#35），未画失败态；本仓库不接真实相册、剪贴板、短信与系统分享，统一走分享适配层模拟，失败态仅由 `?state=` 复现。' },
+  shareCapability: { confirmed: false, blocker: 'B-005', note: 'H032 已接 Native saveImageToAlbum / copyText target contract，但 Native 当前仍未实现，且正式邀请海报 payload / 真实邀请 URL 仍缺业务数据来源；页面继续保留既有成功/失败结果态，缺真实 payload 时不伪造成功。' },
   inviteeLanding: { confirmed: false, blocker: 'B-005', note: '#30 只有一行「应用商店H5」占位，备注说明未安装走应用商店 H5、已安装弹窗跳转 APP；此处按 WebView 边界页 + 唤起弹窗两态承载，不伪造应用商店视觉。' },
 } as const
