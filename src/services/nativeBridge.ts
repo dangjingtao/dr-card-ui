@@ -285,7 +285,7 @@ const capabilityRegistry = {
     platforms: ['android', 'ios'],
     description:
       'Scan a QR code, barcode, or either through the confirmed Android/iOS injected-object contract.',
-    sensitiveResult: false,
+    sensitiveResult: true,
     resolve(hostWindow) {
       if (hostWindow?.androidBridge) {
         const probe = androidScanCodeTransport.resolve(hostWindow, { scanType: 'all' })
