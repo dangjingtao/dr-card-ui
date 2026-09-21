@@ -24,8 +24,8 @@ import { NativeBridgeError, showRewardAd, type NativeRewardAdStatus } from '../s
  * 已确认：顶部「今日已签到」+ 当前周期连续签到天数；当月月历（已签到 ✅、漏签显示「补签」）；
  *        活动周期 2026.06.01 - 2026.06.30；连续签到奖励；
  *        底部「为你精选」洗护兑换商品；补签 → 补打卡成功弹窗；推荐商品 → 洗护兑换专区。
- * ⚠️ 未决规则一律隔离在 fixtures 的 CHECKIN_RULE_STATUS（B-019 月份切换 / B-020 补签消耗与
- *    不可补签判定 / B-021 弹窗广告位与倒计时），页面不自持规则常量。
+ * ⚠️ 未决规则继续隔离在 fixtures 的 CHECKIN_RULE_STATUS（B-019 月份切换 / B-020 补签消耗与
+ *    不可补签判定）；H033 已用 Native 激励广告协议替代旧 B-021 演示倒计时。
  * 可复现状态：?state=success；?overlay=reminder / make-up-success
  * 2026-08-28：诗得丽首页改为紧凑 7 日入口；本签到内页继续保留金色 Hero，并恢复完整 30 天月历与补签入口。
  */
