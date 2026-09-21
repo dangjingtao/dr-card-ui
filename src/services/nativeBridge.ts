@@ -111,6 +111,16 @@ export interface NativeSuccessResult {
   success: boolean
 }
 
+export type NativeRewardAdStatus = 'completed' | 'closed' | 'failed' | 'no_fill'
+
+export interface NativeRewardAdInput {
+  scene: 'h5CheckinResign'
+}
+
+export interface NativeRewardAdResult {
+  status: NativeRewardAdStatus
+}
+
 function isFiniteNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value)
 }
@@ -209,6 +219,38 @@ function parseNativeSuccessPayload(payload: unknown): NativeSuccessResult {
   }
 
   return { success: (parsed as { success: boolean }).success }
+}
+
+function validateRewardAdInput(input: NativeRewardAdInput): NativeRewardAdInput {
+  if (
+    input === null ||
+    typeof input !== 'object' ||
+    (input as { scene?: unknown }).scene !== 'h5CheckinResign'
+  ) {
+    throw new NativeTransportError(
+      'payload-invalid',
+      'Native showRewardAd() input requires scene to be h5CheckinResign.',
+    )
+  }
+
+  return input
+}
+
+function parseRewardAdPayload(payload: unknown): NativeRewardAdResult {
+  const parsed = parseJsonStringPayload<unknown>(payload)
+  const status =
+    parsed !== null && typeof parsed === 'object'
+      ? (parsed as { status?: unknown }).status
+      : undefined
+
+  if (!['completed', 'closed', 'failed', 'no_fill'].includes(status as string)) {
+    throw new NativeTransportError(
+      'payload-invalid',
+      'Native showRewardAd() result requires status to be completed, closed, failed, or no_fill.',
+    )
+  }
+
+  return { status: status as NativeRewardAdStatus }
 }
 
 function validateScanCodeInput(input: NativeScanCodeInput): NativeScanCodeInput {
@@ -384,6 +426,26 @@ const iosCopyTextTransport = createInjectedObjectTransport<
   methodName: 'copyText',
   serializeArgs: (input) => [serializeJsonValue(validateCopyTextInput(input))],
   parseResult: parseNativeSuccessPayload,
+})
+
+const androidRewardAdTransport = createInjectedObjectTransport<
+  NativeRewardAdInput,
+  NativeRewardAdResult
+>({
+  objectName: 'androidBridge',
+  methodName: 'showRewardAd',
+  serializeArgs: (input) => [serializeJsonValue(validateRewardAdInput(input))],
+  parseResult: parseRewardAdPayload,
+})
+
+const iosRewardAdTransport = createInjectedObjectTransport<
+  NativeRewardAdInput,
+  NativeRewardAdResult
+>({
+  objectName: 'iosBridge',
+  methodName: 'showRewardAd',
+  serializeArgs: (input) => [serializeJsonValue(validateRewardAdInput(input))],
+  parseResult: parseRewardAdPayload,
 })
 
 function resolveLoginTokenTransport(
@@ -573,6 +635,19 @@ function resolveCopyTextTransport(
   )
 }
 
+function resolveRewardAdTransport(
+  hostWindow: NativeTransportWindow | undefined,
+): NativeCapabilityResolution<NativeRewardAdInput, NativeRewardAdResult> {
+  const sample: NativeRewardAdInput = { scene: 'h5CheckinResign' }
+  return resolveDualInjectedCapability(
+    hostWindow,
+    'showRewardAd',
+    sample,
+    (input) => androidRewardAdTransport.resolve(hostWindow!, input),
+    (input) => iosRewardAdTransport.resolve(hostWindow!, input),
+  )
+}
+
 const capabilityRegistry = {
   getLoginToken: defineCapability<'getLoginToken', void, NativeLoginToken>({
     name: 'getLoginToken',
@@ -653,6 +728,16 @@ const capabilityRegistry = {
     sensitiveResult: false,
     resolve(hostWindow) {
       return resolveCopyTextTransport(hostWindow)
+    },
+  }),
+  showRewardAd: defineCapability<'showRewardAd', NativeRewardAdInput, NativeRewardAdResult>({
+    name: 'showRewardAd',
+    platforms: ['android', 'ios'],
+    description:
+      'Show the check-in resign rewarded ad through the confirmed Android/iOS injected-object contract.',
+    sensitiveResult: false,
+    resolve(hostWindow) {
+      return resolveRewardAdTransport(hostWindow)
     },
   }),
 } as const
@@ -953,4 +1038,17 @@ export function copyText(
   options: NativeInvocationOptions = {},
 ): Promise<NativeSuccessResult> {
   return invokeNativeCapability(capabilityRegistry.copyText, input, options)
+}
+
+/**
+ * H033 rewarded-ad boundary for check-in resign.
+ *
+ * Only the confirmed scene `h5CheckinResign` is exposed. Native owns the ad UI and returns one
+ * of completed / closed / failed / no_fill; H5 must only reward on completed.
+ */
+export function showRewardAd(
+  input: NativeRewardAdInput = { scene: 'h5CheckinResign' },
+  options: NativeInvocationOptions = {},
+): Promise<NativeRewardAdResult> {
+  return invokeNativeCapability(capabilityRegistry.showRewardAd, input, options)
 }
