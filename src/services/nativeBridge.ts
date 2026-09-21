@@ -249,8 +249,9 @@ async function invokeNativeCapability<TName extends string, TInput, TResult>(
   descriptor: NativeCapabilityDescriptor<TName, TInput, TResult>,
   input: TInput,
   options: NativeInvocationOptions = {},
+  allowDisabledBridgeMode = false,
 ): Promise<TResult> {
-  ensureNativeMode(descriptor.name)
+  if (!allowDisabledBridgeMode) ensureNativeMode(descriptor.name)
 
   let resolution: NativeCapabilityResolution<TInput, TResult>
   try {
@@ -305,8 +306,9 @@ async function invokeNativeCapability<TName extends string, TInput, TResult>(
 function isCapabilitySupported(
   descriptor: NativeCapabilityDescriptor<string, never, unknown>,
   hostWindow: NativeTransportWindow | undefined,
+  allowDisabledBridgeMode = false,
 ): boolean {
-  if (runtimePolicy.bridgeMode !== 'native') return false
+  if (!allowDisabledBridgeMode && runtimePolicy.bridgeMode !== 'native') return false
 
   try {
     return descriptor.resolve(hostWindow).supported
@@ -326,6 +328,7 @@ export function getNativeBridgeCapabilityCatalog(): NativeCapabilityCatalogItem[
     supported: isCapabilitySupported(
       descriptor as NativeCapabilityDescriptor<string, never, unknown>,
       hostWindow,
+      runtimePolicy.bridgeLabEnabled,
     ),
     sensitiveResult: descriptor.sensitiveResult === true,
   })) as NativeCapabilityCatalogItem[]
@@ -358,7 +361,7 @@ export function invokeRegisteredNativeCapabilityForDebug(
     unknown,
     unknown
   >
-  return invokeNativeCapability(descriptor, input, options)
+  return invokeNativeCapability(descriptor, input, options, true)
 }
 
 /**
