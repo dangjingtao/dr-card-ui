@@ -4,6 +4,7 @@ import BridgeLab from './BridgeLab'
 
 type AndroidLabWindow = Window & {
   androidBridge?: Record<string, unknown>
+  testFunc?: (params: unknown) => string
 }
 
 const labWindow = window as AndroidLabWindow
@@ -15,6 +16,7 @@ function usePlatform(osType?: 'android' | 'iOS') {
 
 afterEach(() => {
   delete labWindow.androidBridge
+  delete labWindow.testFunc
   usePlatform()
 })
 
@@ -70,6 +72,20 @@ describe('Bridge Lab page', () => {
     expect(document.querySelector('[data-android-raw-probe]')).toBeNull()
     expect(document.querySelector('[data-ios-raw-probe]')).toBeNull()
     expect(document.querySelector('[data-web-platform-hint]')).not.toBeNull()
+  })
+
+  it('restores the legacy Native-to-H5 testFunc endpoint on Native lab modes', async () => {
+    usePlatform('android')
+    render(<BridgeLab />)
+
+    expect(document.querySelector('[data-h5-callback-endpoints]')).not.toBeNull()
+    expect(typeof labWindow.testFunc).toBe('function')
+    expect(labWindow.testFunc?.({ from: 'native', value: 1 })).toBe('h5 处理完成')
+
+    await waitFor(() => {
+      expect(screen.getByText('window.testFunc(params)')).toBeTruthy()
+      expect(screen.getByText(/"from": "native"/)).toBeTruthy()
+    })
   })
 
   it('redacts a sensitive Android Raw Probe result until explicit reveal', async () => {
