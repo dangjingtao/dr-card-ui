@@ -13,7 +13,7 @@ type AndroidLabWindow = Window & {
 
 const labWindow = window as AndroidLabWindow
 
-function usePlatform(osType?: 'android' | 'iOS') {
+function usePlatform(osType?: 'android' | 'iOS' | 'ios') {
   const suffix = osType ? `?osType=${osType}` : ''
   window.history.replaceState({}, '', `/__debug/bridge-lab${suffix}`)
 }
@@ -53,8 +53,8 @@ describe('Bridge Lab page', () => {
     )
   })
 
-  it('uses osType to show only the iOS Raw Probe and its historical preset', () => {
-    usePlatform('iOS')
+  it('accepts lowercase osType=ios and shows the iOS registered capability and Raw Probe', () => {
+    usePlatform('ios')
     render(<BridgeLab />)
 
     expect(document.querySelector('[data-android-raw-probe]')).toBeNull()
@@ -71,6 +71,36 @@ describe('Bridge Lab page', () => {
       'empty-object',
     )
     expect((screen.getByLabelText('iOS callback') as HTMLInputElement).value).toBe('onToken')
+  })
+
+  it('lets Bridge Lab invoke a real iOS host even when the preview business bridge mode is disabled', async () => {
+    usePlatform('ios')
+    labWindow.webkit = {
+      messageHandlers: {
+        getAuthorizationInfo: {
+          postMessage() {
+            setTimeout(() => labWindow.onToken?.('ios-preview-token'), 0)
+          },
+        },
+      },
+    }
+
+    render(<BridgeLab />)
+
+    const capability = document.querySelector(
+      '[data-capability-name="getAuthorizationInfo"]',
+    ) as HTMLButtonElement
+    expect(capability).not.toBeNull()
+    fireEvent.click(capability)
+
+    const invokeButton = screen.getByRole('button', { name: '调用 getAuthorizationInfo' })
+    expect((invokeButton as HTMLButtonElement).disabled).toBe(false)
+    fireEvent.click(invokeButton)
+
+    await waitFor(() => {
+      expect(screen.getByText('[REDACTED]')).toBeTruthy()
+    })
+    expect(screen.queryByText('ios-preview-token')).toBeNull()
   })
 
   it('shows neither Native Raw Probe when osType is not selected', () => {
