@@ -178,7 +178,7 @@ export function createInjectedObjectTransport<TInput, TResult>(
             if (error instanceof NativeTransportError) throw error
             throw new NativeTransportError(
               'serialization-failed',
-              'Android injected-object transport could not serialize method arguments.',
+              'Injected-object transport could not serialize method arguments.',
               error,
             )
           }
@@ -203,6 +203,8 @@ export function createInjectedObjectTransport<TInput, TResult>(
  * Backward-compatible export for H026 callers. New cross-platform object bridges should use
  * createInjectedObjectTransport; Android and iOS now share the same injected-object mechanics.
  */
+export type AndroidInjectedObjectTransportConfig<TInput, TResult> =
+  InjectedObjectTransportConfig<TInput, TResult>
 export const createAndroidInjectedObjectTransport = createInjectedObjectTransport
 
 type IOSCallbackSuccess = {
