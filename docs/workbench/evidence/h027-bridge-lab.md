@@ -162,3 +162,20 @@ iOS 已有文档确认的 `getAuthorizationInfo → window.onToken(token)` 协�
 - 因此 production/business facade 继续遵守 `bridgeMode`；只有 `bridgeLabEnabled` 的非 prod Bridge Lab debug invocation 可以直接按当前宿主解析并调用已注册 transport。
 - production 仍不注册 Bridge Lab，不能借此绕过正式运行时边界。
 - capability catalog 在 Bridge Lab 中按真实宿主 transport 可用性显示 `supported`；业务 diagnostics 仍按正式 `bridgeMode` 计算，不改变业务行为。
+
+
+## 10. H029：Native Bridge v2 登录协议覆盖旧 iOS auth
+
+2026-09-21 Native 团队回填 H028 后，正式登录协议更新为统一 injected-object 方案：
+
+- Android：`window.androidBridge.getLoginToken()`
+- iOS：`window.iosBridge.getLoginToken()`
+- 两端无参数，同步返回 JSON string：`{"token":"..."}`
+- iOS `webkit.messageHandlers.getAuthorizationInfo.postMessage({}) → window.onToken(token)` 降级为历史联调证据 / Raw Probe preset，不再属于 production capability registry。
+
+H027 Bridge Lab 因此保持两层：
+
+- Registered capability：Android / iOS 均展示正式 `getLoginToken`；
+- iOS Raw Probe：仍保留旧 `getAuthorizationInfo + onToken` 预设，用于旧 App build / 历史协议诊断。
+
+该更新不删除 H026 messageHandler transport；它只改变当前 production auth protocol 的事实来源。
