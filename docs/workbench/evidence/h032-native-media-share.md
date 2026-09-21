@@ -81,7 +81,9 @@ method 缺失、JSON malformed、字段类型不符、Native throw 均 fail-clos
 - “从相册选择” → `chooseImage()`
 - Native 返回后用 `data:{mimeType};base64,{imageBase64}` 做当前页面头像预览；
 - capability 不支持时明确提示“当前 App 版本暂不支持该图片能力”；
-- 其它调用失败显示“头像更新失败，请重试”。
+- `native-cancelled` 显示“已取消图片选择”；
+- `native-permission-denied` 按拍照 / 相册来源给出对应权限提示；
+- `native-failed` 与其它未知调用失败显示“头像更新失败，请重试”。
 
 H032 不新增头像上传后端契约；当前只接宿主图片来源和本地预览。
 
@@ -141,6 +143,6 @@ Native 当前仍标记四项未实现。最终 Accepted 需在当前 Android / i
 - 相册可选择图片并返回一致结构；
 - 真实 poster payload 可写入系统相册；
 - 真实 invite URL 可写入系统剪贴板；
-- 权限拒绝 / 用户取消的实际语义按真机协议补齐。
+- 已确认的取消 / 权限拒绝 / 普通失败 envelope 在真机上实际返回一致。
 
 未完成上述 smoke 前，本卡保持 In Review。
