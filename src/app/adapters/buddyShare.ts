@@ -33,10 +33,17 @@ export async function saveInvitePoster(
   }
 }
 
-/** 通过 Native copyText 写入系统剪贴板；Bridge 不可用或 Native 返回 false 时进入失败态。 */
-export async function copyInviteLink(): Promise<BuddyShareFeedback> {
+/**
+ * 通过 Native copyText 写入系统剪贴板。
+ *
+ * 当前仓库只有 fixture 邀请链接，没有正式业务 invite URL；调用方未提供真实链接时明确失败，
+ * 不把 drcard.example 写进用户剪贴板冒充线上邀请地址。
+ */
+export async function copyInviteLink(inviteLink?: string): Promise<BuddyShareFeedback> {
+  if (!inviteLink) return BUDDY_SHARE_FEEDBACK['link-failed']
+
   try {
-    const result = await copyText({ text: BUDDY_INVITE_LINK })
+    const result = await copyText({ text: inviteLink })
     return result.success
       ? BUDDY_SHARE_FEEDBACK['link-copied']
       : BUDDY_SHARE_FEEDBACK['link-failed']
@@ -45,7 +52,7 @@ export async function copyInviteLink(): Promise<BuddyShareFeedback> {
   }
 }
 
-/** 邀请链接文本（#35 展示/复制内容；真实域名仍待业务 contract）。 */
+/** 邀请链接 fixture，仅供 mock/debug 展示；不得自动当作 production copy payload。 */
 export function getInviteLink(): string {
   return BUDDY_INVITE_LINK
 }
