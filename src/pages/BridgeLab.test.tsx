@@ -4,6 +4,10 @@ import BridgeLab from './BridgeLab'
 
 type AndroidLabWindow = Window & {
   androidBridge?: Record<string, unknown>
+  webkit?: {
+    messageHandlers?: Record<string, { postMessage(payload: unknown): void } | undefined>
+  }
+  onToken?: (token: unknown) => unknown
   testFunc?: (params: unknown) => string
 }
 
@@ -16,6 +20,8 @@ function usePlatform(osType?: 'android' | 'iOS') {
 
 afterEach(() => {
   delete labWindow.androidBridge
+  delete labWindow.webkit
+  delete labWindow.onToken
   delete labWindow.testFunc
   usePlatform()
 })
@@ -37,7 +43,7 @@ describe('Bridge Lab page', () => {
     usePlatform('android')
     render(<BridgeLab />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'submitOrder' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Android preset submitOrder' }))
 
     expect((screen.getByLabelText('Android object') as HTMLInputElement).value).toBe('androidBridge')
     expect((screen.getByLabelText('Android method') as HTMLInputElement).value).toBe('submitOrder')
@@ -54,8 +60,10 @@ describe('Bridge Lab page', () => {
     expect(document.querySelector('[data-android-raw-probe]')).toBeNull()
     expect(document.querySelector('[data-ios-raw-probe]')).not.toBeNull()
     expect(document.querySelector('[data-capability-name="getLoginToken"]')).toBeNull()
+    expect(document.querySelector('[data-capability-name="getAuthorizationInfo"]')).not.toBeNull()
+    expect(screen.getByLabelText('input JSON')).toBeTruthy()
 
-    fireEvent.click(screen.getByRole('button', { name: 'getAuthorizationInfo' }))
+    fireEvent.click(screen.getByRole('button', { name: 'iOS preset getAuthorizationInfo' }))
     expect((screen.getByLabelText('iOS message handler') as HTMLInputElement).value).toBe(
       'getAuthorizationInfo',
     )
@@ -63,6 +71,30 @@ describe('Bridge Lab page', () => {
       'empty-object',
     )
     expect((screen.getByLabelText('iOS callback') as HTMLInputElement).value).toBe('onToken')
+  })
+
+  it('invokes the registered iOS authorization capability through the existing onToken callback', async () => {
+    usePlatform('iOS')
+    labWindow.webkit = {
+      messageHandlers: {
+        getAuthorizationInfo: {
+          postMessage() {
+            setTimeout(() => labWindow.onToken?.('ios-registered-token'), 0)
+          },
+        },
+      },
+    }
+
+    render(<BridgeLab />)
+    fireEvent.click(
+      document.querySelector('[data-capability-name="getAuthorizationInfo"]') as HTMLButtonElement,
+    )
+    fireEvent.click(screen.getByRole('button', { name: '调用 getAuthorizationInfo' }))
+
+    await waitFor(() => {
+      expect(screen.getByText('[REDACTED]')).toBeTruthy()
+    })
+    expect(screen.queryByText('ios-registered-token')).toBeNull()
   })
 
   it('shows neither Native Raw Probe when osType is not selected', () => {
@@ -97,7 +129,7 @@ describe('Bridge Lab page', () => {
     }
 
     render(<BridgeLab />)
-    fireEvent.click(screen.getByRole('button', { name: 'getLoginToken' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Android preset getLoginToken' }))
     fireEvent.click(screen.getByRole('button', { name: 'Run Android Probe' }))
 
     await waitFor(() => {
