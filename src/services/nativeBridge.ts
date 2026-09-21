@@ -146,7 +146,7 @@ const NATIVE_FAILURE_CODE_MAP: Record<NativeFailurePayloadCode, NativeBridgeErro
 }
 
 function parseConfirmedNativeResult(payload: unknown): unknown {
-  const parsed = parseConfirmedNativeResult(payload)
+  const parsed = parseJsonStringPayload<unknown>(payload)
 
   if (parsed !== null && typeof parsed === 'object' && 'error' in parsed) {
     const error = (parsed as { error?: unknown }).error
