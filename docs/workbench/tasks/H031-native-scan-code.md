@@ -1,6 +1,6 @@
 # H031｜扫码核销 Native 能力接线
 
-**Status:** Ready  
+**Status:** In Review  
 **Phase:** Host Integration / Card Verify  
 **Depends on:** H029
 
@@ -51,8 +51,17 @@ Native 当前回填状态：两端均“否”；最低版本目标 2.13。
 
 ## 验收标准
 
-- [ ] H5 不再用固定模拟结果冒充扫码；
-- [ ] qr / bar / all 入参保持原字段；
-- [ ] 真实 code 能进入核销确认链；
-- [ ] method 缺失时 fail-closed；
+- [x] H5 不再用固定模拟结果冒充扫码；
+- [x] qr / bar / all 入参保持原字段；
+- [x] 真实 code 能进入核销确认链；
+- [x] method 缺失时 fail-closed；
 - [ ] 真机联调后补齐取消/权限语义。
+
+
+## 当前验证状态
+
+- H5 capability、扫码页与确认链路接线已完成；
+- Native 回填仍标记 Android / iOS `scanCode` 尚未实现；
+- 自动测试覆盖 JSON string 入参/返回、scanType、unsupported、页面跳转与 Bridge Lab；
+- 取消 / 权限 /系统失败语义等待真机联调，不提前定义；
+- 双端真实 App WebView smoke 仍是最终 Accepted 门槛。
