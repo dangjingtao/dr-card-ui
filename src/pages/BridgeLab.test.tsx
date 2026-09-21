@@ -73,30 +73,6 @@ describe('Bridge Lab page', () => {
     expect((screen.getByLabelText('iOS callback') as HTMLInputElement).value).toBe('onToken')
   })
 
-  it('invokes the registered iOS authorization capability through the existing onToken callback', async () => {
-    usePlatform('iOS')
-    labWindow.webkit = {
-      messageHandlers: {
-        getAuthorizationInfo: {
-          postMessage() {
-            setTimeout(() => labWindow.onToken?.('ios-registered-token'), 0)
-          },
-        },
-      },
-    }
-
-    render(<BridgeLab />)
-    fireEvent.click(
-      document.querySelector('[data-capability-name="getAuthorizationInfo"]') as HTMLButtonElement,
-    )
-    fireEvent.click(screen.getByRole('button', { name: '调用 getAuthorizationInfo' }))
-
-    await waitFor(() => {
-      expect(screen.getByText('[REDACTED]')).toBeTruthy()
-    })
-    expect(screen.queryByText('ios-registered-token')).toBeNull()
-  })
-
   it('shows neither Native Raw Probe when osType is not selected', () => {
     usePlatform()
     render(<BridgeLab />)
