@@ -4,6 +4,7 @@ import BridgeLab from './BridgeLab'
 
 type AndroidLabWindow = Window & {
   androidBridge?: Record<string, unknown>
+  iosBridge?: Record<string, unknown>
   webkit?: {
     messageHandlers?: Record<string, { postMessage(payload: unknown): void } | undefined>
   }
@@ -20,6 +21,7 @@ function usePlatform(osType?: 'android' | 'iOS' | 'ios') {
 
 afterEach(() => {
   delete labWindow.androidBridge
+  delete labWindow.iosBridge
   delete labWindow.webkit
   delete labWindow.onToken
   delete labWindow.testFunc
@@ -59,8 +61,8 @@ describe('Bridge Lab page', () => {
 
     expect(document.querySelector('[data-android-raw-probe]')).toBeNull()
     expect(document.querySelector('[data-ios-raw-probe]')).not.toBeNull()
-    expect(document.querySelector('[data-capability-name="getLoginToken"]')).toBeNull()
-    expect(document.querySelector('[data-capability-name="getAuthorizationInfo"]')).not.toBeNull()
+    expect(document.querySelector('[data-capability-name="getLoginToken"]')).not.toBeNull()
+    expect(document.querySelector('[data-capability-name="getAuthorizationInfo"]')).toBeNull()
     expect(screen.getByLabelText('input JSON')).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'iOS preset getAuthorizationInfo' }))
@@ -73,27 +75,23 @@ describe('Bridge Lab page', () => {
     expect((screen.getByLabelText('iOS callback') as HTMLInputElement).value).toBe('onToken')
   })
 
-  it('lets Bridge Lab invoke a real iOS host even when the preview business bridge mode is disabled', async () => {
+  it('lets Bridge Lab invoke the confirmed iosBridge.getLoginToken host even when preview business bridge mode is disabled', async () => {
     usePlatform('ios')
-    labWindow.webkit = {
-      messageHandlers: {
-        getAuthorizationInfo: {
-          postMessage() {
-            setTimeout(() => labWindow.onToken?.('ios-preview-token'), 0)
-          },
-        },
+    labWindow.iosBridge = {
+      getLoginToken() {
+        return '{"token":"ios-preview-token"}'
       },
     }
 
     render(<BridgeLab />)
 
     const capability = document.querySelector(
-      '[data-capability-name="getAuthorizationInfo"]',
+      '[data-capability-name="getLoginToken"]',
     ) as HTMLButtonElement
     expect(capability).not.toBeNull()
     fireEvent.click(capability)
 
-    const invokeButton = screen.getByRole('button', { name: '调用 getAuthorizationInfo' })
+    const invokeButton = screen.getByRole('button', { name: '调用 getLoginToken' })
     expect((invokeButton as HTMLButtonElement).disabled).toBe(false)
     fireEvent.click(invokeButton)
 
