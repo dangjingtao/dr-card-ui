@@ -88,7 +88,7 @@ T014 范围关闭节点使用范围结论：`Exclude / Preserve Evidence / Futur
 | ---: | --- | --- | --- | --- | --- | --- | --- |
 | 2 | 诗得丽专栏 | 01 | T005 | `/dearseed` | Verified | 已按 D-054 从 APP 首页拆为独立业务页；保留原型确认的 Banner、会员/泡泡值摘要、品牌文化/会员空间/洗护兑换、本期活动、为你精选与通知入口。未确认入口不补做 | owner 通过（2026-08-24）；[375×812 截图](../design/evidence/dearseed-column-375x812.png) |
 | 12 | 新人弹窗 | 01 | T005 | `/dearseed?overlay=newcomer`（专栏承载） | Verified | 按原型 §2 落地「专栏背景＋遮罩＋居中弹窗」，复用 `PromptOverlay`；「去完善信息」→ `/onboarding`，弹窗链式切到 `?overlay=app-guide`。**2026-08-24 按摹客真值修正**：标题回正为「恭喜你！」（原误用正文话术「见面礼已送达」作标题）、正文回摹客原话术、卡片改左图右文横排、CTA 移出卡片外下方居中、启用摹客独立插画 `dialog-prompt-bottle`、移除凭空添加的 `bodyHint` 与摹客侧 `disabled:true` 却被误启用的 `border-[#797979]` 描边 | owner 通过；承载路由按 D-054 更新；视觉参数（圆角 8px／阴影／白遮罩）经摹客核验即为原型真值，本轮按 owner 指示不动 |
-| 13 | 引导弹窗 | 01 | T005 | `/dearseed?overlay=app-guide`（专栏承载） | Verified | 复用 `AppPromptDialog`；应用商店地址未确认，仍只提示「下载地址尚未开放」。**2026-08-24 按摹客真值修正**：原实现误套 #20 强制版双按钮形态，现拆为 `variant='guide'`（单按钮「下载链接」＋ 右上角关闭图标，对应摹客「引导弹窗」artboard），与 #20 的 `variant='force'`（双按钮「我知道了／下载链接」）分离；正文回摹客原话术「积分彩蛋存放处已开启！双倍泡泡积分存放在APP里，超多养护福利等你挖掘」 | owner 通过；承载路由按 D-054 更新 |
+| 13 | 引导弹窗 | 01 | T005 | `/dearseed?overlay=app-guide`（专栏承载） | Verified | 复用 `AppPromptDialog`；H034 已将「下载链接」接到 Native store target contract；H5 不再自造或等待硬编码商店 URL。**2026-08-24 按摹客真值修正**：原实现误套 #20 强制版双按钮形态，现拆为 `variant='guide'`（单按钮「下载链接」＋ 右上角关闭图标，对应摹客「引导弹窗」artboard），与 #20 的 `variant='force'`（双按钮「我知道了／下载链接」）分离；正文回摹客原话术「积分彩蛋存放处已开启！双倍泡泡积分存放在APP里，超多养护福利等你挖掘」 | owner 通过；承载路由按 D-054 更新 |
 | 14 | 完善信息 | 01 | T005 | `/onboarding` | Verified | 按 T01-A 分步 onboarding 落地：昵称/生日/身份/性别/消费密码；校验＋提交中＋成功闭环。**owner 已确认：不复用 T011 的 #61 放弃修改弹窗，返回直接回诗得丽专栏；年级/生日/性别保持非必填。**密码强度、重复提交规则仍未确认 | owner 通过（2026-08-22） |
 | 15 | 领取成功 | 01 | T005 | `/claim/success`（专栏「前往领取」进入） | Verified | 专栏背景 + 遮罩 + 居中成功弹窗；关闭回 `/dearseed?state=claimed` | owner 通过；返回目标按 D-054 更新 |
 | 16 | 品牌文化 | 01 | T005 | `/brand-culture`（专栏「品牌文化」进入） | Verified | 只铺原型长图、无浮动 CTA；返回诗得丽专栏 | owner 通过（2026-08-24；B-001 已关闭） |
@@ -203,7 +203,7 @@ T010 本轮证据（2026-08-24）：`BASE_URL=http://127.0.0.1:5173 node scripts
 | # | 节点名 | 模块 | 卡 | 可达 | 等级 | 决策/风险 | 验收 |
 | ---: | --- | --- | --- | --- | --- | --- | --- |
 | 19 | 我的 | 05 | T011 | `/profile` | Verified | 按 reference 我的标准页实现（D-007）：暖白 hero（头像/昵称/VIP/等级进度/三宫格）+ 6 宫格常用功能 + 热门兑换；12 条对外跳转逐点实测落地，11 条返回路径实测回到 `/profile`；顶栏原「更多」死按钮已改为通知入口 → `/notifications` | 已验收（2026-08-22） |
-| 20 | APP弹窗 | 05 | T011 | `/profile?overlay=app-prompt` | Verified | 小程序能力拦截引导；`/profile` 六宫格「绑定搭子」标记 `appOnly` 触发且不跳页（实测）；「下载链接」目标地址待产品提供（现为文案提示，不阻塞验收）。**2026-08-24**：`AppPromptDialog` 拆两形态后本节点显式传 `variant="force"`（摹客「强制APP弹窗」双按钮「我知道了／下载链接」），与 T005 #13 的 `variant="guide"` 单按钮形态分离 | 已验收（2026-08-22） |
+| 20 | APP弹窗 | 05 | T011 | `/profile?overlay=app-prompt` | Verified | 小程序能力拦截引导；`/profile` 六宫格「绑定搭子」标记 `appOnly` 触发且不跳页（实测）；H034 已将「下载链接」接到 Native store target contract；当前 Native 未实现时明确失败，不在 H5 硬编码商店地址。**2026-08-24**：`AppPromptDialog` 拆两形态后本节点显式传 `variant="force"`（摹客「强制APP弹窗」双按钮「我知道了／下载链接」），与 T005 #13 的 `variant="guide"` 单按钮形态分离 | 已验收（2026-08-22） |
 | 59 | 个人设置 | 05 | T011 | `/settings` | Verified | 头像/昵称/生日/年级/消费密码可编辑 + 底部动作面板 + 「确认修改」保存回 `/profile`（实测）；入口为 `/profile` 头像与铅笔，`/membership` 顶栏齿轮亦通 | 已验收（2026-08-22） |
 | 61 | 放弃修改 | 05 | T011 | `/settings?overlay=discard` | Verified | 脏数据返回拦截 + 「确认放弃」真正离开至 `/profile`（实测）：`useBlocker` + 弹窗可见性由 `blocker.state` 驱动（blocked 期间禁止任何导航，否则污染 pending 导航使 `proceed()` 失效） | 已验收（2026-08-22） |
 
