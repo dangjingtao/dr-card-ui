@@ -19,6 +19,22 @@ test.describe('H027 Bridge Lab', () => {
     )
   })
 
+  test('Native can still call the legacy window.testFunc endpoint', async ({ page }) => {
+    await page.goto('/__debug/bridge-lab?osType=android', { waitUntil: 'domcontentloaded' })
+
+    const result = await page.evaluate(() => {
+      const host = window as unknown as {
+        testFunc?: (params: unknown) => string
+      }
+      return host.testFunc?.({ from: 'android-native', value: 7 })
+    })
+
+    expect(result).toBe('h5 处理完成')
+    await expect(page.locator('[data-h5-callback-endpoints]')).toBeVisible()
+    await expect(page.locator('[data-bridge-lab-logs]')).toContainText('window.testFunc(params)')
+    await expect(page.locator('[data-bridge-lab-logs]')).toContainText('android-native')
+  })
+
   test('Android bridge preset preserves receiver and masks a token result by default', async ({ page }) => {
     await page.addInitScript(() => {
       const bridge = {
