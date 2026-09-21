@@ -135,7 +135,7 @@ describe('ScanVerify', () => {
   it.each([
     ['native-cancelled', '已取消扫码'],
     ['native-permission-denied', '请允许相机权限后重试'],
-  ])('shows confirmed %s semantics without navigating', async (code, message) => {
+  ] as const)('shows confirmed %s semantics without navigating', async (code, message) => {
     mocks.getNativeBridgeDiagnostics.mockReturnValue({
       capabilities: {
         scanCode: true,
