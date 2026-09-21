@@ -137,6 +137,43 @@ H029 起该协议降级为 **历史联调证据 / Bridge Lab Raw Probe preset**�
 - 真机 WebView smoke 才能把“契约已实现”升级为“当前 App build 已可用”。
 
 
+## 5.1 Bridge 代码分层
+
+Native Bridge 的业务公开入口保持为：
+
+```text
+src/services/nativeBridge.ts
+```
+
+该文件只承担稳定 façade；页面、adapter 与 Bridge Lab 不直接依赖内部模块。
+
+内部实现按职责拆分：
+
+```text
+src/services/nativeBridge/
+├── types.ts
+├── errors.ts
+├── protocol.ts
+├── core.ts
+├── registry.ts
+├── runtime.ts
+└── capabilities/
+    ├── auth.ts
+    ├── host.ts
+    ├── scan.ts
+    ├── media.ts
+    ├── rewardAd.ts
+    └── openApp.ts
+```
+
+约束：
+
+- 新 capability 优先进入对应 `capabilities/*` 模块，再登记到 `registry.ts`；
+- timeout、mode gate、diagnostics、debug invocation 等统一运行时逻辑留在 `runtime.ts`；
+- Native 通用失败 envelope 与 Bridge error 映射集中维护，不允许页面重复解析；
+- `nativeBridgeTransport.ts` 继续作为更底层 transport 层，当前 H026 messageHandler/callback 能力不因本次拆分改写；
+- 业务侧继续只从 `src/services/nativeBridge.ts` 导入，避免内部结构成为新的公共契约。
+
 ## 6. H030 H5 接线状态
 
 H5 已把双端 `closeWebView()` target contract 注册进 Capability Runtime：
