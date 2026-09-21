@@ -89,7 +89,13 @@ describe('Settings Native avatar integration', () => {
 
   it('shows confirmed Native cancellation without treating it as an unknown failure', async () => {
     const { NativeBridgeError } = await import('../services/nativeBridge')
-    mocks.takePhoto.mockRejectedValue(new NativeBridgeError('native-cancelled'))
+    mocks.takePhoto.mockRejectedValue(
+      new NativeBridgeError(
+        'native-cancelled',
+        'takePhoto',
+        'confirmed Native cancellation',
+      ),
+    )
 
     render(<Settings />)
     openAvatarSheet()
@@ -103,7 +109,11 @@ describe('Settings Native avatar integration', () => {
   it('shows source-specific permission guidance for Native media denial', async () => {
     const { NativeBridgeError } = await import('../services/nativeBridge')
     mocks.chooseImage.mockRejectedValue(
-      new NativeBridgeError('native-permission-denied'),
+      new NativeBridgeError(
+        'native-permission-denied',
+        'chooseImage',
+        'confirmed Native permission denial',
+      ),
     )
 
     render(<Settings />)
