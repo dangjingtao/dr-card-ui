@@ -84,7 +84,7 @@ describe('Settings Native avatar integration', () => {
         'data:image/jpeg;base64,avatar-photo-base64',
       )
     })
-    expect(screen.getByText('头像已更新')).toBeTruthy()
+    expect(screen.getByText('已选择头像')).toBeTruthy()
   })
 
   it('uses chooseImage for the album entry', async () => {
