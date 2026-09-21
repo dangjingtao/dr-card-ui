@@ -98,7 +98,7 @@ H021–H024 完成后，后续工作原则上按功能页面或可独立验收�
 | H026 | Android / iOS Transport 与回调适配机制 | [#44](https://github.com/dangjingtao/dr-card-ui/issues/44) |
 | H027 | [Bridge Lab 真机联调页升级](./H027-bridge-lab.md) | User Review（#45 仅兼容跟踪） |
 | H028 | 正式 H5 Native 能力盘点与接口征集清单 | [#46](https://github.com/dangjingtao/dr-card-ui/issues/46) |
-| H029 | [Native Bridge v2 协议基线与双端登录能力对齐](./H029-native-bridge-v2-auth-contract.md) | Ready |
+| H029 | [Native Bridge v2 协议基线与双端登录能力对齐](./H029-native-bridge-v2-auth-contract.md) | In Review |
 | H030 | [关闭 WebView Native 能力接线](./H030-native-close-webview.md) | Ready |
 | H031 | [扫码核销 Native 能力接线](./H031-native-scan-code.md) | Ready |
 | H032 | [图片与剪贴板 Native 能力接线](./H032-native-media-share.md) | Ready |
