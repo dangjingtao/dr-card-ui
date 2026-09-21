@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { AlertCircle, Check, CheckCircle2, Store } from 'lucide-react'
 import DebugPanel from '../components/mobile/DebugPanel'
 import PageContainer from '../components/mobile/PageContainer'
@@ -17,9 +17,16 @@ import { VERIFY_FEEDBACK, VERIFY_VOUCHER_FIXTURE } from '../app/fixtures'
  */
 export default function ConfirmVerify() {
   const navigate = useNavigate()
+  const location = useLocation()
   const route = findRouteByPathname('/card/verify/confirm')
   const { state } = useFixtureState(route)
   const voucher = VERIFY_VOUCHER_FIXTURE
+  const nativeScanCode =
+    location.state &&
+    typeof location.state === 'object' &&
+    typeof (location.state as { nativeScanCode?: unknown }).nativeScanCode === 'string'
+      ? (location.state as { nativeScanCode: string }).nativeScanCode
+      : null
 
   const [toast, setToast] = useState(false)
 
@@ -78,7 +85,10 @@ export default function ConfirmVerify() {
   // 二级页不显示底部导航，底部只需自带安全区，不再按 TabBar 高度预留
   return (
     <PageContainer className="pb-[calc(1rem+env(safe-area-inset-bottom))]">
-      <section className="mt-4 flex flex-col items-center text-center">
+      <section
+        className="mt-4 flex flex-col items-center text-center"
+        data-verify-source={nativeScanCode !== null ? 'native-scan' : 'fixture'}
+      >
         <span className="flex h-16 w-16 items-center justify-center rounded-full bg-success-bg text-success-text">
           <Check className="h-8 w-8" />
         </span>
