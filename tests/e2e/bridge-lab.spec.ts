@@ -47,7 +47,7 @@ test.describe('H027 Bridge Lab', () => {
     })
 
     await page.goto('/__debug/bridge-lab?osType=android', { waitUntil: 'domcontentloaded' })
-    await page.getByRole('button', { name: 'getLoginToken' }).click()
+    await page.getByRole('button', { name: 'Android preset getLoginToken' }).click()
     await page.getByRole('button', { name: 'Run Android Probe' }).click()
 
     const logs = page.locator('[data-bridge-lab-logs]')
@@ -83,8 +83,9 @@ test.describe('H027 Bridge Lab', () => {
     await expect(page.locator('[data-ios-raw-probe]')).toBeVisible()
     await expect(page.locator('[data-android-raw-probe]')).toHaveCount(0)
     await expect(page.locator('[data-capability-name="getLoginToken"]')).toHaveCount(0)
+    await expect(page.locator('[data-capability-name="getAuthorizationInfo"]')).toBeVisible()
 
-    await page.getByRole('button', { name: 'getAuthorizationInfo' }).click()
+    await page.getByRole('button', { name: 'iOS preset getAuthorizationInfo' }).click()
     await page.getByRole('button', { name: 'Run iOS Probe' }).click()
 
     const logs = page.locator('[data-bridge-lab-logs]')
