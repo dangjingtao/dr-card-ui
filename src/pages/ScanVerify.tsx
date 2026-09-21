@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ScanLine } from 'lucide-react'
 import HostCloseButton from '../components/mobile/HostCloseButton'
@@ -10,9 +10,29 @@ export interface ScanVerifyNavigationState {
 
 export default function ScanVerify() {
   const navigate = useNavigate()
-  const supported = getNativeBridgeDiagnostics().capabilities.scanCode
+  const [supported, setSupported] = useState(
+    () => getNativeBridgeDiagnostics().capabilities.scanCode,
+  )
   const [scanning, setScanning] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (supported) return
+
+    const refreshSupport = () => {
+      setSupported(getNativeBridgeDiagnostics().capabilities.scanCode)
+    }
+
+    const intervalId = window.setInterval(refreshSupport, 500)
+    window.addEventListener('focus', refreshSupport)
+    window.addEventListener('pageshow', refreshSupport)
+
+    return () => {
+      window.clearInterval(intervalId)
+      window.removeEventListener('focus', refreshSupport)
+      window.removeEventListener('pageshow', refreshSupport)
+    }
+  }, [supported])
 
   const handleScan = async () => {
     if (!supported || scanning) return
