@@ -153,6 +153,38 @@ describe('JSBridge capability runtime', () => {
     })
   })
 
+  it('keeps business bridge disabled while allowing Bridge Lab debug invocation in non-prod', async () => {
+    const bridge = await loadBridge('disabled')
+    bridgeWindow.webkit = {
+      messageHandlers: {
+        getAuthorizationInfo: {
+          postMessage() {
+            setTimeout(() => bridgeWindow.onToken?.('ios-debug-token'), 0)
+          },
+        },
+      },
+    }
+
+    await expect(bridge.getAuthorizationInfo()).rejects.toMatchObject({
+      name: 'NativeBridgeError',
+      code: 'bridge-disabled',
+      capability: 'getAuthorizationInfo',
+    })
+
+    expect(
+      bridge.getNativeBridgeCapabilityCatalog().find(
+        (item) => item.name === 'getAuthorizationInfo',
+      ),
+    ).toMatchObject({
+      platforms: ['ios'],
+      supported: true,
+      sensitiveResult: true,
+    })
+
+    const invocation = bridge.invokeRegisteredNativeCapabilityForDebug('getAuthorizationInfo')
+    await expect(invocation).resolves.toBe('ios-debug-token')
+  })
+
   it('keeps disabled mode distinct from a browser without a Native bridge', async () => {
     bridgeWindow.androidBridge = {
       getLoginToken() {
