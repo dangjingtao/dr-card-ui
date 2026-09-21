@@ -62,6 +62,6 @@ Native 当前回填状态：两端均“否”；最低版本目标 2.13。
 
 - H5 capability、扫码页与确认链路接线已完成；
 - Native 回填仍标记 Android / iOS `scanCode` 尚未实现；
-- 自动测试覆盖 JSON string 入参/返回、scanType、unsupported、页面跳转与 Bridge Lab；
+- 自动测试覆盖 JSON string 入参/返回、scanType、unsupported、late injection 恢复、页面跳转与 Bridge Lab；
 - 取消 / 权限 /系统失败语义等待真机联调，不提前定义；
 - 双端真实 App WebView smoke 仍是最终 Accepted 门槛。
