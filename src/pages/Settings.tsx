@@ -90,7 +90,7 @@ export default function Settings() {
           : await chooseImage()
 
       setAvatarSrc(`data:${result.mimeType};base64,${result.imageBase64}`)
-      flashToast('头像已更新')
+      flashToast('已选择头像')
       close()
     } catch (error) {
       if (
