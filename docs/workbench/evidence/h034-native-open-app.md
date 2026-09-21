@@ -49,6 +49,8 @@ Native 当前回填状态：Android / iOS 均“否”，最低版本目标 2.13
 
 H5 不自造 scheme、Universal Link、应用商店 URL，也不通过 visibility/timer hack 猜安装状态。
 
+Native 通用失败 envelope `cancel / permission_denied / fail` 会在成功 DTO 解析前统一转为结构化 Bridge error；未知 error 值继续 fail-closed。
+
 ## 3. action 分层
 
 新增 `src/app/adapters/appOpen.ts`，把三个动作拆成独立入口：
