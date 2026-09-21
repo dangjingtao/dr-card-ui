@@ -611,6 +611,50 @@ const capabilityRegistry = {
       return resolveScanCodeTransport(hostWindow)
     },
   }),
+  takePhoto: defineCapability<'takePhoto', NativeTakePhotoInput, NativeImageResult>({
+    name: 'takePhoto',
+    platforms: ['android', 'ios'],
+    description:
+      'Capture one image through the confirmed Android/iOS injected-object contract.',
+    sensitiveResult: true,
+    resolve(hostWindow) {
+      return resolveTakePhotoTransport(hostWindow)
+    },
+  }),
+  chooseImage: defineCapability<'chooseImage', NativeChooseImageInput, NativeImageResult>({
+    name: 'chooseImage',
+    platforms: ['android', 'ios'],
+    description:
+      'Choose one image through the confirmed Android/iOS injected-object contract.',
+    sensitiveResult: true,
+    resolve(hostWindow) {
+      return resolveChooseImageTransport(hostWindow)
+    },
+  }),
+  saveImageToAlbum: defineCapability<
+    'saveImageToAlbum',
+    NativeSaveImageToAlbumInput,
+    NativeSuccessResult
+  >({
+    name: 'saveImageToAlbum',
+    platforms: ['android', 'ios'],
+    description:
+      'Save an existing base64 image or HTTPS image URL to the system album.',
+    sensitiveResult: false,
+    resolve(hostWindow) {
+      return resolveSaveImageToAlbumTransport(hostWindow)
+    },
+  }),
+  copyText: defineCapability<'copyText', NativeCopyTextInput, NativeSuccessResult>({
+    name: 'copyText',
+    platforms: ['android', 'ios'],
+    description:
+      'Copy text through the confirmed Android/iOS injected-object contract.',
+    sensitiveResult: false,
+    resolve(hostWindow) {
+      return resolveCopyTextTransport(hostWindow)
+    },
+  }),
 } as const
 
 export type NativeCapabilityName = keyof typeof capabilityRegistry
