@@ -882,16 +882,12 @@ export const ROUTES: RouteMeta[] = [
     path: '/buddy/invite/scan',
     title: '邀请搭子（没 APP）',
     nodes: [30],
-    task: 'T007',
-    /* 用户 2026-08-24 定案（D-055）：#30 只有一行「应用商店H5」占位文案，
-     * 按「WebView 边界页 + 唤起弹窗」两态承载，不伪造任何应用商店视觉。 */
-    states: [
-      { key: 'no-app', node: 30, label: '未安装 APP-应用商店 H5' },
-      { key: 'has-app', node: 30, label: '已安装 APP-弹窗提示跳转' },
-    ],
+    task: 'H034',
+    /* H034：安装态只来自 Native openApp({ action: 'detect' })，
+     * 不再用 ?state=no-app/has-app 夹具模拟真实安装状态。 */
     entry: '微信扫描搭子邀请二维码',
     returnTo: '（外部承接，无应用内返回）',
-    owner: '被邀请人扫码承接（T007 施工；显式标注边界，不实现真实唤起）',
+    owner: '被邀请人扫码承接（H034；Native detect/open/store，H5 不探测 scheme）',
   },
   {
     path: '/buddy/accept',
