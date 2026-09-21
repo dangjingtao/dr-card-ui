@@ -926,3 +926,31 @@ export function scanCode(
 ): Promise<NativeScanCodeResult> {
   return invokeNativeCapability(capabilityRegistry.scanCode, input, options)
 }
+
+export function takePhoto(
+  input: NativeTakePhotoInput = DEFAULT_IMAGE_INPUT,
+  options: NativeInvocationOptions = {},
+): Promise<NativeImageResult> {
+  return invokeNativeCapability(capabilityRegistry.takePhoto, input, options)
+}
+
+export function chooseImage(
+  input: NativeChooseImageInput = DEFAULT_CHOOSE_IMAGE_INPUT,
+  options: NativeInvocationOptions = {},
+): Promise<NativeImageResult> {
+  return invokeNativeCapability(capabilityRegistry.chooseImage, input, options)
+}
+
+export function saveImageToAlbum(
+  input: NativeSaveImageToAlbumInput,
+  options: NativeInvocationOptions = {},
+): Promise<NativeSuccessResult> {
+  return invokeNativeCapability(capabilityRegistry.saveImageToAlbum, input, options)
+}
+
+export function copyText(
+  input: NativeCopyTextInput,
+  options: NativeInvocationOptions = {},
+): Promise<NativeSuccessResult> {
+  return invokeNativeCapability(capabilityRegistry.copyText, input, options)
+}
