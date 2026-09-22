@@ -19,6 +19,7 @@ import hotHerbal from '../assets/brand/exchange/profile-hot-herbal.webp'
 import PageContainer from '../components/mobile/PageContainer'
 import AppPromptDialog from '../components/mobile/AppPromptDialog'
 import { useOverlay } from '../app/fixtures/useFixture'
+import { openNativeAppStore } from '../app/adapters/appOpen'
 import { APP_FORCE_FIXTURE } from '../app/fixtures'
 
 type Tile = {
@@ -57,6 +58,7 @@ export default function Profile() {
   const navigate = useNavigate()
   const { overlay, open, close } = useOverlay()
   const [downloadHint, setDownloadHint] = useState<string | undefined>(undefined)
+  const [downloadPending, setDownloadPending] = useState(false)
 
   const openAppPrompt = () => {
     setDownloadHint(undefined)
@@ -66,6 +68,25 @@ export default function Profile() {
   const closeAppPrompt = () => {
     setDownloadHint(undefined)
     close()
+  }
+
+  const handleAppStoreDownload = async () => {
+    if (downloadPending) return
+
+    setDownloadPending(true)
+    setDownloadHint(undefined)
+    try {
+      const result = await openNativeAppStore()
+      setDownloadHint(
+        result.success
+          ? '已交由系统打开应用商店'
+          : '应用商店打开失败，请稍后重试',
+      )
+    } catch {
+      setDownloadHint('当前 App 版本暂不支持应用商店跳转')
+    } finally {
+      setDownloadPending(false)
+    }
   }
 
   return (
@@ -223,8 +244,9 @@ export default function Profile() {
         variant="force"
         message={APP_FORCE_FIXTURE.message}
         onAcknowledge={closeAppPrompt}
-        onDownload={() => setDownloadHint(APP_FORCE_FIXTURE.downloadHint)}
+        onDownload={() => void handleAppStoreDownload()}
         downloadHint={downloadHint}
+        downloadPending={downloadPending}
       />
     </PageContainer>
   )

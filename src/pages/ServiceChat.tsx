@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Headset, Send } from 'lucide-react'
 import PageContainer from '../components/mobile/PageContainer'
 import ChatMessageList from '../components/mobile/ChatMessageList'
@@ -36,6 +36,7 @@ export default function ServiceChat() {
   const route = findRouteByPathname('/service/chat')
   const { state } = useFixtureState(route)
   const location = useLocation()
+  const navigate = useNavigate()
 
   const [messages, setMessages] = useState<ChatMessage[]>(CHAT_WELCOME_MESSAGES)
   const [draft, setDraft] = useState('')
@@ -49,9 +50,16 @@ export default function ServiceChat() {
   const [wecomOpen, setWecomOpen] = useState(false)
   const closeWecom = () => {
     setWecomOpen(false)
-    /* 关闭时清掉 hash，避免下次进页时旧状态自动重弹 */
+    /* H016：通过 Router replace 清 hash，保留当前 history entry/state，不绕过 React Router。 */
     if (location.hash === '#wecom') {
-      window.history.replaceState(null, '', location.pathname + location.search)
+      navigate(
+        {
+          pathname: location.pathname,
+          search: location.search,
+          hash: '',
+        },
+        { replace: true, state: location.state },
+      )
     }
   }
 

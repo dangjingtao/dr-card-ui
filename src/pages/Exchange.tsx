@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { ChevronRight, Droplets, Gift, Search, Ticket } from 'lucide-react'
+import { ChevronRight, Droplets, Gift, Ticket } from 'lucide-react'
 import DebugPanel from '../components/mobile/DebugPanel'
 import PageContainer from '../components/mobile/PageContainer'
-import { BottomSheet, Button, EmptyState, SegmentedControl } from '../components/ui'
+import { BottomSheet, Button, EmptyState, SearchField, SegmentedControl } from '../components/ui'
 import { useFixtureState, useOverlay } from '../app/fixtures/useFixture'
 import { findRouteByPathname } from '../app/router/routes'
 import {
@@ -19,6 +19,7 @@ import {
   resolveExchangeSort,
   type ExchangeProductFixture,
 } from '../app/fixtures'
+import { redeemExchangeProduct } from '../services/exchange'
 import kitThumb from '../assets/brand/member/checkin-dearseed-kit.webp'
 import bubbleOrb from '../assets/brand/bubble/checkin-bubble-3d.webp'
 import hotBerry from '../assets/brand/exchange/profile-hot-berry.webp'
@@ -33,6 +34,8 @@ const PRODUCT_IMAGES: Partial<Record<NonNullable<ExchangeProductFixture['thumb']
   seasalt: hotSeasalt,
   herbal: hotHerbal,
 }
+
+const EXCHANGE_REQUEST_ERROR_COPY = '兑换失败，请稍后重试'
 
 /**
  * 洗护体验券兑换专区（#18 / #37 / #38 / #39）
@@ -69,8 +72,7 @@ export default function Exchange() {
   const availability = exchangeAvailability(activeProduct)
 
   const [submitting, setSubmitting] = useState(false)
-  const timers = useRef<number[]>([])
-  useEffect(() => () => timers.current.forEach((id) => window.clearTimeout(id)), [])
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   const patchParams = (patch: (next: URLSearchParams) => void) => {
     setSearchParams(
@@ -92,43 +94,46 @@ export default function Exchange() {
   }
 
   const openRedeem = (product: ExchangeProductFixture) => {
+    setSubmitError(null)
     patchParams((next) => {
       next.set('product', product.id)
       next.set('overlay', 'redeem')
     })
   }
 
-  const submit = () => {
+  const submit = async () => {
     if (availability !== 'redeemable' || submitting) return
+
     setSubmitting(true)
-    /** 提交中态：夹具环境下用固定时长模拟一次请求往返，非随机 */
-    timers.current.push(
-      window.setTimeout(() => {
-        setSubmitting(false)
-        const query = new URLSearchParams({ product: activeProduct.id })
-        if (searchParams.get('debug') === '1') query.set('debug', '1')
-        navigate(`/exchange/result?${query.toString()}`)
-      }, 700),
-    )
+    setSubmitError(null)
+    try {
+      await redeemExchangeProduct(activeProduct.id)
+      setSubmitting(false)
+      const query = new URLSearchParams({ product: activeProduct.id })
+      if (searchParams.get('debug') === '1') query.set('debug', '1')
+      navigate(`/exchange/result?${query.toString()}`)
+    } catch {
+      setSubmitting(false)
+      setSubmitError(EXCHANGE_REQUEST_ERROR_COPY)
+    }
   }
 
   return (
     <PageContainer className="flex flex-col pb-8" inset={false}>
       <div className="mx-4 mt-1 flex items-center justify-between gap-3">
-        <label className="flex min-h-9 flex-1 items-center gap-2 rounded-pill border border-border-subtle bg-surface/90 px-3 text-text-tertiary shadow-sm focus-within:border-border-focused">
-          <Search className="h-4 w-4 shrink-0" aria-hidden />
-          <input
-            value={keyword}
-            onChange={(event) => setKeyword(event.target.value)}
-            placeholder={EXCHANGE_COPY.searchPlaceholder}
-            aria-label={EXCHANGE_COPY.searchPlaceholder}
-            className="min-w-0 flex-1 bg-transparent text-xs text-text-primary outline-none placeholder:text-text-placeholder"
-          />
-        </label>
+        <SearchField
+          value={keyword}
+          onChange={(event) => setKeyword(event.target.value)}
+          onClear={() => setKeyword('')}
+          placeholder={EXCHANGE_COPY.searchPlaceholder}
+          variant="pill"
+          size="compact"
+          className="flex-1"
+        />
         <button
           type="button"
           onClick={() => navigate('/points')}
-          className="inline-flex min-h-9 shrink-0 items-center gap-1 rounded-pill bg-surface/90 px-2.5 text-xs text-text-secondary shadow-sm transition active:scale-[.98]"
+          className="inline-flex min-h-10 shrink-0 items-center gap-1 rounded-pill bg-surface px-2.5 text-xs text-text-secondary shadow-sm transition active:scale-[.98]"
         >
           <img src={bubbleOrb} alt="" className="h-6 w-6 object-contain" />
           <strong className="text-sm font-semibold text-exchange-price-text">{BUBBLE_BALANCE.toLocaleString()}</strong>
@@ -271,12 +276,18 @@ export default function Exchange() {
           </p>
         )}
 
+        {submitError && (
+          <p className="mt-2 text-xs text-danger-text" role="alert">
+            {submitError}
+          </p>
+        )}
+
         <Button
           size="large"
           className="mt-4 w-full rounded-full"
           loading={submitting}
           disabled={availability !== 'redeemable'}
-          onClick={submit}
+          onClick={() => void submit()}
         >
           {submitting
             ? EXCHANGE_COPY.submitting

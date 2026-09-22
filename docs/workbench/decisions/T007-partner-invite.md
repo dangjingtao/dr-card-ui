@@ -133,3 +133,21 @@ capture 脚本报告的 46 条 warning 全部为 React Router v6→v7 future fla
 | `inviteeLanding` | B-005 | 真实 APP 唤起方式（Scheme / Universal Link）、应用商店包信息与唤起失败回退 |
 
 另有一项素材缺口：搭子/本人头像目前是摹客自带图库占位照片，正式头像需向品牌方索取，替换时只改 `assets-inventory.md` §2.14 源文件表并复跑提取脚本（见 D-066）。
+
+
+## 6. H034 对 D-055 的后续覆盖
+
+2026-09-21 Native 团队回填 `openApp(json)` 后，D-055 中“真实唤起暂不实现”的技术边界被 H034 覆盖，但原型视觉边界继续保留。
+
+当前事实：
+
+- `/buddy/invite/scan` 不再读取 `?state=no-app|has-app` 作为真实安装状态；
+- 安装态只来自 Native `openApp({action:"detect", ...})` 返回的 `installed:boolean`；
+- `installed=true` 时仍使用原有“打开 APP / 取消”弹窗视觉；
+- “打开 APP”改为 Native `action:"open"`，不再用 H5 内跳 `/buddy/accept` 冒充 App 唤起；
+- `installed=false` 时由 Native `action:"store"` 承接应用商店，不在 H5 编造 App Store / 应用市场 URL；
+- H5 不探测 scheme / Universal Link，也不使用 timer / visibility hack 猜测安装状态；
+- 当前真实 inviteCode / fallbackUrl 尚无业务 contract，H5 按 Native 示例传空字符串，不自行生成；
+- Native 当前仍标记 `openApp` 双端未实现，所以真机 fallback 细节仍属于 H034 In Review 验收项。
+
+旧 T007 的 `?state=no-app|has-app` 截图与闭环证据保留为历史 UI 验收记录，不再是当前 production installed-state 事实源。

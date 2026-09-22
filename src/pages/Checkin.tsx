@@ -1,10 +1,10 @@
+import { useState } from 'react'
 import { X } from 'lucide-react'
 import CheckinBoard from '../components/mobile/CheckinBoard'
 import CheckinMakeupSuccessOverlay from '../components/mobile/CheckinMakeupSuccessOverlay'
 import DebugPanel from '../components/mobile/DebugPanel'
 import PageContainer from '../components/mobile/PageContainer'
 import PromptOverlay from '../components/mobile/PromptOverlay'
-import DemoAdPlayer from '../components/checkin/DemoAdPlayer'
 import { Button } from '../components/ui'
 import {
   useFixtureDebug,
@@ -15,6 +15,7 @@ import {
 import { findRouteByPathname } from '../app/router/routes'
 import { CHECKIN_REMINDER } from '../app/fixtures'
 import checkinRitualHero from '../assets/brand/bubble/checkin-ritual-hero-v2.webp'
+import { NativeBridgeError, showRewardAd, type NativeRewardAdStatus } from '../services/nativeBridge'
 
 /**
  * 打卡日历（#21）/ 打卡成功（#8）/ 打卡提示弹窗（#4）/ 补打卡成功弹窗（#22）
@@ -23,8 +24,8 @@ import checkinRitualHero from '../assets/brand/bubble/checkin-ritual-hero-v2.web
  * 已确认：顶部「今日已签到」+ 当前周期连续签到天数；当月月历（已签到 ✅、漏签显示「补签」）；
  *        活动周期 2026.06.01 - 2026.06.30；连续签到奖励；
  *        底部「为你精选」洗护兑换商品；补签 → 补打卡成功弹窗；推荐商品 → 洗护兑换专区。
- * ⚠️ 未决规则一律隔离在 fixtures 的 CHECKIN_RULE_STATUS（B-019 月份切换 / B-020 补签消耗与
- *    不可补签判定 / B-021 弹窗广告位与倒计时），页面不自持规则常量。
+ * ⚠️ 未决规则继续隔离在 fixtures 的 CHECKIN_RULE_STATUS（B-019 月份切换 / B-020 补签消耗与
+ *    不可补签判定）；H033 已用 Native 激励广告协议替代旧 B-021 演示倒计时。
  * 可复现状态：?state=success；?overlay=reminder / make-up-success
  * 2026-08-28：诗得丽首页改为紧凑 7 日入口；本签到内页继续保留金色 Hero，并恢复完整 30 天月历与补签入口。
  */
@@ -37,22 +38,64 @@ export default function Checkin() {
   const isSuccess = state?.key === 'success'
   const debug = useFixtureDebug()
 
-  /* T045｜补签流程：先看演示广告，看完再触发补签成功弹窗。
-   *  1. 用户在 /checkin 完整月历点击补签日 → 触发 handleMakeupWithAd
-   *  2. DemoAdPlayer 全屏弹窗 + 5 秒倒计时
-   *  3. 倒计时归零 → 直接把当前 overlay 切换为 make-up-success
-   *  本期 B-046：5 秒演示时长；后续接真实 SDK 替换 onAdComplete 触发条件
-   */
-  const handleMakeupWithAd = () => {
-    open('demo-ad')
+  const [rewardAdPending, setRewardAdPending] = useState(false)
+  const [rewardAdMessage, setRewardAdMessage] = useState<string | null>(null)
+
+  const describeRewardAdStatus = (status: Exclude<NativeRewardAdStatus, 'completed'>) => {
+    if (status === 'closed') return '广告未完整观看，补签未完成'
+    if (status === 'no_fill') return '暂无可用广告，请稍后再试'
+    return '广告播放失败，请重试'
   }
-  const handleAdComplete = () => {
-    open('make-up-success')
+
+  /* H033｜补签资格只接受 Native 激励广告 completed。
+   * Native 自己承载广告 UI；H5 不再使用 5 秒 Demo 倒计时作为奖励完成信号。
+   */
+  const handleMakeupWithAd = async () => {
+    if (rewardAdPending) return
+
+    setRewardAdPending(true)
+    setRewardAdMessage(null)
+
+    try {
+      const result = await showRewardAd({ scene: 'h5CheckinResign' })
+      if (result.status === 'completed') {
+        open('make-up-success')
+        return
+      }
+
+      setRewardAdMessage(describeRewardAdStatus(result.status))
+    } catch (error) {
+      if (
+        error instanceof NativeBridgeError &&
+        ['bridge-disabled', 'bridge-unsupported', 'capability-unsupported'].includes(error.code)
+      ) {
+        setRewardAdMessage('当前 App 版本暂不支持激励广告补签')
+      } else {
+        setRewardAdMessage('广告调用失败，请重试')
+      }
+    } finally {
+      setRewardAdPending(false)
+    }
   }
 
   return (
     <PageContainer className="pb-24 pt-2" inset={false}>
-      <CheckinBoard mode="full" isSuccess={isSuccess} onMakeup={handleMakeupWithAd} debug={debug} />
+      <CheckinBoard
+        mode="full"
+        isSuccess={isSuccess}
+        onMakeup={() => void handleMakeupWithAd()}
+        debug={debug}
+      />
+
+      {(rewardAdPending || rewardAdMessage) && (
+        <p
+          role={rewardAdMessage ? 'alert' : 'status'}
+          aria-live="polite"
+          className="mx-4 mt-3 rounded-control bg-surface-subtle px-3 py-2 text-center text-xs text-text-secondary"
+        >
+          {rewardAdPending ? '正在打开激励广告…' : rewardAdMessage}
+        </p>
+      )}
 
       <PromptOverlay open={overlay === 'reminder'} label="每日打卡提示" onDismiss={close} className="overflow-hidden rounded-feature bg-surface px-6 pb-6 pt-5 text-center shadow-modal">
         <button type="button" aria-label="关闭打卡提示" onClick={() => close()} className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full text-text-tertiary active:bg-surface-pressed"><X className="h-5 w-5" aria-hidden /></button>
@@ -69,13 +112,6 @@ export default function Checkin() {
       </PromptOverlay>
 
       <CheckinMakeupSuccessOverlay open={overlay === 'make-up-success'} onDismiss={() => close()} debug={debug} />
-
-      {/* T045｜演示广告弹窗：5 秒倒计时 + 不可跳过，看完触发补签成功 */}
-      <DemoAdPlayer
-        open={overlay === 'demo-ad'}
-        durationSeconds={5}
-        onComplete={handleAdComplete}
-      />
 
       <DebugPanel route={route} />
     </PageContainer>

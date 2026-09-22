@@ -3,17 +3,17 @@
  * -------------------------------------------------------------
  * 背景：任务卡要求「9 个节点逐一可定位并连成闭环」。#36 接受邀请与 #27/#28 搭子列表
  * 是两个独立路由，若各自用页面级 useState，「接受邀请 → 返回搭子页看到已绑定」
- * 这条闭环无法验收；#32 的「已邀请」重复邀请处理同理需要跨路由记忆。
+ * 这条闭环无法验收。
  * 方案：沿用 state/addresses.ts 的模块级可变状态 + 订阅，初始数据来自 app/fixtures。
  *
  * 注意：这是 UI 还原用的最小共享状态，不是持久化存储；刷新页面回到夹具初始态，
- * 因此 `?state=` 夹具仍然可控可复现（截图时以 URL 为唯一事实源）。
+ * 因此 `?state=` 夹具仍然可控可复现（截图时以 URL 为唯一事实源）。手机号搜索/邀请
+ * 的请求状态已由 H014 迁到 service → HTTP → MSW/真实 API 边界，不再存放在这里。
  */
 import { useEffect, useMemo, useState } from 'react'
 import {
   BUDDY_LIST_MULTI,
   BUDDY_LIST_SINGLE,
-  resolveBuddySearchOutcome,
   type BuddyFixture,
 } from '../fixtures'
 
@@ -28,8 +28,6 @@ const PRESETS: Record<BuddyListPreset, BuddyFixture[]> = {
 
 let buddies: BuddyFixture[] = []
 let defaultPresetInitialized = false
-/** 本次会话内已发出邀请的手机号，用于 #32 的「已邀请」重复邀请提示 */
-let invitedPhones = new Set<string>()
 let seq = 0
 const listeners = new Set<() => void>()
 
@@ -76,29 +74,10 @@ export function acceptBuddyInvite(name: string): BuddyFixture {
   return created
 }
 
-/** 记录一次已发出的手机号邀请（#32 重复邀请判定） */
-export function markPhoneInvited(phone: string) {
-  const trimmed = phone.trim()
-  if (!trimmed || invitedPhones.has(trimmed)) return
-  invitedPhones = new Set(invitedPhones).add(trimmed)
-  emit()
-}
-
-/**
- * 手机号搜索结果：先看本次会话是否已邀请过，再落到夹具的确定性映射。
- * 这样「发送邀请成功后再搜同一号码 → 已邀请」这条重复邀请路径可被验收。
- */
-export function resolveBuddyPhoneOutcome(phone: string) {
-  const trimmed = phone.trim()
-  if (trimmed && invitedPhones.has(trimmed)) return 'invited' as const
-  return resolveBuddySearchOutcome(trimmed)
-}
-
 /** 复位到夹具初始态（供夹具切换/调试使用） */
 export function resetBuddies() {
   buddies = []
   defaultPresetInitialized = false
-  invitedPhones = new Set()
   seq = 0
   emit()
 }

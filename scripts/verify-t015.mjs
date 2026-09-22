@@ -89,7 +89,7 @@ for (const [node, path, marker] of cases) {
   if (result.placeholder) issues.push('命中施工中占位页')
   if (result.notFound) issues.push('命中 404')
   if (result.brokenImages) issues.push(`坏图 ${result.brokenImages}`)
-  if (result.statusBars !== 1) issues.push(`状态栏数量应为 1，实际 ${result.statusBars}`)
+  if (result.statusBars !== 0) issues.push(`H021 后系统状态栏模拟应为 0，实际 ${result.statusBars}`)
   if (result.titleBars > 1) issues.push(`重复标题栏 ${result.titleBars}`)
   if (result.tabbars > 1) issues.push(`重复 Tabbar ${result.tabbars}`)
   if (result.overflow > 1) issues.push(`横向溢出 ${result.overflow}px`)

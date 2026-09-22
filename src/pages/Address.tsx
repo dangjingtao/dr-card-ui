@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Check, MapPin, Plus, SquarePen } from 'lucide-react'
 import { Button, EmptyState, Tag, Toast } from '../components/ui'
 import PageContainer from '../components/mobile/PageContainer'
+import EmptyStateIcon from '../components/mobile/EmptyStateIcon'
 import DebugPanel from '../components/mobile/DebugPanel'
 import { findRouteByPathname } from '../app/router/routes'
 import { useFixtureState } from '../app/fixtures/useFixture'
@@ -41,11 +42,7 @@ export default function Address() {
       {list.length === 0 ? (
         <EmptyState
           className="flex-1 pt-16"
-          visual={
-            <span className="flex h-24 w-24 items-center justify-center rounded-full bg-background">
-              <MapPin className="h-12 w-12 text-reward" strokeWidth={1.6} />
-            </span>
-          }
+          visual={<EmptyStateIcon icon={MapPin} />}
           title={<span className="text-[15px] leading-[22px] text-text-secondary">{ADDRESS_COPY.emptyTitle}</span>}
           supportingText={<span className="text-xs leading-[18px]">{ADDRESS_COPY.emptyDesc}</span>}
         />

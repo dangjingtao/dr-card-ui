@@ -53,12 +53,10 @@ export const NEWCOMER_FIXTURE = {
 
 export const APP_GUIDE_FIXTURE = {
   message: '积分彩蛋存放处已开启！双倍泡泡积分存放在APP里，超多养护福利等你挖掘',
-  downloadHint: '下载地址尚未开放，待产品提供后接入。',
 } as const
 
 export const APP_FORCE_FIXTURE = {
   message: '该功能请前往APP使用噢！',
-  downloadHint: '下载地址尚未开放，待产品提供后接入。',
 } as const
 
 export const HOME_BANNER_CAROUSEL = {

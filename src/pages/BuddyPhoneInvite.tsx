@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { Loader2, Search, Send, UserRoundPlus } from 'lucide-react'
+import { Loader2, Send, UserRoundPlus } from 'lucide-react'
 import DebugPanel from '../components/mobile/DebugPanel'
 import PageContainer from '../components/mobile/PageContainer'
 import PromptOverlay from '../components/mobile/PromptOverlay'
-import { Button } from '../components/ui'
+import { Button, SearchField } from '../components/ui'
 import {
   BUDDY_INVITE_COPY,
   BUDDY_SEARCH_FEEDBACK,
@@ -16,11 +16,12 @@ import {
   useFixtureQueryControls,
 } from '../app/fixtures/useFixture'
 import { findRouteByPathname } from '../app/router/routes'
-import { SEARCH_LATENCY, sendPhoneInvite } from '../app/adapters/buddyShare'
-import { markPhoneInvited, resolveBuddyPhoneOutcome } from '../app/state/buddies'
+import { searchBuddyByPhone, sendBuddyPhoneInvite } from '../services/buddyPhone'
 import buddyAvatarXiaomei from '../assets/brand/buddy/buddy-avatar-xiaomei.webp'
 
 const FIXTURE_STATES = new Set<BuddySearchOutcome>(['searching', 'invitable', 'not-found', 'invited'])
+const SEARCH_ERROR_COPY = '搜索失败，请稍后重试'
+const INVITE_ERROR_COPY = '发送邀请失败，请稍后重试'
 
 function initialPhone(state: BuddySearchOutcome): string {
   if (state === 'invitable' || state === 'not-found' || state === 'invited') {
@@ -42,40 +43,54 @@ export default function BuddyPhoneInvite() {
   const [phone, setPhone] = useState(() => initialPhone(directState))
   const [outcome, setOutcome] = useState<BuddySearchOutcome>(directState)
   const [sending, setSending] = useState(false)
-  const searchTimer = useRef<number | null>(null)
+  const [requestError, setRequestError] = useState<string | null>(null)
+  const searchRequest = useRef(0)
   const success = raw === 'success'
 
   useEffect(() => {
+    searchRequest.current += 1
     setOutcome(directState)
     setPhone(initialPhone(directState))
+    setRequestError(null)
   }, [directState])
 
-  useEffect(() => () => {
-    if (searchTimer.current != null) window.clearTimeout(searchTimer.current)
-  }, [])
-
-  const search = () => {
+  const search = async () => {
     const trimmed = phone.trim()
     if (!trimmed) return
+
+    const requestId = ++searchRequest.current
     setOutcome('searching')
-    if (searchTimer.current != null) window.clearTimeout(searchTimer.current)
-    searchTimer.current = window.setTimeout(() => {
-      setOutcome(resolveBuddyPhoneOutcome(trimmed))
-    }, SEARCH_LATENCY)
+    setRequestError(null)
+
+    try {
+      const result = await searchBuddyByPhone(trimmed)
+      if (requestId !== searchRequest.current) return
+      setOutcome(result.outcome)
+    } catch {
+      if (requestId !== searchRequest.current) return
+      setOutcome('idle')
+      setRequestError(SEARCH_ERROR_COPY)
+    }
   }
 
-  const send = () => {
+  const send = async () => {
     const trimmed = phone.trim()
     if (!trimmed || sending) return
+
     setSending(true)
-    void sendPhoneInvite(trimmed).then(() => {
-      markPhoneInvited(trimmed)
+    setRequestError(null)
+    try {
+      await sendBuddyPhoneInvite(trimmed)
+      setSending(false)
       fixtureNavigate(
         `/buddy/invite/phone?phone=${encodeURIComponent(trimmed)}`,
         { state: 'success', debug: debug ? '1' : null },
         { replace: true },
       )
-    })
+    } catch {
+      setSending(false)
+      setRequestError(INVITE_ERROR_COPY)
+    }
   }
 
   const closeSuccess = () => {
@@ -89,25 +104,33 @@ export default function BuddyPhoneInvite() {
           <form
             onSubmit={(event) => {
               event.preventDefault()
-              search()
+              void search()
             }}
             className="flex items-center gap-2"
           >
-            <label className="flex h-11 min-w-0 flex-1 items-center gap-2 rounded-pill border border-border-subtle bg-surface px-4 shadow-sm">
-              <Search className="h-4 w-4 flex-none text-text-tertiary" aria-hidden />
-              <input
-                type="tel"
-                inputMode="tel"
-                aria-label="输入手机号搜索搭子"
-                placeholder={BUDDY_INVITE_COPY.phonePlaceholder}
-                value={phone}
-                onChange={(event) => {
-                  setPhone(event.target.value)
-                  setOutcome('idle')
-                }}
-                className="min-w-0 flex-1 bg-transparent text-sm text-text-primary outline-none placeholder:text-text-tertiary"
-              />
-            </label>
+            <SearchField
+              type="tel"
+              inputMode="tel"
+              aria-label="输入手机号搜索搭子"
+              placeholder={BUDDY_INVITE_COPY.phonePlaceholder}
+              value={phone}
+              variant="pill"
+              inputClassName="placeholder:text-text-tertiary"
+              loading={outcome === 'searching'}
+              onChange={(event) => {
+                searchRequest.current += 1
+                setPhone(event.target.value)
+                setOutcome('idle')
+                setRequestError(null)
+              }}
+              onClear={() => {
+                searchRequest.current += 1
+                setPhone('')
+                setOutcome('idle')
+                setRequestError(null)
+              }}
+              className="min-w-0 flex-1 px-4"
+            />
             <Button type="submit" disabled={!phone.trim() || outcome === 'searching'} className="h-11 flex-none rounded-pill px-5">
               搜索
             </Button>
@@ -136,7 +159,7 @@ export default function BuddyPhoneInvite() {
                 <p className="text-[15px] font-medium text-buddy-text">小美</p>
                 <p className="mt-0.5 text-xs text-buddy-muted">{phone}</p>
               </div>
-              <Button size="regular" leadingIcon={Send} loading={sending} disabled={sending} onClick={send} className="flex-none rounded-pill px-4">
+              <Button size="regular" leadingIcon={Send} loading={sending} disabled={sending} onClick={() => void send()} className="flex-none rounded-pill px-4">
                 {BUDDY_INVITE_COPY.phoneSubmit}
               </Button>
             </article>
@@ -146,6 +169,12 @@ export default function BuddyPhoneInvite() {
             <div role="status" className="mt-3 rounded-container bg-surface px-4 py-6 text-center shadow-card">
               <p className="text-sm leading-6 text-text-secondary">{BUDDY_SEARCH_FEEDBACK[outcome]}</p>
             </div>
+          )}
+
+          {requestError && (
+            <p role="alert" className="mt-2 px-1 text-xs text-danger-text">
+              {requestError}
+            </p>
           )}
         </section>
 

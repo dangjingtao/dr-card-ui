@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PackageOpen } from 'lucide-react'
 import PageContainer from '../components/mobile/PageContainer'
+import EmptyStateIcon from '../components/mobile/EmptyStateIcon'
 import DebugPanel from '../components/mobile/DebugPanel'
 import { Button, EmptyState, SegmentedControl } from '../components/ui'
 import { useFixtureState } from '../app/fixtures/useFixture'
@@ -112,11 +113,7 @@ export default function Orders() {
         ) : (
           <EmptyState
             className="pt-12"
-            visual={
-              <span className="flex h-24 w-24 items-center justify-center rounded-full bg-background">
-                <PackageOpen className="h-12 w-12 text-reward" strokeWidth={1.6} />
-              </span>
-            }
+            visual={<EmptyStateIcon icon={PackageOpen} />}
             title={<span className="text-[15px] leading-[22px] text-text-secondary">{ORDER_COPY.emptyTitle}</span>}
             supportingText={<span className="text-xs leading-[18px]">{ORDER_COPY.emptyDesc}</span>}
             primaryAction={
