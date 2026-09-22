@@ -58,23 +58,6 @@ export const ADDRESS_FORM_COPY = {
   detailError: '请填写街道、楼牌号等详细地址',
 } as const
 
-export interface AddressFormValue {
-  name: string
-  phone: string
-  region: string
-  detail: string
-}
-export type AddressFormErrors = Partial<Record<keyof AddressFormValue, string>>
-
-export function validateAddressForm(value: AddressFormValue): AddressFormErrors {
-  const errors: AddressFormErrors = {}
-  if (!value.name.trim()) errors.name = ADDRESS_FORM_COPY.nameError
-  if (!/^1\d{10}$/.test(value.phone.trim())) errors.phone = ADDRESS_FORM_COPY.phoneError
-  if (!value.region.trim()) errors.region = ADDRESS_FORM_COPY.regionError
-  if (!value.detail.trim()) errors.detail = ADDRESS_FORM_COPY.detailError
-  return errors
-}
-
 export type OrderTabKey = 'all' | 'completed' | 'ongoing' | 'aftersale'
 export type OrderStatusKey = Exclude<OrderTabKey, 'all'>
 export type OrderDelivery = 'received' | 'shipped' | 'pending' | 'aftersale'

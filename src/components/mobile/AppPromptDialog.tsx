@@ -17,6 +17,7 @@ export interface AppPromptDialogProps {
   onAcknowledge: () => void
   onDownload?: () => void
   downloadHint?: string
+  downloadPending?: boolean
 }
 
 /**
@@ -32,6 +33,7 @@ export default function AppPromptDialog({
   onAcknowledge,
   onDownload,
   downloadHint,
+  downloadPending = false,
 }: AppPromptDialogProps) {
   return (
     <PromptOverlay open={open} label="APP 能力引导" onDismiss={onAcknowledge}>
@@ -78,7 +80,12 @@ export default function AppPromptDialog({
               我知道了
             </Button>
           )}
-          <Button size="large" className="flex-1 rounded-pill" onClick={onDownload}>
+          <Button
+            size="large"
+            className="flex-1 rounded-pill"
+            loading={downloadPending}
+            onClick={onDownload}
+          >
             下载链接
           </Button>
         </div>

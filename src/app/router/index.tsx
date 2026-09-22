@@ -89,7 +89,23 @@ import SignInPage from '../../pages/legacy/SignInPage'
 import PointsPage from '../../pages/legacy/PointsPage'
 import NotFound from '../../pages/NotFound'
 import { ROUTES } from './routes'
+import type { RouteMeta } from './routes'
 import type { ReactElement } from 'react'
+
+/**
+ * H022 shared route implementations.
+ * URL / deep-link semantics remain in routes.ts; repeated URLs resolve through one implementation
+ * registry instead of duplicating page entries here.
+ */
+const sharedRouteImplementations: Record<
+  NonNullable<RouteMeta['implementationKey']>,
+  (route: RouteMeta) => ReactElement
+> = {
+  membership: () => <Membership />,
+  'claim-success': (route) => (
+    <ClaimSuccess source={route.implementationVariant ?? 'campaign'} />
+  ),
+}
 
 /** 已完成/进行中的定制页面（其余节点走确定性 NodeStub 或 WebView 边界页） */
 const customPages: Record<string, ReactElement> = {
@@ -99,10 +115,6 @@ const customPages: Record<string, ReactElement> = {
   '/mall': <MallHome />,
   '/dearseed': <DearseedColumn />,
   '/checkin': <Checkin />,
-  /* 2026-08-28：恢复既有会员中心，由「我的 → 快捷服务」进入，不新建页面。 */
-  '/membership': <Membership />,
-  /* T046｜诗得丽专栏内会员中心入口：复用 Membership 组件 */
-  '/dearseed/membership': <Membership />,
   '/profile': <Profile />,
   '/luck': <Luck />,
   '/luck/result': <DrawSuccess />,
@@ -122,9 +134,6 @@ const customPages: Record<string, ReactElement> = {
   '/points/detail': <PointsDetail />,
   '/settings': <Settings />,
   '/onboarding': <Onboarding />,
-  /* T005：#25 与 #15 在摹客中是同构弹窗，仅文案不同，共用 ClaimSuccess */
-  '/onboarding/success': <ClaimSuccess source="onboarding" />,
-  '/claim/success': <ClaimSuccess source="campaign" />,
   /* T005：#16 品牌文化按原型只铺长图，不加浮动 CTA（用户定案，B-001 关闭） */
   '/brand-culture': <BrandCulture />,
   '/service/welfare-officer': <WelfareOfficer />,
@@ -215,7 +224,21 @@ const customPages: Record<string, ReactElement> = {
   '/signin/detail': <PointsPage />,
 }
 
+const bridgeLabRoutes =
+  import.meta.env.MODE === 'production'
+    ? []
+    : [
+        {
+          path: '/__debug/bridge-lab',
+          lazy: async () => {
+            const { default: Component } = await import('../../pages/BridgeLab')
+            return { Component }
+          },
+        },
+      ]
+
 export const router = createBrowserRouter([
+  ...bridgeLabRoutes,
   {
     element: <MobileLayout />,
     children: [
@@ -223,6 +246,7 @@ export const router = createBrowserRouter([
         let element: ReactElement = <NodeStub />
         /* redirectTo 仍用于明确退役并重定向的历史路径，优先级高于定制页。 */
         if (route.redirectTo) element = <Navigate to={route.redirectTo} replace />
+        else if (route.implementationKey) element = sharedRouteImplementations[route.implementationKey](route)
         else if (customPages[route.path]) element = customPages[route.path]
         else if (route.boundary === 'webview') element = <WebViewBoundary />
         return { path: route.path, element }

@@ -53,13 +53,13 @@ Core catalog (33): Button, IconButton, Input, Textarea, Select, Checkbox, Radio,
 | ProgressIndicator | ✅ | — | n/a | — | — | ✅ | ✅ | n/a | `role="progressbar"` + `aria-valuemin/max/now/text` |
 | Stepper | ✅ | — | n/a | — | ✅ | — | ✅ | n/a | `ol/li`，当前步 `aria-current="step"` |
 | Timeline | ✅ | — | n/a | — | — | — | ✅ | n/a | `ol/li` |
-| SearchField | ✅ | — | ✅ | ✅ | — | ✅ | ✅ | 40，清除 40 | 隐藏原生清除键，避免与自定义按钮重复 |
+| SearchField | ✅ | ✅ | ✅ | ✅ | — | ✅ | ✅ | compact 40 / regular 44，清除 40 | `subtle` / `pill`；placeholder 自动补可访问名称；loading → `aria-busy`；仅有 `onClear` 时渲染清除键；`inputClassName` 仅用于保留已确认的输入 token 差异 |
 | Menu | ✅ | — | ✅ | — | — | — | ✅ | n/a | `role="menu"`、Esc 关闭、纵向漫游焦点 |
 | MenuItem | ✅ | ✅ | ✅ | ✅ | — | — | — | 48 | `role="menuitem"`、`aria-current` |
 
 ### 交互检查记录
 
-- 触控目标：`SegmentedControl`（36→40）、`SearchField` 清除按钮（36→40）、`Alert` 关闭按钮（未约束→40）、`Snackbar` 动作按钮（未约束→40）、`BottomNavigation` 按钮（补 `min-h-10`）已全部达到 ≥40px。
+- 触控目标：`SegmentedControl`（36→40）、`SearchField`（compact 40 / regular 44，清除按钮 40）、`Alert` 关闭按钮（未约束→40）、`Snackbar` 动作按钮（未约束→40）、`BottomNavigation` 按钮（补 `min-h-10`）已全部达到 ≥40px。
 - 键盘路径：`Tabs` / `SegmentedControl` 横向、`Menu` 纵向支持方向键与 Home/End；`Dialog` / `BottomSheet` 支持 Esc 关闭与 Tab 循环，关闭后焦点归还触发元素。
 - 弹层不穿透：遮罩层用 `onPointerDown` 判定 `event.target === event.currentTarget` 关闭，面板本身 `stopPropagation`；打开期间锁定 `body` 滚动。
 - 底部安全区：`BottomSheet` 容器 `pb-[calc(16px+env(safe-area-inset-bottom))]`，`BottomNavigation` 容器 `pb-[calc(6px+env(safe-area-inset-bottom))]`。
@@ -74,20 +74,24 @@ Core catalog (33): Button, IconButton, Input, Textarea, Select, Checkbox, Radio,
 - `src/pages` 下 21 个页面中，只有 7 个从 `../components/ui` 导入组件；去重后 pages 层实际消费 9 个：`Button`、`EmptyState`、`Card`、`Tag`、`Section`、`IconButton`、`Dialog`、`Toast`、`SegmentedControl`。
 - 这 7 个页面里，`Tokens.tsx`（工程参照页）、`NodeStub.tsx`、`WebViewBoundary.tsx`、`NotFound.tsx` 属参照与兜底页，按本卡「不用组件展示页替代业务页面验收」不能作为消费证据；真正业务页只有 `Notifications.tsx`、`NotificationDetail.tsx`、`DrawSuccess.tsx`。
 - T005（`Home.tsx` / `Onboarding.tsx`）、T006（`Membership.tsx` / `Checkin.tsx` / `Points.tsx`）、T009（`Card.tsx` / `Redeem.tsx` / `ScanVerify.tsx` / `ConfirmVerify.tsx`）覆盖的页面**全部零消费** ui 组件。
-- 全仓库零消费组件 22 个：`Input`、`Textarea`、`Select`、`Checkbox`、`Radio`、`Switch`、`ListItem`、`Tabs`、`TopAppBar`、`Divider`、`Badge`、`Avatar`、`Snackbar`、`Alert`、`LoadingIndicator`、`Skeleton`、`ProgressIndicator`、`Stepper`、`Timeline`、`SearchField`、`Menu`、`MenuItem`。（`BottomNavigation` 经 `mobile/BottomNav.tsx`、`BottomSheet` 经 `mobile/FixtureOverlay.tsx` 间接进入运行时。）
+- T003 验收时的零消费组件清单经 H023 移除已正式消费的 `SearchField` 后，当前保留 21 个：`Input`、`Textarea`、`Select`、`Checkbox`、`Radio`、`Switch`、`ListItem`、`Tabs`、`TopAppBar`、`Divider`、`Badge`、`Avatar`、`Snackbar`、`Alert`、`LoadingIndicator`、`Skeleton`、`ProgressIndicator`、`Stepper`、`Timeline`、`Menu`、`MenuItem`。（`BottomNavigation` 经 `mobile/BottomNav.tsx`、`BottomSheet` 经 `mobile/FixtureOverlay.tsx` 间接进入运行时。）
 - 已存在手写等价 UI 而未复用 Core 的位置：`Tokens.tsx` 手写原生 `<input>` 与四态提示条（未用 `Input` / `Alert`）、`Settings.tsx` 有开关与输入交互（未用 `Switch` / `Input`）、`Profile.tsx` 与 `Home.tsx` 有头像（未用 `Avatar`）。
 
 T003 已由用户于 2026-08-21 在此缺口未闭合的情况下明确验收为 `Accepted`，验收时豁免了「至少由 T005、T006、T009 各消费一组组件」这一项。**豁免不等于缺口消失**：上述消费证据须随 T005 / T006 / T009 页面施工产生，不能用参照页截图替代；本节清单保留作为后续页面卡的施工输入。
+
+> H023 更新（2026-09-18）：本节仍记录 T003 当时的页面消费缺口，作为历史验收快照；组件零消费清单则按 H023 当前事实移除了已正式消费的 `SearchField`，因此现为 21 个。H023 已把 `SearchField` 正式接入 `Exchange`、`CardShare`、`BuddyPhoneInvite` 三个 active formal H5 页面，并补齐 `subtle/pill`、`compact/regular`、loading、clear 与 accessible-name 契约。
 
 ## ui 与 mobile 的职责边界
 
 | mobile 组件 | 现状 | 结论与去向 |
 | --- | --- | --- |
 | `mobile/BottomNav.tsx` | 消费 `ui/BottomNavigation`，注入路由与 `TAB_ROUTES` | 保留。壳层负责路由绑定，Core 负责视觉，不重复。 |
-| `mobile/TitleBar.tsx` | 业务标题栏，与 `ui/TopAppBar` 布局规格不同（44px 三列 / 居中大标题） | 保留。视觉以已确认页面为准，不与 `TopAppBar` 合并。 |
+| `mobile/TitleBar.tsx` | H021 后统一承担 H5 的 App 标准业务标题栏 | 保留；不模拟系统状态栏。active formal H5 使用 44px App 标题栏：一级 Tab 左侧关闭、二级页左侧返回；Native reference / deferred 保留历史预览宽度。 |
 | `mobile/Header.tsx` | 曾为 `TitleBar` 的无引用 re-export | 已删除；标题栏统一使用 `mobile/TitleBar.tsx`。 |
 | `mobile/EmptyState.tsx` | 曾为 `ui/EmptyState` 的无引用纯透传包装 | 已删除；页面直接使用 `ui/EmptyState`。 |
-| `mobile/PageContainer.tsx` / `StatusBar.tsx` | 壳层容器与状态栏，Core 无对应件 | 保留，无重复。 |
+| `mobile/EmptyStateIcon.tsx` | H023 抽出的 formal H5 空态视觉：96px 柔和圆形 + 48px reward-tone 图标 | 保留；仅负责视觉，不携带任何业务空态判定或文案。`Address` / `Orders` 为首批消费点。 |
+| `mobile/PageContainer.tsx` | H5 / Native reference 共用页面根容器 | 保留；组件本身继续使用 `max-w-legacy-shell` 兼容 reference/deferred，active formal H5 由 route-scope CSS 显式取消上限并随 WebView 铺满。 |
+| `mobile/StatusBar.tsx` | 原型期手机系统状态栏模拟 | H021 删除；正式 H5 不模拟时间、信号、电量等系统 UI。 |
 | `mobile/FixtureOverlay.tsx` | 原型对照工具，消费 `ui/Dialog` + `ui/BottomSheet` + `ui/Button` | 保留。已复用 Core 弹层，不重复。 |
 | `mobile/PromptOverlay.tsx` | 消费 `ui/Dialog` 的 `presentation="custom"` 紧凑形态，品牌弹窗只负责内容编排 | 保留。遮罩、语义、Esc、焦点陷阱、滚动锁定与焦点归还统一由 Core Dialog 提供。 |
 | `mobile/AppPromptDialog.tsx` | 基于 `PromptOverlay` 的品牌 TIPS 弹窗，使用品牌插画与 Com Design 语义 Token | 保留为品牌件。按钮、关闭操作、面板及反馈状态均复用 Core 组件/Token。 |

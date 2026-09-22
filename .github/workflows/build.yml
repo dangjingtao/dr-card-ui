@@ -8,11 +8,12 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 16
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,6 +33,39 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Unit and component tests
+        run: npm test
+
+      - name: Verify H007 HTTP foundation
+        run: npm run verify:h007
+
+      - name: Verify H009 runtime contracts
+        run: npm run verify:h009
+
+      - name: Verify H010 Zustand state
+        run: npm run verify:h010
+
+      - name: Verify H011 Storage Adapter
+        run: npm run verify:h011
+
+      - name: Verify H012 RHF + Zod forms
+        run: npm run verify:h012
+
+      - name: Verify H013 MSW network boundary
+        run: npm run verify:h013
+
+      - name: Verify H014 Mock scenarios
+        run: npm run verify:h014
+
+      - name: Verify H015 JSBridge boundary
+        run: npm run verify:h015
+
+      - name: Verify H022 route-state convergence
+        run: npm run verify:h022
+
+      - name: Verify H023 shared components
+        run: npm run verify:h023
+
       - name: Smoke test development server
         shell: bash
         run: |
@@ -40,6 +74,7 @@ jobs:
           trap 'kill $VITE_PID || true' EXIT
           for attempt in {1..20}; do
             if curl --fail --silent --show-error http://127.0.0.1:4174/ > /dev/null; then
+              curl --fail --silent --show-error http://127.0.0.1:4174/mockServiceWorker.js > /dev/null
               exit 0
             fi
             sleep 1
@@ -53,6 +88,7 @@ jobs:
       - name: Verify development build identity
         run: |
           node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('dist/build-meta.json','utf8'));if(m.appEnvironment!=='dev'||m.dataMode!=='mock')process.exit(1)"
+          test -f dist/mockServiceWorker.js
 
       - name: Verify local dev can explicitly use API
         shell: bash
@@ -89,6 +125,63 @@ jobs:
       - name: Verify Cloudflare preview build identity
         run: |
           node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('dist/build-meta.json','utf8'));if(m.appEnvironment!=='preview'||m.dataMode!=='mock'||m.build.sha!==process.env.GITHUB_SHA)process.exit(1)"
+          test -f dist/mockServiceWorker.js
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Formal H5 browser regression
+        id: formal-e2e
+        shell: bash
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
+        run: |
+          npm run preview -- --port 4173 --strictPort > /tmp/dr-card-playwright-preview.log 2>&1 &
+          PREVIEW_PID=$!
+          trap 'kill $PREVIEW_PID || true' EXIT
+          for attempt in {1..20}; do
+            if curl --fail --silent --show-error http://127.0.0.1:4173/build-meta.json > /dev/null; then
+              npm run test:e2e:formal
+              exit $?
+            fi
+            sleep 1
+          done
+          cat /tmp/dr-card-playwright-preview.log
+          exit 1
+
+      - name: H027 Bridge Lab browser smoke
+        shell: bash
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
+        run: |
+          npm run preview -- --port 4173 --strictPort > /tmp/dr-card-bridge-lab-preview.log 2>&1 &
+          PREVIEW_PID=$!
+          trap 'kill $PREVIEW_PID || true' EXIT
+          for attempt in {1..20}; do
+            if curl --fail --silent --show-error http://127.0.0.1:4173/build-meta.json > /dev/null; then
+              npm run test:e2e:bridge-lab
+              exit $?
+            fi
+            sleep 1
+          done
+          cat /tmp/dr-card-bridge-lab-preview.log
+          exit 1
+
+      - name: Verify H019 evidence assembler
+        if: always() && steps.formal-e2e.outcome != 'skipped'
+        env:
+          EVIDENCE_COMMIT_SHA: ${{ github.sha }}
+          EVIDENCE_BRANCH: ${{ github.head_ref || github.ref_name }}
+          EVIDENCE_REPOSITORY: ${{ github.repository }}
+          EVIDENCE_RUN_ID: ${{ github.run_id }}
+          EVIDENCE_RUN_ATTEMPT: ${{ github.run_attempt }}
+          EVIDENCE_PLAYWRIGHT_OUTCOME: ${{ steps.formal-e2e.outcome }}
+          EVIDENCE_BRIDGE_STATUS: not verified — H015 real Native protocol is blocked
+        run: |
+          npm run report:evidence
+          test -f test-evidence-site/latest/index.html
+          test -f "test-evidence-site/commits/$GITHUB_SHA/summary.json"
+          grep -F 'Browser CI evidence only' test-evidence-site/latest/index.html
 
       - name: Build test bundle
         run: npm run build:test
@@ -96,6 +189,7 @@ jobs:
       - name: Verify test build identity
         run: |
           node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('dist/build-meta.json','utf8'));if(m.appEnvironment!=='test'||m.dataMode!=='api')process.exit(1)"
+          test ! -f dist/mockServiceWorker.js
 
       - name: Reject Mock in production-like builds
         shell: bash
@@ -115,6 +209,23 @@ jobs:
       - name: Verify production build identity
         run: |
           node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('dist/build-meta.json','utf8'));if(m.appEnvironment!=='prod'||m.dataMode!=='api'||m.build.sha!==process.env.GITHUB_SHA)process.exit(1)"
+          test ! -f dist/mockServiceWorker.js
+
+      - name: Verify production excludes Bridge Lab
+        shell: bash
+        run: |
+          if grep -R --binary-files=text -F '__debug/bridge-lab' dist; then
+            echo 'Production bundle must not contain the Bridge Lab route.'
+            exit 1
+          fi
+          if grep -R --binary-files=text -F 'Android Raw Probe' dist; then
+            echo 'Production bundle must not contain Bridge Lab Raw Probe code.'
+            exit 1
+          fi
+          if grep -R --binary-files=text -F 'Run iOS Probe' dist; then
+            echo 'Production bundle must not contain Bridge Lab Raw Probe UI.'
+            exit 1
+          fi
 
       - name: Verify Cloudflare SPA fallback asset
         run: test -f dist/_redirects && grep -F '/* /index.html 200' dist/_redirects
@@ -139,8 +250,11 @@ jobs:
   test-gate:
     name: Test branch gate
     if: github.ref_name == 'test' || github.base_ref == 'test'
+    concurrency:
+      group: h019-test-evidence
+      cancel-in-progress: false
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 18
     env:
       VITE_APP_ENV: test
       VITE_DATA_MODE: api
@@ -179,26 +293,199 @@ jobs:
             exit 1
           fi
 
-      # Historical T015 verifies UI fixture query states from the archived prototype phase.
-      # H004/H006 intentionally disable those state/overlay/debug injections in test/API,
-      # so promotion now validates the production-like test bundle instead. H018 owns the
-      # future formal-H5 Playwright route suite.
-      - name: Smoke test API-only test preview
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Restore previous cumulative evidence site
+        if: always()
+        id: evidence-restore
+        continue-on-error: true
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          npm run preview -- --port 4173 > /tmp/dr-card-test-preview.log 2>&1 &
+          mkdir -p test-evidence-site
+          ARTIFACT_URL="$(gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts?name=h019-evidence-site&per_page=20" --jq '[.artifacts[] | select(.expired == false)] | sort_by(.created_at) | reverse | .[0].archive_download_url // empty')"
+          if [ -z "$ARTIFACT_URL" ]; then
+            echo 'No previous H019 site artifact found; starting a new evidence history.'
+            exit 0
+          fi
+          curl --fail --silent --show-error --location \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "$ARTIFACT_URL" \
+            --output /tmp/h019-evidence-site.zip
+          unzip -q -o /tmp/h019-evidence-site.zip -d test-evidence-site
+
+      - name: Run production-like test browser gate
+        id: test-playwright
+        shell: bash
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
+        run: |
+          npm run preview -- --port 4173 --strictPort > /tmp/dr-card-test-playwright.log 2>&1 &
           PREVIEW_PID=$!
           trap 'kill $PREVIEW_PID || true' EXIT
 
           for attempt in {1..20}; do
-            if curl --fail --silent --show-error http://127.0.0.1:4173/ > /dev/null; then
-              curl --fail --silent --show-error http://127.0.0.1:4173/profile > /dev/null
-              curl --fail --silent --show-error http://127.0.0.1:4173/settings > /dev/null
-              curl --fail --silent --show-error http://127.0.0.1:4173/build-meta.json > /dev/null
-              exit 0
+            if curl --fail --silent --show-error http://127.0.0.1:4173/build-meta.json > /dev/null; then
+              npm run test:e2e:test-gate
+              exit $?
             fi
             sleep 1
           done
 
-          cat /tmp/dr-card-test-preview.log
+          cat /tmp/dr-card-test-playwright.log
           exit 1
+
+      - name: Assemble H019 evidence site
+        if: always() && steps.evidence-restore.outcome == 'success'
+        env:
+          EVIDENCE_COMMIT_SHA: ${{ github.sha }}
+          EVIDENCE_BRANCH: ${{ github.head_ref || github.ref_name }}
+          EVIDENCE_REPOSITORY: ${{ github.repository }}
+          EVIDENCE_RUN_ID: ${{ github.run_id }}
+          EVIDENCE_RUN_ATTEMPT: ${{ github.run_attempt }}
+          EVIDENCE_PLAYWRIGHT_OUTCOME: ${{ steps.test-playwright.outcome }}
+          EVIDENCE_BRIDGE_STATUS: not verified — H015 real Native protocol is blocked
+        run: npm run report:evidence
+
+      - name: Write H019 Actions summary
+        if: always()
+        shell: bash
+        run: |
+          if [ -f test-evidence-site/summary.md ]; then
+            cat test-evidence-site/summary.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo '## H5 test evidence' >> "$GITHUB_STEP_SUMMARY"
+            echo '' >> "$GITHUB_STEP_SUMMARY"
+            echo 'Evidence assembly did not produce summary.md.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload raw H019 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: h019-test-evidence-${{ github.sha }}
+          overwrite: true
+          if-no-files-found: warn
+          retention-days: 30
+          path: |
+            playwright-report/
+            test-results/
+            dist/build-meta.json
+
+      - name: Upload cumulative H019 evidence site
+        if: always() && steps.evidence-restore.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: h019-evidence-site
+          overwrite: true
+          if-no-files-found: error
+          retention-days: 30
+          path: test-evidence-site/
+
+      - name: Resolve independent evidence Pages configuration
+        if: always() && steps.evidence-restore.outcome == 'success'
+        id: evidence-pages-config
+        shell: bash
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CF_PROJECT: ${{ vars.CF_TEST_EVIDENCE_PROJECT || 'dr-card-ui-test-evidence' }}
+          CF_BRANCH: ${{ vars.CF_TEST_EVIDENCE_BRANCH || 'main' }}
+        run: |
+          echo "project=$CF_PROJECT" >> "$GITHUB_OUTPUT"
+          echo "branch=$CF_BRANCH" >> "$GITHUB_OUTPUT"
+          if [ "$CF_PROJECT" = "dr-card-ui" ]; then
+            echo '::warning::H019 refuses to deploy evidence into the formal dr-card-ui Pages project.'
+            echo 'ready=false' >> "$GITHUB_OUTPUT"
+          elif [ -n "$CF_TOKEN" ] && [ -n "$CF_ACCOUNT" ] && [ -n "$CF_PROJECT" ]; then
+            echo 'ready=true' >> "$GITHUB_OUTPUT"
+          else
+            echo '::notice::H019 Cloudflare publish skipped: CLOUDFLARE_API_TOKEN or CLOUDFLARE_ACCOUNT_ID is not configured.'
+            echo 'ready=false' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Ensure independent H019 evidence Pages project
+        if: always() && steps.evidence-pages-config.outputs.ready == 'true'
+        id: evidence-pages-project
+        continue-on-error: true
+        shell: bash
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CF_PROJECT: ${{ steps.evidence-pages-config.outputs.project }}
+          CF_BRANCH: ${{ steps.evidence-pages-config.outputs.branch }}
+        run: |
+          API_BASE="https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT/pages/projects"
+          HTTP_CODE="$(curl --silent --show-error --output /tmp/h019-cf-project.json --write-out '%{http_code}' \
+            -H "Authorization: Bearer $CF_TOKEN" \
+            -H 'Accept: application/json' \
+            "$API_BASE/$CF_PROJECT")"
+
+          if [ "$HTTP_CODE" = "200" ]; then
+            node -e "const fs=require('fs');const r=JSON.parse(fs.readFileSync('/tmp/h019-cf-project.json','utf8'));if(r.success!==true)process.exit(1)"
+            echo "H019 evidence Pages project already exists: $CF_PROJECT"
+            exit 0
+          fi
+
+          if [ "$HTTP_CODE" != "404" ]; then
+            cat /tmp/h019-cf-project.json
+            echo "Unexpected Cloudflare project lookup status: $HTTP_CODE"
+            exit 1
+          fi
+
+          CREATE_BODY="$(node -e "process.stdout.write(JSON.stringify({name:process.env.CF_PROJECT,production_branch:process.env.CF_BRANCH}))")"
+          CREATE_CODE="$(curl --silent --show-error --output /tmp/h019-cf-project-create.json --write-out '%{http_code}' \
+            --request POST \
+            -H "Authorization: Bearer $CF_TOKEN" \
+            -H 'Content-Type: application/json' \
+            --data "$CREATE_BODY" \
+            "$API_BASE")"
+          node -e "const fs=require('fs');const r=JSON.parse(fs.readFileSync('/tmp/h019-cf-project-create.json','utf8'));if(r.success!==true)process.exit(1)"
+          if [ "$CREATE_CODE" -lt 200 ] || [ "$CREATE_CODE" -ge 300 ]; then
+            cat /tmp/h019-cf-project-create.json
+            echo "Cloudflare project create returned status: $CREATE_CODE"
+            exit 1
+          fi
+          echo "Created isolated H019 evidence Pages project: $CF_PROJECT"
+
+      - name: Publish independent H019 evidence Pages
+        if: always() && steps.evidence-pages-config.outputs.ready == 'true' && steps.evidence-pages-project.outcome == 'success'
+        id: evidence-pages-deploy
+        continue-on-error: true
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy test-evidence-site --project-name=${{ steps.evidence-pages-config.outputs.project }} --branch=${{ steps.evidence-pages-config.outputs.branch }}
+
+      - name: Record H019 publish status
+        if: always()
+        shell: bash
+        env:
+          RESTORE_OUTCOME: ${{ steps.evidence-restore.outcome }}
+          CONFIG_READY: ${{ steps.evidence-pages-config.outputs.ready }}
+          PROJECT_OUTCOME: ${{ steps.evidence-pages-project.outcome }}
+          DEPLOY_OUTCOME: ${{ steps.evidence-pages-deploy.outcome }}
+          CF_PROJECT: ${{ steps.evidence-pages-config.outputs.project }}
+        run: |
+          echo '' >> "$GITHUB_STEP_SUMMARY"
+          echo '### Evidence delivery' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Raw GitHub artifact: `h019-test-evidence-${{ github.sha }}`' >> "$GITHUB_STEP_SUMMARY"
+          if [ "$RESTORE_OUTCOME" != "success" ]; then
+            echo "- Cumulative site: not replaced; the last good history was preserved because restore outcome was \`${RESTORE_OUTCOME:-unknown}\`." >> "$GITHUB_STEP_SUMMARY"
+            echo '- Cloudflare Pages: skipped for this run to avoid publishing truncated history.' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo '- Cumulative site artifact: `h019-evidence-site`' >> "$GITHUB_STEP_SUMMARY"
+            if [ "$CONFIG_READY" != "true" ]; then
+              echo '- Cloudflare Pages: skipped (Cloudflare credentials are not fully configured).' >> "$GITHUB_STEP_SUMMARY"
+            elif [ "$PROJECT_OUTCOME" != "success" ]; then
+              echo "- Cloudflare Pages: project \`$CF_PROJECT\` could not be ensured; GitHub artifacts remain available." >> "$GITHUB_STEP_SUMMARY"
+            elif [ "$DEPLOY_OUTCOME" = "success" ]; then
+              echo "- Cloudflare Pages: published to isolated project \`$CF_PROJECT\`." >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "- Cloudflare Pages: publish attempt did not succeed (outcome: \`${DEPLOY_OUTCOME:-unknown}\`); GitHub artifacts remain available." >> "$GITHUB_STEP_SUMMARY"
+            fi
+          fi

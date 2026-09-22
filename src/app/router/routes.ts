@@ -22,6 +22,9 @@ import { CircleDot, Headset, Home, QrCode, UserRound } from 'lucide-react'
  */
 
 export type OverlayType = 'dialog' | 'sheet'
+export type RouteLeadingAction = 'auto' | 'back' | 'close' | 'none'
+export type RouteImplementationKey = 'membership' | 'claim-success'
+export type RouteImplementationVariant = 'campaign' | 'onboarding'
 
 export interface RouteState {
   /** URL `?state=` 取值 */
@@ -58,8 +61,18 @@ export interface RouteMeta {
   titleBar?: 'plain' | 'back' | 'hidden'
   /** 标题栏展示文案与页面业务标题不同时单独指定 */
   titleBarTitle?: string
+  /**
+   * App 标题栏左侧动作。
+   * auto：active formal H5 一级 Tab → close；二级 back 标题栏 → back；plain/hidden → none。
+   * close 只表达“退出当前 WebView”意图，真实宿主能力仍由 JSBridge adapter 决定。
+   */
+  leadingAction?: RouteLeadingAction
   /** 标题栏右侧动作 */
   titleBarAction?: 'settings' | 'notifications'
+  /** H022：合法多 URL 共用同一页面实现时使用，不用复制页面组件。 */
+  implementationKey?: RouteImplementationKey
+  /** 同一实现允许的轻量内容分支；不得用它承载另一套页面实现。 */
+  implementationVariant?: RouteImplementationVariant
   /** 本路由承载的实施节点 */
   nodes: number[]
   /** 所属任务卡 */
@@ -664,6 +677,8 @@ export const ROUTES: RouteMeta[] = [
   },
   {
     path: '/onboarding/success',
+    implementationKey: 'claim-success',
+    implementationVariant: 'onboarding',
     title: '填写完成后领取成功',
     /* 原型是叠在专栏首页上的成功弹窗，非独立页面：标题栏与首页一致，不出返回箭头 */
     titleBar: 'plain',
@@ -676,6 +691,8 @@ export const ROUTES: RouteMeta[] = [
   },
   {
     path: '/claim/success',
+    implementationKey: 'claim-success',
+    implementationVariant: 'campaign',
     title: '领取成功',
     /* 同 #25：专栏背景 + 遮罩 + 居中弹窗，标题栏沿用专栏 */
     titleBar: 'plain',
@@ -728,6 +745,7 @@ export const ROUTES: RouteMeta[] = [
   {
     /* T051v2-rollback｜v2 升格为底部 Tab 5 的改动已回滚；本页保持既有入口，不参与 Tab 5。 */
     path: '/membership',
+    implementationKey: 'membership',
     title: '会员中心',
     titleBarTitle: '会员中心',
     nodes: [6],
@@ -739,6 +757,7 @@ export const ROUTES: RouteMeta[] = [
   /* T046｜诗得丽专栏内会员中心入口：复用既有 Membership 组件，保持 T051 联动路由 slug */
   {
     path: '/dearseed/membership',
+    implementationKey: 'membership',
     title: '会员中心',
     titleBarTitle: '会员中心',
     nodes: [6],
@@ -768,10 +787,8 @@ export const ROUTES: RouteMeta[] = [
     overlays: [
       { key: 'reminder', node: 4, label: '打卡提示弹窗', type: 'dialog' },
       { key: 'make-up-success', node: 22, label: '补打卡成功弹窗', type: 'dialog' },
-      /* T045｜演示广告弹窗：补签流程中播放，5 秒倒计时后自动收起并触发补签成功页 */
-      { key: 'demo-ad', node: 22, label: '补签演示广告弹窗', type: 'dialog' },
     ],
-    owner: '月度签到/补签（T006 施工；T045 新增看广告补签）',
+    owner: '月度签到/补签（T006；H033 接 Native 激励广告完成信号）',
   },
   {
     path: '/luck',
@@ -865,16 +882,12 @@ export const ROUTES: RouteMeta[] = [
     path: '/buddy/invite/scan',
     title: '邀请搭子（没 APP）',
     nodes: [30],
-    task: 'T007',
-    /* 用户 2026-08-24 定案（D-055）：#30 只有一行「应用商店H5」占位文案，
-     * 按「WebView 边界页 + 唤起弹窗」两态承载，不伪造任何应用商店视觉。 */
-    states: [
-      { key: 'no-app', node: 30, label: '未安装 APP-应用商店 H5' },
-      { key: 'has-app', node: 30, label: '已安装 APP-弹窗提示跳转' },
-    ],
+    task: 'H034',
+    /* H034：安装态只来自 Native openApp({ action: 'detect' })，
+     * 不再用 ?state=no-app/has-app 夹具模拟真实安装状态。 */
     entry: '微信扫描搭子邀请二维码',
     returnTo: '（外部承接，无应用内返回）',
-    owner: '被邀请人扫码承接（T007 施工；显式标注边界，不实现真实唤起）',
+    owner: '被邀请人扫码承接（H034；Native detect/open/store，H5 不探测 scheme）',
   },
   {
     path: '/buddy/accept',

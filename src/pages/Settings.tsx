@@ -6,6 +6,11 @@ import PromptOverlay from '../components/mobile/PromptOverlay'
 import { Button, IconButton } from '../components/ui'
 import { useOverlay } from '../app/fixtures/useFixture'
 import { memberProfileActions, useMemberProfile } from '../app/state/memberProfile'
+import {
+  chooseImage,
+  NativeBridgeError,
+  takePhoto,
+} from '../services/nativeBridge'
 import avatar from '../assets/brand/home/home-avatar.webp'
 import { canEditBirthday, formatNextEditableDate } from '../utils/birthdayGate'
 
@@ -37,14 +42,18 @@ export default function Settings() {
   const [pw2, setPw2] = useState('')
   const [pwStep, setPwStep] = useState(1)
   const [showPw, setShowPw] = useState(false)
-  const [toast, setToast] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
+  const [avatarSrc, setAvatarSrc] = useState(avatar)
+  const [avatarPending, setAvatarPending] = useState<'photo' | 'album' | null>(null)
+  const [avatarError, setAvatarError] = useState<string | null>(null)
   const bypassGuard = useRef(false)
 
   const dirty =
     nickname !== initialProfile.nickname ||
     birthdayDraft !== memberProfile.birthday ||
     year !== initialProfile.year ||
-    passwordSet !== initialProfile.passwordSet
+    passwordSet !== initialProfile.passwordSet ||
+    avatarSrc !== avatar
 
   const blocker = useBlocker(
     ({ historyAction }) => !bypassGuard.current && dirty && historyAction !== 'REPLACE',
@@ -59,14 +68,47 @@ export default function Settings() {
     setPw2('')
   }
 
-  const flashToast = () => {
-    setToast(true)
-    window.setTimeout(() => setToast(false), 2200)
+  const flashToast = (message = '保存成功') => {
+    setToast(message)
+    window.setTimeout(() => setToast(null), 2200)
   }
 
   const save = () => {
     flashToast()
     close()
+  }
+
+  const updateAvatar = async (source: 'photo' | 'album') => {
+    if (avatarPending) return
+
+    setAvatarPending(source)
+    setAvatarError(null)
+    try {
+      const result =
+        source === 'photo'
+          ? await takePhoto()
+          : await chooseImage()
+
+      setAvatarSrc(`data:${result.mimeType};base64,${result.imageBase64}`)
+      flashToast('已选择头像')
+      close()
+    } catch (error) {
+      if (error instanceof NativeBridgeError) {
+        if (['bridge-disabled', 'bridge-unsupported', 'capability-unsupported'].includes(error.code)) {
+          setAvatarError('当前 App 版本暂不支持该图片能力')
+        } else if (error.code === 'native-cancelled') {
+          setAvatarError('已取消图片选择')
+        } else if (error.code === 'native-permission-denied') {
+          setAvatarError(source === 'photo' ? '请允许相机权限后重试' : '请允许相册权限后重试')
+        } else {
+          setAvatarError('头像更新失败，请重试')
+        }
+      } else {
+        setAvatarError('头像更新失败，请重试')
+      }
+    } finally {
+      setAvatarPending(null)
+    }
   }
 
   const confirmAll = () => {
@@ -98,7 +140,7 @@ export default function Settings() {
           <span className="w-12 shrink-0 text-sm text-text-tertiary">头像</span>
           <span className="flex min-w-0 flex-1 justify-end">
             <button type="button" onClick={() => setSheet('avatar')} className="h-11 w-11 overflow-hidden rounded-full" aria-label="修改头像">
-              <img src={avatar} alt="会员头像" className="h-full w-full object-cover" />
+              <img src={avatarSrc} alt="会员头像" className="h-full w-full object-cover" />
             </button>
           </span>
           <button type="button" onClick={() => setSheet('avatar')} aria-label="修改头像" className="shrink-0 text-text-tertiary">
@@ -201,14 +243,33 @@ export default function Settings() {
               {sheet === 'avatar' && (
                 <>
                   <p className="text-sm text-text-tertiary">选择一种方式更新您的会员头像</p>
-                  <button type="button" onClick={save} className="mt-4 flex w-full items-center gap-3 rounded-xl p-2.5 active:bg-surface-subtle">
+                  <button
+                    type="button"
+                    onClick={() => void updateAvatar('photo')}
+                    disabled={avatarPending !== null}
+                    className="mt-4 flex w-full items-center gap-3 rounded-xl p-2.5 active:bg-surface-subtle disabled:opacity-60"
+                  >
                     <Camera className="h-5 w-5 text-text-secondary" />
-                    <span className="text-sm text-text-primary">拍照</span>
+                    <span className="text-sm text-text-primary">
+                      {avatarPending === 'photo' ? '正在调用相机…' : '拍照'}
+                    </span>
                   </button>
-                  <button type="button" onClick={save} className="flex w-full items-center gap-3 rounded-xl p-2.5 active:bg-surface-subtle">
+                  <button
+                    type="button"
+                    onClick={() => void updateAvatar('album')}
+                    disabled={avatarPending !== null}
+                    className="flex w-full items-center gap-3 rounded-xl p-2.5 active:bg-surface-subtle disabled:opacity-60"
+                  >
                     <Image className="h-5 w-5 text-text-secondary" />
-                    <span className="text-sm text-text-primary">从相册选择</span>
+                    <span className="text-sm text-text-primary">
+                      {avatarPending === 'album' ? '正在打开相册…' : '从相册选择'}
+                    </span>
                   </button>
+                  {avatarError && (
+                    <p role="alert" className="mt-2 text-xs text-danger-text">
+                      {avatarError}
+                    </p>
+                  )}
                   <div className="my-2 h-px bg-border-subtle" />
                   <button type="button" onClick={close} className="flex w-full items-center gap-3 rounded-xl p-2.5 active:bg-surface-subtle">
                     <X className="h-5 w-5 text-text-secondary" />
@@ -347,7 +408,7 @@ export default function Settings() {
       {toast && (
         <div role="status" className="fixed inset-x-0 top-16 z-50 mx-auto flex w-fit items-center gap-2 rounded-control bg-surface-inverse px-4 py-2 text-sm text-text-inverse shadow-floating">
           <CheckCircle2 className="h-4 w-4" />
-          保存成功
+          {toast}
         </div>
       )}
 

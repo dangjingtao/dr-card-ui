@@ -47,6 +47,12 @@ export default function BottomNav({ variant = 'main' }: { variant?: 'main' | 'le
       if (target && target !== location.pathname) navigate(target)
       return
     }
+
+    if (value === location.pathname) return
+
+    // 一级 Tab 是频道切换，只使用 H016 的 130ms CSS fade。
+    // 不进入 native View Transition，避免 old/new snapshot 叠加造成残影；
+    // deferred formal-H5（当前 mall）也继续保持普通 Router 导航。
     navigate(value)
   }
 
@@ -55,7 +61,7 @@ export default function BottomNav({ variant = 'main' }: { variant?: 'main' | 'le
       items={items}
       value={active}
       onChange={handleChange}
-      className="relative z-40 mx-auto w-full max-w-[480px] shrink-0"
+      className={`relative z-40 w-full shrink-0 ${isLegacy ? 'mx-auto max-w-legacy-shell' : ''}`}
     />
   )
 }
