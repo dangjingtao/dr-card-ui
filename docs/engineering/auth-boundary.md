@@ -8,7 +8,7 @@
 - Android 登录凭证入口：`window.androidBridge.getLoginToken()`；
 - iOS 登录凭证入口：`window.iosBridge.getLoginToken()`；
 - 两端均无参数、同步返回 JSON string；
-- 当前返回结构：`{"token":"..."}`；
+- 当前返回结构：`{"token":"...","salt":"..."}`；H5 兼容旧版 token-only 返回，但需要签名的接口不得把缺失 salt 当作有效凭证；
 - Native 回填写明最低 App 版本目标为 2.13；
 - Native 同时注明两端方法已注入，但内部实现仍需改为读取真实登录态；
 - H5 统一通过 `src/services/nativeBridge.ts` 获取并验证结果，业务页面不得直接访问宿主对象。

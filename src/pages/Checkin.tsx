@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
-import CheckinBoard from '../components/mobile/CheckinBoard'
+import CheckinBoard from './checkin/components/CheckinBoard'
 import CheckinMakeupSuccessOverlay from '../components/mobile/CheckinMakeupSuccessOverlay'
 import DebugPanel from '../components/mobile/DebugPanel'
 import PageContainer from '../components/mobile/PageContainer'

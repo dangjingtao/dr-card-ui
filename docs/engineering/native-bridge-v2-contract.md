@@ -73,10 +73,10 @@ window.androidBridge.getLoginToken()
 window.iosBridge.getLoginToken()
 ```
 
-无参数，同步返回 JSON 字符串：
+无参数，同步返回 JSON 字符串。当前 Android 宿主额外返回 salt；H5 对旧版只返回 token 的宿主保持兼容：
 
 ```json
-{"token":"8a59966dc70c13b2b87b0ab2ca383ebb"}
+{"token":"8a59966dc70c13b2b87b0ab2ca383ebb","salt":"..."}
 ```
 
 H5 正式契约：
@@ -84,6 +84,7 @@ H5 正式契约：
 ```ts
 type NativeLoginToken = {
   token: string
+  salt?: string
 }
 ```
 
@@ -92,6 +93,7 @@ H5 必须：
 - 每次调用重新解析当前 injected object；
 - 保留 Native object receiver；
 - 只接受 JSON string；
+- salt 存在时必须是 string；旧宿主缺少 salt 时保留 token-only 兼容结果；
 - JSON 非法、返回非 JSON string、`token` 非 string 均按 payload invalid 失败；
 - 同步 Native return 统一 Promise 化给业务层；
 - token 结果按敏感信息处理。

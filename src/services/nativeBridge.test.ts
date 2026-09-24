@@ -38,7 +38,7 @@ afterEach(() => {
 })
 
 describe('JSBridge capability runtime', () => {
-  it('supports late Android bridge injection and parses the confirmed JSON-string token DTO', async () => {
+  it('supports late Android bridge injection and preserves the optional salt credential', async () => {
     const { getLoginToken, NativeBridgeError } = await loadBridge()
 
     await expect(getLoginToken()).rejects.toMatchObject({
@@ -49,11 +49,11 @@ describe('JSBridge capability runtime', () => {
 
     bridgeWindow.androidBridge = {
       getLoginToken() {
-        return '{"token":"late-token"}'
+        return '{"token":"late-token","salt":"late-salt"}'
       },
     }
 
-    await expect(getLoginToken()).resolves.toEqual({ token: 'late-token' })
+    await expect(getLoginToken()).resolves.toEqual({ token: 'late-token', salt: 'late-salt' })
   })
 
   it('uses the confirmed iOS iosBridge.getLoginToken() contract', async () => {
@@ -62,12 +62,12 @@ describe('JSBridge capability runtime', () => {
       marker: 'ios-host',
       getLoginToken() {
         expect(this).toBe(iosBridge)
-        return '{"token":"ios-token"}'
+        return '{"token":"ios-token","salt":"ios-salt"}'
       },
     }
     bridgeWindow.iosBridge = iosBridge
 
-    await expect(getLoginToken()).resolves.toEqual({ token: 'ios-token' })
+    await expect(getLoginToken()).resolves.toEqual({ token: 'ios-token', salt: 'ios-salt' })
   })
 
   it('resolves replacement injected-object instances on later invocations', async () => {
@@ -141,6 +141,32 @@ describe('JSBridge capability runtime', () => {
     bridgeWindow.androidBridge = {
       getLoginToken() {
         return { token: 'object-is-not-the-contract' }
+      },
+    }
+    await expect(getLoginToken()).rejects.toMatchObject({
+      name: 'NativeBridgeError',
+      code: 'invocation-failed',
+      capability: 'getLoginToken',
+      cause: expect.objectContaining({
+        name: 'NativeTransportError',
+        code: 'payload-invalid',
+      }),
+    })
+  })
+
+  it('keeps legacy token-only hosts compatible and rejects a malformed salt', async () => {
+    const { getLoginToken } = await loadBridge()
+
+    bridgeWindow.androidBridge = {
+      getLoginToken() {
+        return '{"token":"legacy-token"}'
+      },
+    }
+    await expect(getLoginToken()).resolves.toEqual({ token: 'legacy-token' })
+
+    bridgeWindow.androidBridge = {
+      getLoginToken() {
+        return '{"token":"token","salt":123}'
       },
     }
     await expect(getLoginToken()).rejects.toMatchObject({

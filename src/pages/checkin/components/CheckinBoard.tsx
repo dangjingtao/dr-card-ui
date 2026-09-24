@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowUpRight, CalendarDays, Check, CheckCircle2, ChevronRight, Gift, ListTodo, Sparkles, X } from 'lucide-react'
-import { BottomSheet, Button, ProgressIndicator } from '../ui'
+import { BottomSheet, Button, ProgressIndicator } from '../../../components/ui'
 import {
   CHECKIN_CALENDAR,
   CHECKIN_DAILY_TASK,
@@ -10,13 +10,14 @@ import {
   CHECKIN_STATUS_TEXT,
   CHECKIN_STREAK,
   type CheckinDay,
-} from '../../app/fixtures'
-import checkinRitualHero from '../../assets/brand/bubble/checkin-ritual-hero-v2.webp'
-import pickShampooA from '../../assets/brand/exchange/exchange-pick-shampoo-a.webp'
-import pickShampooB from '../../assets/brand/exchange/exchange-pick-shampoo-b.webp'
+} from '../../../app/fixtures'
+import checkinRitualHero from '../../../assets/brand/bubble/checkin-ritual-hero-v2.webp'
+import pickShampooA from '../../../assets/brand/exchange/exchange-pick-shampoo-a.webp'
+import pickShampooB from '../../../assets/brand/exchange/exchange-pick-shampoo-b.webp'
 
 const pickAssets = [pickShampooA, pickShampooB] as const
 const CHECKIN_CYCLE_TARGET = 7
+const CHECKIN_WEEK_LABELS = ['日', '一', '二', '三', '四', '五', '六'] as const
 const CHECKIN_CYCLE_WEEK_LABELS = ['一', '二', '三', '四', '五', '六', '日'] as const
 const CHECKIN_MONTH_WEEK_LABELS = ['日', '一', '二', '三', '四', '五', '六'] as const
 const CHECKIN_MONTH_START_OFFSET = new Date(2026, 5, 1).getDay()
@@ -33,6 +34,22 @@ function getCheckinCycleDays(): CheckinDay[] {
   const todayOffset = Math.min(Math.max(CHECKIN_STREAK - 1, 0), CHECKIN_CYCLE_TARGET - 1)
   const startIndex = Math.min(Math.max(todayIndex - todayOffset, 0), maxStart)
   return CHECKIN_CALENDAR.slice(startIndex, startIndex + CHECKIN_CYCLE_TARGET)
+}
+
+function getHomeCheckinDays(statusDays: CheckinDay[]) {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  return Array.from({ length: CHECKIN_CYCLE_TARGET }, (_, index) => {
+    const date = new Date(today)
+    date.setDate(today.getDate() + index)
+
+    return {
+      day: date.getDate(),
+      state: index === 0 ? 'today' as const : statusDays[index]?.state === 'done' ? 'done' as const : 'upcoming' as const,
+      weekLabel: CHECKIN_WEEK_LABELS[date.getDay()],
+    }
+  })
 }
 
 /** 是日任务进度条比例：解析夹具里既有的「1 / 1」文案，不额外引入进度字段。 */
@@ -68,6 +85,7 @@ export default function CheckinBoard({ mode = 'home', isSuccess = false, onMakeu
   //  如需恢复抽屉弹窗跳转，把 onClick 改回 setCalendarOpen(true) 即可。
   const [calendarOpen, setCalendarOpen] = useState(false)
   const cycleDays = getCheckinCycleDays()
+  const homeCheckinDays = getHomeCheckinDays(cycleDays)
   const completedDays = cycleDays.filter((item) => item.state === 'done' || item.state === 'today').length
   const monthCompletedDays = CHECKIN_CALENDAR.filter((item) => item.state === 'done' || item.state === 'today').length
   const remainingDays = Math.max(0, CHECKIN_CYCLE_TARGET - completedDays)
@@ -118,54 +136,52 @@ export default function CheckinBoard({ mode = 'home', isSuccess = false, onMakeu
             type="button"
             onClick={() => navigate('/checkin')}
             aria-label={`查看 7 天签到日历，当前 ${completedDays} / ${CHECKIN_CYCLE_TARGET}`}
-            className="mx-4 block w-[calc(100%-2rem)] rounded-[18px] bg-surface px-4 pb-3.5 pt-3 text-left shadow-bubble transition active:scale-[0.995] active:bg-surface-pressed"
+            className="mx-4 block w-[calc(100%-2rem)] rounded-[16px] bg-checkin-home-surface px-3.5 pb-3.5 pt-3.5 text-left shadow-bubble transition active:scale-[0.995] active:bg-surface-pressed"
           >
             <div className="flex items-center justify-between gap-3">
-              <span className="flex min-w-0 items-center gap-2 text-[13px] font-semibold text-text-primary">
-                <CalendarDays className="h-4 w-4 flex-none text-reward-strong" aria-hidden />
-                7 天签到
-                <span className="text-[11px] font-medium text-reward-text">{completedDays}/{CHECKIN_CYCLE_TARGET}</span>
+              <span className="flex min-w-0 items-center gap-2 text-[14px] font-semibold leading-5 text-text-primary">
+                <span className="flex h-7 w-7 flex-none items-center justify-center rounded-[8px] bg-secondary text-reward-strong" aria-hidden>
+                  <CalendarDays className="h-4 w-4" />
+                </span>
+                <span>7天签到</span>
+                <span className="text-[12px] font-semibold text-reward-text">{completedDays}/{CHECKIN_CYCLE_TARGET}</span>
               </span>
-              <span className="flex flex-none items-center gap-0.5 text-[11px] font-medium text-text-tertiary">
+              <span className="flex flex-none items-center gap-0.5 rounded-pill bg-surface-subtle px-2.5 py-1 text-[11px] font-medium leading-4 text-text-secondary">
                 {challengeComplete ? '已完成' : `还差 ${remainingDays} 天`}
-                <ChevronRight className="h-3.5 w-3.5" aria-hidden />
+                <ChevronRight className="h-3 w-3" aria-hidden />
               </span>
             </div>
 
-            <div className="mt-2.5 grid grid-cols-7 gap-2" aria-hidden>
-              {cycleDays.map((item, index) => {
+            <div className="mt-3 grid grid-cols-7 gap-1" aria-hidden>
+              {homeCheckinDays.map((item) => {
                 const completed = item.state === 'done'
                 return (
-                  <span key={item.day} className="flex min-w-0 flex-col items-center gap-1">
-                    <span className="text-[9px] leading-none text-text-tertiary">{CHECKIN_CYCLE_WEEK_LABELS[index]}</span>
+                  <span key={item.day} className="flex min-w-0 flex-col items-center gap-1.5">
+                    <span className="text-[9px] leading-none text-checkin-home-muted">{item.weekLabel}</span>
                     {/* T045｜签到视觉规则：
-                     *  today（今天未签）→ 矩形 + X + 日期
+                     *  today（今天未签）→ 暖金圆角块 + 日期 + 今天
                      *  done（已签）→ ✓ 暖色
                      *  makeup（过往漏签）→ 「补签」两字
                      *  upcoming（未来）→ 透明背景 + 灰色数字（去掉灰色原型底） */}
                     <span
-                      className={`flex h-6 w-6 items-center justify-center text-[9px] font-semibold ${
+                      className={`flex h-7 w-7 items-center justify-center text-[10px] font-semibold ${
                         item.state === 'today'
-                          ? 'flex-col rounded-md bg-[#3A2E1F] text-white shadow-sm'
+                          ? 'flex-col rounded-[10px] bg-checkin-home-today text-checkin-home-today-text shadow-sm'
                           : completed
-                            ? 'flex-col rounded-full bg-reward-subtle text-reward-strong'
-                            : item.state === 'makeup'
-                              ? 'rounded-md bg-primary/10 text-text-brand'
-                              : 'rounded-full text-text-tertiary/70'
+                            ? 'flex-col rounded-full bg-checkin-home-day-surface text-reward-strong'
+                            : 'rounded-full bg-checkin-home-day-surface text-checkin-home-day-text'
                       }`}
                     >
                       {item.state === 'today' ? (
                         <>
-                          <X className="h-2.5 w-2.5" strokeWidth={3} />
-                          <span className="mt-0.5 text-[8px] leading-none">{item.day}</span>
+                          <span className="text-[10px] leading-3">{item.day}</span>
+                          <span className="mt-0.5 text-[8px] font-medium leading-3">今天</span>
                         </>
                       ) : completed ? (
                         <>
                           <Check className="h-2.5 w-2.5" strokeWidth={3} />
                           <span className="mt-0.5 text-[8px] leading-none">{item.day}</span>
                         </>
-                      ) : item.state === 'makeup' ? (
-                        <span className="text-[10px] font-semibold leading-none">补签</span>
                       ) : (
                         item.day
                       )}

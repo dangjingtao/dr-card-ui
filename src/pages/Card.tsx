@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { CalendarDays, Check, Clock, Info, KeyRound, QrCode, ReceiptText, Ticket, X } from 'lucide-react'
 import DebugPanel from '../components/mobile/DebugPanel'
@@ -15,6 +15,7 @@ import {
   type CardCouponStatus,
   COUPON_USE_GUIDE,
 } from '../app/fixtures'
+import { probeDiscountCardList, type DiscountCardProbeResponse } from '../services/cardPackageProbe'
 
 /**
  * 电影票样式卡券（自营页面专用 - 第一版）
@@ -168,6 +169,15 @@ export default function Card() {
   const { state } = useFixtureState(route)
   const { overlay, close } = useOverlay()
   const [searchParams, setSearchParams] = useSearchParams()
+  const apiProbeEnabled = import.meta.env.DEV && searchParams.get('apiProbe') === '1'
+  const apiProbeSigned = Boolean(import.meta.env.VITE_CARD_API_TOKEN && import.meta.env.VITE_CARD_API_SALT)
+  const [apiProbe, setApiProbe] = useState<
+    | { state: 'loading' }
+    | { state: 'success'; response: DiscountCardProbeResponse }
+    | { state: 'error'; message: string }
+    | null
+  >(null)
+  const apiProbeRequestRef = useRef<Promise<DiscountCardProbeResponse> | null>(null)
 
   /** 节点 #62/#63/#64：Tab 初值来自 `?state=`，验收可直达 URL 截图 */
   const [tab, setTab] = useState<CardCouponStatus>((state?.key as CardCouponStatus) ?? 'available')
@@ -180,6 +190,35 @@ export default function Card() {
   /** 弹层内展示的券由 `?coupon=` 决定，保证「使用」弹层可复现 */
   const activeCoupon = resolveCardCoupon(searchParams.get('coupon'))
   const list = cardCouponsByStatus(tab)
+
+  useEffect(() => {
+    if (!apiProbeEnabled) {
+      setApiProbe(null)
+      apiProbeRequestRef.current = null
+      return
+    }
+
+    setApiProbe({ state: 'loading' })
+    const request = (apiProbeRequestRef.current ??= probeDiscountCardList())
+    let active = true
+
+    void request
+      .then((response) => {
+        if (active) setApiProbe({ state: 'success', response })
+      })
+      .catch((error: unknown) => {
+        if (active) {
+          setApiProbe({
+            state: 'error',
+            message: error instanceof Error ? error.message : '网络请求失败',
+          })
+        }
+      })
+
+    return () => {
+      active = false
+    }
+  }, [apiProbeEnabled])
 
   /** 切换 Tab 时把状态同步写回 `?state=`，保证 URL 始终等于页面真实状态（验收可直达截图） */
   const selectTab = (next: CardCouponStatus) => {
@@ -210,6 +249,23 @@ export default function Card() {
 
   return (
     <PageContainer className="pb-24">
+      {apiProbeEnabled && (
+        <section className="mb-4 rounded-xl border border-border-subtle bg-surface p-3 text-xs" aria-live="polite">
+          <div className="font-semibold text-text-primary">后台连通性探测</div>
+          {apiProbe?.state === 'loading' && <p className="mt-1 text-text-secondary">请求中…</p>}
+          {apiProbe?.state === 'error' && <p className="mt-1 text-text-secondary">请求失败：{apiProbe.message}</p>}
+          {apiProbe?.state === 'success' && (
+            <p className="mt-1 text-text-secondary">
+              HTTP 已到达；code={apiProbe.response.code} · status={apiProbe.response.status} · {apiProbe.response.msg}
+            </p>
+          )}
+          <p className="mt-1 text-text-tertiary">
+            {apiProbeSigned
+              ? '当前使用运行时 token/salt 计算 secstr；敏感值未写入页面代码。'
+              : '当前未配置 token/salt，仅用于验证浏览器到上游接口的连通性。'}
+          </p>
+        </section>
+      )}
       <div className="flex gap-2 rounded-xl border border-border-subtle bg-surface p-1" role="tablist" aria-label="卡包状态">
         {CARD_PACK_TABS.map((item) => (
           <button
