@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { CalendarDays, Check, Clock, Info, KeyRound, QrCode, ReceiptText, Ticket, X } from 'lucide-react'
 import DebugPanel from '../components/mobile/DebugPanel'
@@ -8,14 +8,12 @@ import { findRouteByPathname } from '../app/router/routes'
 import {
   CARD_PACK_TABS,
   CARD_PACK_TIPS,
-  cardCouponCount,
-  cardCouponsByStatus,
   resolveCardCoupon,
-  type CardCouponFixture,
   type CardCouponStatus,
   COUPON_USE_GUIDE,
 } from '../app/fixtures'
 import { probeDiscountCardList, type DiscountCardProbeResponse } from '../services/cardPackageProbe'
+import { COUPON_STATUS_ON_SHELF, fetchCouponList, type CouponTemplate } from '../services/coupons'
 
 /**
  * 电影票样式卡券（自营页面专用 - 第一版）
@@ -29,14 +27,36 @@ import { probeDiscountCardList, type DiscountCardProbeResponse } from '../servic
  * - 把所有样式 inline 写在本组件里，方便后续整体替换为更精细的版本。
  * - 不引入 CSS 变量，固定值先用 Tailwind class 表达；金色渐变通过 inline style 注入。
  */
+/**
+ * 票券视图模型：列表数据源已切到 7002 `/api/coupons/*`（券模板），
+ * 接口没有面值与有效期，对应字段缺省时直接不渲染，不留空位、不臆造文案。
+ * 夹具（`?coupon=` 直达验收链路）与接口数据共用本模型。
+ */
+interface CouponTicketView {
+  id: string
+  name: string
+  amountLabel?: string
+  expireAt?: string
+  limitNote?: string
+}
+
 interface MovieTicketProps {
-  coupon: CardCouponFixture
+  coupon: CouponTicketView
   /** 是否已过期（叠加全卡 opacity） */
   expired?: boolean
   /** 是否已使用（左右色块灰化，但保留布局） */
   used?: boolean
   onUse: () => void
   onShare: () => void
+}
+
+/** 接口券模板 → 票券视图模型：仅搬运接口已有字段，不补造金额/有效期。 */
+function toCouponTicketView(coupon: CouponTemplate): CouponTicketView {
+  return {
+    id: String(coupon.id),
+    name: coupon.name,
+    limitNote: coupon.short_desc?.trim() || undefined,
+  }
 }
 
 const NOTCH_SIZE = 14 // 两端半圆缺口直径（px）
@@ -118,10 +138,12 @@ function MovieTicket({ coupon, expired, used, onUse, onShare }: MovieTicketProps
               </span>
             </div>
 
-            <div className={`mt-1.5 flex items-center gap-1 text-[11px] ${isInactive ? 'text-text-inactive-muted' : 'text-text-tertiary'}`}>
-              <CalendarDays className="h-3 w-3" />
-              {coupon.expireAt} 到期
-            </div>
+            {coupon.expireAt && (
+              <div className={`mt-1.5 flex items-center gap-1 text-[11px] ${isInactive ? 'text-text-inactive-muted' : 'text-text-tertiary'}`}>
+                <CalendarDays className="h-3 w-3" />
+                {coupon.expireAt} 到期
+              </div>
+            )}
 
             {coupon.limitNote && (
               <div className={`mt-1 text-[11px] ${isInactive ? 'text-text-inactive-muted' : 'text-text-tertiary'}`}>
@@ -187,9 +209,59 @@ export default function Card() {
     setTab((state?.key as CardCouponStatus) ?? 'available')
   }, [state?.key])
 
+  /**
+   * 券列表数据源：7002 `GET /api/coupons/index`（券模板）。
+   * 本地联调时 dev server 的 `/api` 已透传到 7002，同源请求即可，不需要 salt / token。
+   */
+  const [couponList, setCouponList] = useState<
+    | { state: 'loading' }
+    | { state: 'success'; coupons: CouponTemplate[] }
+    | { state: 'error'; message: string }
+  >({ state: 'loading' })
+
+  useEffect(() => {
+    let active = true
+    void fetchCouponList()
+      .then((response) => {
+        if (active) setCouponList({ state: 'success', coupons: response.data?.data ?? [] })
+      })
+      .catch((error: unknown) => {
+        if (active) {
+          setCouponList({
+            state: 'error',
+            message: error instanceof Error ? error.message : '网络请求失败',
+          })
+        }
+      })
+    return () => {
+      active = false
+    }
+  }, [])
+
+  /**
+   * 可用 Tab = 接口中 status=10（上架）的券。
+   * 已使用 / 已过期 在券模板接口里没有对应字段，保持空态，不自行发明状态映射。
+   */
+  const availableCoupons = useMemo(
+    () =>
+      couponList.state === 'success'
+        ? couponList.coupons
+            .filter((item) => item.status === COUPON_STATUS_ON_SHELF)
+            .map(toCouponTicketView)
+        : [],
+    [couponList],
+  )
+
   /** 弹层内展示的券由 `?coupon=` 决定，保证「使用」弹层可复现 */
-  const activeCoupon = resolveCardCoupon(searchParams.get('coupon'))
-  const list = cardCouponsByStatus(tab)
+  const activeCoupon: CouponTicketView = useMemo(() => {
+    const couponId = searchParams.get('coupon')
+    const fromApi = availableCoupons.find((item) => item.id === couponId)
+    // 接口未命中时回退夹具，保留 `?coupon=` 直达截图与验收链路
+    return fromApi ?? resolveCardCoupon(couponId)
+  }, [availableCoupons, searchParams])
+
+  const list = tab === 'available' ? availableCoupons : []
+  const couponCount = (key: CardCouponStatus) => (key === 'available' ? availableCoupons.length : 0)
 
   useEffect(() => {
     if (!apiProbeEnabled) {
@@ -235,7 +307,7 @@ export default function Card() {
     )
   }
 
-  const openUseSheet = (coupon: CardCouponFixture) => {
+  const openUseSheet = (coupon: CouponTicketView) => {
     setSearchParams(
       (prev) => {
         const next = new URLSearchParams(prev)
@@ -286,7 +358,7 @@ export default function Card() {
                   : 'bg-surface-inactive text-text-inactive-muted'
               }`}
             >
-              {cardCouponCount(item.key)}
+              {couponCount(item.key)}
             </span>
           </button>
         ))}
@@ -302,6 +374,36 @@ export default function Card() {
               onShare={() => navigate(`/card/share?coupon=${coupon.id}`)}
             />
           ))}
+
+        {tab === 'available' && couponList.state === 'loading' && (
+          <div className="flex flex-col items-center rounded-2xl bg-surface px-6 py-12 text-center shadow-sm">
+            <span className="flex h-[60px] w-[60px] items-center justify-center rounded-full bg-surface-inactive text-icon-inactive">
+              <Ticket className="h-7 w-7" />
+            </span>
+            <h3 className="mt-4 text-base font-semibold text-text-primary">正在加载体验券</h3>
+            <p className="mt-1 text-sm text-text-secondary">正在读取优惠券接口数据</p>
+          </div>
+        )}
+
+        {tab === 'available' && couponList.state === 'error' && (
+          <div className="flex flex-col items-center rounded-2xl bg-surface px-6 py-12 text-center shadow-sm">
+            <span className="flex h-[60px] w-[60px] items-center justify-center rounded-full bg-surface-inactive text-icon-inactive">
+              <Info className="h-7 w-7" />
+            </span>
+            <h3 className="mt-4 text-base font-semibold text-text-primary">体验券加载失败</h3>
+            <p className="mt-1 text-sm text-text-secondary">{couponList.message}</p>
+          </div>
+        )}
+
+        {tab === 'available' && couponList.state === 'success' && list.length === 0 && (
+          <div className="flex flex-col items-center rounded-2xl bg-surface px-6 py-12 text-center shadow-sm">
+            <span className="flex h-[60px] w-[60px] items-center justify-center rounded-full bg-surface-inactive text-icon-inactive">
+              <Ticket className="h-7 w-7" />
+            </span>
+            <h3 className="mt-4 text-base font-semibold text-text-primary">暂无可用的体验券</h3>
+            <p className="mt-1 text-sm text-text-secondary">领取到的体验券，会显示在这里</p>
+          </div>
+        )}
 
         {tab === 'used' && list.length === 0 && (
           <div className="flex flex-col items-center rounded-2xl bg-surface px-6 py-12 text-center shadow-sm">
@@ -389,9 +491,13 @@ export default function Card() {
                   <span className="block text-sm font-medium text-text-primary">
                     {activeCoupon.amountLabel ? `${activeCoupon.amountLabel} ${activeCoupon.name}` : activeCoupon.name}
                   </span>
-                  <span className="block text-xs text-text-tertiary">
-                    {activeCoupon.expireAt} 到期 · {activeCoupon.limitNote}
-                  </span>
+                  {(activeCoupon.expireAt || activeCoupon.limitNote) && (
+                    <span className="block text-xs text-text-tertiary">
+                      {[activeCoupon.expireAt ? `${activeCoupon.expireAt} 到期` : null, activeCoupon.limitNote ?? null]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </span>
+                  )}
                 </span>
               </div>
 

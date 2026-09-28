@@ -1,5 +1,4 @@
 import { useEffect, type ReactElement } from 'react'
-import { ChevronLeft } from 'lucide-react'
 import { useNavigate, useRouteError } from 'react-router-dom'
 import { closeWebView } from '../services/nativeBridge'
 import errorIllustration from '../assets/brand/error/error-illustration.webp'
@@ -7,8 +6,6 @@ import errorIllustration from '../assets/brand/error/error-illustration.webp'
 export interface ErrorPageProps {
   /** 标题栏文案；参考稿为「卡博士」 */
   title?: string
-  /** 自定义返回行为；默认 history back */
-  onBack?: () => void
 }
 
 /**
@@ -16,19 +13,14 @@ export interface ErrorPageProps {
  * -------------------------------------------------------------
  * - 独立整页，不依赖 MobileLayout 壳层：路由渲染抛错时由 React Router errorElement
  *   整体替换壳层展示本页，避免壳层自身出错时无兜底。
- * - 顶部为 H5 标准业务标题栏（返回 + 标题「卡博士」）；系统状态栏按仓库约定不模拟。
+ * - 顶部仅保留 H5 标准业务标题「卡博士」；系统状态栏按仓库约定不模拟。
  * - 「返回 APP」调用已确认的 closeWebView() 契约（H030）。浏览器等无宿主环境调用
  *   必然失败，此时降级为回到首页 —— 这是明确标注的 Web fallback，不推断原生能力存在。
  * - 本组件不直接使用 useRouteError，避免在非 data-router 的预览路由上抛错；
  *   错误记录由 PageErrorBoundary 包装负责。
  */
-export default function ErrorPage({ title = '卡博士', onBack }: ErrorPageProps) {
+export default function ErrorPage({ title = '卡博士' }: ErrorPageProps) {
   const navigate = useNavigate()
-
-  const handleBack = () => {
-    if (onBack) onBack()
-    else navigate(-1)
-  }
 
   const handleReturnApp = async () => {
     try {
@@ -45,22 +37,11 @@ export default function ErrorPage({ title = '卡博士', onBack }: ErrorPageProp
       className="app-background flex h-dvh flex-col overflow-hidden pt-[env(safe-area-inset-top)] text-text-primary"
       data-error-boundary
     >
-      <header className="w-full shrink-0" data-title-bar="back">
-        <div className="grid h-11 w-full grid-cols-[40px_minmax(0,1fr)_40px] items-center px-3">
-          <div className="flex h-10 items-center justify-start">
-            <button
-              type="button"
-              aria-label="返回"
-              onClick={handleBack}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-text-primary transition active:bg-[rgba(89,55,15,0.06)]"
-            >
-              <ChevronLeft className="h-[22px] w-[22px] stroke-[2.2]" aria-hidden />
-            </button>
-          </div>
+      <header className="w-full shrink-0" data-title-bar="plain">
+        <div className="flex h-11 w-full items-center justify-center px-3">
           <h1 className="m-0 truncate text-center text-[17px] font-semibold leading-[22px] tracking-[0.01em] text-text-primary">
             {title}
           </h1>
-          <span aria-hidden="true" />
         </div>
       </header>
 

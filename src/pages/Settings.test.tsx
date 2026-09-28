@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 
 const mocks = vi.hoisted(() => ({
@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   takePhoto: vi.fn(),
   chooseImage: vi.fn(),
   updateProfile: vi.fn(),
+  fetchUserProfileDetail: vi.fn(),
 }))
 
 vi.mock('react-router-dom', async (importOriginal) => {
@@ -52,13 +53,24 @@ vi.mock('../services/nativeBridge', () => {
   }
 })
 
+/* 资料读取按用例显式驱动；默认挂起，避免回填影响头像相关用例。 */
+vi.mock('../services/userProfile', () => ({
+  fetchUserProfileDetail: mocks.fetchUserProfileDetail,
+}))
+
 import Settings from './Settings'
+
+beforeEach(() => {
+  /* 默认挂起：只有显式驱动的用例才产生回填结果。 */
+  mocks.fetchUserProfileDetail.mockImplementation(() => new Promise(() => {}))
+})
 
 afterEach(() => {
   mocks.navigate.mockReset()
   mocks.takePhoto.mockReset()
   mocks.chooseImage.mockReset()
   mocks.updateProfile.mockReset()
+  mocks.fetchUserProfileDetail.mockReset()
 })
 
 function openAvatarSheet() {
@@ -143,5 +155,39 @@ describe('Settings Native avatar integration', () => {
     expect((screen.getByAltText('会员头像') as HTMLImageElement).src).toContain(
       'data:image/png;base64,avatar-album-base64',
     )
+  })
+})
+
+describe('Settings profile backfill', () => {
+  it('backfills nickname and grade from /api/user/detail', async () => {
+    mocks.fetchUserProfileDetail.mockResolvedValue({ nickname: '接口昵称', grade: '大三' })
+
+    render(<Settings />)
+
+    await waitFor(() => {
+      expect(screen.getByText('接口昵称')).toBeTruthy()
+    })
+    expect(screen.getByRole('button', { name: '大三' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.queryByRole('alert')).toBeNull()
+  })
+
+  it('keeps local defaults and retries when the profile request fails', async () => {
+    mocks.fetchUserProfileDetail
+      .mockRejectedValueOnce(new Error('profile failed'))
+      .mockResolvedValueOnce({ nickname: '接口昵称', grade: '' })
+
+    render(<Settings />)
+
+    const alert = await screen.findByRole('alert')
+    expect(alert.textContent).toContain('会员资料加载失败')
+    expect(screen.getByText('会员小福')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: '重试' }))
+
+    await waitFor(() => {
+      expect(screen.getByText('接口昵称')).toBeTruthy()
+    })
+    expect(mocks.fetchUserProfileDetail).toHaveBeenCalledTimes(2)
+    expect(screen.queryByRole('alert')).toBeNull()
   })
 })

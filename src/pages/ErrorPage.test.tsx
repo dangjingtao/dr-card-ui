@@ -34,7 +34,7 @@ describe('ErrorPage', () => {
     expect(screen.getByRole('heading', { name: '页面开小差了' })).toBeTruthy()
     expect(screen.getByText('当前页面暂时无法加载，请返回 APP 后继续使用。')).toBeTruthy()
     expect(screen.getByRole('button', { name: '返回 APP' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: '返回' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: '返回' })).toBeNull()
   })
 
   it('honors a custom title bar label', () => {
@@ -72,11 +72,4 @@ describe('ErrorPage', () => {
     await screen.findByText('home-marker')
   })
 
-  it('goes back in history from the leading back arrow', () => {
-    renderAt(['/previous', '/error'])
-
-    fireEvent.click(screen.getByRole('button', { name: '返回' }))
-
-    expect(screen.getByText('previous-marker')).toBeTruthy()
-  })
 })

@@ -92,6 +92,7 @@ import ErrorPage, { PageErrorBoundary } from '../../pages/ErrorPage'
 import { ROUTES } from './routes'
 import type { RouteMeta } from './routes'
 import type { ReactElement } from 'react'
+import HomeAuthGate from '../auth/HomeAuthGate'
 
 /**
  * H022 shared route implementations.
@@ -110,7 +111,11 @@ const sharedRouteImplementations: Record<
 
 /** 已完成/进行中的定制页面（其余节点走确定性 NodeStub 或 WebView 边界页） */
 const customPages: Record<string, ReactElement> = {
-  '/': <Home />,
+  '/': (
+    <HomeAuthGate>
+      <Home />
+    </HomeAuthGate>
+  ),
   '/legacy-home': <LegacyHome />,
   '/legacy-home/scan': <LegacyScan />,
   '/mall': <MallHome />,
