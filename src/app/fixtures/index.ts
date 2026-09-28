@@ -168,23 +168,67 @@ export const HOME_BANNER_CAROUSEL = {
 } as const
 
 /**
- * 诗得丽专栏「为你精选」banner 占位（摹客 #2 标题 @(28,638) + 容器 @(25,670) 326×112 双卡）
+ * 诗得丽专栏「为你精选」夹具（摹客 #2 标题 @(28,638) + 容器 @(25,670) 326×112 双卡）
+ * 商品文案、价格、按钮文案逐字取自原型；两张卡在原型中文案完全相同、仅商品图不同，
+ * 此处如实保留，不去重、不自造第二个商品。
+ * 跳转按原型 group interaction：卡 1 → 洗护兑换专区，卡 2 与两卡按钮 → 商品兑换弹窗。
+ * ⚠️ 价格「200🫧」原型为红色，与项目 exchange-price 语义一致（⚠️ 冲突记录见 card-brand.css §8）。
  *
- * 2026-09-28 用户确认：原「两张洗发水体验券卡」替换为一张 banner 图，
- * 内容为 DearSeed 5 款体验装荟萃，图仍在制作中，先以圆角矩形占位。
- * 占位期保留原有「进入洗护兑换专区」的跳转，替换真图时只需换掉占位框内容。
+ * 2026-09-28 说明：本组卡用于 `/dearseed` 独立专栏页（`DearseedColumn.tsx`）。
+ * 品牌专栏首页（根路由 `/`，实测由 `Home.tsx` 经 `CheckinBoard` 渲染）的「为你精选」
+ * 另有实现，见下方 `DEARSEED_PICK_BANNER`；两者不是同一处。
+ */
+export interface DearseedPick {
+  id: string
+  asset: 'pick-a' | 'pick-b'
+  nameStrong: string
+  nameRest: string
+  desc: string
+  cost: number
+  cta: string
+  to: string
+  ctaTo: string
+}
+
+export const DEARSEED_PICKS: DearseedPick[] = [
+  {
+    id: 'pick-1',
+    asset: 'pick-a',
+    nameStrong: '核心DearSeed温和',
+    nameRest: '清洁洗发水',
+    desc: '牡丹花水配方，温和清洁多余油脂',
+    cost: 200,
+    cta: '去兑换',
+    to: '/exchange',
+    ctaTo: '/exchange?overlay=redeem',
+  },
+  {
+    id: 'pick-2',
+    asset: 'pick-b',
+    nameStrong: '核心DearSeed温和',
+    nameRest: '清洁洗发水',
+    desc: '牡丹花水配方，温和清洁多余油脂',
+    cost: 200,
+    cta: '去兑换',
+    to: '/exchange?overlay=redeem',
+    ctaTo: '/exchange?overlay=redeem',
+  },
+]
+
+/**
+ * 品牌专栏首页「为你精选」banner（根路由 `/` 的 `CheckinBoard` 内使用）
+ *
+ * 2026-09-28 用户确认：原两张带「去兑换」的洗发水体验包卡替换为一张 banner 图，
+ * 内容为 DearSeed 5 款体验装荟萃 / 核心洗发水系列宣传。
+ * 素材：`assets/brand/exchange/dearseed-picks-banner.webp`（用户提供，2132×738）。
+ * 同一张图也用于会员中心「热门体验券」区块（`Profile.tsx`）。
  */
 export interface DearseedPickBanner {
-  /** 占位文案；真图到位后本字段与占位框一并移除 */
-  placeholderTitle: string
-  placeholderHint: string
   alt: string
   to: string
 }
 
 export const DEARSEED_PICK_BANNER: DearseedPickBanner = {
-  placeholderTitle: 'DearSeed 5 款体验装荟萃',
-  placeholderHint: 'banner 图制作中 · 占位',
   alt: 'DearSeed 5 款体验装荟萃，进入洗护兑换专区',
   to: '/exchange',
 }

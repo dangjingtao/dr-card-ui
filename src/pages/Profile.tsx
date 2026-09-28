@@ -6,13 +6,14 @@ import {
   Crown,
   Gift,
   Headphones,
-  Image as ImageIcon,
   MapPin,
   Pencil,
   Ticket,
   UserRoundPlus,
 } from 'lucide-react'
 import avatar from '../assets/brand/home/home-avatar.webp'
+/** 「热门体验券」banner：用户提供的核心洗发水系列宣传图 */
+import picksBannerImage from '../assets/brand/exchange/dearseed-picks-banner.webp'
 import PageContainer from '../components/mobile/PageContainer'
 import AppPromptDialog from '../components/mobile/AppPromptDialog'
 import { useOverlay } from '../app/fixtures/useFixture'
@@ -197,20 +198,17 @@ export default function Profile() {
         </header>
         {/*
           2026-09-28 用户确认：原横滑 4 张体验券卡替换为一张 banner 图，
-          内容为 DearSeed 5 款体验装荟萃，图仍在制作中，先以圆角矩形占位。
-          占位框样式与专栏首页同名 banner 保持一致（圆角 / 底色 / 虚线边框）。
+          内容为 DearSeed 5 款体验装荟萃 / 核心洗发水系列宣传。
+          与专栏首页（根路由 `/` 的 CheckinBoard）同名 banner 使用同一张素材与同一跳转。
         */}
         <button
           type="button"
           onClick={() => navigate(DEARSEED_PICK_BANNER.to)}
           aria-label={DEARSEED_PICK_BANNER.alt}
-          className="relative flex aspect-[16/7] w-full items-center justify-center overflow-hidden rounded-feature border border-dashed border-border-subtle bg-reward-subtle shadow-bubble transition active:scale-[.99]"
+          className="block w-full overflow-hidden rounded-feature border border-border-subtle shadow-bubble transition active:scale-[.99]"
         >
-          <span className="flex flex-col items-center gap-1.5 px-6 text-center">
-            <ImageIcon className="h-7 w-7 text-reward-strong/60" aria-hidden />
-            <span className="text-[13px] font-semibold text-text-primary">{DEARSEED_PICK_BANNER.placeholderTitle}</span>
-            <span className="text-[10px] text-text-tertiary">{DEARSEED_PICK_BANNER.placeholderHint}</span>
-          </span>
+          {/* 保持原图比例，宽度撑满容器、高度自适应，不裁切不拉伸 */}
+          <img src={picksBannerImage} alt="" aria-hidden className="block h-auto w-full" />
         </button>
       </section>
 

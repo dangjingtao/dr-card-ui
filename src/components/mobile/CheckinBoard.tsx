@@ -5,17 +5,15 @@ import { BottomSheet, Button, ProgressIndicator } from '../ui'
 import {
   CHECKIN_CALENDAR,
   CHECKIN_DAILY_TASK,
-  CHECKIN_PICKS,
   CHECKIN_RULE_STATUS,
   CHECKIN_STATUS_TEXT,
   CHECKIN_STREAK,
+  DEARSEED_PICK_BANNER,
   type CheckinDay,
 } from '../../app/fixtures'
 import checkinRitualHero from '../../assets/brand/bubble/checkin-ritual-hero-v2.webp'
-import pickShampooA from '../../assets/brand/exchange/exchange-pick-shampoo-a.webp'
-import pickShampooB from '../../assets/brand/exchange/exchange-pick-shampoo-b.webp'
-
-const pickAssets = [pickShampooA, pickShampooB] as const
+/** 「为你精选」banner：用户提供的核心洗发水系列宣传图 */
+import picksBannerImage from '../../assets/brand/exchange/dearseed-picks-banner.webp'
 const CHECKIN_CYCLE_TARGET = 7
 const CHECKIN_CYCLE_WEEK_LABELS = ['一', '二', '三', '四', '五', '六', '日'] as const
 const CHECKIN_MONTH_WEEK_LABELS = ['日', '一', '二', '三', '四', '五', '六'] as const
@@ -341,49 +339,21 @@ export default function CheckinBoard({ mode = 'home', isSuccess = false, onMakeu
               <ChevronRight className="h-3.5 w-3.5" aria-hidden />
             </button>
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-3">
-            {CHECKIN_PICKS.map((pick, index) => (
-              <article
-                key={pick.id}
-                className={`relative flex min-h-[248px] flex-col overflow-hidden rounded-feature border border-border-subtle p-3 shadow-bubble ${
-                  index % 2 === 0 ? 'bg-reward-subtle' : 'bg-surface'
-                }`}
-              >
-                <div className="relative flex h-[104px] items-center justify-center overflow-hidden rounded-[14px] bg-surface/75">
-                  <span aria-hidden className="absolute h-20 w-20 rounded-full bg-reward/20 blur-xl" />
-                  <img
-                    src={pickAssets[index]}
-                    alt=""
-                    aria-hidden
-                    className="relative h-24 w-16 object-contain drop-shadow-[0_10px_12px_rgba(51,37,20,0.18)]"
-                  />
-                </div>
-
-                <h3 className="mt-3 text-[12px] font-bold leading-[17px] text-text-primary">{pick.name}</h3>
-                <p className="mt-1 line-clamp-2 text-[10px] leading-[15px] text-text-tertiary">{pick.desc}</p>
-
-                <div className="mt-auto flex items-end justify-between pt-3">
-                  {pick.cost != null ? (
-                    <span className="text-base font-bold leading-5 text-exchange-price">
-                      {pick.cost}
-                      <span className="ml-0.5 text-[10px] font-medium">🫧</span>
-                    </span>
-                  ) : (
-                    <span className="text-[11px] font-semibold leading-5 text-text-secondary">到店核销</span>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => navigate('/exchange')}
-                    aria-label={`${pick.name} 去兑换`}
-                    className="flex min-h-10 items-center gap-0.5 rounded-pill bg-primary px-3 text-[10px] font-semibold text-text-inverse shadow-primary-button active:bg-primary-pressed"
-                  >
-                    去兑换
-                    <ArrowUpRight className="h-3 w-3" aria-hidden />
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
+          {/*
+            2026-09-28 用户确认：原两张「去兑换」洗发水体验包卡替换为一张 banner 图，
+            内容为 DearSeed 5 款体验装荟萃 / 核心洗发水系列宣传。
+            当前图仍在制作中，先用项目内已有通用洗护素材占位（该素材会被真图替换）。
+            标题行右侧「体验券兑换」入口保留不变。
+          */}
+          <button
+            type="button"
+            onClick={() => navigate(DEARSEED_PICK_BANNER.to)}
+            aria-label={DEARSEED_PICK_BANNER.alt}
+            className="mt-3 block w-full overflow-hidden rounded-feature border border-border-subtle shadow-bubble transition active:scale-[.99]"
+          >
+            {/* 保持原图比例：宽度撑满容器、高度按图片自然比例自适应，不裁切不拉伸 */}
+            <img src={picksBannerImage} alt="" aria-hidden className="block h-auto w-full" />
+          </button>
         </section>
       )}
 
