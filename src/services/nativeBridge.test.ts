@@ -15,6 +15,7 @@ type InjectedBridgeProbe = {
 
 type BridgeProbeWindow = Window & {
   androidBridge?: InjectedBridgeProbe
+  androidBridgeCallback?: (callbackId: string, payload: unknown) => void
   iosBridge?: InjectedBridgeProbe
   webkit?: {
     messageHandlers?: Record<string, { postMessage(payload: unknown): void } | undefined>
@@ -31,6 +32,7 @@ async function loadBridge(mode: 'disabled' | 'native' = 'native') {
 
 afterEach(() => {
   delete bridgeWindow.androidBridge
+  delete bridgeWindow.androidBridgeCallback
   delete bridgeWindow.iosBridge
   delete bridgeWindow.webkit
   vi.unstubAllEnvs()
@@ -411,14 +413,27 @@ describe('JSBridge capability runtime', () => {
   })
 
 
-  it('serializes Android scanCode input as the confirmed JSON string and parses the code result', async () => {
+  it('correlates Android scanCode through androidBridgeCallback', async () => {
     const { scanCode, getNativeBridgeDiagnostics } = await loadBridge()
-    const received: unknown[] = []
+    const received: Array<{ scanType: string; callbackId: string }> = []
     const androidBridge = {
       scanCode(payload: unknown) {
         expect(this).toBe(androidBridge)
-        received.push(payload)
-        return '{"code":"QR-ANDROID-001"}'
+        const request = JSON.parse(payload as string) as {
+          scanType: string
+          callbackId: string
+        }
+        received.push(request)
+        queueMicrotask(() => {
+          bridgeWindow.androidBridgeCallback?.(request.callbackId, {
+            code: 0,
+            message: 'ok',
+            data: {
+              text: 'QR-ANDROID-001',
+              scanType: 'qr',
+            },
+          })
+        })
       },
     }
     bridgeWindow.androidBridge = androidBridge
@@ -427,7 +442,12 @@ describe('JSBridge capability runtime', () => {
     await expect(scanCode({ scanType: 'all' })).resolves.toEqual({
       code: 'QR-ANDROID-001',
     })
-    expect(received).toEqual(['{"scanType":"all"}'])
+    expect(received).toEqual([
+      {
+        scanType: 'all',
+        callbackId: expect.any(String),
+      },
+    ])
   })
 
   it('supports qr/bar/all scanType values on iOS without changing the field name', async () => {
@@ -640,21 +660,39 @@ describe('JSBridge capability runtime', () => {
     })
   })
 
-  it('serializes showRewardAd with the confirmed scene and accepts only known statuses', async () => {
+  it('correlates Android showRewardAd through androidBridgeCallback', async () => {
     const { showRewardAd, getNativeBridgeDiagnostics } = await loadBridge()
-    const received: unknown[] = []
+    const received: Array<{ scene: string; callbackId: string }> = []
     const androidBridge = {
       showRewardAd(payload: unknown) {
         expect(this).toBe(androidBridge)
-        received.push(payload)
-        return '{"status":"completed"}'
+        const request = JSON.parse(payload as string) as {
+          scene: string
+          callbackId: string
+        }
+        received.push(request)
+        queueMicrotask(() => {
+          bridgeWindow.androidBridgeCallback?.(request.callbackId, {
+            code: 0,
+            message: 'ok',
+            data: {
+              scene: 'h5CheckinResign',
+              status: 'completed',
+            },
+          })
+        })
       },
     }
     bridgeWindow.androidBridge = androidBridge
 
     expect(getNativeBridgeDiagnostics().capabilities.showRewardAd).toBe(true)
     await expect(showRewardAd()).resolves.toEqual({ status: 'completed' })
-    expect(received).toEqual(['{"scene":"h5CheckinResign"}'])
+    expect(received).toEqual([
+      {
+        scene: 'h5CheckinResign',
+        callbackId: expect.any(String),
+      },
+    ])
   })
 
   it('supports all four iOS reward-ad statuses without renaming values', async () => {
