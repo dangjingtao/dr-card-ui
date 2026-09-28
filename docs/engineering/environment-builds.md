@@ -34,7 +34,7 @@ H006 将 `preview → dev → test → prod` 的产品分支语义和 Vite mode�
 
 - `VITE_APP_ENV`：`preview | dev | test | prod`。正常由构建脚本注入，并必须与 Vite mode 一致。
 - `VITE_DATA_MODE`：`mock | api`。不填写时按上表取默认值。
-- `VITE_API_BASE_URL`：真实后端根地址。H008 仍 blocked，因此 H006 允许为空；一旦填写必须为绝对 `http(s)` URL。空值表示“后端尚未配置”，绝不表示回退 Mock。
+- `VITE_API_BASE_URL`：真实后端根地址。`test` 构建必须提供该值，且必须为绝对 `http(s)` URL；缺失时 `build:test` 直接失败。`preview/dev` 仍可为空；空值绝不表示回退 Mock。`prod` 的正式后端地址由生产发布环境单独配置，不复用 test 地址。
 - `VITE_BRIDGE_MODE`：`disabled | mock | native`。默认值按环境确定：`preview/dev = disabled`，`test/prod = native`。`test/prod` 显式覆盖为任何非 `native` 值都会在构建期与运行期失败；这里只表达是否允许调用已确认的 Native 能力，不据此发明宿主协议。
 - `VITE_BUILD_SHA` / `VITE_BUILD_ID` / `VITE_SOURCE_BRANCH`：构建身份，通常由构建脚本从 GitHub / Cloudflare / git 上下文注入。
 
@@ -48,6 +48,8 @@ H006 将 `preview → dev → test → prod` 的产品分支语义和 Vite mode�
 - `npm run build`：迁移安全入口。本地默认 `prod`；检测到 `CF_PAGES_BRANCH` 时自动使用 Cloudflare 分支映射，防止旧 Pages Dashboard 仍调用 `npm run build` 时把 branch preview 误构建成 prod。
 
 每次成功构建都会生成 `dist/build-meta.json`，只包含非敏感诊断信息：App env、Vite mode、data/bridge mode、是否配置 API base，以及 build SHA / ID / source branch；不会把 API URL复制进该诊断文件。
+
+GitHub Actions 的 `test` gate 从仓库 Actions Variable `VITE_API_BASE_URL` 注入测试后端地址，并要求 `build-meta.json.apiBaseConfigured=true`。该 URL 属于非敏感运行配置；token / salt 等凭证不得以 `VITE_*` 变量保存。Cloudflare Pages 不继承 GitHub Actions Variables，`test` 分支在 Pages Dashboard 中也必须单独配置同名变量。
 
 ## Cloudflare Pages
 
