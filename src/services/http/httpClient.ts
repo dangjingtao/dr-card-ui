@@ -12,22 +12,40 @@ export const DEFAULT_HTTP_TIMEOUT_MS = 10_000
 type Awaitable<T> = T | Promise<T>
 
 export type HttpAuthHeadersProvider = () => Awaitable<Record<string, string> | undefined>
+export type HttpUnauthorizedHandler = () => Awaitable<void>
+export type HttpAuthFailureHandler = () => void
+
+export interface HttpRequestConfig extends AxiosRequestConfig {
+  skipAuth?: boolean
+}
 
 export interface HttpClientOptions {
   baseURL?: string
   timeoutMs?: number
   authHeadersProvider?: HttpAuthHeadersProvider
+  onUnauthorized?: HttpUnauthorizedHandler
+  onAuthFailure?: HttpAuthFailureHandler
   adapter?: AxiosAdapter
 }
 
 export interface HttpClient {
-  request<TResponse>(config: AxiosRequestConfig): Promise<TResponse>
+  request<TResponse>(config: HttpRequestConfig): Promise<TResponse>
 }
 
 let defaultAuthHeadersProvider: HttpAuthHeadersProvider | undefined
+let defaultUnauthorizedHandler: HttpUnauthorizedHandler | undefined
+let defaultAuthFailureHandler: HttpAuthFailureHandler | undefined
 
 export function setHttpAuthHeadersProvider(provider: HttpAuthHeadersProvider | undefined) {
   defaultAuthHeadersProvider = provider
+}
+
+export function setHttpUnauthorizedHandler(handler: HttpUnauthorizedHandler | undefined) {
+  defaultUnauthorizedHandler = handler
+}
+
+export function setHttpAuthFailureHandler(handler: HttpAuthFailureHandler | undefined) {
+  defaultAuthFailureHandler = handler
 }
 
 function normalizeBaseURL(value: string | undefined) {
@@ -45,6 +63,25 @@ function createConfigurationError() {
     code: 'HTTP_BASE_URL_MISSING',
     message: 'HTTP base URL 未配置',
   })
+}
+
+function isBusinessUnauthorized(data: unknown) {
+  if (!data || typeof data !== 'object') return false
+  const code = (data as { code?: unknown }).code
+  return code === 401 || code === '401'
+}
+
+function isUnauthorizedError(error: AppError) {
+  return error.status === 401 || (error.kind === 'business' && error.status === 401)
+}
+
+function belongsToBaseURL(config: AxiosRequestConfig, baseURL: string | undefined) {
+  if (!baseURL || !config.url) return !/^https?:\/\//i.test(config.url ?? '')
+  try {
+    return new URL(config.url, baseURL).origin === new URL(baseURL).origin
+  } catch {
+    return false
+  }
 }
 
 function getConfiguredBaseURL() {
@@ -81,7 +118,11 @@ export function createHttpClient(options: HttpClientOptions = {}): HttpClient {
       throw createConfigurationError()
     }
 
-    const authHeaders = await options.authHeadersProvider?.()
+    const headersProvider = options.authHeadersProvider ?? (() => defaultAuthHeadersProvider?.())
+    const authHeaders =
+      (config as HttpRequestConfig).skipAuth || !belongsToBaseURL(config, effectiveBaseURL)
+        ? undefined
+        : await headersProvider()
     if (authHeaders) {
       const headers = AxiosHeaders.from(config.headers)
       for (const [name, value] of Object.entries(authHeaders)) {
@@ -93,18 +134,43 @@ export function createHttpClient(options: HttpClientOptions = {}): HttpClient {
     return config
   })
 
-  instance.interceptors.response.use(
-    (response) => response,
-    (error: unknown) => Promise.reject(toAppError(error)),
-  )
-
   return {
     async request<TResponse>(config: AxiosRequestConfig) {
-      try {
-        const response: AxiosResponse<TResponse> = await instance.request<TResponse>(config)
-        return response.data
-      } catch (error) {
-        throw toAppError(error)
+      let retried = false
+      while (true) {
+        try {
+          const response: AxiosResponse<TResponse> = await instance.request<TResponse>(config)
+          if (isBusinessUnauthorized(response.data)) {
+            throw new AppError({
+              kind: 'business',
+              code: '401',
+              status: 401,
+              message: '业务鉴权已失效',
+              details: response.data,
+            })
+          }
+          return response.data
+        } catch (error) {
+          const appError = toAppError(error)
+          const unauthorizedHandler = options.onUnauthorized ?? defaultUnauthorizedHandler
+          const authFailureHandler = options.onAuthFailure ?? defaultAuthFailureHandler
+          if (retried && !(config as HttpRequestConfig).skipAuth && isUnauthorizedError(appError)) {
+            authFailureHandler?.()
+            throw appError
+          }
+          if (
+            !unauthorizedHandler ||
+            (config as HttpRequestConfig).skipAuth ||
+            /\/api\/oauth\/login(?:\?|$)/.test(config.url ?? '') ||
+            !belongsToBaseURL(config, normalizeBaseURL(config.baseURL ?? instance.defaults.baseURL)) ||
+            !isUnauthorizedError(appError)
+          ) {
+            throw appError
+          }
+
+          retried = true
+          await unauthorizedHandler()
+        }
       }
     },
   }

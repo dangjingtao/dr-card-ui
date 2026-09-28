@@ -20,11 +20,22 @@ function parseLoginTokenPayload(payload: unknown): NativeLoginToken {
   ) {
     throw new NativeTransportError(
       'payload-invalid',
-      'Native getLoginToken() result must be a JSON string with a string token field.',
+      'Native getLoginToken() result must be a JSON string with a string token field; salt is optional for legacy hosts.',
     )
   }
 
-  return { token: (parsed as { token: string }).token }
+  const salt = (parsed as { salt?: unknown }).salt
+  if (salt !== undefined && typeof salt !== 'string') {
+    throw new NativeTransportError(
+      'payload-invalid',
+      'Native getLoginToken() result salt must be a string when provided.',
+    )
+  }
+
+  return {
+    token: (parsed as { token: string }).token,
+    ...(salt !== undefined ? { salt } : {}),
+  }
 }
 
 const androidTransport = createInjectedObjectTransport<void, NativeLoginToken>({

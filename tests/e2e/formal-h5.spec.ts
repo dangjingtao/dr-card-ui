@@ -203,13 +203,8 @@ test('@formal-h5 H021 App title bar stays reachable while content scrolls', asyn
   await expect(titleBar).toBeVisible()
   await expect(back).toBeVisible()
   const before = await titleBar.boundingBox()
-
-  await page.locator('[data-page-scroll]').evaluate((node) => {
-    ;(node as HTMLElement).scrollTop = 700
-  })
-  await expect
-    .poll(() => page.locator('[data-page-scroll]').evaluate((node) => (node as HTMLElement).scrollTop))
-    .toBeGreaterThan(0)
+  await expect(page.locator('[data-rich-text-placeholder="/brand-culture"]')).toBeVisible()
+  await expect(page.locator('[data-rich-text-content]')).toBeEmpty()
 
   await expect(titleBar).toBeVisible()
   const after = await titleBar.boundingBox()

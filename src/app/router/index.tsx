@@ -23,7 +23,7 @@ import PointsDetail from '../../pages/PointsDetail'
 import Settings from '../../pages/Settings'
 import Onboarding from '../../pages/Onboarding'
 import ClaimSuccess from '../../pages/ClaimSuccess'
-import BrandCulture from '../../pages/BrandCulture'
+import RichTextPlaceholder from '../../pages/RichTextPlaceholder'
 import WelfareOfficer from '../../pages/WelfareOfficer'
 import ServiceChat from '../../pages/ServiceChat'
 import ServiceHuman from '../../pages/ServiceHuman'
@@ -88,9 +88,11 @@ import SchoolRefundPage from '../../pages/legacy/SchoolRefundPage'
 import SignInPage from '../../pages/legacy/SignInPage'
 import PointsPage from '../../pages/legacy/PointsPage'
 import NotFound from '../../pages/NotFound'
+import ErrorPage, { PageErrorBoundary } from '../../pages/ErrorPage'
 import { ROUTES } from './routes'
 import type { RouteMeta } from './routes'
 import type { ReactElement } from 'react'
+import HomeAuthGate from '../auth/HomeAuthGate'
 
 /**
  * H022 shared route implementations.
@@ -109,7 +111,11 @@ const sharedRouteImplementations: Record<
 
 /** 已完成/进行中的定制页面（其余节点走确定性 NodeStub 或 WebView 边界页） */
 const customPages: Record<string, ReactElement> = {
-  '/': <Home />,
+  '/': (
+    <HomeAuthGate>
+      <Home />
+    </HomeAuthGate>
+  ),
   '/legacy-home': <LegacyHome />,
   '/legacy-home/scan': <LegacyScan />,
   '/mall': <MallHome />,
@@ -134,8 +140,9 @@ const customPages: Record<string, ReactElement> = {
   '/points/detail': <PointsDetail />,
   '/settings': <Settings />,
   '/onboarding': <Onboarding />,
-  /* T005：#16 品牌文化按原型只铺长图，不加浮动 CTA（用户定案，B-001 关闭） */
-  '/brand-culture': <BrandCulture />,
+  /* 公益与品牌故事均预留为服务富文本承载页，当前不发起请求、不渲染假内容。 */
+  '/cause': <RichTextPlaceholder routePath="/cause" />,
+  '/brand-culture': <RichTextPlaceholder routePath="/brand-culture" />,
   '/service/welfare-officer': <WelfareOfficer />,
   /* T013：#58 智能客服承载 #71 弹层，#70 为转人工后的排队/接入两态 */
   '/service/chat': <ServiceChat />,
@@ -239,8 +246,13 @@ const bridgeLabRoutes =
 
 export const router = createBrowserRouter([
   ...bridgeLabRoutes,
+  /* 页面级错误边界（参考稿「页面开小差了」）：
+   * - /error：独立预览路由（工程参照页，不属于业务节点，不进入业务导航）。
+   * - 顶层 errorElement：任何子路由渲染抛错时整页替换壳层，展示同一错误页。 */
+  { path: '/error', element: <ErrorPage /> },
   {
     element: <MobileLayout />,
+    errorElement: <PageErrorBoundary />,
     children: [
       ...ROUTES.map((route) => {
         let element: ReactElement = <NodeStub />

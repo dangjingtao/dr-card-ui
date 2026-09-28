@@ -4,14 +4,29 @@ H006 将 `preview → dev → test → prod` 的产品分支语义和 Vite mode�
 
 ## 环境矩阵
 
-| App env | Vite mode | 默认 data mode | fixture/debug | Bridge 默认 |
-|---|---|---|---|---|
-| `dev` | `development` | `mock` | 允许 | `disabled` |
-| `preview` | `preview` | `mock` | 允许 | `disabled` |
-| `test` | `test` | `api` | 禁止 | `disabled` |
-| `prod` | `production` | `api` | 禁止 | `disabled` |
+| App env | Vite mode | 默认 data mode | fixture/debug | Bridge 默认 | 运行宿主要求 |
+|---|---|---|---|---|---|
+| `dev` | `development` | `mock` | 允许 | `disabled` | 不限（浏览器可独立预览） |
+| `preview` | `preview` | `mock` | 允许 | `disabled` | 不限（浏览器可独立预览） |
+| `test` | `test` | `api` | 禁止 | `disabled` | 仅原生宿主 |
+| `prod` | `production` | `api` | 禁止 | `disabled` | 仅原生宿主 |
 
 `test/prod` 明确禁止 `VITE_DATA_MODE=mock` 与 `VITE_BRIDGE_MODE=mock`。`scripts/build-h5.mjs` 在 Vite 启动前 hard fail，`src/app/config/runtime.ts` 在浏览器运行时再校验一次，避免通过错误环境变量静默回退。
+
+## 运行宿主要求（H036）
+
+`test/prod` 只承载真实 API + Native Bridge 集成，因此**不允许浏览器直接打开**。`test/prod` 构建在非原生宿主下不进入应用，而是展示"请在卡博士 App 内打开"提示。
+
+- 判据：`runtimePolicy.requiresNativeHost`（由 `isProdLike` 派生）叠加 `getNativeHost()` 的注入对象探测结果；
+- 该判定发生在应用挂载前（`src/main.tsx`），非原生宿主下不启动路由、不发业务请求；
+- 它是**运行时探测**，不是构建期配置：同一份 `test` 产物会被浏览器与 App WebView 两种方式打开，构建期无法预知，因此不为它引入任何环境变量；
+- `preview` / `dev` 不受影响，继续作为浏览器独立预览与 Mock 载体。
+
+实现位置：
+
+- `src/app/config/runtime.ts`：`requiresNativeHost`；
+- `src/pages/UnsupportedHostNotice.tsx`：`isUnsupportedHost()` 判定与提示页；
+- `src/main.tsx`：挂载前分流。
 
 ## 环境变量
 
@@ -20,7 +35,7 @@ H006 将 `preview → dev → test → prod` 的产品分支语义和 Vite mode�
 - `VITE_APP_ENV`：`preview | dev | test | prod`。正常由构建脚本注入，并必须与 Vite mode 一致。
 - `VITE_DATA_MODE`：`mock | api`。不填写时按上表取默认值。
 - `VITE_API_BASE_URL`：真实后端根地址。H008 仍 blocked，因此 H006 允许为空；一旦填写必须为绝对 `http(s)` URL。空值表示“后端尚未配置”，绝不表示回退 Mock。
-- `VITE_BRIDGE_MODE`：`disabled | mock | native`。H015 真实协议未提供，默认 `disabled`；这里只建立环境开关，不发明任何 Native 方法。
+- `VITE_BRIDGE_MODE`：`disabled | mock | native`。默认 `disabled`；这里只建立环境开关，不发明任何 Native 方法。`test/prod` 要真实调用宿主能力（含登录取凭证）时必须为 `native`，否则 `ensureNativeMode` 会以 `bridge-disabled` 失败；`test/prod` 禁止 `mock`。
 - `VITE_BUILD_SHA` / `VITE_BUILD_ID` / `VITE_SOURCE_BRANCH`：构建身份，通常由构建脚本从 GitHub / Cloudflare / git 上下文注入。
 
 ## 构建命令

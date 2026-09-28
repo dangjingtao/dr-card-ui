@@ -81,6 +81,16 @@ const IOS_RAW_PRESETS = [
   },
 ]
 
+const CAPABILITY_INPUT_PRESETS: Partial<Record<NativeCapabilityName, string>> = {
+  scanCode: '{"scanType":"all"}',
+  takePhoto: '{"crop":true,"maxWidth":1080,"maxHeight":1080,"quality":0.8}',
+  chooseImage:
+    '{"crop":true,"maxWidth":1080,"maxHeight":1080,"quality":0.8,"count":1}',
+  copyText: '{"text":"Bridge Lab copy test"}',
+  showRewardAd: '{"scene":"h5CheckinResign"}',
+  openApp: '{"action":"detect","inviteCode":"","fallbackUrl":""}',
+}
+
 function getLabPlatform(): LabPlatform {
   if (typeof window === 'undefined') return 'web'
   const osType = new URLSearchParams(window.location.search).get('osType')?.trim().toLowerCase()
@@ -101,10 +111,14 @@ function formatValue(value: unknown): string {
 
 function errorValue(error: unknown): unknown {
   if (error instanceof Error) {
+    const cause = 'cause' in error ? (error as { cause?: unknown }).cause : undefined
     return {
       name: error.name,
       message: error.message,
       ...('code' in error ? { code: (error as { code?: unknown }).code } : {}),
+      ...(cause instanceof Error
+        ? { cause: { name: cause.name, message: cause.message, ...('code' in cause ? { code: (cause as { code?: unknown }).code } : {}) } }
+        : cause !== undefined ? { cause } : {}),
     }
   }
   return error
@@ -433,7 +447,10 @@ export default function BridgeLab() {
                   <button
                     key={item.name}
                     type="button"
-                    onClick={() => setSelectedCapability(item.name)}
+                    onClick={() => {
+                      setSelectedCapability(item.name)
+                      setCapabilityInput(CAPABILITY_INPUT_PRESETS[item.name] ?? '')
+                    }}
                     data-capability-name={item.name}
                     className={[
                       'rounded-control border p-3 text-left transition',

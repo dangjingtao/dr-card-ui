@@ -17,6 +17,11 @@ export type NativeInvocationOptions = {
 
 export interface NativeLoginToken {
   token: string
+  /**
+   * Optional for backwards compatibility with older hosts that only returned token.
+   * Callers that need signed Card API requests must validate presence before use.
+   */
+  salt?: string
 }
 
 export type NativeScanType = 'qr' | 'bar' | 'all'

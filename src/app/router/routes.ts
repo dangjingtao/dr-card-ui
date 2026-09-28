@@ -113,9 +113,8 @@ export const ROUTES: RouteMeta[] = [
     entry: 'APP 主入口',
     returnTo: '—（根首页）',
     /*
-     * 用户 2026-08-27 定案「默认全是新用户」：无参数进入 `/` 即自动弹出新人体验券。
-     * `?newcomer=off` 是取证/回归专用的抑制参数，只让脚本确定性地拿到首页无遮挡形态，
-     * 不属于 fixture 状态也不属于弹层，故不进 states/overlays；产品访问不带此参数。
+     * 首页新人券演示弹窗已关闭。正式券数需等待 APP 用户信息与跨后台用户识别接口，
+     * `?newcomer=off` 仅保留为历史取证兼容参数，不代表线上业务开关。
      */
     states: [
       { key: 'coupon-1', node: 0, label: '新人券-1 张' },
@@ -127,7 +126,7 @@ export const ROUTES: RouteMeta[] = [
       /* 打卡内容随 CheckinBoard 迁入后，补签这个主要操作也在首页自持反馈（需求 §2.3），节点沿用 /checkin 的 #22 */
       { key: 'make-up-success', node: 22, label: '补打卡成功弹窗', type: 'dialog' },
     ],
-    owner: '诗得丽品牌专栏首页（T021 改造；打卡内容与 /checkin 共用 CheckinBoard；默认弹出新人体验券，`?newcomer=off` 抑制）',
+    owner: '诗得丽品牌专栏首页（T021 改造；打卡内容与 /checkin 共用 CheckinBoard；新人券演示弹窗暂时关闭）',
   },
   {
     path: '/legacy-home',
@@ -704,13 +703,22 @@ export const ROUTES: RouteMeta[] = [
     owner: '活动卡券领取反馈（T005 施工）',
   },
   {
+    path: '/cause',
+    title: '公益板块',
+    nodes: [],
+    task: 'T021',
+    entry: '首页-公益板块',
+    returnTo: '首页',
+    owner: '公益富文本承载页（当前空内容；未来由统一数据层请求富文本）',
+  },
+  {
     path: '/brand-culture',
-    title: '品牌文化',
+    title: '极地种子品牌故事',
     nodes: [16],
     task: 'T005',
-    entry: '诗得丽专栏-「品牌文化」',
-    returnTo: '诗得丽专栏首页',
-    owner: '品牌文化长页（T005 施工；用户定案只铺原型长图、无浮动 CTA，B-001 关闭）',
+    entry: '首页-极地种子品牌故事；诗得丽专栏-「品牌文化」',
+    returnTo: '来源页（首页或诗得丽专栏）',
+    owner: '品牌故事富文本承载页（当前空内容；未来由统一数据层请求富文本）',
   },
 
   /* ────────────────────────── T006 会员、泡泡值、打卡与澡运 ────────────────────────── */

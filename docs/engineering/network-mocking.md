@@ -12,6 +12,20 @@ API Mock 是否启用只取决于 H006 的 `runtimePolicy.dataMode`：
 
 Mock 启动发生在 React render 之前。选中了 `mock` 却无法启动 worker 时，不静默切回真实 API。
 
+### 1.1 `api` 模式还有一层宿主前置（H036）
+
+`api` 只说明"数据来源是真实接口"，不等于"任何容器都能跑"。`test/prod` 采用 `api` 语义时，同时要求运行在原生宿主内：
+
+```text
+dataMode = api 且 requiresNativeHost
+  → 原生宿主：进入应用，请求走 VITE_API_BASE_URL
+  → 非原生宿主：不进入应用，展示"请在卡博士 App 内打开"提示
+```
+
+这样浏览器直接打开 `test/prod` 产物不会以"各区域静默降级"的形式伪装成可用，也不会把失败请求打到真实后端。浏览器独立预览仍然由 `preview` / `dev` + `mock` 承担，Mock 与 API 的来源判定逻辑本身没有变化。
+
+判定与提示见 `src/pages/UnsupportedHostNotice.tsx`，分流点在 `src/main.tsx`，且在 React 挂载前完成，因此被拦截时不产生任何业务请求。
+
 ## 2. 目录职责
 
 ```text

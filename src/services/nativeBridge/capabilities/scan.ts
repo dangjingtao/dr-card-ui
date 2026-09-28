@@ -1,5 +1,7 @@
 import {
+  createCallbackInjectedObjectTransport,
   createInjectedObjectTransport,
+  parseJsonPayload,
   NativeTransportError,
   serializeJsonValue,
   type NativeTransportWindow,
@@ -27,28 +29,43 @@ function validateInput(input: NativeScanCodeInput): NativeScanCodeInput {
 }
 
 function parseResult(payload: unknown): NativeScanCodeResult {
-  const parsed = parseConfirmedNativeResult(payload)
-  if (
-    parsed === null ||
-    typeof parsed !== 'object' ||
-    typeof (parsed as { code?: unknown }).code !== 'string'
-  ) {
+  let parsed: unknown
+  try {
+    parsed = parseConfirmedNativeResult(payload)
+  } catch (error) {
+    if (error instanceof NativeTransportError && error.code !== 'payload-invalid') throw error
+    parsed = parseJsonPayload(payload)
+  }
+  const data = parsed !== null && typeof parsed === 'object'
+    ? (parsed as { data?: unknown }).data
+    : undefined
+  const code = typeof (parsed as { code?: unknown })?.code === 'string'
+    ? (parsed as { code: string }).code
+    : data !== null && typeof data === 'object'
+      ? (data as { text?: unknown }).text
+      : undefined
+  const nativeCode = (parsed as { code?: unknown })?.code
+  if (typeof nativeCode === 'number' && nativeCode !== 0) {
+    const errorCode = nativeCode === 1 ? 'native-cancelled' : nativeCode === 3 ? 'native-permission-denied' : 'native-failed'
+    throw new NativeTransportError(errorCode, 'Native scanCode reported ' + (parsed as { message?: string }).message)
+  }
+  if (typeof code !== 'string' || !code) {
     throw new NativeTransportError(
       'payload-invalid',
       'Native scanCode() result must be a JSON string with a string code field.',
     )
   }
 
-  return { code: (parsed as { code: string }).code }
+  return { code }
 }
 
-const androidTransport = createInjectedObjectTransport<
+const androidTransport = createCallbackInjectedObjectTransport<
   NativeScanCodeInput,
   NativeScanCodeResult
 >({
   objectName: 'androidBridge',
   methodName: 'scanCode',
-  serializeArgs: (input) => [serializeJsonValue(validateInput(input))],
+  serializeArgs: (input, callbackId) => [serializeJsonValue({ ...validateInput(input), callbackId })],
   parseResult,
 })
 

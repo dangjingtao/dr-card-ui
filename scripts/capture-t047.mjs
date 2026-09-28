@@ -105,9 +105,11 @@ console.log(`  首页底部卡片：title=${cardTitle} desc=${cardDesc}`)
 expect(cardTitle >= 1, '首页底部「卡博士品牌故事」卡片应展示「极地种子品牌故事」标题')
 expect(cardDesc >= 1, '首页底部卡片应展示「了解极地种子品牌起源与匠心洗护」描述')
 
-/* 公益板块仍为静态不可点击（D-079） */
+/* 公益板块作为可点击入口，品牌故事文案仍保留 */
 const causeTitle = await page.getByText('公益板块', { exact: true }).count()
 expect(causeTitle >= 1, '公益板块标题应保留')
+const causeCard = page.locator('section[aria-label="公益板块与品牌故事"] > button').filter({ hasText: '公益板块' })
+expect(await causeCard.count() === 1, '公益板块应是可点击卡片')
 
 await shot('01-home-bottom-card')
 

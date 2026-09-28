@@ -19,6 +19,13 @@ const DEFAULT_DATA_MODE: Record<AppEnvironment, DataMode> = {
   prod: 'api',
 }
 
+const DEFAULT_BRIDGE_MODE: Record<AppEnvironment, BridgeMode> = {
+  preview: 'disabled',
+  dev: 'disabled',
+  test: 'native',
+  prod: 'native',
+}
+
 function asAppEnvironment(value: string | undefined): AppEnvironment | undefined {
   return APP_ENVIRONMENTS.includes(value as AppEnvironment) ? (value as AppEnvironment) : undefined
 }
@@ -94,7 +101,7 @@ const parsedBridgeMode = asBridgeMode(rawBridgeMode)
 if (rawBridgeMode && !parsedBridgeMode) {
   configErrors.push(`Unknown VITE_BRIDGE_MODE=${rawBridgeMode}.`)
 }
-const bridgeMode = parsedBridgeMode ?? 'disabled'
+const bridgeMode = parsedBridgeMode ?? DEFAULT_BRIDGE_MODE[appEnvironment]
 
 const isDevLike = appEnvironment === 'dev' || appEnvironment === 'preview'
 const isProdLike = !isDevLike
@@ -102,8 +109,8 @@ const isProdLike = !isDevLike
 if (isProdLike && dataMode === 'mock') {
   configErrors.push(`${appEnvironment} runtime forbids VITE_DATA_MODE=mock.`)
 }
-if (isProdLike && bridgeMode === 'mock') {
-  configErrors.push(`${appEnvironment} runtime forbids VITE_BRIDGE_MODE=mock.`)
+if (isProdLike && bridgeMode !== 'native') {
+  configErrors.push(`${appEnvironment} runtime requires VITE_BRIDGE_MODE=native.`)
 }
 
 const apiBaseUrl = validateApiBaseUrl(import.meta.env.VITE_API_BASE_URL, configErrors)
@@ -119,6 +126,14 @@ if (configErrors.length > 0) {
 
 const fixtureEnvironment = dataMode === 'mock' && isDevLike
 const bridgeLabEnabled = appEnvironment !== 'prod'
+
+/**
+ * H036: test/prod carry real API + Native Bridge integration only, so their only legal runtime
+ * container is the App WebView. This flag is derived from the static environment (never from a
+ * new env var): whether the *current* host qualifies is a runtime probe and belongs to
+ * getNativeHost(), because the same bundle is opened both in browsers and in the App WebView.
+ */
+const requiresNativeHost = isProdLike
 
 /**
  * Single runtime truth for the embedded H5.
@@ -140,5 +155,6 @@ export const runtimePolicy = Object.freeze({
   fixtureQueriesEnabled: fixtureEnvironment,
   debugPanelEnabled: fixtureEnvironment,
   bridgeLabEnabled,
+  requiresNativeHost,
   build,
 })

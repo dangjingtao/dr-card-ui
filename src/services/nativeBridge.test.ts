@@ -15,6 +15,7 @@ type InjectedBridgeProbe = {
 
 type BridgeProbeWindow = Window & {
   androidBridge?: InjectedBridgeProbe
+  androidBridgeCallback?: (callbackId: string, payload: unknown) => void
   iosBridge?: InjectedBridgeProbe
   webkit?: {
     messageHandlers?: Record<string, { postMessage(payload: unknown): void } | undefined>
@@ -31,6 +32,7 @@ async function loadBridge(mode: 'disabled' | 'native' = 'native') {
 
 afterEach(() => {
   delete bridgeWindow.androidBridge
+  delete bridgeWindow.androidBridgeCallback
   delete bridgeWindow.iosBridge
   delete bridgeWindow.webkit
   vi.unstubAllEnvs()
@@ -38,7 +40,7 @@ afterEach(() => {
 })
 
 describe('JSBridge capability runtime', () => {
-  it('supports late Android bridge injection and parses the confirmed JSON-string token DTO', async () => {
+  it('supports late Android bridge injection and preserves the optional salt credential', async () => {
     const { getLoginToken, NativeBridgeError } = await loadBridge()
 
     await expect(getLoginToken()).rejects.toMatchObject({
@@ -49,11 +51,11 @@ describe('JSBridge capability runtime', () => {
 
     bridgeWindow.androidBridge = {
       getLoginToken() {
-        return '{"token":"late-token"}'
+        return '{"token":"late-token","salt":"late-salt"}'
       },
     }
 
-    await expect(getLoginToken()).resolves.toEqual({ token: 'late-token' })
+    await expect(getLoginToken()).resolves.toEqual({ token: 'late-token', salt: 'late-salt' })
   })
 
   it('uses the confirmed iOS iosBridge.getLoginToken() contract', async () => {
@@ -62,12 +64,12 @@ describe('JSBridge capability runtime', () => {
       marker: 'ios-host',
       getLoginToken() {
         expect(this).toBe(iosBridge)
-        return '{"token":"ios-token"}'
+        return '{"token":"ios-token","salt":"ios-salt"}'
       },
     }
     bridgeWindow.iosBridge = iosBridge
 
-    await expect(getLoginToken()).resolves.toEqual({ token: 'ios-token' })
+    await expect(getLoginToken()).resolves.toEqual({ token: 'ios-token', salt: 'ios-salt' })
   })
 
   it('resolves replacement injected-object instances on later invocations', async () => {
@@ -141,6 +143,32 @@ describe('JSBridge capability runtime', () => {
     bridgeWindow.androidBridge = {
       getLoginToken() {
         return { token: 'object-is-not-the-contract' }
+      },
+    }
+    await expect(getLoginToken()).rejects.toMatchObject({
+      name: 'NativeBridgeError',
+      code: 'invocation-failed',
+      capability: 'getLoginToken',
+      cause: expect.objectContaining({
+        name: 'NativeTransportError',
+        code: 'payload-invalid',
+      }),
+    })
+  })
+
+  it('keeps legacy token-only hosts compatible and rejects a malformed salt', async () => {
+    const { getLoginToken } = await loadBridge()
+
+    bridgeWindow.androidBridge = {
+      getLoginToken() {
+        return '{"token":"legacy-token"}'
+      },
+    }
+    await expect(getLoginToken()).resolves.toEqual({ token: 'legacy-token' })
+
+    bridgeWindow.androidBridge = {
+      getLoginToken() {
+        return '{"token":"token","salt":123}'
       },
     }
     await expect(getLoginToken()).rejects.toMatchObject({
@@ -385,14 +413,27 @@ describe('JSBridge capability runtime', () => {
   })
 
 
-  it('serializes Android scanCode input as the confirmed JSON string and parses the code result', async () => {
+  it('correlates Android scanCode through androidBridgeCallback', async () => {
     const { scanCode, getNativeBridgeDiagnostics } = await loadBridge()
-    const received: unknown[] = []
+    const received: Array<{ scanType: string; callbackId: string }> = []
     const androidBridge = {
       scanCode(payload: unknown) {
         expect(this).toBe(androidBridge)
-        received.push(payload)
-        return '{"code":"QR-ANDROID-001"}'
+        const request = JSON.parse(payload as string) as {
+          scanType: string
+          callbackId: string
+        }
+        received.push(request)
+        queueMicrotask(() => {
+          bridgeWindow.androidBridgeCallback?.(request.callbackId, {
+            code: 0,
+            message: 'ok',
+            data: {
+              text: 'QR-ANDROID-001',
+              scanType: 'qr',
+            },
+          })
+        })
       },
     }
     bridgeWindow.androidBridge = androidBridge
@@ -401,7 +442,12 @@ describe('JSBridge capability runtime', () => {
     await expect(scanCode({ scanType: 'all' })).resolves.toEqual({
       code: 'QR-ANDROID-001',
     })
-    expect(received).toEqual(['{"scanType":"all"}'])
+    expect(received).toEqual([
+      {
+        scanType: 'all',
+        callbackId: expect.any(String),
+      },
+    ])
   })
 
   it('supports qr/bar/all scanType values on iOS without changing the field name', async () => {
@@ -614,21 +660,39 @@ describe('JSBridge capability runtime', () => {
     })
   })
 
-  it('serializes showRewardAd with the confirmed scene and accepts only known statuses', async () => {
+  it('correlates Android showRewardAd through androidBridgeCallback', async () => {
     const { showRewardAd, getNativeBridgeDiagnostics } = await loadBridge()
-    const received: unknown[] = []
+    const received: Array<{ scene: string; callbackId: string }> = []
     const androidBridge = {
       showRewardAd(payload: unknown) {
         expect(this).toBe(androidBridge)
-        received.push(payload)
-        return '{"status":"completed"}'
+        const request = JSON.parse(payload as string) as {
+          scene: string
+          callbackId: string
+        }
+        received.push(request)
+        queueMicrotask(() => {
+          bridgeWindow.androidBridgeCallback?.(request.callbackId, {
+            code: 0,
+            message: 'ok',
+            data: {
+              scene: 'h5CheckinResign',
+              status: 'completed',
+            },
+          })
+        })
       },
     }
     bridgeWindow.androidBridge = androidBridge
 
     expect(getNativeBridgeDiagnostics().capabilities.showRewardAd).toBe(true)
     await expect(showRewardAd()).resolves.toEqual({ status: 'completed' })
-    expect(received).toEqual(['{"scene":"h5CheckinResign"}'])
+    expect(received).toEqual([
+      {
+        scene: 'h5CheckinResign',
+        callbackId: expect.any(String),
+      },
+    ])
   })
 
   it('supports all four iOS reward-ad statuses without renaming values', async () => {
