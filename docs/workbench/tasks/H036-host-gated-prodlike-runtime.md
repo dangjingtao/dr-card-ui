@@ -16,7 +16,7 @@
 现状事实：
 
 - `preview` / `dev` 默认 `VITE_DATA_MODE=mock`，允许 fixture / debug；
-- `test` / `prod` 默认 `api` 并禁止 Mock（构建期 + 运行期双重校验）；
+- `test` / `prod` 默认 `api + native`：禁止 API Mock，并要求真实 Native Bridge 模式（构建期 + 运行期双重校验）；
 - 因此"浏览器 Mock / 原生真接口"的区分**在构建层已经成立**，不需要新增环境档位或环境变量。
 
 真正的缺口是：`test` / `prod` 产物当前**用浏览器直接打开不会给出任何环境提示**，而是按 `api` 模式去请求真实后端，通常因 API base 缺失或未登录而各区域静默降级，表现为"页面坏了"。
@@ -41,7 +41,7 @@
 ## 不做
 
 - 不新增环境变量，不新增 data mode / bridge mode 取值；
-- 不修改 `scripts/build-h5.mjs` 的构建目标、Mock 禁令与 worker 资产门禁；
+- 不新增构建目标或 Bridge mode；沿用 `scripts/build-h5.mjs` 的既有目标，并把 `test/prod` 的 Bridge 默认值固定为当前实现所要求的 `native`；
 - 不修改 `.github/workflows/build.yml` 的构建与环境策略；
 - 不把提示页做成业务错误页，不伪造后端口径或 Native 能力；
 - 不改动 Native reference / legacy 路由的归属与实现。
@@ -76,7 +76,7 @@
 - [x] `preview` / `dev` 的浏览器 Mock 预览行为零变化；
 - [x] 宿主判定不依赖 UA，不缓存注入对象，不受 `bridgeMode` 影响；
 - [x] `npm run typecheck`、`npm run lint`、`npm run build:test`、`npm run build:prod` 通过；
-- [x] `test` bundle 仍不含 `mockServiceWorker.js`，`build-meta.json` 仍为 `test + api`；
+- [x] `test` bundle 仍不含 `mockServiceWorker.js`，`build-meta.json` 为 `test + api + native`；
 - [x] `test` branch gate 浏览器用例与新行为一致；
 - [x] 规范文档已同步，且未把未落地能力写成已完成。
 
@@ -87,9 +87,12 @@
 - `tests/e2e/formal-h5.spec.ts` 50/50 通过（preview 产物不受影响）；
 - `npx vitest run` 存在 5 项既有失败（`scanCode` / `showRewardAd` / `BuddyScanLanding`），已通过回滚本次 4 个代码文件复现，确认与本卡无关，属当前分支在途工作。
 
-## 待确认
+## 当前实现口径
 
-- `test` / `prod` 构建的 `VITE_BRIDGE_MODE` 当前未在 CI 与 Cloudflare 显式设置，默认回落 `disabled`。门禁放行原生宿主后，真实 Native 能力调用仍会因 `ensureNativeMode` 失败。是否需要在本卡范围内补 `VITE_BRIDGE_MODE=native` 并增加构建期一致性校验，待用户确认。
+- `preview/dev`：默认 `mock + disabled`，用于浏览器独立预览与 UI / Mock 联调；
+- `test/prod`：默认 `api + native`，且运行容器必须是原生 App WebView；
+- `scripts/build-h5.mjs` 与 `src/app/config/runtime.ts` 都要求 `test/prod` 的 `VITE_BRIDGE_MODE=native`，显式配置为 `disabled` 或 `mock` 均 hard fail；
+- 这只决定 H5 是否允许调用已经确认的 Native capability，不把“检测到宿主”误写成“某个具体 capability 已在当前 App 版本实现”。
 
 ## 证据
 
