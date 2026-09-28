@@ -6,10 +6,10 @@ import { resolve } from 'node:path'
 import { loadEnv } from 'vite'
 
 const TARGETS = {
-  dev: { mode: 'development', appEnvironment: 'dev', defaultDataMode: 'mock' },
-  preview: { mode: 'preview', appEnvironment: 'preview', defaultDataMode: 'mock' },
-  test: { mode: 'test', appEnvironment: 'test', defaultDataMode: 'api' },
-  prod: { mode: 'production', appEnvironment: 'prod', defaultDataMode: 'api' },
+  dev: { mode: 'development', appEnvironment: 'dev', defaultDataMode: 'mock', defaultBridgeMode: 'disabled' },
+  preview: { mode: 'preview', appEnvironment: 'preview', defaultDataMode: 'mock', defaultBridgeMode: 'disabled' },
+  test: { mode: 'test', appEnvironment: 'test', defaultDataMode: 'api', defaultBridgeMode: 'native' },
+  prod: { mode: 'production', appEnvironment: 'prod', defaultDataMode: 'api', defaultBridgeMode: 'native' },
 }
 
 const DATA_MODES = new Set(['mock', 'api'])
@@ -78,7 +78,7 @@ const dataMode = rawDataMode || target.defaultDataMode
 if (!DATA_MODES.has(dataMode)) errors.push(`Unknown VITE_DATA_MODE=${dataMode}. Expected mock or api.`)
 
 const rawBridgeMode = readEnv('VITE_BRIDGE_MODE')?.trim()
-const bridgeMode = rawBridgeMode || 'disabled'
+const bridgeMode = rawBridgeMode || target.defaultBridgeMode
 if (!BRIDGE_MODES.has(bridgeMode)) {
   errors.push(`Unknown VITE_BRIDGE_MODE=${bridgeMode}. Expected disabled, mock, or native.`)
 }
@@ -87,8 +87,8 @@ const prodLike = target.appEnvironment === 'test' || target.appEnvironment === '
 if (prodLike && dataMode === 'mock') {
   errors.push(`${target.appEnvironment} builds forbid VITE_DATA_MODE=mock; Mock fallback is not allowed.`)
 }
-if (prodLike && bridgeMode === 'mock') {
-  errors.push(`${target.appEnvironment} builds forbid VITE_BRIDGE_MODE=mock; Bridge Mock is dev/preview only.`)
+if (prodLike && bridgeMode !== 'native') {
+  errors.push(`${target.appEnvironment} builds require VITE_BRIDGE_MODE=native.`)
 }
 if (
   cloudflareBuildContext &&
