@@ -99,6 +99,9 @@ if (
 }
 
 const apiBaseUrl = readEnv('VITE_API_BASE_URL')?.trim() ?? ''
+if (target.appEnvironment === 'test' && !apiBaseUrl) {
+  errors.push('test builds require VITE_API_BASE_URL; a production-like test bundle must target a real backend.')
+}
 if (apiBaseUrl) {
   try {
     const parsed = new URL(apiBaseUrl)
