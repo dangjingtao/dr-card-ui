@@ -26,6 +26,12 @@ const bridgeWindow = window as BridgeProbeWindow
 
 async function loadBridge(mode: 'disabled' | 'native' = 'native') {
   vi.stubEnv('VITE_BRIDGE_MODE', mode)
+  if (mode === 'disabled') {
+    // Vitest itself runs with Vite mode "test"; these cases specifically verify the
+    // dev/preview-only disabled Bridge behavior, so make that runtime environment explicit.
+    vi.stubEnv('MODE', 'development')
+    vi.stubEnv('VITE_APP_ENV', 'dev')
+  }
   vi.resetModules()
   return import('./nativeBridge')
 }
@@ -497,7 +503,7 @@ describe('JSBridge capability runtime', () => {
 
     bridgeWindow.androidBridge = {
       scanCode() {
-        return '{"code":123}'
+        return '{"code":0,"data":{"text":123}}'
       },
     }
     await expect(scanCode({ scanType: 'all' })).rejects.toMatchObject({
