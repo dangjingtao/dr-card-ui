@@ -95,9 +95,9 @@ export function closeWebView(
 /**
  * H031 confirmed Native scanner boundary.
  *
- * Android uses window.androidBridge.scanCode(json); iOS uses
- * window.iosBridge.scanCode(json). The input is serialized as a JSON string with
- * scanType: qr | bar | all; Native synchronously returns a JSON string with code.
+ * Android uses window.androidBridge.scanCode(json) with a generated callbackId and resolves
+ * through window.androidBridgeCallback(callbackId, payload). iOS currently uses
+ * window.iosBridge.scanCode(json). H5 normalizes both host shapes to the same Promise result.
  */
 export function scanCode(
   input: NativeScanCodeInput,
@@ -141,8 +141,9 @@ export function copyText(
 /**
  * H033 rewarded-ad boundary for check-in resign.
  *
- * Only the confirmed scene h5CheckinResign is exposed. Native owns the ad UI and returns one
- * of completed / closed / failed / no_fill; H5 must only reward on completed.
+ * Only the confirmed scene h5CheckinResign is exposed. Android resolves asynchronously through
+ * window.androidBridgeCallback(callbackId, payload); H5 normalizes the Native result to
+ * completed / closed / failed / no_fill and must only reward on completed.
  */
 export function showRewardAd(
   input: NativeRewardAdInput = { scene: 'h5CheckinResign' },
