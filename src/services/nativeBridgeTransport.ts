@@ -258,7 +258,7 @@ function getInjectedCallbackChannel(
           request.handle(payload)
           return
         }
-        channel?.fallback?.(callbackId, payload)
+        channel?.fallback?.call(hostWindow, callbackId, payload)
       },
     }
     channels.set(callbackName, channel)
