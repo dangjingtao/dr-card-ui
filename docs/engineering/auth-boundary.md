@@ -15,6 +15,7 @@
 - OAuth 开发登录：`POST {VITE_API_BASE_URL}/api/oauth/login`，请求体 `{ salt, token }`；成功响应兼容旧的 `{ userInfo, accessToken }`，以及当前后台返回的 `{ code: 0, data: { userInfo, accessToken, ... } }`；后续同源 API 请求使用 `Authorization: Bearer <accessToken>`。
 - 正式 H5 根首页在 `VITE_DATA_MODE=api` 时先完成登录；仅 `accessToken` 暂存于 `sessionStorage`，`userInfo` 保留在当前文档内存。Mock 模式保留独立浏览器预览，不模拟真实登录。
 - HTTP 401 或响应顶层 `code: 401` 触发一次单飞重登；原请求最多重放一次。重登失败进入 `/error?reason=auth`，不循环。
+- 2026-09-28 后端统一响应协议：成功码 `code: 0`（兼容原生；`GET /api/user/detail` 此前 2026-09-24 实测的 `code: 200` 已由后端统一改回 0）；失败为非 0 code + `message` 字段（无 `msg` / `status`）。正式接口共用 `parseApiEnvelope` 解析。
 
 旧 iOS `webkit.messageHandlers.getAuthorizationInfo.postMessage({}) → window.onToken(token)` 仅作为历史联调 / Bridge Lab Raw Probe 证据保留，不再是 production auth contract。
 
@@ -24,7 +25,6 @@ Native Bridge 解决的是“如何从 App 拿到登录 token”，以下问题�
 
 - 以上 Authorization 约定来自当前开发联调口径，需由后端最终确认是否同时适用于所有 API；
 - 2026-09-24 本地联调（模拟器 WebView 真实登录态）实测：7002 需登录接口只接受 `token` 请求头；仅带 `Authorization: Bearer <accessToken>` 返回 401「请先登录」。Bearer 是否为最终口径仍待后端确认，[userProfile.ts](../../src/services/userProfile.ts) 暂按实测同时携带两种头；
-- 同期实测 `GET /api/user/detail` 对有效登录态只返回 `{"code":200,"message":"用户不存在！"}`，真实出参字段待后端补齐；
 - token 过期、刷新、登出与跨 WebView 生命周期同步；
 - 未登录时 Native `getLoginToken()` 返回什么；
 - token 为空 / 过期时由 Native 拉起登录，还是 H5 展示登录入口；

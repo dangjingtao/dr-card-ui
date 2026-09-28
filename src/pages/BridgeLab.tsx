@@ -111,10 +111,14 @@ function formatValue(value: unknown): string {
 
 function errorValue(error: unknown): unknown {
   if (error instanceof Error) {
+    const cause = 'cause' in error ? (error as { cause?: unknown }).cause : undefined
     return {
       name: error.name,
       message: error.message,
       ...('code' in error ? { code: (error as { code?: unknown }).code } : {}),
+      ...(cause instanceof Error
+        ? { cause: { name: cause.name, message: cause.message, ...('code' in cause ? { code: (cause as { code?: unknown }).code } : {}) } }
+        : cause !== undefined ? { cause } : {}),
     }
   }
   return error
