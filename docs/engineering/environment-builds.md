@@ -49,7 +49,7 @@ H006 将 `preview → dev → test → prod` 的产品分支语义和 Vite mode�
 
 每次成功构建都会生成 `dist/build-meta.json`，只包含非敏感诊断信息：App env、Vite mode、data/bridge mode、是否配置 API base，以及 build SHA / ID / source branch；不会把 API URL复制进该诊断文件。
 
-GitHub Actions 的 `test` gate 从仓库 Actions Variable `VITE_API_BASE_URL` 注入测试后端地址，并要求 `build-meta.json.apiBaseConfigured=true`。该 URL 属于非敏感运行配置；token / salt 等凭证不得以 `VITE_*` 变量保存。Cloudflare Pages 不继承 GitHub Actions Variables，`test` 分支在 Pages Dashboard 中也必须单独配置同名变量。
+GitHub Actions 的 `test` gate 从仓库 Actions Variable `VITE_API_BASE_URL` 注入测试后端地址，并要求 `build-meta.json.apiBaseConfigured=true`。该 URL 属于非敏感运行配置；token / salt 等凭证不得以 `VITE_*` 变量保存。Cloudflare Pages 不继承 GitHub Actions Variables，Pages 的 Preview 环境需单独配置同名变量。由于 Pages 的 preview 配置会覆盖所有非 production 分支，`scripts/build-h5.mjs` 只允许 Cloudflare `test` 目标消费这项 API base；Cloudflare `dev` / `preview` / feature 目标会忽略它并继续保持 Mock + current-origin 边界。
 
 ## Cloudflare Pages
 
