@@ -82,7 +82,9 @@ try {
   const { createStorageAdapter, storage: browserStorage } = storageModule
   const { defineStorageKey, STORAGE_KEYS } = keyModule
 
-  assert.deepEqual(STORAGE_KEYS, {})
+  assert.deepEqual(Object.keys(STORAGE_KEYS), ['authSession'])
+  assert.equal(STORAGE_KEYS.authSession.name, 'dr-card:auth-session')
+  assert.equal(STORAGE_KEYS.authSession.area, 'session')
 
   const localBackend = createMemoryStorage()
   const sessionBackend = createMemoryStorage()
@@ -111,6 +113,18 @@ try {
   assert.equal(adapter.write(sessionKey, { step: 2 }), true)
   assert.deepEqual(adapter.read(sessionKey), { step: 2 })
   assert.equal(localBackend.values.has(sessionKey.name), false)
+
+  assert.equal(
+    adapter.write(STORAGE_KEYS.authSession, {
+      accessToken: 'session-only-probe',
+    }),
+    true,
+  )
+  assert.deepEqual(adapter.read(STORAGE_KEYS.authSession), {
+    accessToken: 'session-only-probe',
+  })
+  assert.equal(sessionBackend.values.has(STORAGE_KEYS.authSession.name), true)
+  assert.equal(localBackend.values.has(STORAGE_KEYS.authSession.name), false)
 
   localBackend.values.set(localKey.name, '{broken json')
   assert.equal(adapter.read(localKey), null)

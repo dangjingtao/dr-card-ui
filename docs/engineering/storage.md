@@ -53,7 +53,7 @@ storage.remove(STORAGE_KEYS.someConfirmedKey)
 - 长期 secret、私钥、第三方服务密钥；
 - 未经明确安全/认证契约确认的 token 或其它敏感凭据。
 
-H011 **不决定认证 token 的存储方案**。在 Native 容器认证链路、token 生命周期与安全契约确认前，不得为了接接口临时把 token 放进 `localStorage` 或 `sessionStorage`。
+H011 **不决定认证 token 的存储方案**。本轮首页鉴权按用户确认，将短期 `accessToken` 限定存放在 `sessionStorage` 的 `auth-session` key 中，不使用 `localStorage`；不代表允许存储密码、长期凭据或其它 token。生命周期及其它 API 的认证安全契约仍待确认。
 
 ## 5. Key 规则
 

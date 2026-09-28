@@ -88,6 +88,7 @@
 | D-078 | 首页默认弹窗改变了 `/` 的初始形态，会遮挡一切首页点击型断言，因此引入取证专用抑制参数 **`?newcomer=off`**：它只让脚本确定性地拿到首页无遮挡形态，不改变产品行为，既不是 fixture 状态也不是弹层，故 **不进 `states` / `overlays`**；`RouteMeta` 亦不为其新增字段（现有字段集无「取证参数」语义位，新增属过度设计），改为在 `routes.ts` 的 `/` 条目就近块注释 + `owner` 文案登记，并在 route-table 留档。所有触碰 `/` 的取证/回归脚本统一改用 `/?newcomer=off`；`console-check-t004.mjs` 例外地同时保留 `/` 与 `/?newcomer=off`，因为弹窗态本身也必须无 console error | PASS | [routes.ts](../../../src/app/router/routes.ts)、[route-table.md](../route-table.md)、[capture-t021.mjs](../../../scripts/capture-t021.mjs)、[console-check-t004.mjs](../../../scripts/console-check-t004.mjs) | T021 全局 |
 | D-079 | **用户 2026-08-27 定案「1 张 / 2 张体验券领取概率 1:1」**：页面层按 50/50 抽取初始 variant，且该值惰性求值一次、同次访问内不变（沿用 D-074，随机仍不作为验收状态来源）。**「公益板块暂不实现跳转」**：该板块渲染为 `div` 静态承载，不给 `button` 语义、不带入口文案与 `ChevronRight`，原先指向 `/checkin` 的占位链接一并移除；`COLUMN_HOME_SECTIONS` 中 `cause` 的 `action`/`to` 均为 `null`，「卡博士品牌故事」保留跳 `/brand-culture`。取证脚本断言公益板块与品牌故事区内可点击入口有且仅有「卡博士品牌故事」 | PASS | [fixtures/index.ts](../../../src/app/fixtures/index.ts)、[Home.tsx](../../../src/pages/Home.tsx)、[capture-t021.mjs](../../../scripts/capture-t021.mjs) | T021 |
 | D-080 | 金刚区删除（D-072）带来一处连带脚本失效：`capture-t005.mjs` 原先点击首页「诗得丽品牌专栏」卡片进入 `/dearseed?overlay=reminder`，而该卡片正是金刚区的一部分（已由 `git show HEAD:src/pages/Home.tsx` 核实旧版存在），故这不是弹窗遮挡、加 `?newcomer=off` 无效。改为直连 `/dearseed?overlay=reminder`，该脚本只继续验证专栏侧提示层与关闭出口；首页与专栏的新入口关系由 `capture-t021.mjs` 覆盖。**T005 历史验收结论不回改** | PASS | [capture-t005.mjs](../../../scripts/capture-t005.mjs)、[T005-entry-home-onboarding.md](T005-entry-home-onboarding.md) | T021 T005 #2 |
+| D-081 | 首页「公益板块」和「极地种子品牌故事」均为可点击入口，分别进入 `/cause` 与 `/brand-culture`；两个详情页使用共享空富文本承载组件，当前不请求接口、不填充假内容，未来由统一数据层提供富文本。两个路由沿用 App 壳层标题栏，返回各自来源页；`/cause` 为新增空节点，`/brand-culture` 保留原路径和来源入口 | Implemented | [Home.tsx](../../../src/pages/Home.tsx)、[RichTextPlaceholder.tsx](../../../src/pages/RichTextPlaceholder.tsx)、[routes.ts](../../../src/app/router/routes.ts) | T021 |
 
 ## 2. 待确认/阻塞项（施工前必须决策）
 
@@ -114,7 +115,7 @@
 | B-030 | 运费计算、优惠抵扣与泡泡值抵扣规则（原型 §15 只列商品总价/运费/实付款；现实付款只做算术求和，见 D-048） | 高 | — | #72 | T010 |
 | B-031 | 新人体验券弹窗的**跨会话频次**与「已领取后再次进入首页」的服务端口径（用户 2026-08-27 已定案「默认全是新用户」，见 D-077：本阶段不做真实识别与持久化，进入 `/` 即弹、关闭后同次会话内不复现；剩余未决部分需等接口阶段确认） | 中 | — | — | T021 |
 | B-032 | 新人体验券的**券种池、库存与单人发放上限**（用户 2026-08-27 已定案 1 张 / 2 张概率 1:1，见 D-079；剩余券池与库存未给出，故只沉淀 `coupon-1`/`coupon-2` 两组确定性夹具，验收一律用 `?state=` 复现，不做服务端发券） | 中 | — | — | T021 |
-| B-033 | 「公益板块」的**实际内容与数据来源**（需求 §2.2 只给名称与顺序，`docs/prototype` 全库无「公益」命中；用户 2026-08-27 已定案「暂不实现跳转」，见 D-079，故现为标题 + 一句说明的静态承载、无入口无链接，不自造公益数据、项目列表与捐赠进度） | 中 | — | — | T021 |
+| B-033 | 「公益板块」的**实际内容与数据来源**（需求 §2.2 只给名称与顺序，`docs/prototype` 全库无「公益」命中；详情页已按 D-081 建为可达空富文本承载页，未来数据来源与服务契约待接口阶段确认；不自造公益数据、项目列表与捐赠进度） | 中 | — | — | T021 |
 
 ### 2.1 已关闭阻塞项
 

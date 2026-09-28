@@ -40,7 +40,7 @@ vi.mock('../app/router/routes', () => ({
   findRouteByPathname: () => ({ path: '/checkin' }),
 }))
 
-vi.mock('../components/mobile/CheckinBoard', () => ({
+vi.mock('./checkin/components/CheckinBoard', () => ({
   default: ({ onMakeup }: { onMakeup: () => void }) => (
     <button type="button" onClick={onMakeup}>
       补签

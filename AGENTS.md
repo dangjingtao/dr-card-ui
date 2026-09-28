@@ -90,6 +90,10 @@ H5 与原生 App 的交互必须集中到 Bridge adapter / protocol 层。
 
 禁止页面各自发明 Bridge 协议。浏览器 Mock 只能模拟已确认协议，不得据此推断原生 App 存在某项能力。
 
+宿主身份（当前是浏览器还是原生 WebView）同样必须经 `src/services/nativeBridge.ts` 的宿主查询获得，页面、入口与提示组件不得自行读取 `window.androidBridge` / `window.iosBridge`，也不得用 UA 或环境变量猜宿主。
+
+`test` / `prod` 只承载真实 API + Native Bridge 集成，其合法运行容器是 App WebView（H036）。浏览器独立预览由 `preview` / `dev` + Mock 承担。
+
 ### 3.4 Native 参考路由 / legacy 范围
 
 仓库中存在一组主要提供给 Native 同事参考的页面与路由。它们 **原则上不属于当前 H5 团队的施工、重构、API 接入、Mock、路由动画或业务验收范围**。

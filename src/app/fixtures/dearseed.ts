@@ -163,12 +163,12 @@ export const NEWCOMER_COUPON_RULE_STATUS = {
   causeSection: {
     confirmed: false,
     blocker: 'B-033',
-    note: '需求 §2.2 只给出「公益板块」的名称与排列顺序，摹客原型无对应 artboard（docs/prototype 全库无「公益」命中）。用户 2026-08-27 定案「暂不实现跳转」，故本板块只做标题 + 一句说明的静态承载，不带入口文案与跳转，不自造公益数据、项目列表与捐赠进度。',
+    note: '公益详情页现为无内容占位路由；未来仅承载服务返回的富文本，不自造公益数据、项目列表与捐赠进度。',
   },
 } as const
 
 export const COLUMN_HOME_SECTIONS = [
-  { key: 'cause', title: '公益板块', desc: '每次打卡助力公益，传递温暖', action: null, to: null },
+  { key: 'cause', title: '公益板块', desc: '每次打卡助力公益，传递温暖', action: '查看详情', to: '/cause' },
   { key: 'brand-story', title: '极地种子品牌故事', desc: '了解极地种子品牌起源与匠心洗护', action: '查看品牌故事', to: '/brand-culture' },
 ] as const
 

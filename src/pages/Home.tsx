@@ -1,30 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { BookOpen, ChevronLeft, ChevronRight, Gift, Heart, Search } from 'lucide-react'
 import BannerCarousel from '../components/mobile/BannerCarousel'
-import CheckinBoard from '../components/mobile/CheckinBoard'
+import CheckinBoard from './checkin/components/CheckinBoard'
 import CheckinMakeupSuccessOverlay from '../components/mobile/CheckinMakeupSuccessOverlay'
 import DebugPanel from '../components/mobile/DebugPanel'
-import NewcomerCouponDialog from '../components/mobile/NewcomerCouponDialog'
 import PageContainer from '../components/mobile/PageContainer'
-import IdentityPickerSheet from '../components/coupon/IdentityPickerSheet'
-import NewcomerGiftSheet from '../components/coupon/NewcomerGiftSheet'
 import { useFixtureState, useOverlay } from '../app/fixtures/useFixture'
 import { findRouteByPathname } from '../app/router/routes'
-import {
-  COLUMN_HOME_SECTIONS,
-  HOME_BANNER_CAROUSEL,
-  NEWCOMER_COUPON_RULE_STATUS,
-  NEWCOMER_COUPON_VARIANTS,
-} from '../app/fixtures'
+import { COLUMN_HOME_SECTIONS, NEWCOMER_COUPON_RULE_STATUS } from '../app/fixtures'
+import { resolveBannerLink, type BannerItem } from '../services/banners'
+import { useHomeBanners, useHomeSettings, useSignStatus } from './home/useHomeFeed'
 import avatar from '../assets/brand/home/home-avatar.webp'
-import bannerCheckin from '../assets/brand/home/home-banner-checkin.webp'
-import bannerWashCare from '../assets/brand/home/home-banner-wash-care.webp'
-
-const carouselAssets: Record<string, string> = {
-  checkin: bannerCheckin,
-  'wash-care': bannerWashCare,
-}
 
 const sectionIcons = {
   cause: Heart,
@@ -37,45 +24,62 @@ const sectionIcons = {
  * 2026-08-28 追加确认：签到业务在首页仅保留紧凑 7 日入口，不再展示金色签到 Hero；
  * 完整金色签到卡、30 天日历与补签入口统一收回 `/checkin` 内页。
  *
- * T043R3｜2026-09-10 用户现场反馈：从卡博士 APP 首页「诗得丽品牌专栏」卡片进入此页面后，
- * 必须弹出身份选择弹窗（IdentityPickerSheet），不再走 T021 的「自动弹新人体验券」单弹逻辑。
- * - 选「诗得丽新增用户」 → 洗发水体验券弹窗（NewcomerCouponDialog）
- * - 选「卡博士存量用户」 → 新人礼包占位弹窗（NewcomerGiftSheet）
- * - 所有弹窗关闭后留在当前 / 页面，不跳走
- * - 抑制参数：`?picker=off` 跳过身份选择；`?overlay=xxx` 跳过避免覆盖其他演示态
+ * 首页新人体验券弹窗暂时关闭：身份选择弹窗只是演示用，正式券数需等待 APP 用户信息
+ * 和跨后台用户识别接口完成后，由统一业务服务决定，不能在页面初始化时自行猜测。
  */
 export default function Home() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const route = findRouteByPathname('/')
-  /* T043R3｜useFixtureState 仍调用以保持夹具注册与 DebugPanel 工作，但 state 不再被读取 */
+  /* 保持夹具注册与 DebugPanel 工作；首页正式状态暂不直接驱动新人券弹窗。 */
   useFixtureState(route)
   const { overlay, open, close } = useOverlay()
 
   const debug = searchParams.get('debug') === '1'
 
-  /* T043R3｜身份选择弹窗三级流程（与 DearseedColumn.tsx 同语义） */
-  const [pickerOpen, setPickerOpen] = useState(false)
-  const [couponOpen, setCouponOpen] = useState(false)
-  const [couponSuccessOpen, setCouponSuccessOpen] = useState(false)
-  const [giftOpen, setGiftOpen] = useState(false)
-  const dearseedCoupons = NEWCOMER_COUPON_VARIANTS['coupon-1']
+  /* 首页接口数据：轮播 / 今日签到状态 / 品牌文化配置（mock 与 api 走同一 service）。 */
+  const banners = useHomeBanners()
+  const signStatus = useSignStatus()
+  const homeSettings = useHomeSettings()
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    const params = new URLSearchParams(window.location.search)
-    if (params.get('picker') === 'off') return
-    if (params.has('overlay')) return
-    setPickerOpen(true)
-  }, [])
+  const bannerSlides = useMemo(
+    () =>
+      banners.state === 'success'
+        ? banners.data.map((item) => ({
+            key: String(item.id),
+            image: item.image ?? undefined,
+            alt: item.title?.trim() || `首页轮播图 ${item.id}`,
+          }))
+        : [],
+    [banners],
+  )
+
+  const bannerItems = useMemo(() => {
+    const map = new Map<string, BannerItem>()
+    if (banners.state === 'success') {
+      for (const item of banners.data) map.set(String(item.id), item)
+    }
+    return map
+  }, [banners])
+
+  /** 公益 / 品牌故事描述：接口命中时以后台配置为准，未命中回退已确认静态文案（字段名待联调收口）。 */
+  const sectionDesc = (key: string) => {
+    const fallback = COLUMN_HOME_SECTIONS.find((item) => item.key === key)?.desc ?? ''
+    if (homeSettings.state !== 'success') return fallback
+    const text = key === 'cause' ? homeSettings.data.causeText : homeSettings.data.brandCultureText
+    return text ?? fallback
+  }
 
   return (
     <PageContainer className="pb-24 pt-4" inset={false}>
       <section className="mx-4 flex items-center gap-2" aria-label="搜索与用户入口">
+        {/* 临时调试入口（需移除）：原「返回卡博士首页」按钮临时改跳 Bridge Lab，
+         * 便于在 App WebView 内直接进入 /__debug/bridge-lab?osType=Android。
+         * 调试结束后恢复 onClick={() => navigate('/legacy-home')} 与原 aria-label。 */}
         <button
           type="button"
-          aria-label="返回卡博士首页"
-          onClick={() => navigate('/legacy-home')}
+          aria-label="打开 Bridge Lab（临时调试入口）"
+          onClick={() => navigate('/__debug/bridge-lab?osType=Android')}
           className="flex h-10 w-10 flex-none items-center justify-center rounded-full border border-border-subtle bg-surface text-text-primary active:bg-surface-secondary"
         >
           <ChevronLeft className="h-5 w-5" />
@@ -101,31 +105,41 @@ export default function Home() {
         </button>
       </section>
 
-      <div className="mx-4 mt-4">
-        <BannerCarousel
-          label="首页活动轮播"
-          interval={HOME_BANNER_CAROUSEL.interval}
-          speed={HOME_BANNER_CAROUSEL.speed}
-          slides={HOME_BANNER_CAROUSEL.slides.map((slide) => ({
-            key: slide.key,
-            image: slide.asset ? carouselAssets[slide.asset] : undefined,
-            alt: slide.alt,
-            eyebrow: 'eyebrow' in slide ? slide.eyebrow : undefined,
-            title: 'title' in slide ? slide.title : undefined,
-            description: 'description' in slide ? slide.description : undefined,
-            cta: 'cta' in slide ? slide.cta : undefined,
-          }))}
-          onSelect={(_, index) => {
-            const slide = HOME_BANNER_CAROUSEL.slides[index]
-            if (!slide) return
-            if ('to' in slide) navigate(slide.to)
-            else navigate(`/dearseed?overlay=${slide.toOverlay}`)
-          }}
-        />
-      </div>
+      {/* 接口空列表时隐藏轮播区域，不渲染空容器（2026-09-28 首页联调文档）。 */}
+      {bannerSlides.length > 0 && (
+        <div className="mx-4 mt-4">
+          <BannerCarousel
+            label="首页活动轮播"
+            slides={bannerSlides}
+            onSelect={(slide) => {
+              const item = bannerItems.get(slide.key)
+              if (!item) return
+              const target = resolveBannerLink(item)
+              if (!target) return
+              if (target.kind === 'internal') navigate(target.to)
+              // 外链按联调文档走 WebView / 系统浏览器打开；宿主拦截行为需在 App 内验证。
+              else window.location.assign(target.href)
+            }}
+          />
+        </div>
+      )}
 
       <div className="mt-4">
-        <CheckinBoard mode="home" onMakeup={() => open('make-up-success')} debug={debug} />
+        <CheckinBoard
+          mode="home"
+          onMakeup={() => open('make-up-success')}
+          debug={debug}
+          signStatus={
+            signStatus.state === 'success'
+              ? {
+                  signed: signStatus.data.signed,
+                  consecutiveDays: signStatus.data.consecutive_days,
+                  points: signStatus.data.points,
+                  rewardDesc: signStatus.data.reward_desc ?? '',
+                }
+              : null
+          }
+        />
       </div>
 
       <section className="mx-4 mt-7 space-y-3" aria-label="公益板块与品牌故事">
@@ -138,7 +152,7 @@ export default function Home() {
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-[15px] font-bold leading-5 text-text-primary">{item.title}</span>
-                <span className="mt-1 block text-xs leading-5 text-text-tertiary">{item.desc}</span>
+                <span className="mt-1 block text-xs leading-5 text-text-tertiary">{sectionDesc(item.key)}</span>
               </span>
               {item.action && (
                 <span className="flex flex-none items-center gap-0.5 text-xs text-reward-text">
@@ -149,14 +163,6 @@ export default function Home() {
             </>
           )
           const shell = 'flex w-full items-center gap-3 rounded-feature bg-surface p-4 text-left shadow-bubble'
-
-          if (!item.to) {
-            return (
-              <div key={item.key} className={shell}>
-                {body}
-              </div>
-            )
-          }
 
           return (
             <button key={item.key} type="button" onClick={() => navigate(item.to)} className={shell}>
@@ -177,47 +183,12 @@ export default function Home() {
         type="button"
         aria-label="福袋"
         onClick={() => navigate('/redeem')}
-        className="absolute bottom-[calc(59px+env(safe-area-inset-bottom)+1rem)] right-4 z-30 flex h-14 w-14 flex-col items-center justify-center rounded-full border border-border-subtle bg-reward-subtle text-reward-text shadow-sm"
+        className="fixed bottom-[calc(59px+env(safe-area-inset-bottom)+1rem)] left-4 z-30 flex h-14 w-14 flex-col items-center justify-center rounded-full border border-border-subtle bg-reward-subtle text-reward-text shadow-sm"
       >
         <span className="absolute right-2 top-2 h-2 w-2 rounded-full border-2 border-surface bg-danger" aria-hidden />
         <Gift className="h-[22px] w-[22px]" />
         <span className="mt-0.5 text-[10px] leading-none">福袋</span>
       </button>
-
-      {/* T043R3｜身份选择 → 二级弹窗三级流程（替代原 T021 自动弹体验券） */}
-      <IdentityPickerSheet
-        open={pickerOpen}
-        onPick={(identity) => {
-          setPickerOpen(false)
-          if (identity === 'new') {
-            setCouponOpen(true)
-          } else {
-            setGiftOpen(true)
-          }
-        }}
-        onDismiss={() => setPickerOpen(false)}
-      />
-      <NewcomerCouponDialog
-        open={couponOpen}
-        successOpen={couponSuccessOpen}
-        coupons={dearseedCoupons}
-        onConfirm={() => {
-          setCouponOpen(false)
-          setCouponSuccessOpen(true)
-        }}
-        onDismiss={() => {
-          setCouponOpen(false)
-          setCouponSuccessOpen(false)
-        }}
-        onSuccessAction={() => {
-          setCouponSuccessOpen(false)
-        }}
-      />
-      <NewcomerGiftSheet
-        open={giftOpen}
-        onConfirm={() => setGiftOpen(false)}
-        onDismiss={() => setGiftOpen(false)}
-      />
 
       <CheckinMakeupSuccessOverlay open={overlay === 'make-up-success'} onDismiss={close} debug={debug} />
 

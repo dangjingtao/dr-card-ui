@@ -32,6 +32,18 @@ function detectHost(hostWindow = getHostWindow()): NativeHost {
   return 'browser'
 }
 
+/**
+ * H036 host identity query.
+ *
+ * Answers "which host is currently running this H5" using injected-object presence only: no UA
+ * sniffing, no version inference, no caching, and deliberately independent of runtimePolicy
+ * .bridgeMode (bridgeMode gates whether capability calls are allowed; this only reports the host).
+ * Re-reading window on every call keeps late injection working, matching the capability runtime.
+ */
+export function getNativeHost(): NativeHost {
+  return detectHost()
+}
+
 function ensureNativeMode(capability: string): void {
   if (runtimePolicy.bridgeMode === 'native') return
 

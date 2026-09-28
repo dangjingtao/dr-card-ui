@@ -116,11 +116,15 @@ describe('Bridge Lab page', () => {
     expect(screen.queryByText('ios-preview-token')).toBeNull()
   })
 
-  it('can run registered scanCode with editable JSON input on Android', async () => {
+  it('preloads scanCode input and invokes Android with a callback id', async () => {
     usePlatform('android')
     labWindow.androidBridge = {
       scanCode(payload: unknown) {
-        expect(payload).toBe('{"scanType":"all"}')
+        expect(typeof payload).toBe('string')
+        expect(JSON.parse(payload as string)).toMatchObject({
+          scanType: 'all',
+          callbackId: expect.any(String),
+        })
         return '{"code":"bridge-lab-scan"}'
       },
     }
@@ -130,9 +134,9 @@ describe('Bridge Lab page', () => {
     fireEvent.click(
       document.querySelector('[data-capability-name="scanCode"]') as HTMLButtonElement,
     )
-    fireEvent.change(screen.getByLabelText('input JSON'), {
-      target: { value: '{"scanType":"all"}' },
-    })
+    expect((screen.getByLabelText('input JSON') as HTMLTextAreaElement).value).toBe(
+      '{"scanType":"all"}',
+    )
     fireEvent.click(screen.getByRole('button', { name: '调用 scanCode' }))
 
     await waitFor(() => {
@@ -165,11 +169,15 @@ describe('Bridge Lab page', () => {
     })
   })
 
-  it('can invoke registered showRewardAd with the confirmed check-in scene', async () => {
+  it('preloads showRewardAd input and invokes Android with a callback id', async () => {
     usePlatform('android')
     labWindow.androidBridge = {
       showRewardAd(payload: unknown) {
-        expect(payload).toBe('{"scene":"h5CheckinResign"}')
+        expect(typeof payload).toBe('string')
+        expect(JSON.parse(payload as string)).toMatchObject({
+          scene: 'h5CheckinResign',
+          callbackId: expect.any(String),
+        })
         return '{"status":"completed"}'
       },
     }
@@ -179,9 +187,9 @@ describe('Bridge Lab page', () => {
     fireEvent.click(
       document.querySelector('[data-capability-name="showRewardAd"]') as HTMLButtonElement,
     )
-    fireEvent.change(screen.getByLabelText('input JSON'), {
-      target: { value: '{"scene":"h5CheckinResign"}' },
-    })
+    expect((screen.getByLabelText('input JSON') as HTMLTextAreaElement).value).toBe(
+      '{"scene":"h5CheckinResign"}',
+    )
     fireEvent.click(screen.getByRole('button', { name: '调用 showRewardAd' }))
 
     await waitFor(() => {
