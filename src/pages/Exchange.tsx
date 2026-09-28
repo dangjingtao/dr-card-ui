@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { ChevronRight, Droplets, Gift, Search, Ticket } from 'lucide-react'
+import { ChevronRight, Droplets, Gift, Ticket } from 'lucide-react'
 import DebugPanel from '../components/mobile/DebugPanel'
 import PageContainer from '../components/mobile/PageContainer'
 import { BottomSheet, Button, EmptyState, SegmentedControl } from '../components/ui'
@@ -21,17 +21,9 @@ import {
 } from '../app/fixtures'
 import kitThumb from '../assets/brand/member/checkin-dearseed-kit.webp'
 import bubbleOrb from '../assets/brand/bubble/checkin-bubble-3d.webp'
-import hotBerry from '../assets/brand/exchange/profile-hot-berry.webp'
-import hotHoney from '../assets/brand/exchange/profile-hot-honey.webp'
-import hotSeasalt from '../assets/brand/exchange/profile-hot-seasalt.webp'
-import hotHerbal from '../assets/brand/exchange/profile-hot-herbal.webp'
 
 const PRODUCT_IMAGES: Partial<Record<NonNullable<ExchangeProductFixture['thumb']>, string>> = {
-  'dearseed-kit': kitThumb,
-  berry: hotBerry,
-  honey: hotHoney,
-  seasalt: hotSeasalt,
-  herbal: hotHerbal,
+  'dearseed-generic': kitThumb,
 }
 
 /**
@@ -57,11 +49,10 @@ export default function Exchange() {
   /** 排序状态继续兼容原型直达 URL；前台主 Tab 按用户参考图切换体验券分类。 */
   const sort = resolveExchangeSort(state?.key ?? null)
   const category = resolveExchangeCategory(searchParams.get('category'))
-  const [keyword, setKeyword] = useState('')
 
   const list = useMemo(
-    () => exchangeSearch(exchangeProductsByCategory(exchangeProductsBySort(sort), category), keyword),
-    [category, sort, keyword],
+    () => exchangeSearch(exchangeProductsByCategory(exchangeProductsBySort(sort), category)),
+    [category, sort],
   )
 
   /** 弹层内展示的体验券由 `?product=` 决定，保证兑换弹窗可复现 */
@@ -114,17 +105,7 @@ export default function Exchange() {
 
   return (
     <PageContainer className="flex flex-col pb-8" inset={false}>
-      <div className="mx-4 mt-1 flex items-center justify-between gap-3">
-        <label className="flex min-h-9 flex-1 items-center gap-2 rounded-pill border border-border-subtle bg-surface/90 px-3 text-text-tertiary shadow-sm focus-within:border-border-focused">
-          <Search className="h-4 w-4 shrink-0" aria-hidden />
-          <input
-            value={keyword}
-            onChange={(event) => setKeyword(event.target.value)}
-            placeholder={EXCHANGE_COPY.searchPlaceholder}
-            aria-label={EXCHANGE_COPY.searchPlaceholder}
-            className="min-w-0 flex-1 bg-transparent text-xs text-text-primary outline-none placeholder:text-text-placeholder"
-          />
-        </label>
+      <div className="mx-4 mt-1 flex items-center justify-end gap-3">
         <button
           type="button"
           onClick={() => navigate('/points')}
@@ -162,7 +143,7 @@ export default function Exchange() {
               title={EXCHANGE_COPY.emptyTitle}
               supportingText={EXCHANGE_COPY.emptyDesc}
               primaryAction={
-                <Button variant="outline" onClick={() => setKeyword('')}>
+                <Button variant="outline" onClick={() => changeCategory('all')}>
                   {EXCHANGE_COPY.emptyAction}
                 </Button>
               }

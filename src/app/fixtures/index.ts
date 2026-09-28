@@ -168,48 +168,26 @@ export const HOME_BANNER_CAROUSEL = {
 } as const
 
 /**
- * 诗得丽专栏「为你精选」夹具（摹客 #2 标题 @(28,638) + 容器 @(25,670) 326×112 双卡）
- * 商品文案、价格、按钮文案逐字取自原型；两张卡在原型中文案完全相同、仅商品图不同，
- * 此处如实保留，不去重、不自造第二个商品。
- * 跳转按原型 group interaction：卡 1 → 洗护兑换专区，卡 2 与两卡按钮 → 商品兑换弹窗。
- * ⚠️ 价格「200🫧」原型为红色，与项目 exchange-price 语义一致（⚠️ 冲突记录见 card-brand.css §8）。
+ * 诗得丽专栏「为你精选」banner 占位（摹客 #2 标题 @(28,638) + 容器 @(25,670) 326×112 双卡）
+ *
+ * 2026-09-28 用户确认：原「两张洗发水体验券卡」替换为一张 banner 图，
+ * 内容为 DearSeed 5 款体验装荟萃，图仍在制作中，先以圆角矩形占位。
+ * 占位期保留原有「进入洗护兑换专区」的跳转，替换真图时只需换掉占位框内容。
  */
-export interface DearseedPick {
-  id: string
-  asset: 'pick-a' | 'pick-b'
-  nameStrong: string
-  nameRest: string
-  desc: string
-  cost: number
-  cta: string
+export interface DearseedPickBanner {
+  /** 占位文案；真图到位后本字段与占位框一并移除 */
+  placeholderTitle: string
+  placeholderHint: string
+  alt: string
   to: string
-  ctaTo: string
 }
 
-export const DEARSEED_PICKS: DearseedPick[] = [
-  {
-    id: 'pick-1',
-    asset: 'pick-a',
-    nameStrong: '核心DearSeed温和',
-    nameRest: '清洁洗发水',
-    desc: '牡丹花水配方，温和清洁多余油脂',
-    cost: 200,
-    cta: '去兑换',
-    to: '/exchange',
-    ctaTo: '/exchange?overlay=redeem',
-  },
-  {
-    id: 'pick-2',
-    asset: 'pick-b',
-    nameStrong: '核心DearSeed温和',
-    nameRest: '清洁洗发水',
-    desc: '牡丹花水配方，温和清洁多余油脂',
-    cost: 200,
-    cta: '去兑换',
-    to: '/exchange?overlay=redeem',
-    ctaTo: '/exchange?overlay=redeem',
-  },
-]
+export const DEARSEED_PICK_BANNER: DearseedPickBanner = {
+  placeholderTitle: 'DearSeed 5 款体验装荟萃',
+  placeholderHint: 'banner 图制作中 · 占位',
+  alt: 'DearSeed 5 款体验装荟萃，进入洗护兑换专区',
+  to: '/exchange',
+}
 
 /* ────────────────────────── T009 卡包、核销、转赠与兑换码 ────────────────────────── */
 
@@ -1289,64 +1267,29 @@ export interface ExchangeProductFixture {
   stock: ExchangeStock
   /** 用于用户确认的四分类前台 Tab；未归类体验券只在「全部」中展示。 */
   category?: Exclude<ExchangeCategory, 'all'>
-  /** 缩略图素材键；仅 src/assets/brand 内已有素材可用，其余走 Token 占位（不新增二进制素材） */
-  thumb?: 'dearseed-kit' | 'honey' | 'seasalt' | 'berry' | 'herbal'
+  /**
+   * 缩略图素材键；仅 src/assets/brand 内已有素材可用，其余走 Token 占位（不新增二进制素材）。
+   * 2026-09-28 收敛为单一通用券后，仅保留通用洗发水素材键。
+   */
+  thumb?: 'dearseed-generic'
 }
 
+/**
+ * 2026-09-28 用户确认：当前业务只有一种通用体验券，可兑换商品收敛为单一
+ * 「DearSeed 洗发水通用兑换券」。原 e2–e5 的确定性夹具一并移除，不保留为隐藏 SKU，
+ * 以免分类 Tab / 排序仍能筛出已下线商品。
+ * ⚠️ 除本券外的 SKU 恢复条件与真实所需泡泡值仍未定稿（B-025 部分关闭）。
+ */
 export const EXCHANGE_PRODUCT_FIXTURES: ExchangeProductFixture[] = [
   {
     id: 'e1',
-    name: 'DearSeed 洗发水体验券',
+    name: 'DearSeed 洗发水通用兑换券',
     desc: '单次洗发体验，限到店核销',
     cost: 200,
     redeemed: 2000,
     redeemedLabel: '2000+',
     stock: 'in-stock',
-    category: 'shampoo',
-    thumb: 'dearseed-kit',
-  },
-  {
-    id: 'e2',
-    name: '洗护组合体验券',
-    desc: '洗发 / 护发组合体验，限到店核销',
-    cost: 200,
-    redeemed: 1860,
-    redeemedLabel: '1860',
-    stock: 'in-stock',
-    category: 'conditioner',
-    thumb: 'honey',
-  },
-  {
-    id: 'e3',
-    name: '核心洗发水体验券',
-    desc: '限到店核销',
-    cost: 480,
-    redeemed: 1240,
-    redeemedLabel: '1240',
-    stock: 'in-stock',
-    category: 'scalp-care',
-    thumb: 'seasalt',
-  },
-  {
-    id: 'e4',
-    name: '洗发体验券',
-    desc: '单次洗发体验，限到店核销',
-    cost: 320,
-    redeemed: 720,
-    redeemedLabel: '720',
-    stock: 'sold-out',
-    category: 'shampoo',
-    thumb: 'berry',
-  },
-  {
-    id: 'e5',
-    name: '现金减免体验券',
-    desc: '¥20 到店减免，限到店核销',
-    cost: 1500,
-    redeemed: 960,
-    redeemedLabel: '960',
-    stock: 'in-stock',
-    thumb: 'herbal',
+    thumb: 'dearseed-generic',
   },
 ]
 
@@ -1369,11 +1312,11 @@ export function exchangeProductsByCategory(list: ExchangeProductFixture[], categ
   return category === 'all' ? list : list.filter((item) => item.category === category)
 }
 
-/** 搜索：对体验券名称与说明做大小写无关的包含匹配；空串等价于不过滤 */
-export function exchangeSearch(list: ExchangeProductFixture[], keyword: string): ExchangeProductFixture[] {
-  const q = keyword.trim().toLowerCase()
-  if (!q) return list
-  return list.filter((item) => `${item.name}${item.desc}`.toLowerCase().includes(q))
+/**
+ * 兑换专区无搜索控件，`list` 直接透传（保留函数位以待后续筛选需求）。
+ */
+export function exchangeSearch(list: ExchangeProductFixture[]): ExchangeProductFixture[] {
+  return list
 }
 
 export function resolveExchangeSort(raw: string | null): ExchangeSort {
@@ -1400,7 +1343,10 @@ export function exchangeAvailability(
 
 /** 兑换专区文案（原型 §1 / §3 / §4 逐字照抄，不改写） */
 export const EXCHANGE_COPY = {
-  searchPlaceholder: '搜索体验券',
+  /**
+   * 2026-09-28 用户要求去掉兑换专区搜索框后，`searchPlaceholder` 已无对应控件，
+   * 一并移除，避免留下无人引用的死文案。
+   */
   balanceLabel: '泡泡值余额',
   costUnit: '泡泡值',
   redeemedPrefix: '兑换量',
@@ -1409,9 +1355,9 @@ export const EXCHANGE_COPY = {
   soldOut: '已兑完',
   insufficient: '泡泡值不足',
   submitting: '兑换中',
-  emptyTitle: '没有找到相关体验券',
-  emptyDesc: '换个关键词试试，或浏览全部洗护体验券。',
-  emptyAction: '清空搜索',
+  emptyTitle: '该类目暂无体验券',
+  emptyDesc: '当前仅提供通用洗护体验券，可回到「全部」查看。',
+  emptyAction: '查看全部',
   /** #40 存入卡包（原型 §4） */
   successTitle: '兑换成功，卡券已经存入你的卡包啦～',
   successAction: '查看我的卡包',

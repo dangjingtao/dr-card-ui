@@ -6,20 +6,17 @@ import {
   Crown,
   Gift,
   Headphones,
+  Image as ImageIcon,
   MapPin,
   Pencil,
   Ticket,
   UserRoundPlus,
 } from 'lucide-react'
 import avatar from '../assets/brand/home/home-avatar.webp'
-import hotBerry from '../assets/brand/exchange/profile-hot-berry.webp'
-import hotHoney from '../assets/brand/exchange/profile-hot-honey.webp'
-import hotSeasalt from '../assets/brand/exchange/profile-hot-seasalt.webp'
-import hotHerbal from '../assets/brand/exchange/profile-hot-herbal.webp'
 import PageContainer from '../components/mobile/PageContainer'
 import AppPromptDialog from '../components/mobile/AppPromptDialog'
 import { useOverlay } from '../app/fixtures/useFixture'
-import { APP_FORCE_FIXTURE } from '../app/fixtures'
+import { APP_FORCE_FIXTURE, DEARSEED_PICK_BANNER } from '../app/fixtures'
 
 type Tile = {
   icon: typeof Ticket
@@ -44,13 +41,6 @@ const tiles: Tile[] = [
 const stats = [
   { name: '卡包', value: '1', to: '/card', hint: '查看卡包' },
   { name: '泡泡值', value: '1,280', to: '/points', hint: '查看泡泡值明细' },
-]
-
-const hotGoods = [
-  { image: hotBerry, name: '莓果净澈体验券', meta: '单次体验 · 到店核销' },
-  { image: hotHoney, name: '蜂蜜修护体验券', meta: '单次体验 · 到店核销' },
-  { image: hotSeasalt, name: '海盐控油体验券', meta: '单次体验 · 到店核销' },
-  { image: hotHerbal, name: '草本柔顺体验券', meta: '单次体验 · 到店核销' },
 ]
 
 export default function Profile() {
@@ -205,17 +195,23 @@ export default function Profile() {
             <ChevronRight className="h-3.5 w-3.5" />
           </button>
         </header>
-        <div className="flex gap-3 overflow-x-auto px-1 pb-1" style={{ scrollbarWidth: 'none' }}>
-          {hotGoods.map((goods) => (
-            <article key={goods.name} className="w-[120px] min-w-[120px] flex-none rounded-xl bg-surface p-2 pb-3 text-left shadow-[0_1px_2px_rgba(23,27,42,0.04)]">
-              <div className="aspect-square overflow-hidden rounded-lg bg-surface-subtle">
-                <img src={goods.image} alt="" aria-hidden className="h-full w-full object-cover" />
-              </div>
-              <h4 className="mt-2 truncate text-[13px] font-medium text-text-primary">{goods.name}</h4>
-              <p className="mt-0.5 text-[11px] text-text-tertiary">{goods.meta}</p>
-            </article>
-          ))}
-        </div>
+        {/*
+          2026-09-28 用户确认：原横滑 4 张体验券卡替换为一张 banner 图，
+          内容为 DearSeed 5 款体验装荟萃，图仍在制作中，先以圆角矩形占位。
+          占位框样式与专栏首页同名 banner 保持一致（圆角 / 底色 / 虚线边框）。
+        */}
+        <button
+          type="button"
+          onClick={() => navigate(DEARSEED_PICK_BANNER.to)}
+          aria-label={DEARSEED_PICK_BANNER.alt}
+          className="relative flex aspect-[16/7] w-full items-center justify-center overflow-hidden rounded-feature border border-dashed border-border-subtle bg-reward-subtle shadow-bubble transition active:scale-[.99]"
+        >
+          <span className="flex flex-col items-center gap-1.5 px-6 text-center">
+            <ImageIcon className="h-7 w-7 text-reward-strong/60" aria-hidden />
+            <span className="text-[13px] font-semibold text-text-primary">{DEARSEED_PICK_BANNER.placeholderTitle}</span>
+            <span className="text-[10px] text-text-tertiary">{DEARSEED_PICK_BANNER.placeholderHint}</span>
+          </span>
+        </button>
       </section>
 
       <AppPromptDialog

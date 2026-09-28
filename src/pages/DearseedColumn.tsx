@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowUpRight, ChevronRight, Crown, Droplets, ShoppingBag, Sparkles, X } from 'lucide-react'
+import { ArrowUpRight, ChevronRight, Crown, Droplets, Image as ImageIcon, ShoppingBag, Sparkles, X } from 'lucide-react'
 import AppPromptDialog from '../components/mobile/AppPromptDialog'
 import DebugPanel from '../components/mobile/DebugPanel'
 import FixtureOverlay from '../components/mobile/FixtureOverlay'
@@ -19,7 +19,7 @@ import {
   CAMPAIGN_FIXTURE,
   CHECKIN_REMINDER,
   DEARSEED_BANNER_TEXT,
-  DEARSEED_PICKS,
+  DEARSEED_PICK_BANNER,
   GIFT_FOR_NEW_USERS,
   MEMBER_PROFILE,
   NEWCOMER_COUPON_SUCCESS,
@@ -29,13 +29,6 @@ import {
 import columnBanner from '../assets/brand/home/home-banner-carousel.webp'
 import avatar from '../assets/brand/home/home-avatar.webp'
 import campaignThumb from '../assets/brand/member/checkin-dearseed-kit.webp'
-import pickShampooA from '../assets/brand/exchange/exchange-pick-shampoo-a.webp'
-import pickShampooB from '../assets/brand/exchange/exchange-pick-shampoo-b.webp'
-
-const pickAssets = {
-  'pick-a': pickShampooA,
-  'pick-b': pickShampooB,
-} as const
 
 const columnEntries = [
   { label: '品牌文化', icon: Sparkles, to: '/brand-culture' },
@@ -264,31 +257,23 @@ export default function DearseedColumn() {
           <p className="text-[10px] font-medium tracking-[0.2em] text-reward-strong">DEARSEED SELECTION</p>
           <h2 className="mt-1 text-lg font-bold text-text-primary">为你精选</h2>
         </header>
-        <div className="grid grid-cols-2 gap-3">
-          {DEARSEED_PICKS.map((pick, index) => (
-            <article
-              key={pick.id}
-              data-dearseed-pick={pick.id}
-              className={`relative min-h-[254px] overflow-hidden rounded-feature border border-border-subtle p-3 shadow-bubble ${index === 0 ? 'bg-reward-subtle' : 'bg-surface'}`}
-            >
-              <button type="button" aria-label={`${pick.nameStrong}${pick.nameRest}`} onClick={() => navigate(pick.to)} className="block w-full pb-14 text-left">
-                <span className="relative flex h-[104px] items-center justify-center overflow-hidden rounded-[14px] bg-surface/75">
-                  <span aria-hidden className="absolute h-20 w-20 rounded-full bg-reward/20 blur-xl" />
-                  <img src={pickAssets[pick.asset]} alt="" aria-hidden className="relative h-24 w-16 object-contain drop-shadow-[0_10px_12px_rgba(51,37,20,0.18)]" />
-                </span>
-                <span className="mt-3 block text-[12px] leading-[17px] text-text-primary"><span className="font-bold">{pick.nameStrong}</span>{pick.nameRest}</span>
-                <span className="mt-1 line-clamp-1 block text-[10px] text-text-tertiary">{pick.desc}</span>
-              </button>
-              <div className="absolute inset-x-3 bottom-3 flex items-center justify-between">
-                <span className="text-base font-bold text-exchange-price">{pick.cost}<span className="ml-0.5 text-[10px] font-medium">🫧</span></span>
-                <button type="button" onClick={() => navigate(pick.ctaTo)} className="flex min-h-10 items-center gap-0.5 rounded-pill bg-primary px-3 text-[10px] font-semibold text-text-inverse shadow-primary-button active:bg-primary-pressed">
-                  {pick.cta}
-                  <ArrowUpRight className="h-3 w-3" aria-hidden />
-                </button>
-              </div>
-            </article>
-          ))}
-        </div>
+        {/*
+          2026-09-28 用户确认：原两张洗发水体验券卡替换为一张 banner 图，
+          内容为 DearSeed 5 款体验装荟萃，图仍在制作中，先以圆角矩形占位。
+          占位期保留跳转 /exchange 的可点击能力，替换真图时只需换掉框内内容。
+        */}
+        <button
+          type="button"
+          onClick={() => navigate(DEARSEED_PICK_BANNER.to)}
+          aria-label={DEARSEED_PICK_BANNER.alt}
+          className="relative flex aspect-[16/7] w-full items-center justify-center overflow-hidden rounded-feature border border-dashed border-border-subtle bg-reward-subtle shadow-bubble transition active:scale-[.99]"
+        >
+          <span className="flex flex-col items-center gap-1.5 px-6 text-center">
+            <ImageIcon className="h-7 w-7 text-reward-strong/60" aria-hidden />
+            <span className="text-[13px] font-semibold text-text-primary">{DEARSEED_PICK_BANNER.placeholderTitle}</span>
+            <span className="text-[10px] text-text-tertiary">{DEARSEED_PICK_BANNER.placeholderHint}</span>
+          </span>
+        </button>
       </section>
 
       {route && !ownedOverlay && <FixtureOverlay route={route} />}
