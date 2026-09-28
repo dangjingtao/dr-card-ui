@@ -60,8 +60,8 @@ describe('user profile detail contract', () => {
     })
   })
 
-  it('treats the 7002 business failure envelope as a business error', () => {
-    const failure = { code: 200, message: '用户不存在！', data: [] }
+  it('treats a non-zero code envelope as a business error with the message', () => {
+    const failure = { code: 400, message: '用户不存在！', data: [] }
 
     try {
       parseUserProfileDetail(failure)
@@ -70,6 +70,16 @@ describe('user profile detail contract', () => {
       expect(error).toBeInstanceOf(AppError)
       expect((error as AppError).kind).toBe('business')
       expect((error as AppError).message).toBe('用户不存在！')
+    }
+  })
+
+  it('rejects a success envelope whose data is not the user entity', () => {
+    try {
+      parseUserProfileDetail({ code: 0, msg: 'success', data: [] })
+      throw new Error('expected parseUserProfileDetail to throw')
+    } catch (error) {
+      expect(error).toBeInstanceOf(AppError)
+      expect((error as AppError).kind).toBe('contract')
     }
   })
 

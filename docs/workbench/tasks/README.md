@@ -119,6 +119,14 @@ H029 是 H030–H034 的公共协议前置；H029 合入后，H030–H034 可独
 |---|---|---|
 | H035 | [正式首页 Native OAuth 鉴权](./H035-home-authentication.md) | User Review |
 
+### H. 环境边界
+
+> H036 按 2026-09-28 用户指令继续使用仓库任务卡，不创建 GitHub Issue。
+
+| ID | 任务 | 状态 |
+|---|---|---|
+| H036 | [test / prod 宿主门禁与"仅限 App WebView"提示](./H036-host-gated-prodlike-runtime.md) | Agent Review |
+
 ## 主要阻塞
 
 - H008：除 H035 已确认的 OAuth 登录契约外，其它真实业务 API 与核心接口契约尚未确认；禁止自行发明协议。

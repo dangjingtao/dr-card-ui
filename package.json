@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "dev:5175": "npm run dev -- --port 5175",
+    "dev:mock:5175": "npm run dev -- --mode preview --port 5175",
     "adb:reverse:5175": "adb reverse tcp:5175 tcp:5175",
     "dev:android:5175": "npm run adb:reverse:5175 && npm run dev:5175",
     "lint": "node scripts/check-h5-hygiene.mjs && node scripts/check-fixture-query-debt.mjs",

@@ -42,6 +42,10 @@ export interface CouponListEnvelope {
 }
 
 export interface CouponListParams {
+  /** coupons.status：10=上架（首页/卡券页固定），20=下架。2026-09-28 联调文档起为必填。 */
+  status?: number
+  /** 按分类过滤。 */
+  categoryId?: number
   page?: number
   pageSize?: number
 }
@@ -50,6 +54,11 @@ export async function fetchCouponList(params: CouponListParams = {}): Promise<Co
   return httpClient.request<CouponListEnvelope>({
     method: 'GET',
     url: COUPON_LIST_PATH,
-    params: { page: params.page ?? 1, pageSize: params.pageSize ?? 50 },
+    params: {
+      status: params.status ?? COUPON_STATUS_ON_SHELF,
+      category_id: params.categoryId,
+      page: params.page ?? 1,
+      pageSize: params.pageSize ?? 50,
+    },
   })
 }

@@ -18,6 +18,7 @@ export type IOSMessageHandler = {
 export type NativeTransportWindow = Window & {
   androidBridge?: Record<string, unknown>
   iosBridge?: Record<string, unknown>
+  androidBridgeCallback?: (callbackId: string, payload: unknown) => void
   webkit?: {
     messageHandlers?: Record<string, IOSMessageHandler | undefined>
   }
@@ -196,6 +197,93 @@ export function createInjectedObjectTransport<TInput, TResult>(
           }
 
           return parseResult(rawResult)
+        },
+      }
+    },
+  }
+}
+
+export interface CallbackInjectedObjectTransportConfig<TInput, TResult>
+  extends Omit<InjectedObjectTransportConfig<TInput, TResult>, 'serializeArgs'> {
+  serializeArgs: (input: TInput, callbackId: string) => readonly unknown[]
+  callbackName?: 'androidBridgeCallback'
+  timeoutMs?: number
+}
+
+export function createCallbackInjectedObjectTransport<TInput, TResult>(
+  config: CallbackInjectedObjectTransportConfig<TInput, TResult>,
+) {
+  const parseResult = config.parseResult ?? identityResultParser<TResult>
+
+  return {
+    resolve(
+      hostWindow: NativeTransportWindow | undefined,
+      input: TInput,
+    ): NativeTransportResolution<TResult> {
+      const bridge = resolveHostObject(hostWindow, config.objectName)
+      if (!bridge) {
+        return {
+          supported: false,
+          code: 'bridge-unsupported',
+          message: 'window.' + config.objectName + ' is not available in the current host.',
+        }
+      }
+      const method = bridge[config.methodName]
+      if (typeof method !== 'function') {
+        return {
+          supported: false,
+          code: 'capability-unsupported',
+          message: config.objectName + '.' + config.methodName + ' is not available in the current host.',
+        }
+      }
+
+      return {
+        supported: true,
+        invoke: () => {
+          if (!hostWindow) throw new NativeTransportError('callback-channel-unsafe', 'Native callback channel is unavailable.')
+          const callbackId = `${config.methodName}-${Date.now()}-${Math.random().toString(36).slice(2)}`
+          const callbackName = config.callbackName ?? 'androidBridgeCallback'
+          const previous = hostWindow[callbackName]
+          const timeoutMs = config.timeoutMs ?? 120000
+
+          return new Promise<TResult>((resolve, reject) => {
+            let settled = false
+            const cleanup = () => {
+              if (hostWindow[callbackName] === handler) {
+                if (typeof previous === 'function') hostWindow[callbackName] = previous
+                else delete hostWindow[callbackName]
+              }
+              window.clearTimeout(timer)
+            }
+            const finish = (work: () => void) => {
+              if (settled) return
+              settled = true
+              cleanup()
+              work()
+            }
+            const handler = (id: string, payload: unknown) => {
+              if (id !== callbackId) return
+              finish(() => {
+                try { resolve(parseResult(payload)) } catch (error) { reject(error) }
+              })
+            }
+            hostWindow[callbackName] = handler
+            const timer = window.setTimeout(() => {
+              finish(() => reject(new NativeTransportError('callback-timeout', `Native ${config.methodName} callback timed out.`)))
+            }, timeoutMs)
+
+            try {
+              const args = config.serializeArgs(input, callbackId)
+              const rawResult = method.call(bridge, ...args)
+              if (rawResult !== undefined) {
+                finish(() => {
+                  try { resolve(parseResult(rawResult)) } catch (error) { reject(error) }
+                })
+              }
+            } catch (error) {
+              finish(() => reject(error instanceof NativeTransportError ? error : new NativeTransportError('serialization-failed', 'Injected-object transport could not invoke the native method.', error)))
+            }
+          })
         },
       }
     },

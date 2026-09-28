@@ -1,5 +1,7 @@
 import {
+  createCallbackInjectedObjectTransport,
   createInjectedObjectTransport,
+  parseJsonPayload,
   NativeTransportError,
   serializeJsonValue,
   type NativeTransportWindow,
@@ -28,11 +30,22 @@ function validateInput(input: NativeRewardAdInput): NativeRewardAdInput {
 }
 
 function parseResult(payload: unknown): NativeRewardAdResult {
-  const parsed = parseConfirmedNativeResult(payload)
+  let parsed: unknown
+  try {
+    parsed = parseConfirmedNativeResult(payload)
+  } catch (error) {
+    if (error instanceof NativeTransportError && error.code !== 'payload-invalid') throw error
+    parsed = parseJsonPayload(payload)
+  }
   const status =
     parsed !== null && typeof parsed === 'object'
-      ? (parsed as { status?: unknown }).status
+      ? ((parsed as { status?: unknown; data?: { status?: unknown } }).status
+        ?? (parsed as { data?: { status?: unknown } }).data?.status)
       : undefined
+  const nativeCode = (parsed as { code?: unknown })?.code
+  if (typeof nativeCode === 'number' && nativeCode !== 0 && nativeCode !== 1 && nativeCode !== 7) {
+    throw new NativeTransportError('native-failed', 'Native showRewardAd reported failure.')
+  }
 
   if (!['completed', 'closed', 'failed', 'no_fill'].includes(status as string)) {
     throw new NativeTransportError(
@@ -44,13 +57,13 @@ function parseResult(payload: unknown): NativeRewardAdResult {
   return { status: status as NativeRewardAdStatus }
 }
 
-const androidTransport = createInjectedObjectTransport<
+const androidTransport = createCallbackInjectedObjectTransport<
   NativeRewardAdInput,
   NativeRewardAdResult
 >({
   objectName: 'androidBridge',
   methodName: 'showRewardAd',
-  serializeArgs: (input) => [serializeJsonValue(validateInput(input))],
+  serializeArgs: (input, callbackId) => [serializeJsonValue({ ...validateInput(input), callbackId })],
   parseResult,
 })
 

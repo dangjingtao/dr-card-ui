@@ -138,6 +138,28 @@ H029 起该协议降级为 **历史联调证据 / Bridge Lab Raw Probe preset**�
 - 浏览器、旧 App 或方法未注入时必须明确 unsupported；
 - 真机 WebView smoke 才能把“契约已实现”升级为“当前 App build 已可用”。
 
+## 5.0 宿主身份查询（H036）
+
+`src/services/nativeBridge.ts` 除 capability 调用外，还对外提供一个一等公民的**宿主身份查询**：
+
+```ts
+export type NativeHostKind = 'android' | 'ios' | 'browser'
+
+export function getNativeHost(): NativeHostKind
+```
+
+语义约束：
+
+- 判定依据只有注入对象是否存在（`window.androidBridge` → `android`；`window.iosBridge` / `window.webkit.messageHandlers` → `ios`；否则 `browser`），**不看 UA，不做版本推断**；
+- 每次调用重新读取当前 `window`，**不缓存**注入对象，允许注入晚于 H5 初始化；
+- 结果与 `runtimePolicy.bridgeMode` **无关**：`bridgeMode` 决定"是否允许调用能力"，`getNativeHost()` 只回答"当前是什么宿主"；
+- 它是宿主探测结果，因此**不得**由环境变量表达或用构建期配置替代；
+- 与 capability 调用相同，页面、入口与提示组件只能经该 façade 查询，不得自行检测宿主对象。
+
+`getNativeBridgeDiagnostics()` 继续用于能力就绪诊断；宿主门禁（`test/prod` 仅限原生宿主）消费的是 `getNativeHost()`，因为门禁不应受 `bridgeMode` 影响。
+
+实现位置：`src/services/nativeBridge/runtime.ts` 的 `getNativeHost()`，经 `src/services/nativeBridge.ts` 重新导出。
+
 
 ## 5.1 Bridge 代码分层
 

@@ -59,6 +59,14 @@ const CHECKIN_DAILY_TASK_PERCENT = (() => {
   return Math.min(100, Math.max(0, (done / total) * 100))
 })()
 
+/** 首页签到状态视图（来自 `/api/signrecords/status`，由宿主页面归一化后传入）。 */
+export interface HomeSignStatusView {
+  signed: boolean
+  consecutiveDays: number
+  points: number
+  rewardDesc: string
+}
+
 export interface CheckinBoardProps {
   /** 首页只显示紧凑 7 日轨道；签到内页显示金色 Hero + 完整 30 天日历。 */
   mode?: 'home' | 'full'
@@ -68,6 +76,8 @@ export interface CheckinBoardProps {
   onMakeup: () => void
   /** `?debug=1` 时追加未决规则说明 */
   debug?: boolean
+  /** 今日签到状态（接口）；缺省（加载中 / 失败 / 未登录）时不渲染状态行，保持既有夹具视觉。 */
+  signStatus?: HomeSignStatusView | null
 }
 
 /**
@@ -79,7 +89,7 @@ export interface CheckinBoardProps {
  * - `/checkin` 签到内页保留金色 Hero，并直接展示完整 30 天日历与补签入口；
  * - 补签状态继续完全来自 CHECKIN_CALENDAR，不删除、不重写业务规则。
  */
-export default function CheckinBoard({ mode = 'home', isSuccess = false, onMakeup, debug = false }: CheckinBoardProps) {
+export default function CheckinBoard({ mode = 'home', isSuccess = false, onMakeup, debug = false, signStatus }: CheckinBoardProps) {
   const navigate = useNavigate()
   // T045｜calendarOpen state 暂时保留，但首页 7 天卡片已不再触发此 BottomSheet。
   //  如需恢复抽屉弹窗跳转，把 onClick 改回 setCalendarOpen(true) 即可。
@@ -190,6 +200,18 @@ export default function CheckinBoard({ mode = 'home', isSuccess = false, onMakeu
                 )
               })}
             </div>
+
+            {signStatus && (
+              <span
+                data-checkin-sign-status={signStatus.signed ? 'signed' : 'unsigned'}
+                className={`mt-3 flex items-center gap-1 text-[11px] leading-4 ${
+                  signStatus.signed ? 'text-reward-text' : 'text-text-tertiary'
+                }`}
+              >
+                {signStatus.signed && <Check className="h-3 w-3" strokeWidth={3} aria-hidden />}
+                {buildSignStatusHint(signStatus)}
+              </span>
+            )}
           </button>
 
           <BottomSheet
@@ -410,6 +432,19 @@ export default function CheckinBoard({ mode = 'home', isSuccess = false, onMakeu
       )}
     </>
   )
+}
+
+/**
+ * 首页签到状态提示文案。
+ * 未签到且 points=0 时不写「+0 泡泡值」，优先展示 reward_desc（2026-09-28 首页联调文档要求）。
+ */
+function buildSignStatusHint(status: HomeSignStatusView): string {
+  if (status.signed) return `今日已签到 · 连续签到 ${status.consecutiveDays} 天`
+
+  const parts: string[] = []
+  if (status.rewardDesc) parts.push(status.rewardDesc)
+  if (status.points > 0) parts.push(`今日签到 +${status.points} 泡泡值`)
+  return parts.length > 0 ? parts.join(' · ') : '今日还未签到'
 }
 
 function CalendarCell({ item, onMakeup }: { item: CheckinDay; onMakeup: () => void }) {

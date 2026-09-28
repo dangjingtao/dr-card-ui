@@ -25,6 +25,7 @@ export { NativeBridgeError } from './nativeBridge/errors'
 export {
   getNativeBridgeCapabilityCatalog,
   getNativeBridgeDiagnostics,
+  getNativeHost,
   invokeRegisteredNativeCapabilityForDebug,
 } from './nativeBridge/runtime'
 export type { NativeBridgeDiagnostics } from './nativeBridge/runtime'

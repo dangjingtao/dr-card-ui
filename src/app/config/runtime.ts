@@ -121,6 +121,14 @@ const fixtureEnvironment = dataMode === 'mock' && isDevLike
 const bridgeLabEnabled = appEnvironment !== 'prod'
 
 /**
+ * H036: test/prod carry real API + Native Bridge integration only, so their only legal runtime
+ * container is the App WebView. This flag is derived from the static environment (never from a
+ * new env var): whether the *current* host qualifies is a runtime probe and belongs to
+ * getNativeHost(), because the same bundle is opened both in browsers and in the App WebView.
+ */
+const requiresNativeHost = isProdLike
+
+/**
  * Single runtime truth for the embedded H5.
  *
  * H006 makes environment/build identity explicit without inventing H008 backend contracts or H015
@@ -140,5 +148,6 @@ export const runtimePolicy = Object.freeze({
   fixtureQueriesEnabled: fixtureEnvironment,
   debugPanelEnabled: fixtureEnvironment,
   bridgeLabEnabled,
+  requiresNativeHost,
   build,
 })
