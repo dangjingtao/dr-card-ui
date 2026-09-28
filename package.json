@@ -12,7 +12,7 @@
     "dev:5175": "npm run dev -- --port 5175",
     "dev:mock:5175": "npm run dev -- --mode preview --port 5175",
     "adb:reverse:5175": "adb reverse tcp:5175 tcp:5175",
-    "dev:android:5175": "npm run adb:reverse:5175 && npm run dev:5175",
+    "dev:android:5175": "node scripts/dev-android.mjs",
     "lint": "node scripts/check-h5-hygiene.mjs && node scripts/check-fixture-query-debt.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
