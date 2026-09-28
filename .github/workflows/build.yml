@@ -211,11 +211,14 @@ jobs:
           node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('dist/build-meta.json','utf8'));if(m.appEnvironment!=='prod'||m.dataMode!=='api'||m.build.sha!==process.env.GITHUB_SHA)process.exit(1)"
           test ! -f dist/mockServiceWorker.js
 
-      - name: Verify production excludes Bridge Lab
+      - name: Verify production excludes Bridge Lab implementation
         shell: bash
         run: |
-          if grep -R --binary-files=text -F '__debug/bridge-lab' dist; then
-            echo 'Production bundle must not contain the Bridge Lab route.'
+          # The temporary Home link may still contain the debug route string by maintainer decision.
+          # Production safety is that the production router must not bundle the lazy BridgeLab module
+          # or its Raw Probe implementation/UI.
+          if find dist/assets -type f -name 'BridgeLab-*.js' -print -quit | grep -q .; then
+            echo 'Production bundle must not contain a Bridge Lab implementation chunk.'
             exit 1
           fi
           if grep -R --binary-files=text -F 'Android Raw Probe' dist; then
