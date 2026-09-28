@@ -184,11 +184,13 @@ jobs:
           grep -F 'Browser CI evidence only' test-evidence-site/latest/index.html
 
       - name: Build test bundle
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
         run: npm run build:test
 
       - name: Verify test build identity
         run: |
-          node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('dist/build-meta.json','utf8'));if(m.appEnvironment!=='test'||m.dataMode!=='api')process.exit(1)"
+          node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('dist/build-meta.json','utf8'));if(m.appEnvironment!=='test'||m.dataMode!=='api'||m.bridgeMode!=='native'||m.apiBaseConfigured!==true)process.exit(1)"
           test ! -f dist/mockServiceWorker.js
 
       - name: Reject Mock in production-like builds
@@ -261,6 +263,7 @@ jobs:
     env:
       VITE_APP_ENV: test
       VITE_DATA_MODE: api
+      VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -280,13 +283,14 @@ jobs:
           test "$VITE_APP_ENV" = "test"
           test "$VITE_DATA_MODE" = "api"
           test "$VITE_DATA_MODE" != "mock"
+          test -n "$VITE_API_BASE_URL"
 
       - name: Build test bundle
         run: npm run build:test
 
       - name: Verify test bundle identity
         run: |
-          node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('dist/build-meta.json','utf8'));if(m.appEnvironment!=='test'||m.dataMode!=='api')process.exit(1)"
+          node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('dist/build-meta.json','utf8'));if(m.appEnvironment!=='test'||m.dataMode!=='api'||m.bridgeMode!=='native'||m.apiBaseConfigured!==true)process.exit(1)"
 
       - name: Verify test bundle has no Mock Service Worker asset
         shell: bash
