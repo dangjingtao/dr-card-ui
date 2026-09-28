@@ -19,6 +19,13 @@ const DEFAULT_DATA_MODE: Record<AppEnvironment, DataMode> = {
   prod: 'api',
 }
 
+const DEFAULT_BRIDGE_MODE: Record<AppEnvironment, BridgeMode> = {
+  preview: 'disabled',
+  dev: 'disabled',
+  test: 'native',
+  prod: 'native',
+}
+
 function asAppEnvironment(value: string | undefined): AppEnvironment | undefined {
   return APP_ENVIRONMENTS.includes(value as AppEnvironment) ? (value as AppEnvironment) : undefined
 }
@@ -94,7 +101,7 @@ const parsedBridgeMode = asBridgeMode(rawBridgeMode)
 if (rawBridgeMode && !parsedBridgeMode) {
   configErrors.push(`Unknown VITE_BRIDGE_MODE=${rawBridgeMode}.`)
 }
-const bridgeMode = parsedBridgeMode ?? 'disabled'
+const bridgeMode = parsedBridgeMode ?? DEFAULT_BRIDGE_MODE[appEnvironment]
 
 const isDevLike = appEnvironment === 'dev' || appEnvironment === 'preview'
 const isProdLike = !isDevLike
@@ -102,8 +109,8 @@ const isProdLike = !isDevLike
 if (isProdLike && dataMode === 'mock') {
   configErrors.push(`${appEnvironment} runtime forbids VITE_DATA_MODE=mock.`)
 }
-if (isProdLike && bridgeMode === 'mock') {
-  configErrors.push(`${appEnvironment} runtime forbids VITE_BRIDGE_MODE=mock.`)
+if (isProdLike && bridgeMode !== 'native') {
+  configErrors.push(`${appEnvironment} runtime requires VITE_BRIDGE_MODE=native.`)
 }
 
 const apiBaseUrl = validateApiBaseUrl(import.meta.env.VITE_API_BASE_URL, configErrors)
