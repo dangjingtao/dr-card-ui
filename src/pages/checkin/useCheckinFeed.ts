@@ -88,7 +88,7 @@ export interface CheckinActionsResult {
 /**
  * 签到 / 补签动作。走真实 service（`add` / `makeup`），页面不做模式分支。
  *
- * ℹ️ 补签不在最新《签到页面接口文档》内，但为 7002 实测可用能力，2026-09-29 用户确认保留；
+ * ℹ️ 补签已纳入当前《签到页面接口文档》，走正式 `POST /api/signrecords/makeup`；
  * 调用前必须先通过 Native 激励广告闸门（在宿主页面完成，本 hook 只负责接口调用）。
  *
  * `index` 记录带业务日期字段 `year`/`month`/`day`，接口刷新后能正确归属；
