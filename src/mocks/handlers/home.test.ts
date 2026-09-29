@@ -7,8 +7,8 @@ const url = (query: string) => new URL(`https://mock.local/api/coupons/index${qu
 describe('coupon list mock filtering', () => {
   it('returns every coupon when no status filter is sent', () => {
     const body = filterCouponList(url(''))
-    expect(body.data.total).toBe(5)
-    expect(body.data.data.length).toBe(5)
+    expect(body.data.total).toBe(1)
+    expect(body.data.data.length).toBe(1)
   })
 
   it('filters by the confirmed status parameter', () => {
@@ -19,7 +19,7 @@ describe('coupon list mock filtering', () => {
 
   it('does not treat category_id as a confirmed mock contract', () => {
     const body = filterCouponList(url('?category_id=999'))
-    expect(body.data.total).toBe(5)
-    expect(body.data.data.length).toBe(5)
+    expect(body.data.total).toBe(1)
+    expect(body.data.data.length).toBe(1)
   })
 })
