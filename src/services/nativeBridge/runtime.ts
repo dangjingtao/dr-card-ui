@@ -125,9 +125,18 @@ export async function invokeNativeCapability<
     )
   }
 
+  const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+    throw new NativeBridgeError(
+      'invocation-failed',
+      descriptor.name,
+      `Native capability "${descriptor.name}" requires a positive finite timeout.`,
+    )
+  }
+
   let invocation: Promise<TResult>
   try {
-    invocation = Promise.resolve(resolution.invoke(input))
+    invocation = Promise.resolve(resolution.invoke(input, { timeoutMs }))
   } catch (error) {
     throw toInvocationBridgeError(error, descriptor.name, 'threw')
   }
@@ -136,7 +145,7 @@ export async function invokeNativeCapability<
     return await withTimeout(
       invocation,
       descriptor.name,
-      options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+      timeoutMs,
     )
   } catch (error) {
     throw toInvocationBridgeError(error, descriptor.name, 'rejected')
