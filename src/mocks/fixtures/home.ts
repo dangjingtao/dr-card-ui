@@ -48,18 +48,6 @@ export const HOME_BANNERS_MOCK = {
   },
 } as const
 
-export const HOME_SIGN_STATUS_MOCK = {
-  code: 0,
-  msg: 'success',
-  status: 'succ',
-  data: {
-    signed: false,
-    consecutive_days: 3,
-    points: 5,
-    reward_desc: '连续签到3天',
-  },
-} as const
-
 /** settings 字段名待联调确认（见 src/services/settings.ts 别名表），这里使用第一候选。 */
 export const HOME_SETTINGS_MOCK = {
   code: 0,

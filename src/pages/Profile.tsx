@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ChevronRight,
@@ -11,16 +11,14 @@ import {
   Ticket,
   UserRoundPlus,
 } from 'lucide-react'
-import avatar from '../assets/brand/home/home-avatar.webp'
+import avatarFallback from '../assets/brand/home/home-avatar.webp'
 import hotBerry from '../assets/brand/exchange/profile-hot-berry.webp'
-import hotHoney from '../assets/brand/exchange/profile-hot-honey.webp'
-import hotSeasalt from '../assets/brand/exchange/profile-hot-seasalt.webp'
-import hotHerbal from '../assets/brand/exchange/profile-hot-herbal.webp'
 import PageContainer from '../components/mobile/PageContainer'
 import AppPromptDialog from '../components/mobile/AppPromptDialog'
 import { useOverlay } from '../app/fixtures/useFixture'
 import { openNativeAppStore } from '../app/adapters/appOpen'
 import { APP_FORCE_FIXTURE } from '../app/fixtures'
+import { useProfileCoupons, useProfileFeed } from './profile/useProfileFeed'
 
 type Tile = {
   icon: typeof Ticket
@@ -42,23 +40,51 @@ const tiles: Tile[] = [
   { icon: Headphones, name: '客服中心', from: '#F6F8FB', deep: '#E1E6ED', color: '#535D72', to: '/service/chat' },
 ]
 
-const stats = [
-  { name: '卡包', value: '1', to: '/card', hint: '查看卡包' },
-  { name: '泡泡值', value: '1,280', to: '/points', hint: '查看泡泡值明细' },
-]
+/** 资料 / 泡泡值在加载或失败时的占位，不回退旧夹具值，避免把假值冒充成真实资料。 */
+const PROFILE_VALUE_PLACEHOLDER = '--'
 
-const hotGoods = [
-  { image: hotBerry, name: '莓果净澈体验券', meta: '单次体验 · 到店核销' },
-  { image: hotHoney, name: '蜂蜜修护体验券', meta: '单次体验 · 到店核销' },
-  { image: hotSeasalt, name: '海盐控油体验券', meta: '单次体验 · 到店核销' },
-  { image: hotHerbal, name: '草本柔顺体验券', meta: '单次体验 · 到店核销' },
-]
+/** 体验券封面缺失时（`image` 为 null / 空串）的本地兜底图。 */
+const COUPON_COVER_FALLBACK = hotBerry
 
 export default function Profile() {
   const navigate = useNavigate()
   const { overlay, open, close } = useOverlay()
   const [downloadHint, setDownloadHint] = useState<string | undefined>(undefined)
   const [downloadPending, setDownloadPending] = useState(false)
+
+  // GET /api/user/profile：昵称 / 头像 / 等级 / 券数量 / 泡泡值快照。
+  // 加载与失败显示占位，不回退旧夹具值；页面不做 mock/api 分支。
+  const { remote: profileRemote } = useProfileFeed()
+  const profile = profileRemote.state === 'success' ? profileRemote.data : null
+
+  // GET /api/coupons/index：热门体验券横滑区（券模板，可兑换的券）。
+  // 首屏只取第 1 页，「查看更多」跳券页承接完整分页。
+  const { remote: couponsRemote } = useProfileCoupons()
+  const hotGoods = useMemo(
+    () =>
+      couponsRemote.state === 'success'
+        ? couponsRemote.data.map((coupon) => ({
+            id: coupon.id,
+            image: coupon.image?.trim() || COUPON_COVER_FALLBACK,
+            name: coupon.name,
+            meta: coupon.short_desc?.trim() || '单次体验 · 到店核销',
+          }))
+        : [],
+    [couponsRemote],
+  )
+
+  const avatarSrc = profile?.avatar ?? avatarFallback
+  const nickname = profile?.nickname || PROFILE_VALUE_PLACEHOLDER
+  const gradeName = profile?.grade || PROFILE_VALUE_PLACEHOLDER
+  const kbsId = profile?.kbsId
+  const nextGrade = profile?.nextGrade
+  const pointsText = profile ? profile.points.toLocaleString() : PROFILE_VALUE_PLACEHOLDER
+
+  // 资产区：券数量取 couponsCount（恒为数字，0 是合法值，不用 || 折叠）；泡泡值取资料快照。
+  const stats = [
+    { name: '优惠券', value: profile ? String(profile.couponsCount) : PROFILE_VALUE_PLACEHOLDER, to: '/card', hint: '查看优惠券' },
+    { name: '泡泡值', value: pointsText, to: '/points', hint: '查看泡泡值明细' },
+  ]
 
   const openAppPrompt = () => {
     setDownloadHint(undefined)
@@ -109,17 +135,17 @@ export default function Profile() {
             onClick={() => navigate('/settings')}
             className="h-16 w-16 flex-none overflow-hidden rounded-full border-2 border-white/90 shadow-[0_0_0_4px_rgba(165,122,29,0.25)]"
           >
-            <img src={avatar} alt="" className="h-full w-full object-cover" />
+            <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
           </button>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-lg font-semibold text-[#4A3206]">昵称 12345678910</h2>
+              <h2 className="text-lg font-semibold text-[#4A3206]">{nickname}</h2>
               <span className="inline-flex h-[22px] flex-none items-center gap-1 rounded-full bg-[#4A3206] px-2 text-[11px] font-semibold text-[#F7E2A1]">
                 <Crown className="h-3 w-3 text-[#F7E2A1]" />
-                VIP 泡泡新生
+                VIP {gradeName}
               </span>
             </div>
-            <p className="mt-1 text-xs tracking-wide text-[#6B4A12]/85">ID 80012345</p>
+            {kbsId ? <p className="mt-1 text-xs tracking-wide text-[#6B4A12]/85">ID {kbsId}</p> : null}
           </div>
           <button
             type="button"
@@ -133,10 +159,18 @@ export default function Profile() {
 
         <div className="relative mt-4">
           <div className="mb-2 flex items-baseline justify-between text-xs text-[#4A3206]/85">
-            <span>当前 Lv.1 泡泡新生</span>
-            <span className="font-semibold text-[#4A3206]">距 Lv.2 泡泡萌芽 还差 720 泡泡值</span>
+            <span>当前等级 {gradeName}</span>
+            {/* nextGrade 为空字符串时后端表示「已是最高等级」，此时不展示升级文案。 */}
+            {nextGrade ? (
+              <span className="font-semibold text-[#4A3206]">
+                距 {nextGrade.name} 还差 {nextGrade.min_exp_number} 经验值
+              </span>
+            ) : (
+              <span className="font-semibold text-[#4A3206]">已是最高等级</span>
+            )}
           </div>
           <div className="h-1.5 overflow-hidden rounded-full bg-[#4A3206]/20">
+            {/* 文档未提供当前经验值，无法计算真实完成度，此处保持既有视觉条，不做进度反推。 */}
             <span className="block h-full rounded-full bg-[linear-gradient(90deg,#E4BA48,#A57A1D)]" style={{ width: '30%' }} />
           </div>
         </div>
@@ -227,15 +261,21 @@ export default function Profile() {
           </button>
         </header>
         <div className="flex gap-3 overflow-x-auto px-1 pb-1" style={{ scrollbarWidth: 'none' }}>
-          {hotGoods.map((goods) => (
-            <article key={goods.name} className="w-[120px] min-w-[120px] flex-none rounded-xl bg-surface p-2 pb-3 text-left shadow-[0_1px_2px_rgba(23,27,42,0.04)]">
-              <div className="aspect-square overflow-hidden rounded-lg bg-surface-subtle">
-                <img src={goods.image} alt="" aria-hidden className="h-full w-full object-cover" />
-              </div>
-              <h4 className="mt-2 truncate text-[13px] font-medium text-text-primary">{goods.name}</h4>
-              <p className="mt-0.5 text-[11px] text-text-tertiary">{goods.meta}</p>
-            </article>
-          ))}
+          {hotGoods.length > 0 ? (
+            hotGoods.map((goods) => (
+              <article key={goods.id} className="w-[120px] min-w-[120px] flex-none rounded-xl bg-surface p-2 pb-3 text-left shadow-[0_1px_2px_rgba(23,27,42,0.04)]">
+                <div className="aspect-square overflow-hidden rounded-lg bg-surface-subtle">
+                  <img src={goods.image} alt="" aria-hidden className="h-full w-full object-cover" />
+                </div>
+                <h4 className="mt-2 truncate text-[13px] font-medium text-text-primary">{goods.name}</h4>
+                <p className="mt-0.5 text-[11px] text-text-tertiary">{goods.meta}</p>
+              </article>
+            ))
+          ) : (
+            <p className="px-1 py-6 text-[11px] text-text-tertiary">
+              {couponsRemote.state === 'loading' ? '加载中…' : '暂时没有可兑换的体验券'}
+            </p>
+          )}
         </div>
       </section>
 

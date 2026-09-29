@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   CalendarCheck,
@@ -17,14 +18,16 @@ import PageContainer from '../components/mobile/PageContainer'
 import { Button, ProgressIndicator } from '../components/ui'
 import { findRouteByPathname } from '../app/router/routes'
 import {
-  BUBBLE_BALANCE,
   LUCK_PLACEHOLDER,
   POINTS_TASK_PLACEHOLDERS,
   POINTS_TASK_PLACEHOLDER_NOTE,
-  pointsTaskPercent,
-  sumBubbleRecords,
   type PointsTaskPlaceholder,
 } from '../app/fixtures'
+import {
+  SIGN_ACTIVITY_STATUS_ACTIVE,
+  type SignActivity,
+} from '../services/signrecords'
+import { useSignActivityList, useUserPointsStat } from './points/usePointsFeed'
 import pointsBenefitCheckin from '../assets/brand/bubble/points-benefit-checkin.webp'
 import pointsBenefitHero from '../assets/brand/bubble/points-benefit-hero-v2.webp'
 import pointsBenefitLuck from '../assets/brand/bubble/points-benefit-luck.svg'
@@ -44,6 +47,12 @@ import pointsBenefitVoucher from '../assets/brand/bubble/points-benefit-voucher.
  *    §4.3 澡运入口保持金色卡片风格，且入口与目标页均为占位（LUCK_PLACEHOLDER）；
  *    §4.4 底部主按钮文案改为「泡泡值兑换」，样式、位置与跳转逻辑保持不变。
  * 2026-08-28：澡运入口补独立金色图标物料，不再使用通用 Waves 线框图标。
+ * 2026-09-28：接入 GET /api/userpoints/stat —— 顶部「可用 / 累计收入 / 累计消耗」三块数字
+ *    改为读接口（可用严格取 points，禁止用 income - expense 反推）。泡泡任务区仍为占位，
+ *    继续读 fixtures，不受本次接口接入影响。
+ * 2026-09-28（续）：泡泡任务区接入 GET /api/signactivity/list —— 签到类任务（每日打卡 /
+ *    连续签到）的标题与进度改读接口（title / signed_days / max_days）；「观看视频」「邀请好友」
+ *    在该接口无对应数据，继续读 fixtures 占位。接口返回什么状态就展示什么，前端暂不过滤。
  */
 
 /** 占位任务与图标的对应关系；任务语义沿用流水夹具中的同名条目 */
@@ -52,6 +61,17 @@ const TASK_ICONS: Record<string, LucideIcon> = {
   'streak-checkin': Flame,
   'watch-video': Video,
   'invite-buddy': UserPlus,
+}
+
+/**
+ * 打卡类任务（每日打卡 / 连续签到）复用 Dashboard 语义的图标。
+ * signactivity/list 的 title 是后端配置文案，不能保证与 id 稳定对应，
+ * 因此按「标题包含关键词」做软匹配，未命中一律回退到通用任务图标。
+ */
+function resolveTaskIcon(title: string): LucideIcon {
+  if (title.includes('连续')) return Flame
+  if (title.includes('签到') || title.includes('打卡')) return CalendarCheck
+  return ListTodo
 }
 
 /** 三个状态各自的 Token 组合，避免在 JSX 里散落条件类名 */
@@ -74,14 +94,75 @@ const TASK_STATE_STYLES = {
 } as const
 
 /**
- * 任务占位卡。
+ * 任务卡视图模型。占位卡与接口卡共用同一张卡皮肤，
+ * 差异只在数据来源，避免两套卡片视觉漂移。
+ */
+interface TaskCardView {
+  id: string
+  title: string
+  description: string
+  current: number
+  target: number
+  state: keyof typeof TASK_STATE_STYLES
+  stateLabel: string
+  rewardBubble: number | null
+  icon: LucideIcon
+}
+
+function toPercent(current: number, target: number): number {
+  if (target <= 0) return 0
+  return Math.min(100, Math.round((current / target) * 100))
+}
+
+/** 占位卡 → 视图模型 */
+function toPlaceholderView(task: PointsTaskPlaceholder): TaskCardView {
+  return {
+    id: task.id,
+    title: task.title,
+    description: task.description,
+    current: task.current,
+    target: task.target,
+    state: task.state,
+    stateLabel: task.stateLabel,
+    rewardBubble: task.rewardBubble,
+    icon: TASK_ICONS[task.id] ?? ListTodo,
+  }
+}
+
+/**
+ * 签到活动 → 视图模型。
+ * 进度用文档建议的 `signed_days / max_days`，并用 Math.min 兜底避免超过 100%。
+ * 状态映射：`status === 20`（使用中）为进行中，否则视为未开始；
+ * 进度打满时记为已完成 —— 这是纯展示派生，不写入任何业务结算。
+ */
+function toActivityView(activity: SignActivity): TaskCardView {
+  const target = Math.max(activity.max_days, 0)
+  const current = Math.min(Math.max(activity.signed_days, 0), target)
+  const done = target > 0 && current >= target
+  const active = activity.status === SIGN_ACTIVITY_STATUS_ACTIVE
+
+  return {
+    id: `signactivity-${activity.id}`,
+    title: activity.title,
+    description: done ? '已达成本轮签到进度' : '签到累积进度',
+    current,
+    target,
+    state: done ? 'done' : active ? 'active' : 'todo',
+    stateLabel: done ? '已完成' : active ? '进行中' : '未开始',
+    rewardBubble: null,
+    icon: resolveTaskIcon(activity.title),
+  }
+}
+
+/**
+ * 任务卡（占位 / 接口共用）。
  * 需求 §4.2 只要求「视觉完整的占位卡片」，因此这里刻意不做成可点击控件，
  * 避免把未定稿的任务体系表现成已经可用的功能入口。
  */
-function PointsTaskCard({ task }: { task: PointsTaskPlaceholder }) {
-  const Icon = TASK_ICONS[task.id] ?? ListTodo
+function PointsTaskCard({ task }: { task: TaskCardView }) {
+  const Icon = task.icon
   const styles = TASK_STATE_STYLES[task.state]
-  const percent = pointsTaskPercent(task)
+  const percent = toPercent(task.current, task.target)
 
   return (
     <div className="flex items-center gap-3 border-b border-border-subtle px-4 py-3.5 last:border-0">
@@ -116,10 +197,12 @@ function PointsTaskCard({ task }: { task: PointsTaskPlaceholder }) {
         </div>
       </div>
 
-      <span className="shrink-0 text-sm font-semibold text-reward-strong">
-        +{task.rewardBubble}
-        <span className="ml-0.5 text-xs font-normal">🫧</span>
-      </span>
+      {task.rewardBubble == null ? null : (
+        <span className="shrink-0 text-sm font-semibold text-reward-strong">
+          +{task.rewardBubble}
+          <span className="ml-0.5 text-xs font-normal">🫧</span>
+        </span>
+      )}
     </div>
   )
 }
@@ -128,12 +211,38 @@ function PointsTaskCard({ task }: { task: PointsTaskPlaceholder }) {
 const BENEFIT_CARD_CLASS =
   'group relative flex flex-col items-center overflow-hidden rounded-[16px] border border-[#efcf98] bg-[linear-gradient(150deg,#fffaf0_0%,#fff8e9_58%,#f8e3bc_100%)] px-1.5 pb-3 pt-3 text-center shadow-[0_5px_14px_rgba(166,111,32,0.08)] transition active:scale-[.98]'
 
+/** 余额 / 累计数字在加载或失败时的占位，不显示误导性的旧夹具值。 */
+const POINTS_VALUE_PLACEHOLDER = '--'
+
 export default function Points() {
   const navigate = useNavigate()
   const route = findRouteByPathname('/points')
 
-  const income = sumBubbleRecords('income')
-  const expense = sumBubbleRecords('expense')
+  // GET /api/userpoints/stat：可用严格取 points，累计收入 / 消耗取 income / expense。
+  // 两者是独立口径，禁止用 income - expense 反推可用余额。
+  const { remote: statRemote } = useUserPointsStat()
+  const stat = statRemote.state === 'success' ? statRemote.data : null
+  const balanceText = stat ? stat.points.toLocaleString() : POINTS_VALUE_PLACEHOLDER
+  const incomeText = stat ? String(stat.income) : POINTS_VALUE_PLACEHOLDER
+  const expenseText = stat ? String(stat.expense) : POINTS_VALUE_PLACEHOLDER
+
+  // GET /api/signactivity/list：签到类任务（每日打卡 / 连续签到）的数据源。
+  // 接口返回什么状态就展示什么，前端暂不过滤（产品未定是否过滤 status=10/40）。
+  const { remote: activityRemote } = useSignActivityList()
+
+  // 任务区最终列表 = 接口返回的签到活动（成功时）+ 无数据源的占位卡。
+  // 接口失败时回退为纯占位，不把失败伪装成空数据。
+  const taskCards = useMemo<TaskCardView[]>(() => {
+    const activityCards =
+      activityRemote.state === 'success' ? activityRemote.data.map(toActivityView) : []
+
+    // 「观看视频」「邀请好友」在 signactivity/list 中无对应数据，保持占位。
+    const placeholderOnly = POINTS_TASK_PLACEHOLDERS.filter(
+      (task) => task.id === 'watch-video' || task.id === 'invite-buddy',
+    ).map(toPlaceholderView)
+
+    return [...activityCards, ...placeholderOnly]
+  }, [activityRemote])
 
   // 底部主操作沿用滚动列表页的 sticky bottom-0 约定；/points 现为「泡泡」一级 Tab，
   // TabBar 位于 MobileLayout 的滚动区之外，sticky 操作区会自然停在 TabBar 上方。
@@ -159,7 +268,7 @@ export default function Points() {
           <p className="text-xs font-medium tracking-wide text-[#845a2e]">泡泡值余额</p>
           <div className="mt-1 flex items-end gap-1.5">
             <p className="text-[42px] font-bold leading-none tracking-[-0.045em] text-[#21190f]">
-              {BUBBLE_BALANCE.toLocaleString()}
+              {balanceText}
             </p>
             <span className="pb-1 text-xs font-medium text-[#765634]">泡泡值</span>
           </div>
@@ -173,11 +282,15 @@ export default function Points() {
         <div className="relative z-10 flex items-center border-t border-[#e9c98f]/65 bg-[linear-gradient(90deg,rgba(255,250,240,0.92),rgba(255,245,225,0.82))] py-2.5 pr-3 backdrop-blur-md">
           <div className="min-w-0 flex-1 px-4">
             <p className="text-[11px] text-[#8c7357]">累计收入</p>
-            <p className="mt-0.5 text-sm font-semibold text-success-text">+{income}</p>
+            <p className="mt-0.5 text-sm font-semibold text-success-text">
+              {stat ? `+${incomeText}` : incomeText}
+            </p>
           </div>
           <div className="min-w-0 flex-1 border-l border-[#e6cda3] px-4">
             <p className="text-[11px] text-[#8c7357]">累计消耗</p>
-            <p className="mt-0.5 text-sm font-semibold text-danger-text">-{expense}</p>
+            <p className="mt-0.5 text-sm font-semibold text-danger-text">
+              {stat ? `-${expenseText}` : expenseText}
+            </p>
           </div>
           <button
             type="button"
@@ -249,7 +362,7 @@ export default function Points() {
         </div>
         <p className="mb-2 px-0.5 text-[11px] leading-5 text-text-tertiary">{POINTS_TASK_PLACEHOLDER_NOTE}</p>
         <div className="overflow-hidden rounded-feature border border-border-subtle bg-surface shadow-bubble">
-          {POINTS_TASK_PLACEHOLDERS.map((task) => (
+          {taskCards.map((task) => (
             <PointsTaskCard key={task.id} task={task} />
           ))}
         </div>

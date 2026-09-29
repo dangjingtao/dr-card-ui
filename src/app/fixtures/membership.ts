@@ -126,46 +126,15 @@ export function pointsTaskPercent(task: PointsTaskPlaceholder): number {
   return Math.min(100, Math.round((task.current / task.target) * 100))
 }
 
-export const CHECKIN_CYCLE_LABEL = '2026.06.01 - 2026.06.30'
-export const CHECKIN_TODAY = 12
-export const CHECKIN_MONTH_DAYS = 30
-export const CHECKIN_FIRST_WEEKDAY = 1
-export const CHECKIN_WEEK_LABELS = ['日', '一', '二', '三', '四', '五', '六'] as const
-
+/**
+ * 打卡日历状态语义（仍被通用类型消费）。
+ *
+ * 2026-09-28 接口接入后，`CHECKIN_CYCLE_LABEL` / `CHECKIN_TODAY` / `CHECKIN_MONTH_DAYS` /
+ * `CHECKIN_CALENDAR` / `CHECKIN_STREAK` 等**固定月份夹具已废弃并删除**：月份、今天与
+ * 已签/补签状态改由本地时间 + `GET /api/signrecords/index` 真实记录推导
+ * （见 `src/pages/checkin/components/CheckinBoard.tsx` 的 `buildCheckinCalendar`）。
+ */
 export type CheckinDayState = 'done' | 'today' | 'makeup' | 'upcoming'
-const CHECKIN_DONE_DAYS = [1, 2, 3, 4, 5, 8, 9, 10, 11]
-
-export interface CheckinDay {
-  day: number
-  state: CheckinDayState
-}
-
-export const CHECKIN_CALENDAR: CheckinDay[] = Array.from({ length: CHECKIN_MONTH_DAYS }, (_, index) => {
-  const day = index + 1
-  if (day === CHECKIN_TODAY) return { day, state: 'today' }
-  if (CHECKIN_DONE_DAYS.includes(day)) return { day, state: 'done' }
-  if (day < CHECKIN_TODAY) return { day, state: 'makeup' }
-  return { day, state: 'upcoming' }
-})
-
-export const CHECKIN_STREAK = (() => {
-  let streak = 0
-  for (let day = CHECKIN_TODAY; day >= 1; day -= 1) {
-    if (!CHECKIN_DONE_DAYS.includes(day)) break
-    streak += 1
-  }
-  return streak
-})()
-
-export interface CheckinReward {
-  days: number
-  bubble?: number
-}
-
-export const CHECKIN_REWARDS: CheckinReward[] = [
-  { days: 3, bubble: 10 },
-  { days: 10 },
-]
 
 export const CHECKIN_STATUS_TEXT = '今日未签到'
 export const CHECKIN_DAILY_TASK = {

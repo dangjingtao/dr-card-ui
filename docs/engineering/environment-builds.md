@@ -28,6 +28,12 @@ H006 将 `preview → dev → test → prod` 的产品分支语义和 Vite mode�
 - `src/pages/UnsupportedHostNotice.tsx`：`isUnsupportedHost()` 判定与提示页；
 - `src/main.tsx`：挂载前分流。
 
+## 调试能力口径
+
+- `dev` / `preview`：2026-09-29 Maintainer 明确定案，Eruda 默认初始化，无需 `?debug=1`；这是开发/视觉联调能力，不代表业务 `DebugPanel` 常显。
+- 页面业务状态调试 `DebugPanel` 仍严格由 `?debug=1` 显式开启，两者互不替代。
+- `test` / `prod`：`runtimePolicy.isProdLike` 直接阻止 Eruda 初始化，正式产物不启用该调试控制台。
+
 ## 环境变量
 
 `.env.example` 是非敏感示例。运行时只通过 `src/app/config/runtime.ts` 读取环境变量，页面不得自行解析 `import.meta.env` 来决定业务行为。
