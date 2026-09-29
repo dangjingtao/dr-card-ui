@@ -42,8 +42,12 @@ function toCreateTime(date: Date): string {
 let records: SignRecordMock[] = buildCheckinRecordsMock()
 let nextId = records.length + 1
 
-function findRecord(dateKey: string): SignRecordMock | undefined {
-  return records.find((item) => item.create_time.slice(0, 10) === dateKey)
+function findNormalSignRecord(dateKey: string): SignRecordMock | undefined {
+  return records.find(
+    (item) =>
+      item.status === SIGN_RECORD_STATUS_SIGNED &&
+      item.create_time.slice(0, 10) === dateKey,
+  )
 }
 
 function todayKey(): string {
@@ -51,14 +55,44 @@ function todayKey(): string {
 }
 
 function signedToday(): boolean {
-  return Boolean(findRecord(todayKey()))
+  return Boolean(findNormalSignRecord(todayKey()))
+}
+
+function consecutiveSignedDaysEndingAt(date: Date): number {
+  const cursor = new Date(date)
+  let count = 0
+
+  while (findNormalSignRecord(toLocalDateKey(cursor))) {
+    count += 1
+    cursor.setDate(cursor.getDate() - 1)
+  }
+
+  return count
+}
+
+/**
+ * /status 的 consecutive_days 口径：
+ * - 今天已签：返回当前连续签到天数；
+ * - 今天未签：真实后端返回「今天签到后将达到的天数」，因此在昨日连续值上 +1。
+ */
+function statusConsecutiveDays(): number {
+  const today = new Date()
+  if (signedToday()) return consecutiveSignedDaysEndingAt(today)
+
+  const yesterday = new Date(today)
+  yesterday.setDate(today.getDate() - 1)
+  return consecutiveSignedDaysEndingAt(yesterday) + 1
 }
 
 export const checkinHandlers = [
   http.get(`*${SIGN_RECORDS_STATUS_PATH}`, () =>
     HttpResponse.json({
       ...CHECKIN_SIGN_STATUS_MOCK,
-      data: { ...CHECKIN_SIGN_STATUS_MOCK.data, signed: signedToday() },
+      data: {
+        ...CHECKIN_SIGN_STATUS_MOCK.data,
+        signed: signedToday(),
+        consecutive_days: statusConsecutiveDays(),
+      },
     }),
   ),
 
@@ -86,7 +120,7 @@ export const checkinHandlers = [
       delete_time: null,
       user_id: CHECKIN_MOCK_USER_ID,
       points: 0,
-      consecutive_days: 1,
+      consecutive_days: statusConsecutiveDays(),
       status: SIGN_RECORD_STATUS_SIGNED,
     }
     nextId += 1
