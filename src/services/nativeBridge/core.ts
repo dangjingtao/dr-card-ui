@@ -1,5 +1,4 @@
 import type {
-  NativeTransportInvocationOptions,
   NativeTransportResolution,
   NativeTransportWindow,
 } from '../nativeBridgeTransport'
@@ -13,10 +12,7 @@ export type UnsupportedCapabilityResolution = Extract<
 
 export type SupportedCapabilityResolution<TInput, TResult> = {
   supported: true
-  invoke: (
-    input: TInput,
-    options?: NativeTransportInvocationOptions,
-  ) => TResult | PromiseLike<TResult>
+  invoke: (input: TInput) => TResult | PromiseLike<TResult>
 }
 
 export type NativeCapabilityResolution<TInput, TResult> =
@@ -67,7 +63,7 @@ export function resolveDualInjectedCapability<TInput, TResult>(
   if (hostWindow?.androidBridge) {
     const probe = resolveAndroid(sampleInput)
     if (!probe.supported) return probe
-    return supportedCapability((input, options) => {
+    return supportedCapability((input) => {
       const resolution = resolveAndroid(input)
       if (!resolution.supported) {
         throw new NativeBridgeError(
@@ -76,14 +72,14 @@ export function resolveDualInjectedCapability<TInput, TResult>(
           resolution.message,
         )
       }
-      return resolution.invoke(options)
+      return resolution.invoke()
     })
   }
 
   if (hostWindow?.iosBridge) {
     const probe = resolveIOS(sampleInput)
     if (!probe.supported) return probe
-    return supportedCapability((input, options) => {
+    return supportedCapability((input) => {
       const resolution = resolveIOS(input)
       if (!resolution.supported) {
         throw new NativeBridgeError(
@@ -92,7 +88,7 @@ export function resolveDualInjectedCapability<TInput, TResult>(
           resolution.message,
         )
       }
-      return resolution.invoke(options)
+      return resolution.invoke()
     })
   }
 
