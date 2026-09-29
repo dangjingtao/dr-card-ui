@@ -6,6 +6,7 @@ import type { ReactNode } from 'react'
 const mocks = vi.hoisted(() => ({
   redeem: vi.fn(),
   close: vi.fn(),
+  patchFixtureQueryControls: vi.fn(),
   useExchangeCoupons: vi.fn(),
   pointsRemote: { state: 'success', data: { points: 500, income: 0, expense: 0 } } as
     | { state: 'success'; data: { points: number; income: number; expense: number } }
@@ -32,6 +33,7 @@ vi.mock('./points/usePointsFeed', () => ({
 vi.mock('../app/fixtures/useFixture', () => ({
   useFixtureState: () => ({ state: null }),
   useOverlay: () => ({ overlay: mocks.overlay, close: mocks.close }),
+  useFixtureQueryControls: () => ({ patch: mocks.patchFixtureQueryControls }),
   useFixtureDebug: () => false,
 }))
 
@@ -96,6 +98,7 @@ function successRemote() {
 afterEach(() => {
   mocks.redeem.mockReset()
   mocks.close.mockReset()
+  mocks.patchFixtureQueryControls.mockReset()
   mocks.useExchangeCoupons.mockReset()
   mocks.pointsRemote = { state: 'success', data: { points: 500, income: 0, expense: 0 } }
   mocks.overlay = null
@@ -127,18 +130,19 @@ describe('Exchange（洗护体验券专区接口接入）', () => {
     expect(screen.getByText('泡泡值不足')).toBeTruthy()
   })
 
-  it('requests the category_id filter when switching tabs', async () => {
+  it('updates category and closes the redeem overlay in one navigation', async () => {
     mocks.useExchangeCoupons.mockReturnValue(successRemote())
 
-    renderExchange()
+    renderExchange('/exchange?category=conditioner&product=1')
     await screen.findByText('Mock·洗护体验券')
-
-    // 初始「全部」不传 categoryId
-    expect(mocks.useExchangeCoupons).toHaveBeenLastCalledWith(undefined)
 
     fireEvent.click(screen.getByRole('tab', { name: '洗发体验' }))
 
-    await waitFor(() => expect(mocks.useExchangeCoupons).toHaveBeenLastCalledWith(2))
+    expect(mocks.patchFixtureQueryControls).toHaveBeenCalledWith(
+      { overlay: null },
+      { category: 'shampoo', product: null },
+    )
+    expect(mocks.close).not.toHaveBeenCalled()
   })
 
   it('shows a retry action when the coupon list fails', async () => {
