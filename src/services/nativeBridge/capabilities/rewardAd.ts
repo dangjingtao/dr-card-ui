@@ -43,9 +43,17 @@ function parseResult(payload: unknown): NativeRewardAdResult {
         ?? (parsed as { data?: { status?: unknown } }).data?.status)
       : undefined
 
-  // Keep the migration-era status contract when an older host still returns it.
-  if (['completed', 'closed', 'failed', 'no_fill'].includes(status as string)) {
-    return { status: status as NativeRewardAdStatus }
+  // Keep the migration-era status contract when an older host still returns it. If a host
+  // explicitly sends that field, validate it strictly instead of silently falling through to the
+  // newer numeric code contract.
+  if (status !== undefined) {
+    if (['completed', 'closed', 'failed', 'no_fill'].includes(status as string)) {
+      return { status: status as NativeRewardAdStatus }
+    }
+    throw new NativeTransportError(
+      'payload-invalid',
+      'Native showRewardAd() returned an unknown legacy status.',
+    )
   }
 
   const nativeCode = (parsed as { code?: unknown })?.code
