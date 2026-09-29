@@ -17,19 +17,22 @@ Android: window.androidBridge.scanCode(json)
 iOS:     window.iosBridge.scanCode(json)
 ```
 
-输入 JSON 字符串：
+输入 JSON 字符串（`callbackId` 由 H5 transport 自动生成，业务层不传）：
 
 ```json
-{"scanType":"all"}
+{"callbackId":"scanCode-...","scanType":"all"}
 ```
 
 `scanType: qr | bar | all`
 
-同步返回 JSON 字符串：
+双端均为异步回调：
 
-```json
-{"code":"扫码原始内容"}
+```text
+Target:  window.nativeBridgeCallback(callbackId, payload)
+Android compatibility: window.androidBridgeCallback(callbackId, payload)
 ```
+
+成功 payload 使用统一 envelope，扫码正文位于 `data.text`。
 
 Native 当前回填状态：两端均“否”；最低版本目标 2.13。
 

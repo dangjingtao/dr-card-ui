@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { fetchHomeSettings, parseHomeSettings } from './settings'
+import {
+  fetchRichTextSetting,
+  parseRichTextSetting,
+} from './settings'
 
 const mocks = vi.hoisted(() => ({
   request: vi.fn(),
@@ -11,35 +14,25 @@ vi.mock('./http', async (importOriginal) => {
   return { ...actual, httpClient: { request: mocks.request } }
 })
 
-describe('home settings contract', () => {
+describe('settings rich-text contract', () => {
   beforeEach(() => {
     mocks.request.mockReset()
   })
 
-  it('reads the alias fields while the confirmed schema is pending', () => {
+  it('reads rich text from the documented setting response', () => {
     expect(
-      parseHomeSettings({
-        code: 0,
-        msg: 'success',
-        status: 'succ',
-        data: { brand_culture: '品牌描述', cause: '公益描述' },
-      }),
-    ).toEqual({ brandCultureText: '品牌描述', causeText: '公益描述' })
+      parseRichTextSetting({ code: 0, msg: 'success', data: { key: 'welfare', value: '<p>公益内容</p>' } }),
+    ).toBe('<p>公益内容</p>')
   })
 
-  it('treats empty data shapes as no configuration', () => {
-    expect(parseHomeSettings({ code: 0, msg: 'success', data: [] })).toEqual({})
-    expect(parseHomeSettings({ code: 0, msg: 'success', data: null })).toEqual({})
-  })
+  it('requests the welfare rich text with its documented key', async () => {
+    mocks.request.mockResolvedValue({ code: 0, msg: 'success', data: { value: '<p>公益内容</p>' } })
 
-  it('throws a business error when code is not 0', () => {
-    expect(() => parseHomeSettings({ code: 500, message: '参数错误', data: [] })).toThrowError('参数错误')
-  })
-
-  it('fetches the settings detail path', async () => {
-    mocks.request.mockResolvedValue({ code: 0, msg: 'success', data: { cause: '公益描述' } })
-
-    await expect(fetchHomeSettings()).resolves.toEqual({ causeText: '公益描述' })
-    expect(mocks.request).toHaveBeenCalledWith({ method: 'GET', url: '/api/settings/detail' })
+    await expect(fetchRichTextSetting('welfare')).resolves.toBe('<p>公益内容</p>')
+    expect(mocks.request).toHaveBeenCalledWith({
+      method: 'GET',
+      url: '/api/settings/detail',
+      params: { key: 'welfare' },
+    })
   })
 })

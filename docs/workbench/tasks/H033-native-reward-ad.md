@@ -17,17 +17,20 @@ Android: window.androidBridge.showRewardAd(json)
 iOS:     window.iosBridge.showRewardAd(json)
 ```
 
-输入：
+输入（`callbackId` 由 H5 transport 自动生成）：
 
 ```json
-{"scene":"h5CheckinResign"}
+{"callbackId":"showRewardAd-...","scene":"h5CheckinResign"}
 ```
 
-同步返回：
+双端均异步回调：
 
-```json
-{"status":"completed"}
+```text
+Target:  window.nativeBridgeCallback(callbackId, payload)
+Android compatibility: window.androidBridgeCallback(callbackId, payload)
 ```
+
+业务状态从 callback payload 的 `data.status` 解析。
 
 `status: completed | closed | failed | no_fill`
 

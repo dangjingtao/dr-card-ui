@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { COUPON_PAGE_SIZE_DEFAULT, COUPON_STATUS_ON_SHELF, fetchCouponIndex } from './coupons'
+import {
+  COUPON_PAGE_SIZE_DEFAULT,
+  COUPON_STATUS_ON_SHELF,
+  fetchCouponIndex,
+  toCouponRedeemView,
+} from './coupons'
 
 const mocks = vi.hoisted(() => ({
   request: vi.fn(),
@@ -18,7 +23,6 @@ const PAGE_DATA = {
       name: 'Mock·洗护体验券',
       short_desc: '限到店核销',
       image: null,
-      category_id: '2',
       points_number: '200',
       total_number: 300,
       exchanged_nuuur: 12,
@@ -44,7 +48,7 @@ describe('coupon index contract', () => {
     expect(mocks.request).toHaveBeenCalledWith({
       method: 'GET',
       url: '/api/coupons/index',
-      params: { category_id: undefined, status: undefined, page: 1, pageSize: COUPON_PAGE_SIZE_DEFAULT },
+      params: { status: undefined, page: 1, pageSize: COUPON_PAGE_SIZE_DEFAULT },
     })
     expect(page.total).toBe(1)
     expect(page.data[0]).toMatchObject({ id: 1, name: 'Mock·洗护体验券' })
@@ -59,7 +63,6 @@ describe('coupon index contract', () => {
       method: 'GET',
       url: '/api/coupons/index',
       params: {
-        category_id: undefined,
         status: COUPON_STATUS_ON_SHELF,
         page: 1,
         pageSize: COUPON_PAGE_SIZE_DEFAULT,
@@ -67,7 +70,7 @@ describe('coupon index contract', () => {
     })
   })
 
-  it('tolerates string points_number / category_id from the backend', async () => {
+  it('tolerates string points_number from the backend', async () => {
     mocks.request.mockResolvedValue({ code: 0, msg: 'success', data: PAGE_DATA })
 
     await expect(fetchCouponIndex()).resolves.toMatchObject({ current_page: 1, last_page: 1 })
@@ -87,5 +90,65 @@ describe('coupon index contract', () => {
     mocks.request.mockResolvedValue({ code: 401, message: '请先登录', data: [] })
 
     await expect(fetchCouponIndex()).rejects.toMatchObject({ kind: 'business', message: '请先登录' })
+  })
+})
+
+describe('toCouponRedeemView', () => {
+  const base = {
+    id: 7,
+    name: 'Mock·洗护体验券',
+    short_desc: '洗发 / 护发 / 沐浴体验，限到店核销',
+    image: 'https://cdn.example.com/coupon.png',
+    points_number: '200',
+    total_number: 300,
+    exchanged_nuuur: 12,
+    status: COUPON_STATUS_ON_SHELF,
+  }
+
+  it('maps points_number / exchanged_nuuur into the redeem view', () => {
+    expect(toCouponRedeemView(base)).toEqual({
+      id: 7,
+      name: 'Mock·洗护体验券',
+      desc: '洗发 / 护发 / 沐浴体验，限到店核销',
+      cost: 200,
+      redeemed: 12,
+      image: 'https://cdn.example.com/coupon.png',
+      soldOut: false,
+    })
+  })
+
+  it('treats exchanged_nuuur >= total_number as sold out', () => {
+    expect(toCouponRedeemView({ ...base, exchanged_nuuur: 300 }).soldOut).toBe(true)
+    expect(toCouponRedeemView({ ...base, exchanged_nuuur: 301 }).soldOut).toBe(true)
+  })
+
+  it('treats an off-shelf coupon (status !== 10) as sold out', () => {
+    expect(toCouponRedeemView({ ...base, status: 20 }).soldOut).toBe(true)
+  })
+
+  it('falls back to safe defaults for missing / invalid fields', () => {
+    const view = toCouponRedeemView({
+      id: 8,
+      name: 'Mock·空值券',
+      short_desc: null,
+      image: '   ',
+      points_number: null,
+      exchanged_nuuur: null,
+      status: COUPON_STATUS_ON_SHELF,
+    })
+
+    expect(view).toEqual({
+      id: 8,
+      name: 'Mock·空值券',
+      desc: '',
+      cost: 0,
+      redeemed: 0,
+      image: undefined,
+      soldOut: false,
+    })
+  })
+
+  it('does not mark sold out when total_number is absent', () => {
+    expect(toCouponRedeemView({ ...base, total_number: null }).soldOut).toBe(false)
   })
 })

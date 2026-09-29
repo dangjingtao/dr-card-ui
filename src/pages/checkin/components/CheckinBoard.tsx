@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CalendarDays, Check, CheckCircle2, ChevronRight, Gift, ListTodo, Sparkles, X } from 'lucide-react'
-import { BottomSheet, Button, ProgressIndicator } from '../../../components/ui'
+import { CalendarCheck, CalendarDays, Check, CheckCircle2, ChevronRight, Gift, Sparkles, X } from 'lucide-react'
+import { BottomSheet, Button, ProgressIndicator, Skeleton } from '../../../components/ui'
 import {
   CHECKIN_DAILY_TASK,
   CHECKIN_RULE_STATUS,
   CHECKIN_STATUS_TEXT,
   type CheckinDayState,
 } from '../../../app/fixtures'
-import { buildSignRecordDayMap, type SignRecord } from '../../../services/signrecords'
+import { buildSignRecordDayMap, SIGN_RECORD_STATUS_MAKEUP, type SignRecord } from '../../../services/signrecords'
 import checkinRitualHero from '../../../assets/brand/bubble/checkin-ritual-hero-v2.webp'
 import exchangePromoShampoo from '../../../assets/brand/exchange/exchange-promo-shampoo.webp'
 
@@ -35,17 +35,18 @@ function toDateKey(year: number, monthIndex: number, day: number): string {
 
 /**
  * 一个日历格。`state` 沿用原语义：done=已签 / today=今天未签 / makeup=过往漏签可补 / upcoming=未来。
- * `dateKey` 为本地 `YYYY-MM-DD`，`makeupApplied` 标记该格是否由本次会话补签乐观点亮。
+ * `dateKey` 为本地 `YYYY-MM-DD`；`makeup` 标记该格来自补签记录（接口 status=20）；
+ * `makeupApplied` 标记该格由本次会话补签乐观点亮（接口刷新返回前的即时反馈）。
  */
 export interface CheckinCalendarDay {
   day: number
   dateKey: string
   state: CheckinDayState
-  /** 该格是否已点亮（接口有记录或会话内补签）。与 state 独立，今天已签时 state 仍是 today。 */
+  /** 该格是否已点亮（接口记录或会话内补签）。与 state 独立，今天已签时 state 仍是 today。 */
   signed: boolean
-  /** 该格是补签记录（接口 status=20）。 */
+  /** 该格来自补签记录（接口 status=20）。 */
   makeup: boolean
-  /** 由本次会话补签乐观点亮（接口无法回显被补日期，标记以区分）。 */
+  /** 由本次会话补签乐观点亮（接口刷新返回前的即时反馈，标记以区分）。 */
   makeupApplied: boolean
 }
 
@@ -77,12 +78,12 @@ export interface BuildCalendarOptions {
 /**
  * 构建某月的打卡日历（UI 事实源：原型 §6 月历 + 已确认的 10 格视觉）。
  *
- * 数据口径（2026-09-28 实测）：
+ * 数据口径（2026-09-29《签到页面接口文档》+ `index` 实测）：
  * - 月份与「今天」取**本地系统时间**（本次约定：今日暂用本地时间）；
- * - `done` 只来自正常签到记录（status=10），按 `create_time` 的本地日期归属；
- * - status=20 的补签记录不会按 `create_time` 入格，因为该字段是补签操作时刻而非被补日期；
- * - 过往未签且允许补签的格子显示「补签」（沿用原规则，补签资格判定仍属未决 B-020）；
- * - 接口无法回显补签对应的具体日期，`optimisticMakeupDays` 用于会话内即时点亮。
+ * - 正常签到（status=10）与补签（status=20）都按记录的**业务日期**（`year`/`month`/`day`）
+ *   归属日历格；`create_time` 是操作时刻，不参与归属，业务日期缺失时该记录直接跳过；
+ * - 过往未签且允许补签的格子显示「补签」入口（补签资格判定仍属未决 B-020）；
+ * - `optimisticMakeupDays` 在接口刷新返回前对本次补签格做即时点亮。
  */
 export function buildCheckinCalendar(options: BuildCalendarOptions = {}): CheckinCalendarModel {
   const today = options.today ?? new Date()
@@ -103,7 +104,7 @@ export function buildCheckinCalendar(options: BuildCalendarOptions = {}): Checki
     const record = dayMap.get(dateKey)
     const isOptimistic = optimistic.has(dateKey)
     const signed = Boolean(record) || isOptimistic
-    const makeup = isOptimistic
+    const makeup = record?.status === SIGN_RECORD_STATUS_MAKEUP || isOptimistic
 
     let state: CheckinDayState
     if (dateKey === todayKey) state = 'today'
@@ -152,7 +153,7 @@ export function buildCycleDays(
       dateKey,
       state,
       signed,
-      makeup: isOptimistic,
+      makeup: record?.status === SIGN_RECORD_STATUS_MAKEUP || isOptimistic,
       makeupApplied: isOptimistic && !record,
     }
   })
@@ -164,6 +165,9 @@ const CHECKIN_DAILY_TASK_PERCENT = (() => {
   if (!Number.isFinite(done) || !Number.isFinite(total) || total <= 0) return 0
   return Math.min(100, Math.max(0, (done / total) * 100))
 })()
+
+/** 是日任务进度文案：直接取夹具的「1 / 1」，不在组件里另算一套口径。 */
+const CHECKIN_DAILY_TASK_PROGRESS_LABEL = `${CHECKIN_DAILY_TASK.progress}`
 
 /** 首页签到状态视图（来自 `/api/signrecords/status`，由宿主页面归一化后传入）。 */
 export interface HomeSignStatusView {
@@ -198,11 +202,16 @@ export interface CheckinBoardProps {
   isSuccess?: boolean
   /** 今日签到状态（接口）；缺省（加载中 / 失败 / 未登录）时不渲染状态行，保持既有夹具视觉。 */
   signStatus?: HomeSignStatusView | null
+  /**
+   * 首页首屏接口仍在请求中：每日任务区先渲染同尺寸骨架占位，
+   * 数据返回后原地替换内容，容器高度不变（避免初始化尺寸抖动）。
+   */
+  loading?: boolean
   /** 接口签到记录（打卡日历依据）；缺省时不渲染任何已签格。 */
   records?: SignRecord[] | null
   /** 本次会话补签乐观点亮的日期。 */
   optimisticMakeupDays?: string[]
-  /** 点击日历中的「补签」，参数为该格本地日期 `YYYY-MM-DD`；由宿主页面执行补签。 */
+  /** 点击日历中的「补签」，参数为该格本地日期 `YYYY-MM-DD`；由宿主页面执行（先过广告闸门）。 */
   onMakeupDay?: (dateKey: string) => void
   /** 点击「立即签到」；由宿主页面执行签到。 */
   onSignIn?: () => void
@@ -215,19 +224,20 @@ export interface CheckinBoardProps {
 /**
  * 打卡业务内容（首页紧凑入口 / 签到内页当月日历 / 是日任务 / 为你精选）
  * -------------------------------------------------------------
- * 2026-09-28 接口接入：
- * - 月份与「今天」改用**本地系统时间**（此前固定 2026-06 / 12 日，已废弃）；
- * - 已签 / 补签状态改读 `GET /api/signrecords/index` 的真实记录；
+ * 2026-09-29 对齐《签到页面接口文档》：
+ * - 月份与「今天」用**本地系统时间**（此前固定 2026-06 / 12 日，已废弃）；
+ * - 已签 / 补签状态改读 `GET /api/signrecords/index?range=month` 的真实记录；
  * - 签到 / 补签动作由宿主页面调用 service 执行，组件只负责呈现与回调。
  *
- * ⚠️ 仍未决（不自行定稿）：
- * - 接口未回显补签对应的具体日期，月历中补签格依赖会话内乐观点亮；
- * - 补签消耗、次数上限与不可补签判定（B-020）仍属未确认。
+ * 补签已纳入当前签到接口文档：
+ * 过往漏签格可点击「补签」，由宿主页面先过 Native 激励广告闸门再调用补签接口。
+ * 补签消耗 / 次数上限与资格判定（B-020）仍未确认。
  */
 export default function CheckinBoard({
   mode = 'home',
   isSuccess = false,
   signStatus,
+  loading = false,
   records,
   optimisticMakeupDays,
   onMakeupDay,
@@ -489,52 +499,66 @@ export default function CheckinBoard({
       )}
 
       {mode === 'home' && (
-      <section className="mx-4 mt-7" aria-label="是日任务">
-        <header className="flex items-end justify-between">
+      <section className="mx-4 mt-7" aria-label="每日任务">
+        <header className="flex items-end justify-between gap-3">
           <div>
             <p className="text-[10px] font-semibold tracking-[0.16em] text-reward-strong">DAILY MISSION</p>
-            <h2 className="mt-1 text-lg font-bold leading-6 text-text-primary">是日任务</h2>
+            <h2 className="mt-1 text-lg font-bold leading-6 text-text-primary">每日任务</h2>
           </div>
-          <span className="inline-flex items-center gap-1 rounded-pill bg-checkin-success-bg px-2.5 py-1 text-[11px] font-semibold text-checkin-success">
-            <Check className="h-3 w-3" strokeWidth={3} aria-hidden />
-            今日进度 {todaySigned ? '1 / 1' : '0 / 1'}
-          </span>
+          {loading ? (
+            <Skeleton className="h-6 w-[86px] rounded-pill" />
+          ) : (
+            <span className="inline-flex items-center gap-1 rounded-pill bg-checkin-mission-done-bg px-2.5 py-1 text-[11px] font-semibold leading-4 text-checkin-mission-done">
+              <Check className="h-3 w-3" strokeWidth={3} aria-hidden />
+              今日进度 {todaySigned ? CHECKIN_DAILY_TASK_PROGRESS_LABEL : '0 / 1'}
+            </span>
+          )}
         </header>
 
-        <article
-          className="relative mt-3 overflow-hidden rounded-feature bg-surface p-4 shadow-bubble"
-          aria-label={`${CHECKIN_DAILY_TASK.title} ${todaySigned ? '已完成' : '待完成'}`}
-        >
-          <span aria-hidden className="absolute -right-6 -top-8 h-24 w-24 rounded-full bg-checkin-success-bg/60" />
-          <div className="relative flex items-center gap-3">
-            <span className="flex h-11 w-11 flex-none items-center justify-center rounded-app-icon bg-secondary text-text-brand" aria-hidden>
-              <ListTodo className="h-5 w-5" strokeWidth={2.2} />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-bold leading-5 text-text-primary">{CHECKIN_DAILY_TASK.title}</p>
-              <p className="mt-0.5 text-xs leading-[18px] text-text-secondary">{CHECKIN_DAILY_TASK.description}</p>
-            </div>
-            <span className="flex flex-none flex-col items-end gap-1">
-              <span className="inline-flex items-center rounded-pill bg-reward px-2 py-0.5 text-xs font-bold leading-4 text-text-inverse">
-                +{CHECKIN_DAILY_TASK.rewardBubble}🫧
-              </span>
+        {loading ? (
+          <DailyMissionSkeleton />
+        ) : (
+          <article
+            className="relative mt-3 overflow-hidden rounded-feature bg-surface p-4 shadow-bubble"
+            aria-label={`${CHECKIN_DAILY_TASK.title} ${todaySigned ? '已完成' : '待完成'}`}
+          >
+            <div className="flex items-center gap-3">
               <span
-                className={`inline-flex items-center gap-1 text-[11px] font-semibold ${
-                  todaySigned ? 'text-checkin-success' : 'text-text-tertiary'
-                }`}
+                className="flex h-11 w-11 flex-none items-center justify-center rounded-pill bg-checkin-mission-icon-bg text-checkin-mission-icon"
+                aria-hidden
               >
-                {todaySigned ? <CheckCircle2 className="h-3.5 w-3.5" aria-hidden /> : null}
-                {todaySigned ? '已完成' : '待完成'}
+                <CalendarCheck className="h-5 w-5" strokeWidth={2.2} />
               </span>
-            </span>
-          </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[15px] font-bold leading-5 text-text-primary">{CHECKIN_DAILY_TASK.title}</p>
+                <p className="mt-1 text-xs leading-[18px] text-text-secondary">
+                  {CHECKIN_DAILY_TASK.description}
+                  <span className="text-checkin-mission-reward">
+                    +{CHECKIN_DAILY_TASK.rewardBubble} 泡泡值
+                  </span>
+                </p>
+              </div>
+              <span className="flex flex-none flex-col items-end gap-1.5">
+                <span
+                  className={`inline-flex items-center gap-1 rounded-pill px-2.5 py-1 text-[11px] font-semibold leading-4 ${
+                    todaySigned
+                      ? 'bg-checkin-mission-done-bg text-checkin-mission-done'
+                      : 'bg-surface-subtle text-text-tertiary'
+                  }`}
+                >
+                  {todaySigned ? <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2.6} aria-hidden /> : null}
+                  {todaySigned ? '已完成' : '待完成'}
+                </span>
+              </span>
+            </div>
 
-          <ProgressIndicator
-            value={todaySigned ? CHECKIN_DAILY_TASK_PERCENT : 0}
-            label={`${CHECKIN_DAILY_TASK.title}进度`}
-            className="relative mt-3.5 [&>div]:h-1.5 [&>div]:bg-surface-subtle [&>div>div]:bg-checkin-success"
-          />
-        </article>
+            <ProgressIndicator
+              value={todaySigned ? CHECKIN_DAILY_TASK_PERCENT : 0}
+              label={`${CHECKIN_DAILY_TASK.title}进度`}
+              className="mt-3.5 [&>div]:h-1.5 [&>div]:bg-checkin-mission-track [&>div>div]:bg-checkin-mission-done"
+            />
+          </article>
+        )}
       </section>
       )}
 
@@ -576,6 +600,30 @@ export default function CheckinBoard({
 }
 
 /**
+ * 每日任务骨架占位。结构与真实卡片逐行对齐（图标 + 两行文案 + 两个胶囊 + 进度条），
+ * 尺寸与真实卡一致，用于首屏请求期间的稳定占位。
+ */
+function DailyMissionSkeleton() {
+  return (
+    <div
+      aria-hidden
+      data-checkin-daily-task-skeleton
+      className="h5-soft-pulse mt-3 rounded-feature bg-surface p-4 shadow-bubble"
+    >
+      <div className="flex items-center gap-3">
+        <span className="h-11 w-11 flex-none rounded-pill bg-checkin-mission-skeleton" />
+        <div className="min-w-0 flex-1">
+          <span className="block h-4 w-20 rounded-control bg-checkin-mission-skeleton" />
+          <span className="mt-2 block h-3 w-36 rounded-control bg-checkin-mission-skeleton" />
+        </div>
+        <span className="h-[26px] w-16 flex-none rounded-pill bg-checkin-mission-skeleton" />
+      </div>
+      <span className="mt-3.5 block h-1.5 w-full rounded-pill bg-checkin-mission-track" />
+    </div>
+  )
+}
+
+/**
  * 首页签到状态提示文案。
  * 未签到且 points=0 时不写「+0 泡泡值」，优先展示 reward_desc（2026-09-28 首页联调文档要求）。
  */
@@ -598,7 +646,7 @@ function CalendarCell({
   disabled?: boolean
 }) {
   if (item.state === 'makeup') {
-    // 过往漏签：显示「补签」两字（可点击进补签流程）
+    // 过往漏签：显示「补签」两字（可点击进补签流程，先过激励广告闸门）
     return (
       <button
         type="button"

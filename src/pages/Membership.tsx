@@ -22,7 +22,8 @@ import campaignThumb from '../assets/brand/member/checkin-dearseed-kit.webp'
  * 本次只恢复既有 T006 页面与入口，不新建会员页面、不新增会员规则；底部 Tab `/mall` 仍独立承载商城。
  *
  * 事实源：docs/prototype/02-membership-and-checkin.md §1
- * - 页面内容：会员等级与状态、泡泡值余额、四入口（今日澡运 / 是日任务 / 优惠卡包 / 洗头搭子）、底部「本期活动」。
+ * - 页面内容：会员等级与状态、泡泡值余额、四入口（今日澡运 / 是日任务 / 优惠卡包 / 洗头搭子）。
+ * - 2026-09-29 用户确认：底部「本期活动」区块在本页隐藏（`hidden`，代码保留可快速恢复）。
  * ⚠️ 与 reference/D-007 的差异：历史稿把四入口写成「今日幸运 / 每日任务」，与原型文案不一致，
  *    按 AGENTS §7 改回原型口径，不做「文案优化」；等级 hero 的品牌艺术表现保留（AGENTS §3）。
  * ⚠️ 历史稿的「连续打卡 7 天 · 福利加倍 / 5 / 5 已完成 / 限定洗护套装」属自行补写的活动规则，
@@ -133,7 +134,12 @@ export default function Membership() {
         </div>
       </section>
 
-      <section className="relative mx-4 overflow-hidden rounded-feature border border-border-subtle bg-claim-surface p-4 shadow-[0_10px_28px_rgba(51,37,20,0.06)]">
+      {/* 2026-09-29 用户确认：会员中心隐藏「本期活动」区块。
+          代码整段保留、不做删除，恢复时移除下方 hidden 即可。 */}
+      <section
+        hidden
+        className="relative mx-4 overflow-hidden rounded-feature border border-border-subtle bg-claim-surface p-4 shadow-[0_10px_28px_rgba(51,37,20,0.06)]"
+      >
         <span
           className="absolute -right-11 top-4 w-36 rotate-45 py-1 text-center text-[10px] font-semibold tracking-[0.08em] text-bubble-on-gold"
           style={{ backgroundImage: 'var(--gradient-bubble)' }}

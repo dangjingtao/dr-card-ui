@@ -1,8 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { PackageOpen } from 'lucide-react'
 import PageContainer from '../components/mobile/PageContainer'
-import EmptyStateIcon from '../components/mobile/EmptyStateIcon'
+import EmptyStateIllustration from '../components/mobile/EmptyStateIllustration'
 import DebugPanel from '../components/mobile/DebugPanel'
 import { Button, EmptyState, SegmentedControl } from '../components/ui'
 import { useFixtureState } from '../app/fixtures/useFixture'
@@ -48,11 +47,12 @@ export default function Orders() {
 
   return (
     <PageContainer inset={false} className="pb-6">
-      <div className="px-4 pb-3 pt-2">
+      {/* Tab 固定在滚动区顶部：内容从下方穿过，用同色系暖白 + 背景模糊遮挡 */}
+      <div className="sticky top-0 z-20 bg-[linear-gradient(180deg,rgba(255,249,238,0.96),rgba(255,252,247,0.9))] px-4 pb-3 pt-2 backdrop-blur-sm">
         <SegmentedControl items={tabs} value={tab} onChange={(value) => setTab(value as OrderTabKey)} />
       </div>
 
-      <div className="px-4" aria-live="polite">
+      <div className="px-4 pt-1" aria-live="polite">
         {list.length > 0 ? (
           <ul className="flex flex-col gap-2.5">
             {list.map((order) => (
@@ -113,7 +113,7 @@ export default function Orders() {
         ) : (
           <EmptyState
             className="pt-12"
-            visual={<EmptyStateIcon icon={PackageOpen} />}
+            visual={<EmptyStateIllustration />}
             title={<span className="text-[15px] leading-[22px] text-text-secondary">{ORDER_COPY.emptyTitle}</span>}
             supportingText={<span className="text-xs leading-[18px]">{ORDER_COPY.emptyDesc}</span>}
             primaryAction={

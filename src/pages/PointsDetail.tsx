@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { ArrowDownLeft, ArrowUpRight, RefreshCw } from 'lucide-react'
 import DebugPanel from '../components/mobile/DebugPanel'
+import EmptyStateIllustration from '../components/mobile/EmptyStateIllustration'
 import PageContainer from '../components/mobile/PageContainer'
 import { Button, EmptyState, LoadingIndicator, SegmentedControl } from '../components/ui'
 import { useFixtureState } from '../app/fixtures/useFixture'
@@ -83,7 +84,8 @@ export default function PointsDetail() {
 
   return (
     <PageContainer inset={false} className="pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
-      <div className="mx-4 mt-3">
+      {/* Tab 固定在滚动区顶部：内容从下方穿过，用同色系暖白 + 背景模糊遮挡 */}
+      <div className="sticky top-0 z-20 bg-[linear-gradient(180deg,rgba(255,249,238,0.96),rgba(255,252,247,0.9))] px-4 pb-3 pt-3 backdrop-blur-sm">
         <SegmentedControl
           items={BUBBLE_FILTERS.map((item) => ({ value: item.value, label: item.label }))}
           value={filter}
@@ -94,29 +96,30 @@ export default function PointsDetail() {
         />
       </div>
 
-      <section className="mx-4 mt-4" aria-label="泡泡值变动记录">
+      <section className="mx-4 mt-1" aria-label="泡泡值变动记录">
         {isLoading ? (
-          <div className="flex justify-center rounded-feature border border-border-subtle bg-surface py-10 shadow-bubble">
+          <div className="flex justify-center py-10">
             <LoadingIndicator label="加载中" />
           </div>
         ) : isError ? (
-          <div className="rounded-feature border border-border-subtle bg-surface py-6 shadow-bubble">
-            <EmptyState
-              variant="recoverable-error"
-              title="明细加载失败"
-              supportingText={remote.message}
-              primaryAction={
-                <Button variant="outline" leadingIcon={RefreshCw} onClick={reload}>
-                  重新加载
-                </Button>
-              }
-            />
-          </div>
+          <EmptyState
+            variant="recoverable-error"
+            title="明细加载失败"
+            supportingText={remote.message}
+            primaryAction={
+              <Button variant="outline" leadingIcon={RefreshCw} onClick={reload}>
+                重新加载
+              </Button>
+            }
+          />
         ) : records.length === 0 ? (
-          <div className="rounded-feature border border-border-subtle bg-surface py-6 shadow-bubble">
-            {/* 原型 §3 只给了「暂时没有更多记录啦」，不额外补写引导文案 */}
-            <EmptyState variant="no-data" title={BUBBLE_LIST_END} />
-          </div>
+          /* 原型 §3 只给了「暂时没有更多记录啦」，不额外补写引导文案；
+             视觉统一使用品牌插画空态，直接落在页面背景上，不再套白卡片容器。 */
+          <EmptyState
+            variant="no-data"
+            visual={<EmptyStateIllustration />}
+            title={BUBBLE_LIST_END}
+          />
         ) : (
           <>
             <div className="overflow-hidden rounded-feature border border-border-subtle bg-surface shadow-bubble">

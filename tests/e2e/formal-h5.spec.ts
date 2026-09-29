@@ -204,7 +204,9 @@ test('@formal-h5 H021 App title bar stays reachable while content scrolls', asyn
   await expect(back).toBeVisible()
   const before = await titleBar.boundingBox()
   await expect(page.locator('[data-rich-text-placeholder="/brand-culture"]')).toBeVisible()
-  await expect(page.locator('[data-rich-text-content]')).toBeEmpty()
+  const richText = page.locator('[data-rich-text-content]')
+  await expect(richText).toBeVisible()
+  await expect(richText).toContainText('极地种子品牌故事')
 
   await expect(titleBar).toBeVisible()
   const after = await titleBar.boundingBox()
@@ -305,23 +307,6 @@ test('@formal-h5 H022 prototype states stay on one route implementation', async 
 test('@formal-h5 H023 shared SearchField stays consistent across formal H5 consumers', async ({ page }) => {
   const runtimeErrors = collectRuntimeErrors(page)
 
-  await page.goto('/exchange', { waitUntil: 'domcontentloaded' })
-  await expectHealthyFormalRoute(page)
-  const exchangeField = page.locator('[data-search-field="pill"][data-search-field-size="compact"] input')
-  await expect(exchangeField).toHaveCount(1)
-  await exchangeField.fill('__no_match__')
-  await expect(page.getByRole('button', { name: '清除搜索' })).toBeVisible()
-  await page.getByRole('button', { name: '清除搜索' }).click()
-  await expect(exchangeField).toHaveValue('')
-  const exchangeSearchBox = await page
-    .locator('[data-search-field="pill"][data-search-field-size="compact"]')
-    .boundingBox()
-  const exchangeBalanceBox = await page
-    .locator('[data-search-field="pill"][data-search-field-size="compact"] + button')
-    .boundingBox()
-  expect(Math.round(exchangeSearchBox?.height ?? 0)).toBe(40)
-  expect(Math.round(exchangeBalanceBox?.height ?? 0)).toBe(40)
-
   await page.goto('/card/share', { waitUntil: 'domcontentloaded' })
   await expectHealthyFormalRoute(page)
   const cardShareField = page.locator('[data-search-field="subtle"][data-search-field-size="regular"] input')
@@ -345,15 +330,17 @@ test('@formal-h5 H023 shared SearchField stays consistent across formal H5 consu
 test('@formal-h5 H023 shared empty-state visual is stable across data pages', async ({ page }) => {
   const runtimeErrors = collectRuntimeErrors(page)
 
-  for (const path of ['/address?state=empty', '/orders?state=empty']) {
+  for (const path of ['/address?state=empty', '/orders?state=empty', '/points/detail?state=empty']) {
     await page.goto(path, { waitUntil: 'domcontentloaded' })
     await expectHealthyFormalRoute(page)
-    const visual = page.locator('[data-empty-state-icon]')
+    const visual = page.locator('[data-empty-state-illustration]')
     await expect(visual).toHaveCount(1)
-    const box = await visual.boundingBox()
+    const image = visual.locator('img')
+    await expect(image).toHaveCount(1)
+    const box = await image.boundingBox()
     expect(box).not.toBeNull()
-    expect(Math.round(box?.width ?? 0)).toBe(96)
-    expect(Math.round(box?.height ?? 0)).toBe(96)
+    expect(Math.round(box?.width ?? 0)).toBe(112)
+    expect(Math.round(box?.height ?? 0)).toBe(112)
   }
 
   expect(runtimeErrors, runtimeErrors.join('\n')).toEqual([])

@@ -6,7 +6,7 @@ import bannerWashCare from '../../assets/brand/home/home-banner-wash-care.webp'
  *
  * 字段名与真实接口保持一致；轮播素材沿用首页已验收的品牌图，
  * 保证 mock 模式下视觉与 preview 基线一致。取值明确可识别为 Mock，不伪装成真实后台数据
- * （轮播 id 用 1/2 与文档示例同量级，券名带「Mock·」前缀，settings 使用待联调确认的第一候选字段名）。
+ * （轮播 id 用 1/2 与文档示例同量级，券名带「Mock·」前缀）。
  */
 export const HOME_BANNERS_MOCK = {
   code: 0,
@@ -48,17 +48,34 @@ export const HOME_BANNERS_MOCK = {
   },
 } as const
 
-/** settings 字段名待联调确认（见 src/services/settings.ts 别名表），这里使用第一候选。 */
-export const HOME_SETTINGS_MOCK = {
+export const BRAND_CULTURE_SETTING_MOCK = {
   code: 0,
   msg: 'success',
   status: 'succ',
   data: {
-    brand_culture: '了解极地种子品牌起源与匠心洗护',
-    cause: '每次打卡助力公益，传递温暖',
+    key: 'brand_culture_setting',
+    value: '<h2>极地种子品牌故事</h2><p>Mock 富文本：了解品牌起源与匠心洗护。</p>',
   },
 } as const
 
+export const WELFARE_SETTING_MOCK = {
+  code: 0,
+  msg: 'success',
+  status: 'succ',
+  data: {
+    key: 'welfare',
+    value: '<h2>公益板块</h2><p>Mock 富文本：每次打卡助力公益，传递温暖。</p>',
+  },
+} as const
+
+/**
+ * `GET /api/coupons/index` Mock 数据（契约来源：客户端《签到页面接口文档》第 4 节「体验券列表」）。
+ *
+ * 券名统一带「Mock·」前缀，明确可识别为 Mock，不伪装真实后台数据。
+ * 当前不模拟 category_id：后端分类能力尚未确认，Mock 不应反向制造接口契约。
+ * 当前共享 Mock 只保留“通用体验包”，避免把历史多 SKU 设计伪装成当前业务事实。
+ * 售罄 / 泡泡值不足等边界由页面 / service 单测使用局部样本覆盖。
+ */
 export const COUPON_LIST_MOCK = {
   code: 0,
   msg: 'success',
@@ -67,38 +84,22 @@ export const COUPON_LIST_MOCK = {
     data: [
       {
         id: 1,
-        name: 'Mock·10 元无门槛券',
-        short_desc: '全场通用，满 0 元可用',
+        name: 'Mock·通用体验包',
+        short_desc: '当前唯一开放的洗护体验包',
         image: null,
-        category_id: '1',
-        points_number: '100',
-        total_number: 500,
-        exchanged_nuuur: 37,
-        extra_data: null,
-        status: 10,
-        create_time: '2026-09-01 12:00:00',
-        update_time: '2026-09-01 12:00:00',
-        delete_time: null,
-      },
-      {
-        id: 2,
-        name: 'Mock·洗护体验券',
-        short_desc: '限到店核销',
-        image: null,
-        category_id: '2',
         points_number: '200',
-        total_number: 300,
-        exchanged_nuuur: 12,
+        total_number: 1000,
+        exchanged_nuuur: 128,
         extra_data: null,
         status: 10,
         create_time: '2026-09-01 12:00:00',
         update_time: '2026-09-01 12:00:00',
-        delete_time: null,
+        delete_time: 0,
       },
     ],
     current_page: 1,
-    per_page: 50,
-    total: 2,
+    per_page: 15,
+    total: 1,
     last_page: 1,
   },
 } as const
