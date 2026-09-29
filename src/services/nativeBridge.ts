@@ -4,6 +4,7 @@ import {
 } from './nativeBridge/capabilities/media'
 import { capabilityRegistry } from './nativeBridge/registry'
 import { invokeNativeCapability } from './nativeBridge/runtime'
+import { INJECTED_CALLBACK_TIMEOUT_MS } from './nativeBridgeTransport'
 import type {
   NativeChooseImageInput,
   NativeCopyTextInput,
@@ -92,6 +93,13 @@ export function closeWebView(
   )
 }
 
+function withInjectedCallbackTimeout(options: NativeInvocationOptions): NativeInvocationOptions {
+  return {
+    timeoutMs: INJECTED_CALLBACK_TIMEOUT_MS,
+    ...options,
+  }
+}
+
 /**
  * H031 confirmed Native scanner boundary.
  *
@@ -103,21 +111,21 @@ export function scanCode(
   input: NativeScanCodeInput,
   options: NativeInvocationOptions = {},
 ): Promise<NativeScanCodeResult> {
-  return invokeNativeCapability(capabilityRegistry.scanCode, input, options)
+  return invokeNativeCapability(capabilityRegistry.scanCode, input, withInjectedCallbackTimeout(options))
 }
 
 export function takePhoto(
   input: NativeTakePhotoInput = DEFAULT_IMAGE_INPUT,
   options: NativeInvocationOptions = {},
 ): Promise<NativeImageResult> {
-  return invokeNativeCapability(capabilityRegistry.takePhoto, input, options)
+  return invokeNativeCapability(capabilityRegistry.takePhoto, input, withInjectedCallbackTimeout(options))
 }
 
 export function chooseImage(
   input: NativeChooseImageInput = DEFAULT_CHOOSE_IMAGE_INPUT,
   options: NativeInvocationOptions = {},
 ): Promise<NativeImageResult> {
-  return invokeNativeCapability(capabilityRegistry.chooseImage, input, options)
+  return invokeNativeCapability(capabilityRegistry.chooseImage, input, withInjectedCallbackTimeout(options))
 }
 
 export function saveImageToAlbum(
@@ -127,7 +135,7 @@ export function saveImageToAlbum(
   return invokeNativeCapability(
     capabilityRegistry.saveImageToAlbum,
     input,
-    options,
+    withInjectedCallbackTimeout(options),
   )
 }
 
@@ -135,15 +143,8 @@ export function copyText(
   input: NativeCopyTextInput,
   options: NativeInvocationOptions = {},
 ): Promise<NativeSuccessResult> {
-  return invokeNativeCapability(capabilityRegistry.copyText, input, options)
+  return invokeNativeCapability(capabilityRegistry.copyText, input, withInjectedCallbackTimeout(options))
 }
-
-/**
- * 激励广告属于「用户交互型长任务」：用户完整看完广告通常需要 15~30 秒，
- * 不能吃 runtime 层 5 秒的通用默认超时，否则会在用户还在看广告时就判超时。
- * 这里显式抬到 2 分钟，仍在 transport 内层 120 秒兜底的时间量级内。
- */
-const REWARD_AD_TIMEOUT_MS = 120_000
 
 /**
  * H033 rewarded-ad boundary for check-in resign.
@@ -158,10 +159,7 @@ export function showRewardAd(
   input: NativeRewardAdInput = { scene: 'h5CheckinResign' },
   options: NativeInvocationOptions = {},
 ): Promise<NativeRewardAdResult> {
-  return invokeNativeCapability(capabilityRegistry.showRewardAd, input, {
-    timeoutMs: REWARD_AD_TIMEOUT_MS,
-    ...options,
-  })
+  return invokeNativeCapability(capabilityRegistry.showRewardAd, input, withInjectedCallbackTimeout(options))
 }
 
 /**
@@ -174,5 +172,5 @@ export function openApp(
   input: NativeOpenAppInput,
   options: NativeInvocationOptions = {},
 ): Promise<NativeOpenAppResult> {
-  return invokeNativeCapability(capabilityRegistry.openApp, input, options)
+  return invokeNativeCapability(capabilityRegistry.openApp, input, withInjectedCallbackTimeout(options))
 }
