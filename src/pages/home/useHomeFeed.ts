@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 
 import { fetchHomeBanners, type BannerItem } from '../../services/banners'
-import { fetchHomeSettings, type HomeSettings } from '../../services/settings'
 import { fetchSignStatus, type SignStatus } from '../../services/signrecords'
 
 export type HomeRemoteData<T> =
