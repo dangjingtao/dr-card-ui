@@ -17,19 +17,22 @@ Android: window.androidBridge.openApp(json)
 iOS:     window.iosBridge.openApp(json)
 ```
 
-输入：
+输入（`callbackId` 由 H5 transport 自动生成）：
 
 ```json
-{"action":"open","inviteCode":"","fallbackUrl":""}
+{"callbackId":"openApp-...","action":"open","inviteCode":"","fallbackUrl":""}
 ```
 
 `action: open | store | detect`
 
-返回：
+双端均异步回调：
 
-```json
-{"success":true,"installed":true}
+```text
+Android: window.androidBridgeCallback(callbackId, payload)
+iOS:     window.iosBridgeCallback(callbackId, payload)
 ```
+
+`detect` 从 callback `data.installed` 读取安装状态；`open/store` 以 `code === 0` 判成功。
 
 Native 当前回填状态：两端均“否”；最低版本目标 2.13。
 

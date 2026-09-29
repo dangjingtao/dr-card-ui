@@ -15,14 +15,14 @@
 
 ## Native 目标协议
 
-双端 object 分别为 `androidBridge` / `iosBridge`，方法名和 JSON 字段一致。
+双端 object 分别为 `androidBridge` / `iosBridge`，方法名和 JSON 字段一致。四项都属于异步能力：H5 transport 自动生成 `callbackId` 并写入 JSON；Android / iOS 分别经 `androidBridgeCallback` / `iosBridgeCallback` 回传同一 envelope。
 
 ### takePhoto(json)
 
 输入：
 
 ```json
-{"crop":true,"maxWidth":1080,"maxHeight":1080,"quality":0.8}
+{"callbackId":"takePhoto-...","crop":true,"maxWidth":1080,"maxHeight":1080,"quality":0.8}
 ```
 
 返回：
@@ -36,7 +36,7 @@
 输入：
 
 ```json
-{"crop":true,"maxWidth":1080,"maxHeight":1080,"quality":0.8,"count":1}
+{"callbackId":"chooseImage-...","crop":true,"maxWidth":1080,"maxHeight":1080,"quality":0.8,"count":1}
 ```
 
 返回同 `takePhoto`。
@@ -46,30 +46,22 @@
 输入：
 
 ```json
-{"imageType":"base64","imageData":"纯base64或https地址","fileName":"kaboshi-invite.png"}
+{"callbackId":"saveImageToAlbum-...","imageType":"base64","imageData":"纯base64或https地址","fileName":"kaboshi-invite.png"}
 ```
 
 `imageType: base64 | url`
 
-返回：
-
-```json
-{"success":true}
-```
+成功回调：`code === 0`，H5 归一为 `{ success: true }`。
 
 ### copyText(json)
 
 输入：
 
 ```json
-{"text":"https://example.com/invite"}
+{"callbackId":"copyText-...","text":"https://example.com/invite"}
 ```
 
-返回：
-
-```json
-{"success":true}
-```
+成功回调：`code === 0`，H5 归一为 `{ success: true }`。
 
 四项 Native 当前回填均为“否”；最低版本目标 2.13。
 

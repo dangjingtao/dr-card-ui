@@ -1,6 +1,5 @@
 import {
   createCallbackInjectedObjectTransport,
-  createInjectedObjectTransport,
   parseJsonPayload,
   NativeTransportError,
   serializeJsonValue,
@@ -46,7 +45,7 @@ function parseResult(payload: unknown): NativeScanCodeResult {
       : undefined
   const nativeCode = (parsed as { code?: unknown })?.code
   if (typeof nativeCode === 'number' && nativeCode !== 0) {
-    const errorCode = nativeCode === 1 ? 'native-cancelled' : nativeCode === 3 ? 'native-permission-denied' : 'native-failed'
+    const errorCode = nativeCode === 1 ? 'native-cancelled' : nativeCode === 2 || nativeCode === 3 ? 'native-permission-denied' : 'native-failed'
     throw new NativeTransportError(errorCode, 'Native scanCode reported ' + (parsed as { message?: string }).message)
   }
   if (typeof code !== 'string' || !code) {
@@ -69,13 +68,14 @@ const androidTransport = createCallbackInjectedObjectTransport<
   parseResult,
 })
 
-const iosTransport = createInjectedObjectTransport<
+const iosTransport = createCallbackInjectedObjectTransport<
   NativeScanCodeInput,
   NativeScanCodeResult
 >({
   objectName: 'iosBridge',
   methodName: 'scanCode',
-  serializeArgs: (input) => [serializeJsonValue(validateInput(input))],
+  callbackName: 'iosBridgeCallback',
+  serializeArgs: (input, callbackId) => [serializeJsonValue({ ...validateInput(input), callbackId })],
   parseResult,
 })
 

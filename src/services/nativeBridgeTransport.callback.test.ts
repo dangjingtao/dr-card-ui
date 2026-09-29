@@ -40,6 +40,8 @@ function invoke(
 afterEach(() => {
   delete hostWindow.androidBridge
   delete hostWindow.androidBridgeCallback
+  delete hostWindow.iosBridge
+  delete hostWindow.iosBridgeCallback
   vi.useRealTimers()
 })
 
@@ -111,6 +113,34 @@ describe('Android injected callback dispatcher', () => {
       'one-result',
       'two-result',
       'three-result',
+    ])
+  })
+
+  it('uses the same callbackId correlation model for iOS injected-object methods', async () => {
+    const requests: CallbackRequest[] = []
+    hostWindow.iosBridge = {
+      scanCode(payload: unknown) {
+        const request = JSON.parse(payload as string) as CallbackRequest
+        requests.push(request)
+        queueMicrotask(() => {
+          hostWindow.iosBridgeCallback?.(request.callbackId, { value: 'ios-result' })
+        })
+      },
+    }
+    const transport = createCallbackInjectedObjectTransport<string, string>({
+      objectName: 'iosBridge',
+      methodName: 'scanCode',
+      callbackName: 'iosBridgeCallback',
+      serializeArgs: (value, callbackId) => [JSON.stringify({ value, callbackId })],
+      parseResult: (payload) => (payload as { value: string }).value,
+    })
+
+    const resolution = transport.resolve(hostWindow, 'ios')
+    if (!resolution.supported) throw new Error('Expected iOS callback transport to resolve.')
+
+    await expect(Promise.resolve(resolution.invoke())).resolves.toBe('ios-result')
+    expect(requests).toEqual([
+      { value: 'ios', callbackId: expect.any(String) },
     ])
   })
 

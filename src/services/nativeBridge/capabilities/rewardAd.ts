@@ -1,6 +1,5 @@
 import {
   createCallbackInjectedObjectTransport,
-  createInjectedObjectTransport,
   parseJsonPayload,
   NativeTransportError,
   serializeJsonValue,
@@ -67,13 +66,14 @@ const androidTransport = createCallbackInjectedObjectTransport<
   parseResult,
 })
 
-const iosTransport = createInjectedObjectTransport<
+const iosTransport = createCallbackInjectedObjectTransport<
   NativeRewardAdInput,
   NativeRewardAdResult
 >({
   objectName: 'iosBridge',
   methodName: 'showRewardAd',
-  serializeArgs: (input) => [serializeJsonValue(validateInput(input))],
+  callbackName: 'iosBridgeCallback',
+  serializeArgs: (input, callbackId) => [serializeJsonValue({ ...validateInput(input), callbackId })],
   parseResult,
 })
 

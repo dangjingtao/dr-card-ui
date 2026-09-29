@@ -19,6 +19,7 @@ export type NativeTransportWindow = Window & {
   androidBridge?: Record<string, unknown>
   iosBridge?: Record<string, unknown>
   androidBridgeCallback?: (callbackId: string, payload: unknown) => void
+  iosBridgeCallback?: (callbackId: string, payload: unknown) => void
   webkit?: {
     messageHandlers?: Record<string, IOSMessageHandler | undefined>
   }
@@ -206,7 +207,7 @@ export function createInjectedObjectTransport<TInput, TResult>(
 export interface CallbackInjectedObjectTransportConfig<TInput, TResult>
   extends Omit<InjectedObjectTransportConfig<TInput, TResult>, 'serializeArgs'> {
   serializeArgs: (input: TInput, callbackId: string) => readonly unknown[]
-  callbackName?: 'androidBridgeCallback'
+  callbackName?: 'androidBridgeCallback' | 'iosBridgeCallback'
   timeoutMs?: number
 }
 

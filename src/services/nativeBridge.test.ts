@@ -16,6 +16,7 @@ type InjectedBridgeProbe = {
 type BridgeProbeWindow = Window & {
   androidBridge?: InjectedBridgeProbe
   androidBridgeCallback?: (callbackId: string, payload: unknown) => void
+  iosBridgeCallback?: (callbackId: string, payload: unknown) => void
   iosBridge?: InjectedBridgeProbe
   webkit?: {
     messageHandlers?: Record<string, { postMessage(payload: unknown): void } | undefined>
@@ -39,6 +40,7 @@ async function loadBridge(mode: 'disabled' | 'native' = 'native') {
 afterEach(() => {
   delete bridgeWindow.androidBridge
   delete bridgeWindow.androidBridgeCallback
+  delete bridgeWindow.iosBridgeCallback
   delete bridgeWindow.iosBridge
   delete bridgeWindow.webkit
   vi.unstubAllEnvs()
@@ -458,11 +460,14 @@ describe('JSBridge capability runtime', () => {
 
   it('supports qr/bar/all scanType values on iOS without changing the field name', async () => {
     const { scanCode } = await loadBridge()
-    const received: unknown[] = []
+    const received: Array<{ scanType: string; callbackId: string }> = []
     bridgeWindow.iosBridge = {
       scanCode(payload: unknown) {
-        received.push(payload)
-        return '{"code":"IOS-CODE"}'
+        const request = JSON.parse(payload as string) as { scanType: string; callbackId: string }
+        received.push(request)
+        queueMicrotask(() => {
+          bridgeWindow.iosBridgeCallback?.(request.callbackId, '{"code":"IOS-CODE"}')
+        })
       },
     }
 
@@ -470,9 +475,9 @@ describe('JSBridge capability runtime', () => {
     await expect(scanCode({ scanType: 'bar' })).resolves.toEqual({ code: 'IOS-CODE' })
     await expect(scanCode({ scanType: 'all' })).resolves.toEqual({ code: 'IOS-CODE' })
     expect(received).toEqual([
-      '{"scanType":"qr"}',
-      '{"scanType":"bar"}',
-      '{"scanType":"all"}',
+      { scanType: 'qr', callbackId: expect.any(String) },
+      { scanType: 'bar', callbackId: expect.any(String) },
+      { scanType: 'all', callbackId: expect.any(String) },
     ])
   })
 
@@ -547,11 +552,11 @@ describe('JSBridge capability runtime', () => {
     const received: Array<{ method: string; payload: unknown }> = []
     bridgeWindow.androidBridge = {
       takePhoto(payload: unknown) {
-        received.push({ method: 'takePhoto', payload })
+        received.push({ method: 'takePhoto', payload: JSON.parse(payload as string) })
         return '{"mimeType":"image/jpeg","imageBase64":"photo-base64"}'
       },
       chooseImage(payload: unknown) {
-        received.push({ method: 'chooseImage', payload })
+        received.push({ method: 'chooseImage', payload: JSON.parse(payload as string) })
         return '{"mimeType":"image/png","imageBase64":"album-base64"}'
       },
     }
@@ -568,12 +573,24 @@ describe('JSBridge capability runtime', () => {
     expect(received).toEqual([
       {
         method: 'takePhoto',
-        payload: '{"crop":true,"maxWidth":1080,"maxHeight":1080,"quality":0.8}',
+        payload: {
+          crop: true,
+          maxWidth: 1080,
+          maxHeight: 1080,
+          quality: 0.8,
+          callbackId: expect.any(String),
+        },
       },
       {
         method: 'chooseImage',
-        payload:
-          '{"crop":true,"maxWidth":1080,"maxHeight":1080,"quality":0.8,"count":1}',
+        payload: {
+          crop: true,
+          maxWidth: 1080,
+          maxHeight: 1080,
+          quality: 0.8,
+          count: 1,
+          callbackId: expect.any(String),
+        },
       },
     ])
   })
@@ -583,11 +600,11 @@ describe('JSBridge capability runtime', () => {
     const received: Array<{ method: string; payload: unknown }> = []
     bridgeWindow.iosBridge = {
       saveImageToAlbum(payload: unknown) {
-        received.push({ method: 'saveImageToAlbum', payload })
+        received.push({ method: 'saveImageToAlbum', payload: JSON.parse(payload as string) })
         return '{"success":true}'
       },
       copyText(payload: unknown) {
-        received.push({ method: 'copyText', payload })
+        received.push({ method: 'copyText', payload: JSON.parse(payload as string) })
         return '{"success":true}'
       },
     }
@@ -606,12 +623,19 @@ describe('JSBridge capability runtime', () => {
     expect(received).toEqual([
       {
         method: 'saveImageToAlbum',
-        payload:
-          '{"imageType":"base64","imageData":"poster-base64","fileName":"kaboshi-invite.png"}',
+        payload: {
+          imageType: 'base64',
+          imageData: 'poster-base64',
+          fileName: 'kaboshi-invite.png',
+          callbackId: expect.any(String),
+        },
       },
       {
         method: 'copyText',
-        payload: '{"text":"https://example.com/invite"}',
+        payload: {
+          text: 'https://example.com/invite',
+          callbackId: expect.any(String),
+        },
       },
     ])
   })
@@ -707,10 +731,16 @@ describe('JSBridge capability runtime', () => {
     let index = 0
     bridgeWindow.iosBridge = {
       showRewardAd(payload: unknown) {
-        expect(payload).toBe('{"scene":"h5CheckinResign"}')
+        const request = JSON.parse(payload as string) as { scene: string; callbackId: string }
+        expect(request).toEqual({
+          scene: 'h5CheckinResign',
+          callbackId: expect.any(String),
+        })
         const status = statuses[index]
         index += 1
-        return JSON.stringify({ status })
+        queueMicrotask(() => {
+          bridgeWindow.iosBridgeCallback?.(request.callbackId, JSON.stringify({ status }))
+        })
       },
     }
 
@@ -755,11 +785,11 @@ describe('JSBridge capability runtime', () => {
 
   it('serializes openApp detect/open/store actions without inventing URLs', async () => {
     const { openApp, getNativeBridgeDiagnostics } = await loadBridge()
-    const received: unknown[] = []
+    const received: Array<Record<string, unknown>> = []
     const androidBridge = {
       openApp(payload: unknown) {
         expect(this).toBe(androidBridge)
-        received.push(payload)
+        received.push(JSON.parse(payload as string) as Record<string, unknown>)
         return '{"success":true,"installed":true}'
       },
     }
@@ -781,18 +811,18 @@ describe('JSBridge capability runtime', () => {
     }
 
     expect(received).toEqual([
-      '{"action":"detect","inviteCode":"","fallbackUrl":""}',
-      '{"action":"open","inviteCode":"","fallbackUrl":""}',
-      '{"action":"store","inviteCode":"","fallbackUrl":""}',
+      { action: 'detect', inviteCode: '', fallbackUrl: '', callbackId: expect.any(String) },
+      { action: 'open', inviteCode: '', fallbackUrl: '', callbackId: expect.any(String) },
+      { action: 'store', inviteCode: '', fallbackUrl: '', callbackId: expect.any(String) },
     ])
   })
 
   it('preserves inviteCode/fallbackUrl strings on iOS and parses both result booleans', async () => {
     const { openApp } = await loadBridge()
-    const received: unknown[] = []
+    const received: Array<Record<string, unknown>> = []
     bridgeWindow.iosBridge = {
       openApp(payload: unknown) {
-        received.push(payload)
+        received.push(JSON.parse(payload as string) as Record<string, unknown>)
         return '{"success":false,"installed":false}'
       },
     }
@@ -809,7 +839,12 @@ describe('JSBridge capability runtime', () => {
     })
 
     expect(received).toEqual([
-      '{"action":"open","inviteCode":"invite-123","fallbackUrl":"https://example.com/fallback"}',
+      {
+        action: 'open',
+        inviteCode: 'invite-123',
+        fallbackUrl: 'https://example.com/fallback',
+        callbackId: expect.any(String),
+      },
     ])
   })
 
