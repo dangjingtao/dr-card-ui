@@ -1,7 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { scanCode } from './nativeBridge'
-import type { NativeTransportWindow } from './nativeBridgeTransport'
+import {
+  INJECTED_CALLBACK_TIMEOUT_MS,
+  type NativeTransportWindow,
+} from './nativeBridgeTransport'
 
 const hostWindow = window as NativeTransportWindow
 
@@ -106,14 +109,14 @@ describe('scanCode Android H037 transaction contract', () => {
     })
   })
 
-  it('cleans up the transport pending entry when the caller timeout wins', async () => {
+  it('cleans up the Android scan pending entry at the existing callback timeout', async () => {
     vi.useFakeTimers()
 
     const lateCallbackFallback = vi.fn()
     hostWindow.androidBridgeCallback = lateCallbackFallback
 
     const getRequest = installAndroidScanHost()
-    const promise = scanCode({ scanType: 'all' }, { timeoutMs: 50 })
+    const promise = scanCode({ scanType: 'all' })
     promise.catch(() => undefined)
     const request = getRequest()
 
@@ -123,7 +126,7 @@ describe('scanCode Android H037 transaction contract', () => {
       data: { text: 'DEVICE-QR-TIMEOUT', scanType: 'qr' },
     })
 
-    await vi.advanceTimersByTimeAsync(50)
+    await vi.advanceTimersByTimeAsync(INJECTED_CALLBACK_TIMEOUT_MS)
 
     await expect(promise).rejects.toMatchObject({
       name: 'NativeBridgeError',
