@@ -21,8 +21,8 @@ async function prepareRuntime() {
 }
 
 async function prepareMobileDebugPanel() {
-  // Maintainer 2026-09-29: Eruda should be available in every non-prod environment.
-  if (runtimePolicy.appEnvironment === 'prod') return
+  // Eruda is a dev/preview aid only. test/prod are production-like App WebView environments.
+  if (runtimePolicy.isProdLike) return
 
   try {
     const { default: eruda } = await import('eruda')
