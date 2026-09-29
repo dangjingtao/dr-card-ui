@@ -32,7 +32,7 @@ Target:  window.nativeBridgeCallback(callbackId, payload)
 Android compatibility: window.androidBridgeCallback(callbackId, payload)
 ```
 
-`detect` 从 callback `data.installed` 读取安装状态；`open/store` 以 `code === 0` 判成功。
+`detect` 从成功 callback 的 `data.installed` 读取安装状态；`open/store` 成功 callback 必须满足 `code === 0`，并按当前 Android 基线在 `data.action` 回填 `open | store`。缺少对应业务字段视为协议不完整，不在 H5 静默放宽。
 
 Native 当前回填状态：两端均“否”；最低版本目标 2.13。
 
