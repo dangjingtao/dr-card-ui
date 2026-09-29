@@ -193,7 +193,7 @@ type NativeRewardAdStatus =
 - `code = 7` -> `no_fill`
 - `code = 5 | 6` -> `failed`
 
-迁移期旧宿主如果仍返回既有 `status` 字段，可以继续兼容，但不得要求 Native 恢复旧字段。
+迁移期旧宿主如果仍返回既有 `status` 字段，可以继续兼容，但不得要求 Native 恢复旧字段。若同一结果中存在当前 numeric `code`，以 Native code 为最终事实；legacy `status` 仅在 numeric code 缺失时参与兼容解析。
 
 ### B. 扫码核销事务等待
 
