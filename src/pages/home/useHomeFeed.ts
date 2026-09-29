@@ -45,7 +45,3 @@ export function useHomeBanners(): HomeRemoteData<BannerItem[]> {
 export function useSignStatus(): HomeRemoteData<SignStatus> {
   return useRemoteData(fetchSignStatus)
 }
-
-export function useHomeSettings(): HomeRemoteData<HomeSettings> {
-  return useRemoteData(fetchHomeSettings)
-}
