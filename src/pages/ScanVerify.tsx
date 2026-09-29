@@ -47,7 +47,9 @@ export default function ScanVerify() {
     try {
       const result = await scanCode({ scanType: 'all' })
       const state: ScanVerifyNavigationState = { nativeScanCode: result.code }
-      navigate('/card/verify/confirm', { state })
+      // Native only resolves this call after the device transaction has completed. Do not send the
+      // user through the legacy pre-verification confirmation again; H5 resumes at the result state.
+      navigate('/card/verify/confirm?state=done', { replace: true, state })
     } catch (error) {
       if (error instanceof NativeBridgeError) {
         if (error.code === 'native-cancelled') {
