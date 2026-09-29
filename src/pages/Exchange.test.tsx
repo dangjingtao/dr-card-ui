@@ -198,7 +198,7 @@ describe('Exchange（洗护体验券专区接口接入）', () => {
     mocks.useExchangeCoupons.mockReturnValue(successRemote())
 
     renderExchange('/exchange?overlay=redeem&product=1')
-    await screen.findByText('Mock·洗护体验券')
+    await screen.findByRole('button', { name: /Mock·洗护体验券，200 泡泡值/ })
 
     const redeemButton = screen.getByRole('button', { name: '立即兑换' })
     expect((redeemButton as HTMLButtonElement).disabled).toBe(true)
