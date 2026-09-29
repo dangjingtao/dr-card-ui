@@ -42,46 +42,57 @@ function toCreateTime(date: Date): string {
 let records: SignRecordMock[] = buildCheckinRecordsMock()
 let nextId = records.length + 1
 
-function findNormalSignRecord(dateKey: string): SignRecordMock | undefined {
-  return records.find(
-    (item) =>
-      item.status === SIGN_RECORD_STATUS_SIGNED &&
-      item.create_time.slice(0, 10) === dateKey,
-  )
-}
-
 function todayKey(): string {
   return toLocalDateKey(new Date())
 }
 
-function signedToday(): boolean {
-  return Boolean(findNormalSignRecord(todayKey()))
-}
+export function deriveMockSignStatus(
+  sourceRecords: SignRecordMock[],
+  today = new Date(),
+): { signed: boolean; consecutiveDays: number } {
+  const hasNormalSign = (dateKey: string) =>
+    sourceRecords.some(
+      (item) =>
+        item.status === SIGN_RECORD_STATUS_SIGNED &&
+        item.create_time.slice(0, 10) === dateKey,
+    )
 
-function consecutiveSignedDaysEndingAt(date: Date): number {
-  const cursor = new Date(date)
-  let count = 0
+  const consecutiveSignedDaysEndingAt = (date: Date) => {
+    const cursor = new Date(date)
+    let count = 0
 
-  while (findNormalSignRecord(toLocalDateKey(cursor))) {
-    count += 1
-    cursor.setDate(cursor.getDate() - 1)
+    while (hasNormalSign(toLocalDateKey(cursor))) {
+      count += 1
+      cursor.setDate(cursor.getDate() - 1)
+    }
+
+    return count
   }
 
-  return count
-}
+  const signed = hasNormalSign(toLocalDateKey(today))
+  if (signed) {
+    return { signed: true, consecutiveDays: consecutiveSignedDaysEndingAt(today) }
+  }
 
-/**
- * /status 的 consecutive_days 口径：
- * - 今天已签：返回当前连续签到天数；
- * - 今天未签：真实后端返回「今天签到后将达到的天数」，因此在昨日连续值上 +1。
- */
-function statusConsecutiveDays(): number {
-  const today = new Date()
-  if (signedToday()) return consecutiveSignedDaysEndingAt(today)
-
+  // 真实 /status 未签到时返回「今天签到后将达到的连续天数」。
   const yesterday = new Date(today)
   yesterday.setDate(today.getDate() - 1)
-  return consecutiveSignedDaysEndingAt(yesterday) + 1
+  return {
+    signed: false,
+    consecutiveDays: consecutiveSignedDaysEndingAt(yesterday) + 1,
+  }
+}
+
+function currentMockSignStatus() {
+  return deriveMockSignStatus(records)
+}
+
+function signedToday(): boolean {
+  return currentMockSignStatus().signed
+}
+
+function statusConsecutiveDays(): number {
+  return currentMockSignStatus().consecutiveDays
 }
 
 export const checkinHandlers = [
