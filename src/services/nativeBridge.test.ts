@@ -44,6 +44,7 @@ afterEach(() => {
   delete bridgeWindow.iosBridge
   delete bridgeWindow.webkit
   vi.unstubAllEnvs()
+  vi.useRealTimers()
   vi.resetModules()
 })
 
@@ -595,6 +596,44 @@ describe('JSBridge capability runtime', () => {
     ])
   })
 
+  it('keeps Android takePhoto pending beyond the old 5s runtime timeout', async () => {
+    vi.useFakeTimers()
+    const { takePhoto } = await loadBridge()
+    let callbackId: string | undefined
+
+    bridgeWindow.androidBridge = {
+      takePhoto(payload: unknown) {
+        callbackId = (JSON.parse(payload as string) as { callbackId: string }).callbackId
+      },
+    }
+
+    const promise = takePhoto()
+    promise.catch(() => undefined)
+
+    await vi.advanceTimersByTimeAsync(10_000)
+
+    let settled = false
+    promise.finally(() => {
+      settled = true
+    })
+    await Promise.resolve()
+    expect(settled).toBe(false)
+
+    bridgeWindow.androidBridgeCallback?.(callbackId as string, {
+      code: 0,
+      message: 'ok',
+      data: {
+        mimeType: 'image/jpeg',
+        imageBase64: 'delayed-photo',
+      },
+    })
+
+    await expect(promise).resolves.toEqual({
+      mimeType: 'image/jpeg',
+      imageBase64: 'delayed-photo',
+    })
+  })
+
   it('supports iOS saveImageToAlbum and copyText with confirmed field names', async () => {
     const { saveImageToAlbum, copyText } = await loadBridge()
     const received: Array<{ method: string; payload: unknown }> = []
@@ -888,6 +927,45 @@ describe('JSBridge capability runtime', () => {
         callbackId: expect.any(String),
       },
     ])
+  })
+
+  it('keeps iOS openApp pending beyond the old 5s runtime timeout', async () => {
+    vi.useFakeTimers()
+    const { openApp } = await loadBridge()
+    let callbackId: string | undefined
+
+    bridgeWindow.iosBridge = {
+      openApp(payload: unknown) {
+        callbackId = (JSON.parse(payload as string) as { callbackId: string }).callbackId
+      },
+    }
+
+    const promise = openApp({
+      action: 'open',
+      inviteCode: 'invite-123',
+      fallbackUrl: 'https://example.com/fallback',
+    })
+    promise.catch(() => undefined)
+
+    await vi.advanceTimersByTimeAsync(10_000)
+
+    let settled = false
+    promise.finally(() => {
+      settled = true
+    })
+    await Promise.resolve()
+    expect(settled).toBe(false)
+
+    bridgeWindow.nativeBridgeCallback?.(callbackId as string, {
+      code: 0,
+      message: 'ok',
+      data: { action: 'open' },
+    })
+
+    await expect(promise).resolves.toEqual({
+      success: true,
+      installed: true,
+    })
   })
 
   it('rejects missing openApp methods, invalid actions, and malformed result booleans', async () => {
