@@ -209,16 +209,27 @@ describe('sign activity list contract', () => {
 })
 
 describe('buildSignRecordDayMap', () => {
-  it('maps records by local create_time date and keeps the latest id', () => {
+  it('maps normal sign-in records by local create_time date and keeps the latest id', () => {
     const map = buildSignRecordDayMap([
       { id: 5, create_time: '2026-09-28 15:23:06', user_id: 3, points: 0, consecutive_days: 1, status: 10 },
-      { id: 9, create_time: '2026-09-28 18:00:00', user_id: 3, points: 0, consecutive_days: 2, status: 20 },
-      { id: 6, create_time: '2026-09-20 15:23:27', user_id: 3, points: 0, consecutive_days: 0, status: 20 },
+      { id: 9, create_time: '2026-09-28 18:00:00', user_id: 3, points: 0, consecutive_days: 2, status: 10 },
+      { id: 6, create_time: '2026-09-20 15:23:27', user_id: 3, points: 0, consecutive_days: 1, status: 10 },
     ])
 
     expect(map.get('2026-09-28')?.id).toBe(9)
-    expect(map.get('2026-09-20')?.status).toBe(20)
+    expect(map.get('2026-09-20')?.status).toBe(10)
     expect(map.keys().sort()).toEqual(['2026-09-20', '2026-09-28'])
+  })
+
+  it('does not map makeup operation time as the target makeup day', () => {
+    const map = buildSignRecordDayMap([
+      // 实测：09-20 的补签在 09-28 操作，create_time 仍是 09-28。
+      { id: 6, create_time: '2026-09-28 15:23:27', user_id: 3, points: 0, consecutive_days: 0, status: 20 },
+    ])
+
+    expect(map.get('2026-09-28')).toBeUndefined()
+    expect(map.get('2026-09-20')).toBeUndefined()
+    expect(map.keys()).toEqual([])
   })
 
   it('skips records whose create_time is not a date', () => {
