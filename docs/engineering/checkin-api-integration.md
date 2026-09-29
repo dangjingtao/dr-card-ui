@@ -181,11 +181,11 @@
 | `create_time` | `string` | **记录时间戳**，格式 `YYYY-MM-DD HH:mm:ss`；它是**操作时刻**，补签时可不等于被补日期（例如今天补签 9-20，这里仍是今天）。 |
 | `update_time` | `string` | 更新时间，格式 `YYYY-MM-DD HH:mm:ss`。 |
 | `delete_time` | `number \| null` | 删除时间；未删除时为 `null`（历史文档写作 `0`，实测为 `null`，前端两者都容错）。 |
-| `day` / `month` / `year` | `string` | 记录所属**业务日历日**，格式 `DD` / `MM` / `YYYY`。**日历归属以此为准**，缺字段时才回退 `create_time` 前 10 位。 |
+| `day` / `month` / `year` | `string` | 记录所属**业务日历日**，格式 `DD` / `MM` / `YYYY`。**日历归属只认这三个业务字段**；缺失或非法时该记录不进入日历，绝不使用 `create_time` 推断业务日期。 |
 
 > 同一用户同一天只能有一条签到记录。
 >
-> ⚠️ 日期归属：`day`/`month`/`year` 与 `create_time` **不是同一个概念**。前者是该记录所属的业务日历日；后者是记录/操作时间戳，两者在补签时可能不同（实测补签 `create_time` 为操作时刻）。前端 `buildSignRecordDayMap` 因此优先用业务日期字段，`create_time` 仅作兜底。
+> ⚠️ 日期归属：`day`/`month`/`year` 与 `create_time` **不是同一个概念**。前者是该记录所属的业务日历日；后者是记录/操作时间戳，两者在补签时可能不同（实测补签 `create_time` 为操作时刻）。前端 `buildSignRecordDayMap` 因此只使用业务日期字段；字段缺失或非法时直接跳过该记录，`create_time` 不参与日历归属。
 
 ### 2.4 体验券列表
 
@@ -263,7 +263,7 @@
 2. **本地先校验 `day` 格式**：`^\d{4}-\d{2}-\d{2}$`，避免把格式错误打成后端 500。
 3. **边界错误**：非今天之前的日期返回 `400「只能补签今天之前的日期」`。
 4. **会话内乐观点亮**：接口刷新返回前，对本次补签的 `day` 做即时点亮（`optimisticMakeupDays`），
-   与文档口径下按 `create_time` 归属的持久记录互补。
+   与接口刷新后的业务日期记录互补；`create_time` 仅是操作时间，不参与日历归属。
 
 ## 4. Service 层设计
 
@@ -307,7 +307,7 @@ fetchSignRecords({ range: 'month' })   // → GET /api/signrecords/index?range=m
 | [src/mocks/fixtures/checkin.ts](../../src/mocks/fixtures/checkin.ts) | 修改 | 记录与 `status` 同形携带业务日期 `day/month/year` |
 | [src/mocks/fixtures/home.ts](../../src/mocks/fixtures/home.ts) | 修改 | `COUPON_LIST_MOCK` 补齐文档字段（`extra_data` 等），`per_page` 对齐 15 |
 | [src/pages/Checkin.tsx](../../src/pages/Checkin.tsx) | 修改 | 对齐文档口径（`range=month` / `day·month·year`）；**保留**激励广告闸门 + 补签接口调用 |
-| [src/pages/checkin/components/CheckinBoard.tsx](../../src/pages/checkin/components/CheckinBoard.tsx) | 修改 | 补签格**可点击**（先过广告闸门）；保留 `optimisticMakeupDays` 会话内乐观点亮；`status=20` 按 `create_time` 归属 |
+| [src/pages/checkin/components/CheckinBoard.tsx](../../src/pages/checkin/components/CheckinBoard.tsx) | 修改 | 补签格**可点击**（先过广告闸门）；保留 `optimisticMakeupDays` 会话内乐观点亮；`status=20` 按 `year/month/day` 业务日期归属 |
 | [src/pages/checkin/useCheckinFeed.ts](../../src/pages/checkin/useCheckinFeed.ts) | 修改 | `useCheckinActions` 同时提供 `signIn` / `makeup` / `lastMakeupDay` |
 | [src/pages/Checkin.test.tsx](../../src/pages/Checkin.test.tsx) | 修改 | 签到接口用例 + 广告闸门 / 补签用例（fail-closed、失败分级） |
 | [src/pages/checkin/CheckinCalendar.test.ts](../../src/pages/checkin/CheckinCalendar.test.ts) | 修改 | 补签按被补日期归属 + `optimisticMakeupDays` 乐观点亮用例 |
@@ -320,7 +320,7 @@ fetchSignRecords({ range: 'month' })   // → GET /api/signrecords/index?range=m
 4. **补签必须先过广告闸门**：
    - 前端在过往漏签格提供「补签」入口，点击后**先看 Native 激励广告**，`status=completed` 才调用 `POST /api/signrecords/makeup`；
    - `closed` / `failed` / `no_fill` / 宿主不支持 / 用户取消 / 权限拒绝一律**不落库、不亮格**（fail-closed）；
-   - **日历归属按记录的业务日期字段**：`index` 每条记录带 `year`/`month`/`day`，`buildSignRecordDayMap` 优先按它们拼出的 `YYYY-MM-DD` 归属，`create_time` 仅作兜底；因此无论补签的 `create_time` 是操作时刻还是被补日期，补签格都能正确点亮；会话内另做 `optimisticMakeupDays` 即时点亮；
+   - **日历归属按记录的业务日期字段**：`index` 每条记录带 `year`/`month`/`day`，`buildSignRecordDayMap` 只按它们拼出的 `YYYY-MM-DD` 归属，缺失或非法时跳过，`create_time` 不参与归属；因此无论补签的 `create_time` 是操作时刻还是被补日期，补签格都能正确点亮；会话内另做 `optimisticMakeupDays` 即时点亮；
    - 补签消耗 / 次数上限 / 资格判定（原 B-020）仍未确认。
 
 ## 6. 与历史 7002 实测的差异（重要）
@@ -330,7 +330,7 @@ fetchSignRecords({ range: 'month' })   // → GET /api/signrecords/index?range=m
 | 项 | 2026-09-28 实测 | 最新文档 | 处理 |
 | --- | --- | --- | --- |
 | `POST /api/signrecords/makeup` | 实测可用（`{ day: 'YYYY-MM-DD' }` → `status=20`） | 正式文档已收录 | 按正式契约调用，先过广告闸门 |
-| `status=20` 记录的 `create_time` | 实测为**补签操作时刻**，不回显被补日期 | 文档写作**被补签日期的北京时间** | **不再依赖 `create_time` 判定归属**：`index` 记录本身带 `year`/`month`/`day`，按业务日期字段归属，`create_time` 仅兜底（两处不一致也因此被消除） |
+| `status=20` 记录的 `create_time` | 实测为**补签操作时刻**，不回显被补日期 | 文档写作**被补签日期的北京时间** | **不再依赖 `create_time` 判定归属**：`index` 记录本身带 `year`/`month`/`day`，只按业务日期字段归属；业务日期缺失时跳过，`create_time` 不作为兜底（两处不一致也因此被消除） |
 | `index` 按月份过滤 | 实测不接受任何月份过滤入参 | 文档给出 `range=month|week` | 采用文档口径：显式传 `range=month` |
 | `index` 分页 | 接受 `page`/`pageSize` | 文档未列分页参数 | 不再传 `page`/`pageSize`，按裸数组消费 |
 
