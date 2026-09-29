@@ -14,7 +14,7 @@ import Exchange from './Exchange'
  * ⚠️ B-026 未决：泡泡值扣减与卡包写入属服务端规则，本页只做成功反馈，
  *    不修改余额，卡包列表也不随本次兑换变化。
  * 结构沿用 ClaimSuccess：兑换专区作为背景层 + PromptOverlay 承载成功弹窗。
- * 兑换成功的券名来自接口返回的券（经 `?product=` 定位），不再读取本地夹具。
+ * 当前结果层只展示原型确认的通用成功文案，不额外展示券名。
  */
 export default function ExchangeResult() {
   const navigate = useNavigate()
