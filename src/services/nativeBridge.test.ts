@@ -548,6 +548,49 @@ describe('JSBridge capability runtime', () => {
   })
 
 
+  it('keeps Bridge Lab async capability calls pending beyond the old 5s runtime timeout', async () => {
+    vi.useFakeTimers()
+    const bridge = await loadBridge('disabled')
+    let callbackId: string | undefined
+
+    bridgeWindow.androidBridge = {
+      takePhoto(payload: unknown) {
+        callbackId = (JSON.parse(payload as string) as { callbackId: string }).callbackId
+      },
+    }
+
+    const promise = bridge.invokeRegisteredNativeCapabilityForDebug('takePhoto', {
+      crop: true,
+      maxWidth: 1080,
+      maxHeight: 1080,
+      quality: 0.8,
+    })
+    promise.catch(() => undefined)
+
+    await vi.advanceTimersByTimeAsync(10_000)
+
+    let settled = false
+    promise.finally(() => {
+      settled = true
+    })
+    await Promise.resolve()
+    expect(settled).toBe(false)
+
+    bridgeWindow.androidBridgeCallback?.(callbackId as string, {
+      code: 0,
+      message: 'ok',
+      data: {
+        mimeType: 'image/jpeg',
+        imageBase64: 'bridge-lab-delayed-photo',
+      },
+    })
+
+    await expect(promise).resolves.toEqual({
+      mimeType: 'image/jpeg',
+      imageBase64: 'bridge-lab-delayed-photo',
+    })
+  })
+
   it('serializes takePhoto and chooseImage as one JSON string and parses image payloads', async () => {
     const { takePhoto, chooseImage } = await loadBridge()
     const received: Array<{ method: string; payload: unknown }> = []
@@ -965,6 +1008,28 @@ describe('JSBridge capability runtime', () => {
     await expect(promise).resolves.toEqual({
       success: true,
       installed: true,
+    })
+  })
+
+  it('rejects a bare openApp code=0 envelope without the Android baseline data fields', async () => {
+    const bridge = await loadBridge()
+    bridgeWindow.androidBridge = {
+      openApp() {
+        return '{"code":0,"message":"ok","data":{}}'
+      },
+    }
+
+    await expect(
+      bridge.openApp({
+        action: 'open',
+        inviteCode: '',
+        fallbackUrl: '',
+      }),
+    ).rejects.toMatchObject({
+      name: 'NativeBridgeError',
+      code: 'invocation-failed',
+      capability: 'openApp',
+      cause: expect.objectContaining({ code: 'payload-invalid' }),
     })
   })
 
