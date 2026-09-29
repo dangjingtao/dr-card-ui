@@ -131,7 +131,7 @@ H029 是 H030–H034 的公共协议前置；H029 合入后，H030–H034 可独
 
 | ID | 任务 | 状态 |
 |---|---|---|
-| H038 | [MyCoupons 用户卡包列表接入](./H038-card-mycoupons-integration.md) | Planned |
+| H038 | [MyCoupons 用户卡包列表接入](./H038-card-mycoupons-integration.md) | In Progress |
 
 ## 主要阻塞
 
