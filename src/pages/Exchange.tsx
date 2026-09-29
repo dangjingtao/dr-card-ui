@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ChevronRight, Droplets, Ticket } from 'lucide-react'
 import DebugPanel from '../components/mobile/DebugPanel'
@@ -85,9 +85,12 @@ export default function Exchange() {
   /** 弹层内展示的体验券由 `?product=` 决定，保证兑换弹窗可复现 */
   const activeProductId = searchParams.get('product')
   const activeProduct =
-    list.find((item) => String(item.id) === activeProductId) ?? list[0] ?? null
+    activeProductId === null
+      ? null
+      : list.find((item) => String(item.id) === activeProductId) ?? null
   const availability = activeProduct ? resolveAvailability(activeProduct, balance) : 'redeemable'
 
+  const couponListRef = useRef<HTMLElement>(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
@@ -121,9 +124,9 @@ export default function Exchange() {
     })
   }
 
-  /** banner 整卡点击与右上角「泡泡值」胶囊同源，统一进入 /points。 */
+  /** 顶部卡已经位于兑换专区内，「立即兑换」只需把用户带到券列表，不应离开本页。 */
   const onBubbleValueRedeem = () => {
-    navigate('/points')
+    couponListRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
   const submit = async () => {
@@ -159,7 +162,7 @@ export default function Exchange() {
         onChange={changeCategory}
       />
 
-      <section className="mx-4 mt-3 flex-1" aria-label="洗护体验券列表">
+      <section ref={couponListRef} className="mx-4 mt-3 flex-1" aria-label="洗护体验券列表">
         {listRemote.state === 'loading' ? (
           <ul className="grid grid-cols-2 gap-3" aria-busy>
             {Array.from({ length: 4 }).map((_, index) => (

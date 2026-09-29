@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   redeem: vi.fn(),
   close: vi.fn(),
   useExchangeCoupons: vi.fn(),
+  overlay: null as string | null,
 }))
 
 vi.mock('../services/exchange', () => ({
@@ -26,7 +27,7 @@ vi.mock('./points/usePointsFeed', () => ({
 
 vi.mock('../app/fixtures/useFixture', () => ({
   useFixtureState: () => ({ state: null }),
-  useOverlay: () => ({ overlay: null, close: mocks.close }),
+  useOverlay: () => ({ overlay: mocks.overlay, close: mocks.close }),
   useFixtureDebug: () => false,
 }))
 
@@ -38,14 +39,18 @@ vi.mock('../components/mobile/DebugPanel', () => ({ default: () => null }))
 vi.mock('../components/mobile/PageContainer', () => ({
   default: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }))
-vi.mock('../components/card/BubbleValueRedeemCard', () => ({ default: () => null }))
+vi.mock('../components/card/BubbleValueRedeemCard', () => ({
+  default: ({ onRedeem }: { onRedeem?: () => void }) => (
+    <button type="button" onClick={onRedeem}>顶部立即兑换</button>
+  ),
+}))
 
 import Exchange from './Exchange'
 
 /** 页面内使用 useNavigate / useSearchParams，需在 Router 上下文中渲染。 */
-const renderExchange = () =>
+const renderExchange = (entry = '/exchange') =>
   render(
-    <MemoryRouter initialEntries={['/exchange']}>
+    <MemoryRouter initialEntries={[entry]}>
       <Exchange />
     </MemoryRouter>,
   )
@@ -88,6 +93,7 @@ afterEach(() => {
   mocks.redeem.mockReset()
   mocks.close.mockReset()
   mocks.useExchangeCoupons.mockReset()
+  mocks.overlay = null
 })
 
 describe('Exchange（洗护体验券专区接口接入）', () => {
@@ -152,4 +158,32 @@ describe('Exchange（洗护体验券专区接口接入）', () => {
 
     expect(await screen.findByText('没有找到相关体验券')).toBeTruthy()
   })
+
+  it('keeps the top redeem CTA inside the exchange page and scrolls to coupons', async () => {
+    mocks.useExchangeCoupons.mockReturnValue(successRemote())
+
+    renderExchange()
+    await screen.findByText('Mock·洗护体验券')
+
+    const couponList = screen.getByRole('region', { name: '洗护体验券列表' })
+    couponList.scrollIntoView = vi.fn()
+
+    fireEvent.click(screen.getByRole('button', { name: '顶部立即兑换' }))
+
+    expect(couponList.scrollIntoView).toHaveBeenCalledWith({
+      behavior: 'smooth',
+      block: 'start',
+    })
+  })
+
+  it('does not substitute the first coupon when an explicit product id is invalid', async () => {
+    mocks.overlay = 'redeem'
+    mocks.useExchangeCoupons.mockReturnValue(successRemote())
+
+    renderExchange('/exchange?overlay=redeem&product=999999')
+    await screen.findByText('Mock·洗护体验券')
+
+    expect(screen.queryByText('确认兑换')).toBeNull()
+  })
+
 })
