@@ -8,7 +8,7 @@ import {
   CHECKIN_STATUS_TEXT,
   type CheckinDayState,
 } from '../../../app/fixtures'
-import { SIGN_RECORD_STATUS_MAKEUP, buildSignRecordDayMap, type SignRecord } from '../../../services/signrecords'
+import { buildSignRecordDayMap, type SignRecord } from '../../../services/signrecords'
 import checkinRitualHero from '../../../assets/brand/bubble/checkin-ritual-hero-v2.webp'
 import exchangePromoShampoo from '../../../assets/brand/exchange/exchange-promo-shampoo.webp'
 
@@ -103,7 +103,7 @@ export function buildCheckinCalendar(options: BuildCalendarOptions = {}): Checki
     const record = dayMap.get(dateKey)
     const isOptimistic = optimistic.has(dateKey)
     const signed = Boolean(record) || isOptimistic
-    const makeup = record?.status === SIGN_RECORD_STATUS_MAKEUP || isOptimistic
+    const makeup = isOptimistic
 
     let state: CheckinDayState
     if (dateKey === todayKey) state = 'today'
@@ -481,7 +481,7 @@ export default function CheckinBoard({
               <Gift className="h-4 w-4" />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-text-primary">今日{calendar.todaySigned ? '已' : '未'}签到</p>
+              <p className="text-sm font-semibold text-text-primary">今日{todaySigned ? '已' : '未'}签到</p>
               <p className="mt-0.5 text-[11px] leading-4 text-text-tertiary">漏签日期若显示「补签」，可直接点击完成补签。</p>
             </div>
           </div>
