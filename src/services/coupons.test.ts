@@ -23,7 +23,6 @@ const PAGE_DATA = {
       name: 'Mock·洗护体验券',
       short_desc: '限到店核销',
       image: null,
-      category_id: '2',
       points_number: '200',
       total_number: 300,
       exchanged_nuuur: 12,
@@ -49,7 +48,7 @@ describe('coupon index contract', () => {
     expect(mocks.request).toHaveBeenCalledWith({
       method: 'GET',
       url: '/api/coupons/index',
-      params: { category_id: undefined, status: undefined, page: 1, pageSize: COUPON_PAGE_SIZE_DEFAULT },
+      params: { status: undefined, page: 1, pageSize: COUPON_PAGE_SIZE_DEFAULT },
     })
     expect(page.total).toBe(1)
     expect(page.data[0]).toMatchObject({ id: 1, name: 'Mock·洗护体验券' })
@@ -64,7 +63,6 @@ describe('coupon index contract', () => {
       method: 'GET',
       url: '/api/coupons/index',
       params: {
-        category_id: undefined,
         status: COUPON_STATUS_ON_SHELF,
         page: 1,
         pageSize: COUPON_PAGE_SIZE_DEFAULT,
@@ -72,7 +70,7 @@ describe('coupon index contract', () => {
     })
   })
 
-  it('tolerates string points_number / category_id from the backend', async () => {
+  it('tolerates string points_number from the backend', async () => {
     mocks.request.mockResolvedValue({ code: 0, msg: 'success', data: PAGE_DATA })
 
     await expect(fetchCouponIndex()).resolves.toMatchObject({ current_page: 1, last_page: 1 })
@@ -101,7 +99,6 @@ describe('toCouponRedeemView', () => {
     name: 'Mock·洗护体验券',
     short_desc: '洗发 / 护发 / 沐浴体验，限到店核销',
     image: 'https://cdn.example.com/coupon.png',
-    category_id: '2',
     points_number: '200',
     total_number: 300,
     exchanged_nuuur: 12,
