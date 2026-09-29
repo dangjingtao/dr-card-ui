@@ -106,8 +106,11 @@ describe('scanCode Android H037 transaction contract', () => {
     })
   })
 
-  it('cleans up a transaction that never receives the device-stage callback', async () => {
+  it('cleans up the transport pending entry when the caller timeout wins', async () => {
     vi.useFakeTimers()
+
+    const lateCallbackFallback = vi.fn()
+    hostWindow.androidBridgeCallback = lateCallbackFallback
 
     const getRequest = installAndroidScanHost()
     const promise = scanCode({ scanType: 'all' }, { timeoutMs: 50 })
@@ -126,5 +129,16 @@ describe('scanCode Android H037 transaction contract', () => {
       name: 'NativeBridgeError',
       capability: 'scanCode',
     })
+
+    hostWindow.androidBridgeCallback?.(request.callbackId, {
+      code: 0,
+      message: 'late-device-result',
+      data: { text: 'DEVICE-QR-TIMEOUT', scanType: 'qr' },
+    })
+
+    expect(lateCallbackFallback).toHaveBeenCalledWith(
+      request.callbackId,
+      expect.objectContaining({ message: 'late-device-result' }),
+    )
   })
 })
