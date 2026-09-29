@@ -219,7 +219,8 @@ type NativeRewardAdStatus =
 - H5 业务页面不感知 callbackId；
 - H5 原实例在 Native 页面切换期间保持原上下文；
 - Native 最终回调返回后才恢复 H5 后续交互；
-- 超时与异常清理仍必须可控，不能遗留 pending。
+- 超时与异常清理仍必须可控，不能遗留 pending；
+- H037 沿用既有 injected callback 的 120 秒 transport timeout，并验证该既有超时会清理 Android scan pending；本卡不重定义 caller 自定义 timeout 的传递 / cancellation 语义。
 
 ### C. H5 后续交互收口
 
