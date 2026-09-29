@@ -24,6 +24,12 @@ test.describe('H027 Bridge Lab', () => {
   test('Native can still call the legacy window.testFunc endpoint', async ({ page }) => {
     await page.goto('/__debug/bridge-lab?osType=android', { waitUntil: 'domcontentloaded' })
 
+    await expect(page.locator('[data-h5-callback-endpoints]')).toBeVisible()
+    await page.waitForFunction(() => {
+      const host = window as unknown as { testFunc?: unknown }
+      return typeof host.testFunc === 'function'
+    })
+
     const result = await page.evaluate(() => {
       const host = window as unknown as {
         testFunc?: (params: unknown) => string
@@ -32,7 +38,6 @@ test.describe('H027 Bridge Lab', () => {
     })
 
     expect(result).toBe('h5 处理完成')
-    await expect(page.locator('[data-h5-callback-endpoints]')).toBeVisible()
     await expect(page.locator('[data-bridge-lab-logs]')).toContainText('window.testFunc(params)')
     await expect(page.locator('[data-bridge-lab-logs]')).toContainText('android-native')
   })

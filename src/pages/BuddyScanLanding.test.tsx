@@ -22,9 +22,13 @@ vi.mock('../app/fixtures/useFixture', () => ({
   useFixtureDebug: () => false,
 }))
 
-vi.mock('../app/router/routes', () => ({
-  findRouteByPathname: () => undefined,
-}))
+vi.mock('../app/router/routes', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../app/router/routes')>()
+  return {
+    ...actual,
+    findRouteByPathname: () => undefined,
+  }
+})
 
 import BuddyScanLanding from './BuddyScanLanding'
 
