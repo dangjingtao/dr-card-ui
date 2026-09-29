@@ -54,6 +54,9 @@ export type NativeTransportInvocationOptions = {
   timeoutMs?: number
 }
 
+/** Shared timeout for the unified Android/iOS injected-object callbackId protocol. */
+export const INJECTED_CALLBACK_TIMEOUT_MS = 120_000
+
 export type NativeArgumentSerializer<TInput> = (input: TInput) => readonly unknown[]
 export type NativeResultParser<TResult> = (payload: unknown) => TResult
 
@@ -343,7 +346,7 @@ export function createCallbackInjectedObjectTransport<TInput, TResult>(
             config.callbackAliases,
           )
           const callbackId = nextInjectedCallbackId(config.methodName)
-          const timeoutMs = config.timeoutMs ?? 120000
+          const timeoutMs = config.timeoutMs ?? INJECTED_CALLBACK_TIMEOUT_MS
 
           if (channel.pending.has(callbackId)) {
             throw new NativeTransportError(
