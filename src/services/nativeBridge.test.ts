@@ -15,6 +15,7 @@ type InjectedBridgeProbe = {
 
 type BridgeProbeWindow = Window & {
   androidBridge?: InjectedBridgeProbe
+  nativeBridgeCallback?: (callbackId: string, payload: unknown) => void
   androidBridgeCallback?: (callbackId: string, payload: unknown) => void
   iosBridge?: InjectedBridgeProbe
   webkit?: {
@@ -38,10 +39,12 @@ async function loadBridge(mode: 'disabled' | 'native' = 'native') {
 
 afterEach(() => {
   delete bridgeWindow.androidBridge
+  delete bridgeWindow.nativeBridgeCallback
   delete bridgeWindow.androidBridgeCallback
   delete bridgeWindow.iosBridge
   delete bridgeWindow.webkit
   vi.unstubAllEnvs()
+  vi.useRealTimers()
   vi.resetModules()
 })
 
@@ -458,11 +461,14 @@ describe('JSBridge capability runtime', () => {
 
   it('supports qr/bar/all scanType values on iOS without changing the field name', async () => {
     const { scanCode } = await loadBridge()
-    const received: unknown[] = []
+    const received: Array<{ scanType: string; callbackId: string }> = []
     bridgeWindow.iosBridge = {
       scanCode(payload: unknown) {
-        received.push(payload)
-        return '{"code":"IOS-CODE"}'
+        const request = JSON.parse(payload as string) as { scanType: string; callbackId: string }
+        received.push(request)
+        queueMicrotask(() => {
+          bridgeWindow.nativeBridgeCallback?.(request.callbackId, '{"code":"IOS-CODE"}')
+        })
       },
     }
 
@@ -470,9 +476,9 @@ describe('JSBridge capability runtime', () => {
     await expect(scanCode({ scanType: 'bar' })).resolves.toEqual({ code: 'IOS-CODE' })
     await expect(scanCode({ scanType: 'all' })).resolves.toEqual({ code: 'IOS-CODE' })
     expect(received).toEqual([
-      '{"scanType":"qr"}',
-      '{"scanType":"bar"}',
-      '{"scanType":"all"}',
+      { scanType: 'qr', callbackId: expect.any(String) },
+      { scanType: 'bar', callbackId: expect.any(String) },
+      { scanType: 'all', callbackId: expect.any(String) },
     ])
   })
 
@@ -542,16 +548,59 @@ describe('JSBridge capability runtime', () => {
   })
 
 
+  it('keeps Bridge Lab async capability calls pending beyond the old 5s runtime timeout', async () => {
+    vi.useFakeTimers()
+    const bridge = await loadBridge('disabled')
+    let callbackId: string | undefined
+
+    bridgeWindow.androidBridge = {
+      takePhoto(payload: unknown) {
+        callbackId = (JSON.parse(payload as string) as { callbackId: string }).callbackId
+      },
+    }
+
+    const promise = bridge.invokeRegisteredNativeCapabilityForDebug('takePhoto', {
+      crop: true,
+      maxWidth: 1080,
+      maxHeight: 1080,
+      quality: 0.8,
+    })
+    promise.catch(() => undefined)
+
+    await vi.advanceTimersByTimeAsync(10_000)
+
+    let settled = false
+    promise.finally(() => {
+      settled = true
+    })
+    await Promise.resolve()
+    expect(settled).toBe(false)
+
+    bridgeWindow.androidBridgeCallback?.(callbackId as string, {
+      code: 0,
+      message: 'ok',
+      data: {
+        mimeType: 'image/jpeg',
+        imageBase64: 'bridge-lab-delayed-photo',
+      },
+    })
+
+    await expect(promise).resolves.toEqual({
+      mimeType: 'image/jpeg',
+      imageBase64: 'bridge-lab-delayed-photo',
+    })
+  })
+
   it('serializes takePhoto and chooseImage as one JSON string and parses image payloads', async () => {
     const { takePhoto, chooseImage } = await loadBridge()
     const received: Array<{ method: string; payload: unknown }> = []
     bridgeWindow.androidBridge = {
       takePhoto(payload: unknown) {
-        received.push({ method: 'takePhoto', payload })
+        received.push({ method: 'takePhoto', payload: JSON.parse(payload as string) })
         return '{"mimeType":"image/jpeg","imageBase64":"photo-base64"}'
       },
       chooseImage(payload: unknown) {
-        received.push({ method: 'chooseImage', payload })
+        received.push({ method: 'chooseImage', payload: JSON.parse(payload as string) })
         return '{"mimeType":"image/png","imageBase64":"album-base64"}'
       },
     }
@@ -568,14 +617,64 @@ describe('JSBridge capability runtime', () => {
     expect(received).toEqual([
       {
         method: 'takePhoto',
-        payload: '{"crop":true,"maxWidth":1080,"maxHeight":1080,"quality":0.8}',
+        payload: {
+          crop: true,
+          maxWidth: 1080,
+          maxHeight: 1080,
+          quality: 0.8,
+          callbackId: expect.any(String),
+        },
       },
       {
         method: 'chooseImage',
-        payload:
-          '{"crop":true,"maxWidth":1080,"maxHeight":1080,"quality":0.8,"count":1}',
+        payload: {
+          crop: true,
+          maxWidth: 1080,
+          maxHeight: 1080,
+          quality: 0.8,
+          count: 1,
+          callbackId: expect.any(String),
+        },
       },
     ])
+  })
+
+  it('keeps Android takePhoto pending beyond the old 5s runtime timeout', async () => {
+    vi.useFakeTimers()
+    const { takePhoto } = await loadBridge()
+    let callbackId: string | undefined
+
+    bridgeWindow.androidBridge = {
+      takePhoto(payload: unknown) {
+        callbackId = (JSON.parse(payload as string) as { callbackId: string }).callbackId
+      },
+    }
+
+    const promise = takePhoto()
+    promise.catch(() => undefined)
+
+    await vi.advanceTimersByTimeAsync(10_000)
+
+    let settled = false
+    promise.finally(() => {
+      settled = true
+    })
+    await Promise.resolve()
+    expect(settled).toBe(false)
+
+    bridgeWindow.androidBridgeCallback?.(callbackId as string, {
+      code: 0,
+      message: 'ok',
+      data: {
+        mimeType: 'image/jpeg',
+        imageBase64: 'delayed-photo',
+      },
+    })
+
+    await expect(promise).resolves.toEqual({
+      mimeType: 'image/jpeg',
+      imageBase64: 'delayed-photo',
+    })
   })
 
   it('supports iOS saveImageToAlbum and copyText with confirmed field names', async () => {
@@ -583,11 +682,11 @@ describe('JSBridge capability runtime', () => {
     const received: Array<{ method: string; payload: unknown }> = []
     bridgeWindow.iosBridge = {
       saveImageToAlbum(payload: unknown) {
-        received.push({ method: 'saveImageToAlbum', payload })
+        received.push({ method: 'saveImageToAlbum', payload: JSON.parse(payload as string) })
         return '{"success":true}'
       },
       copyText(payload: unknown) {
-        received.push({ method: 'copyText', payload })
+        received.push({ method: 'copyText', payload: JSON.parse(payload as string) })
         return '{"success":true}'
       },
     }
@@ -606,14 +705,56 @@ describe('JSBridge capability runtime', () => {
     expect(received).toEqual([
       {
         method: 'saveImageToAlbum',
-        payload:
-          '{"imageType":"base64","imageData":"poster-base64","fileName":"kaboshi-invite.png"}',
+        payload: {
+          imageType: 'base64',
+          imageData: 'poster-base64',
+          fileName: 'kaboshi-invite.png',
+          callbackId: expect.any(String),
+        },
       },
       {
         method: 'copyText',
-        payload: '{"text":"https://example.com/invite"}',
+        payload: {
+          text: 'https://example.com/invite',
+          callbackId: expect.any(String),
+        },
       },
     ])
+  })
+
+  it('normalizes Android code=0 callback envelopes for saveImageToAlbum and copyText', async () => {
+    const { saveImageToAlbum, copyText } = await loadBridge()
+    bridgeWindow.androidBridge = {
+      saveImageToAlbum(payload: unknown) {
+        const request = JSON.parse(payload as string) as { callbackId: string }
+        queueMicrotask(() => {
+          bridgeWindow.androidBridgeCallback?.(request.callbackId, {
+            code: 0,
+            message: 'ok',
+            data: {},
+          })
+        })
+      },
+      copyText(payload: unknown) {
+        const request = JSON.parse(payload as string) as { callbackId: string }
+        queueMicrotask(() => {
+          bridgeWindow.androidBridgeCallback?.(request.callbackId, {
+            code: 0,
+            message: 'ok',
+            data: {},
+          })
+        })
+      },
+    }
+
+    await expect(
+      saveImageToAlbum({
+        imageType: 'base64',
+        imageData: 'poster-base64',
+        fileName: 'kaboshi-invite.png',
+      }),
+    ).resolves.toEqual({ success: true })
+    await expect(copyText({ text: 'invite' })).resolves.toEqual({ success: true })
   })
 
   it('keeps H032 capabilities fail-closed for missing methods and malformed results', async () => {
@@ -707,10 +848,16 @@ describe('JSBridge capability runtime', () => {
     let index = 0
     bridgeWindow.iosBridge = {
       showRewardAd(payload: unknown) {
-        expect(payload).toBe('{"scene":"h5CheckinResign"}')
+        const request = JSON.parse(payload as string) as { scene: string; callbackId: string }
+        expect(request).toEqual({
+          scene: 'h5CheckinResign',
+          callbackId: expect.any(String),
+        })
         const status = statuses[index]
         index += 1
-        return JSON.stringify({ status })
+        queueMicrotask(() => {
+          bridgeWindow.nativeBridgeCallback?.(request.callbackId, JSON.stringify({ status }))
+        })
       },
     }
 
@@ -755,11 +902,11 @@ describe('JSBridge capability runtime', () => {
 
   it('serializes openApp detect/open/store actions without inventing URLs', async () => {
     const { openApp, getNativeBridgeDiagnostics } = await loadBridge()
-    const received: unknown[] = []
+    const received: Array<Record<string, unknown>> = []
     const androidBridge = {
       openApp(payload: unknown) {
         expect(this).toBe(androidBridge)
-        received.push(payload)
+        received.push(JSON.parse(payload as string) as Record<string, unknown>)
         return '{"success":true,"installed":true}'
       },
     }
@@ -781,19 +928,26 @@ describe('JSBridge capability runtime', () => {
     }
 
     expect(received).toEqual([
-      '{"action":"detect","inviteCode":"","fallbackUrl":""}',
-      '{"action":"open","inviteCode":"","fallbackUrl":""}',
-      '{"action":"store","inviteCode":"","fallbackUrl":""}',
+      { action: 'detect', inviteCode: '', fallbackUrl: '', callbackId: expect.any(String) },
+      { action: 'open', inviteCode: '', fallbackUrl: '', callbackId: expect.any(String) },
+      { action: 'store', inviteCode: '', fallbackUrl: '', callbackId: expect.any(String) },
     ])
   })
 
-  it('preserves inviteCode/fallbackUrl strings on iOS and parses both result booleans', async () => {
+  it('keeps iOS openApp aligned with the Android callback envelope', async () => {
     const { openApp } = await loadBridge()
-    const received: unknown[] = []
+    const received: Array<Record<string, unknown>> = []
     bridgeWindow.iosBridge = {
       openApp(payload: unknown) {
-        received.push(payload)
-        return '{"success":false,"installed":false}'
+        const request = JSON.parse(payload as string) as Record<string, unknown> & { callbackId: string }
+        received.push(request)
+        queueMicrotask(() => {
+          bridgeWindow.nativeBridgeCallback?.(request.callbackId, {
+            code: 0,
+            message: 'ok',
+            data: { action: 'open' },
+          })
+        })
       },
     }
 
@@ -804,13 +958,79 @@ describe('JSBridge capability runtime', () => {
         fallbackUrl: 'https://example.com/fallback',
       }),
     ).resolves.toEqual({
-      success: false,
-      installed: false,
+      success: true,
+      installed: true,
     })
 
     expect(received).toEqual([
-      '{"action":"open","inviteCode":"invite-123","fallbackUrl":"https://example.com/fallback"}',
+      {
+        action: 'open',
+        inviteCode: 'invite-123',
+        fallbackUrl: 'https://example.com/fallback',
+        callbackId: expect.any(String),
+      },
     ])
+  })
+
+  it('keeps iOS openApp pending beyond the old 5s runtime timeout', async () => {
+    vi.useFakeTimers()
+    const { openApp } = await loadBridge()
+    let callbackId: string | undefined
+
+    bridgeWindow.iosBridge = {
+      openApp(payload: unknown) {
+        callbackId = (JSON.parse(payload as string) as { callbackId: string }).callbackId
+      },
+    }
+
+    const promise = openApp({
+      action: 'open',
+      inviteCode: 'invite-123',
+      fallbackUrl: 'https://example.com/fallback',
+    })
+    promise.catch(() => undefined)
+
+    await vi.advanceTimersByTimeAsync(10_000)
+
+    let settled = false
+    promise.finally(() => {
+      settled = true
+    })
+    await Promise.resolve()
+    expect(settled).toBe(false)
+
+    bridgeWindow.nativeBridgeCallback?.(callbackId as string, {
+      code: 0,
+      message: 'ok',
+      data: { action: 'open' },
+    })
+
+    await expect(promise).resolves.toEqual({
+      success: true,
+      installed: true,
+    })
+  })
+
+  it('rejects a bare openApp code=0 envelope without the Android baseline data fields', async () => {
+    const bridge = await loadBridge()
+    bridgeWindow.androidBridge = {
+      openApp() {
+        return '{"code":0,"message":"ok","data":{}}'
+      },
+    }
+
+    await expect(
+      bridge.openApp({
+        action: 'open',
+        inviteCode: '',
+        fallbackUrl: '',
+      }),
+    ).rejects.toMatchObject({
+      name: 'NativeBridgeError',
+      code: 'invocation-failed',
+      capability: 'openApp',
+      cause: expect.objectContaining({ code: 'payload-invalid' }),
+    })
   })
 
   it('rejects missing openApp methods, invalid actions, and malformed result booleans', async () => {

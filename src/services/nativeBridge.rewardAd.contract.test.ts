@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { showRewardAd } from './nativeBridge'
 import type { NativeTransportWindow } from './nativeBridgeTransport'
@@ -25,6 +25,7 @@ interface CapturedRequest {
 }
 
 afterEach(() => {
+  vi.useRealTimers()
   delete hostWindow.androidBridge
   delete hostWindow.androidBridgeCallback
 })
@@ -109,5 +110,58 @@ describe('showRewardAd Android documented contract', () => {
       code,
       capability: 'showRewardAd',
     })
+  })
+
+  /**
+   * 回归防护：激励广告是用户交互型长任务，Native 通常要十几秒才回调 completed。
+   * 历史 bug：showRewardAd 未显式传 timeoutMs，吃到了 runtime 层 5 秒默认超时，
+   * 用户还在看广告就已被判 invocation-timeout，真正回调到达时 pending 已被清理而丢弃。
+   *
+   * 上面的用例假 Native 都是「同步立刻回调」，5 秒超时永远不会触发，所以拦不住这个 bug。
+   * 这里用 fake timers 模拟「明显晚于 5 秒」的迟到回调，断言 Promise 仍以 completed 落地。
+   */
+  it('resolves completed when Native callbacks well after the old 5s default timeout', async () => {
+    vi.useFakeTimers()
+
+    let callbackId: string | undefined
+    hostWindow.androidBridge = {
+      showRewardAd(payload: unknown) {
+        // 只记住 callbackId，故意不同步回调，模拟用户在看广告。
+        callbackId = (JSON.parse(payload as string) as CapturedRequest)
+          .callbackId as string
+      },
+    }
+
+    const promise = showRewardAd({ scene: 'h5CheckinResign' })
+    // 先挂一个 rejection 兜底，避免断言前出现 unhandled rejection。
+    promise.catch(() => undefined)
+
+    // 推进到旧默认超时值：绝不应该 reject。
+    await vi.advanceTimersByTimeAsync(5_000)
+
+    // 再推进到 10 秒（超过旧的 5 秒默认值），Promise 仍应保持 pending。
+    await vi.advanceTimersByTimeAsync(5_000)
+    let settled = false
+    promise.then(
+      () => {
+        settled = true
+      },
+      () => {
+        settled = true
+      },
+    )
+    await Promise.resolve()
+    expect(settled).toBe(false)
+
+    // 在延长后的超时值以内，Native 迟到回调 completed。
+    await vi.advanceTimersByTimeAsync(5_000)
+    expect(callbackId).toMatch(/^showRewardAd-/)
+    hostWindow.androidBridgeCallback?.(callbackId as string, {
+      code: 0,
+      message: 'ok',
+      data: { scene: 'h5CheckinResign', status: 'completed' },
+    })
+
+    await expect(promise).resolves.toEqual({ status: 'completed' })
   })
 })

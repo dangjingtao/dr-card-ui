@@ -21,12 +21,15 @@ async function prepareRuntime() {
 }
 
 async function prepareMobileDebugPanel() {
-  // Maintainer 2026-09-29: Eruda is intentionally enabled by default in dev/preview.
-  // test/prod are prod-like and keep the debug console disabled regardless of URL parameters.
-  if (runtimePolicy.isProdLike) return
+  // Maintainer 2026-09-29: Eruda is required in dev/preview/test for WebView diagnostics.
+  if (runtimePolicy.appEnvironment === 'prod') return
 
-  const { default: eruda } = await import('eruda')
-  eruda.init()
+  try {
+    const { default: eruda } = await import('eruda')
+    eruda.init()
+  } catch (error) {
+    console.warn('[debug] Eruda initialization failed; continuing without the mobile console.', error)
+  }
 }
 
 async function bootstrap() {

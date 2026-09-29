@@ -20,7 +20,12 @@ export interface BannerCarouselProps {
   onSelect?: (slide: CarouselSlide, index: number) => void
   label: string
   className?: string
+  /** true 时渲染与真实轮播同尺寸的占位骨架，用于接口请求期间的尺寸位 */
+  loading?: boolean
 }
+
+/** 轮播帧固定比例，与已验收黑金 Banner 一致；占位骨架复用同一比例。 */
+const SLIDE_RATIO = '3 / 1'
 
 /**
  * 首页 Banner 轮播（节点 #2 `carouselChart 7ps-mqivvr04-28o`）
@@ -28,6 +33,9 @@ export interface BannerCarouselProps {
  * 参数逐字取自摹客：effect push（横向推移）、playInterval 3000、playSpeed 700、
  * indicator circle（激活白 / 默认 rgb(163,163,163)）、showPageTurnBtn false。
  * 视觉比例与首页已验收的黑金 Banner 保持一致（3:1）。
+ *
+ * 尺寸稳定性：`section` 固定 3:1 比例，接口请求期渲染同比例占位骨架，
+ * 因此轮播从占位到真图、以及各帧切换都不会改变所在区域高度。
  */
 export default function BannerCarousel({
   slides,
@@ -36,6 +44,7 @@ export default function BannerCarousel({
   onSelect,
   label,
   className = '',
+  loading = false,
 }: BannerCarouselProps) {
   const [index, setIndex] = useState(0)
   const total = slides.length
@@ -65,12 +74,29 @@ export default function BannerCarousel({
     setIndex((prev) => (delta < 0 ? (prev + 1) % total : (prev - 1 + total) % total))
   }
 
+  if (loading) {
+    return (
+      <section
+        className={`relative w-full overflow-hidden rounded-2xl shadow-sm bg-claim-surface ${className}`}
+        style={{ aspectRatio: SLIDE_RATIO }}
+        aria-label={label}
+        aria-busy="true"
+      >
+        <span aria-hidden="true" className="absolute inset-0 animate-pulse bg-surface-subtle" />
+      </section>
+    )
+  }
+
   if (total === 0) return null
 
   return (
-    <section className={`relative overflow-hidden rounded-2xl shadow-sm ${className}`} aria-label={label}>
+    <section
+      className={`relative w-full overflow-hidden rounded-2xl shadow-sm ${className}`}
+      style={{ aspectRatio: SLIDE_RATIO }}
+      aria-label={label}
+    >
       <div
-        className="flex"
+        className="absolute inset-0 flex"
         style={{ transform: `translateX(-${index * 100}%)`, transition: `transform ${speed}ms ease-in-out` }}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
@@ -87,16 +113,17 @@ export default function BannerCarousel({
               if (moved.current) return
               onSelect?.(slide, slideIndex)
             }}
-            className="relative block w-full flex-none text-left"
+            className="relative block h-full w-full flex-none text-left"
           >
             {slide.image ? (
               <img
                 src={slide.image}
                 alt={slide.alt}
-                className="aspect-[3/1] w-full object-cover object-center"
+                loading={slideIndex === index ? 'eager' : 'lazy'}
+                className="h-full w-full object-cover object-center"
               />
             ) : (
-              <span className="flex aspect-[3/1] w-full items-center justify-center bg-claim-surface text-xs text-text-tertiary">
+              <span className="flex h-full w-full items-center justify-center bg-claim-surface text-xs text-text-tertiary">
                 {slide.alt}
               </span>
             )}

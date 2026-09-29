@@ -293,7 +293,7 @@ src/mocks/handlers/home.ts             # 不改动：已注册 /api/coupons/inde
 | --- | --- | --- |
 | [src/services/userProfile.ts](../../src/services/userProfile.ts) | 修改 | 新增 `USER_PROFILE_PATH` / `USER_UPDATE_PATH`、`fetchUserProfile` / `parseUserProfile`（`nextGrade` 空串建模 + 空串收敛）、`updateUserProfile` 与性别常量；保留 `detail` 端点与 `token` 头兼容口径 |
 | [src/services/userProfile.test.ts](../../src/services/userProfile.test.ts) | 重写 | 6 条契约单测：视图模型映射、`nextGrade: ""`、`0` 值保留、业务错误、update 只传变更字段、update 校验失败文案 |
-| [src/services/coupons.ts](../../src/services/coupons.ts) | 修改 | 新增 `fetchCouponIndex` + `CouponIndexParams` + zod 契约（共用 `COUPON_LIST_PATH`；`points_number` / `category_id` 容错 `number | string`） |
+| [src/services/coupons.ts](../../src/services/coupons.ts) | 修改 | 新增 `fetchCouponIndex` + `CouponIndexParams` + zod 契约（共用 `COUPON_LIST_PATH`；`points_number` 容错 `number | string`；`category_id` 当前不进入正式消费契约） |
 | [src/services/coupons.test.ts](../../src/services/coupons.test.ts) | 新增 | 4 条契约单测：默认分页参数、字符串数值容错、空结果 `last_page: 1`、业务错误 |
 | [src/mocks/fixtures/userProfile.ts](../../src/mocks/fixtures/userProfile.ts) | 修改 | 新增 `USER_PROFILE_MOCK` / `USER_PROFILE_MOCK_NO_NEXT_GRADE` / `USER_UPDATE_MOCK` |
 | [src/mocks/handlers/userProfile.ts](../../src/mocks/handlers/userProfile.ts) | 修改 | 注册 `GET /api/user/profile` 与 `POST /api/user/update` |

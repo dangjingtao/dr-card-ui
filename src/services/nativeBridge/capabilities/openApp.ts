@@ -1,11 +1,11 @@
 import {
-  createInjectedObjectTransport,
+  createCallbackInjectedObjectTransport,
   NativeTransportError,
   serializeJsonValue,
   type NativeTransportWindow,
 } from '../../nativeBridgeTransport'
 import { defineCapability, resolveDualInjectedCapability } from '../core'
-import { parseConfirmedNativeResult } from '../protocol'
+import { parseConfirmedNativeAsyncResult } from '../protocol'
 import type {
   NativeOpenAppInput,
   NativeOpenAppResult,
@@ -29,42 +29,61 @@ function validateInput(input: NativeOpenAppInput): NativeOpenAppInput {
 }
 
 function parseResult(payload: unknown): NativeOpenAppResult {
-  const parsed = parseConfirmedNativeResult(payload)
-  if (
-    parsed === null ||
-    typeof parsed !== 'object' ||
-    typeof (parsed as { success?: unknown }).success !== 'boolean' ||
-    typeof (parsed as { installed?: unknown }).installed !== 'boolean'
-  ) {
+  const parsed = parseConfirmedNativeAsyncResult(payload)
+  if (parsed === null || typeof parsed !== 'object') {
     throw new NativeTransportError(
       'payload-invalid',
-      'Native openApp() result must be a JSON string with boolean success and installed fields.',
+      'Native openApp() result must be an object payload.',
     )
   }
 
-  return {
-    success: (parsed as { success: boolean }).success,
-    installed: (parsed as { installed: boolean }).installed,
+  const result = parsed as { success?: unknown; installed?: unknown }
+  const legacySuccess = result.success
+  const installed = result.installed
+  if ('success' in result) {
+    if (typeof legacySuccess !== 'boolean' || typeof installed !== 'boolean') {
+      throw new NativeTransportError(
+        'payload-invalid',
+        'Native openApp() legacy result requires success:boolean and installed:boolean.',
+      )
+    }
+    return { success: legacySuccess, installed }
   }
+
+  if (typeof installed === 'boolean') {
+    return { success: true, installed }
+  }
+
+  const action = (parsed as { action?: unknown }).action
+  if (action === 'open') return { success: true, installed: true }
+  if (action === 'store') return { success: true, installed: false }
+
+  throw new NativeTransportError(
+    'payload-invalid',
+    'Native openApp() callback data requires installed:boolean for detect or action=open|store.',
+  )
 }
 
-const androidTransport = createInjectedObjectTransport<
+const androidTransport = createCallbackInjectedObjectTransport<
   NativeOpenAppInput,
   NativeOpenAppResult
 >({
   objectName: 'androidBridge',
+  callbackName: 'nativeBridgeCallback',
+  callbackAliases: ['androidBridgeCallback'],
   methodName: 'openApp',
-  serializeArgs: (input) => [serializeJsonValue(validateInput(input))],
+  serializeArgs: (input, callbackId) => [serializeJsonValue({ ...validateInput(input), callbackId })],
   parseResult,
 })
 
-const iosTransport = createInjectedObjectTransport<
+const iosTransport = createCallbackInjectedObjectTransport<
   NativeOpenAppInput,
   NativeOpenAppResult
 >({
   objectName: 'iosBridge',
+  callbackName: 'nativeBridgeCallback',
   methodName: 'openApp',
-  serializeArgs: (input) => [serializeJsonValue(validateInput(input))],
+  serializeArgs: (input, callbackId) => [serializeJsonValue({ ...validateInput(input), callbackId })],
   parseResult,
 })
 

@@ -1,5 +1,5 @@
 import { runtimePolicy } from '../../app/config/runtime'
-import type { NativeTransportWindow } from '../nativeBridgeTransport'
+import { INJECTED_CALLBACK_TIMEOUT_MS, type NativeTransportWindow } from '../nativeBridgeTransport'
 import type { NativeCapabilityDescriptor } from './core'
 import { NativeBridgeError, toInvocationBridgeError } from './errors'
 import {
@@ -201,7 +201,10 @@ export function invokeRegisteredNativeCapabilityForDebug(
     unknown,
     unknown
   >
-  return invokeNativeCapability(descriptor, input, options, true)
+  return invokeNativeCapability(descriptor, input, {
+    timeoutMs: INJECTED_CALLBACK_TIMEOUT_MS,
+    ...options,
+  }, true)
 }
 
 /**

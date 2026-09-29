@@ -16,7 +16,7 @@
 
 | 路径 | 标签 | 图标 | 承载节点 | 任务卡 | 说明 |
 | --- | --- | --- | --- | --- | --- |
-| `/` | 首页 | Home | — | T005、T021 | 诗得丽品牌专栏首页（T021 按需求 §2.1 改造）：搜索栏 + 头像 + Banner + 迁入的打卡内容 + 公益板块 + 品牌故事；两个板块分别进入 `/cause` 与 `/brand-culture` 富文本占位页；`/dearseed?overlay=reminder` 等专栏原路由保留不动 |
+| `/` | 首页 | Home | — | T005、T021 | 极地种子品牌专栏首页（T021 按需求 §2.1 改造）：搜索栏 + 头像 + Banner + 迁入的打卡内容 + 公益板块 + 品牌故事；两个板块分别进入 `/cause` 与 `/brand-culture` 富文本占位页；`/dearseed?overlay=reminder` 等专栏原路由保留不动 |
 | `/points` | 泡泡 | CircleDot | #5 | T006、T022 | 泡泡值资产卡 + 泡泡福利入口 + 泡泡任务占位卡；流水明细已按 T022 迁至 `/points/detail`；用户于 2026-08-24 明确纠正原 `/checkin` 映射 |
 | `/card/verify` | 扫码 | QrCode（中间凸起） | #67 | T009 | 扫码核销，点击扫描框进入确认核销 |
 | `/mall` | 服务 | Headset | #17 | T008、T023 | 卡博士 H5 商城：D-082 以 `MallWebView` iframe 承载 `http://www.3-wins.cn/`；T023 按需求 §6 接管一级 Tab「服务」。真实 App WebView 兼容性仍待联调 |

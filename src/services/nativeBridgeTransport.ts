@@ -18,6 +18,7 @@ export type IOSMessageHandler = {
 export type NativeTransportWindow = Window & {
   androidBridge?: Record<string, unknown>
   iosBridge?: Record<string, unknown>
+  nativeBridgeCallback?: (callbackId: string, payload: unknown) => void
   androidBridgeCallback?: (callbackId: string, payload: unknown) => void
   webkit?: {
     messageHandlers?: Record<string, IOSMessageHandler | undefined>
@@ -52,6 +53,9 @@ export class NativeTransportError extends Error {
 export type NativeTransportInvocationOptions = {
   timeoutMs?: number
 }
+
+/** Shared timeout for the unified Android/iOS injected-object callbackId protocol. */
+export const INJECTED_CALLBACK_TIMEOUT_MS = 120_000
 
 export type NativeArgumentSerializer<TInput> = (input: TInput) => readonly unknown[]
 export type NativeResultParser<TResult> = (payload: unknown) => TResult
@@ -203,25 +207,32 @@ export function createInjectedObjectTransport<TInput, TResult>(
   }
 }
 
+export type InjectedCallbackName =
+  | 'nativeBridgeCallback'
+  | 'androidBridgeCallback'
+
 export interface CallbackInjectedObjectTransportConfig<TInput, TResult>
   extends Omit<InjectedObjectTransportConfig<TInput, TResult>, 'serializeArgs'> {
   serializeArgs: (input: TInput, callbackId: string) => readonly unknown[]
-  callbackName?: 'androidBridgeCallback'
+  /**
+   * Unified protocol target is window.nativeBridgeCallback.
+   * callbackAliases exists only for confirmed host compatibility (currently Android).
+   */
+  callbackName?: InjectedCallbackName
+  callbackAliases?: readonly InjectedCallbackName[]
   timeoutMs?: number
 }
-
-type InjectedCallbackName = NonNullable<
-  CallbackInjectedObjectTransportConfig<unknown, unknown>['callbackName']
->
 
 type InjectedCallbackPending = {
   handle: (payload: unknown) => void
 }
 
+type InjectedCallbackDispatcher = (callbackId: string, payload: unknown) => void
+
 type InjectedCallbackChannel = {
-  dispatcher: (callbackId: string, payload: unknown) => void
-  fallback?: (callbackId: string, payload: unknown) => void
   pending: Map<string, InjectedCallbackPending>
+  dispatchers: Map<InjectedCallbackName, InjectedCallbackDispatcher>
+  fallbacks: Map<InjectedCallbackName, InjectedCallbackDispatcher>
 }
 
 const injectedCallbackChannels = new WeakMap<
@@ -235,9 +246,38 @@ function nextInjectedCallbackId(methodName: string): string {
   return `${methodName}-${Date.now().toString(36)}-${injectedCallbackSequence.toString(36)}`
 }
 
+function installInjectedCallbackEndpoint(
+  hostWindow: NativeTransportWindow,
+  channels: Map<InjectedCallbackName, InjectedCallbackChannel>,
+  channel: InjectedCallbackChannel,
+  callbackName: InjectedCallbackName,
+) {
+  let dispatcher = channel.dispatchers.get(callbackName)
+  if (!dispatcher) {
+    dispatcher = (callbackId, payload) => {
+      const request = channel.pending.get(callbackId)
+      if (request) {
+        request.handle(payload)
+        return
+      }
+      channel.fallbacks.get(callbackName)?.call(hostWindow, callbackId, payload)
+    }
+    channel.dispatchers.set(callbackName, dispatcher)
+  }
+
+  const current = hostWindow[callbackName]
+  if (typeof current === 'function' && current !== dispatcher) {
+    channel.fallbacks.set(callbackName, current)
+  }
+
+  hostWindow[callbackName] = dispatcher
+  channels.set(callbackName, channel)
+}
+
 function getInjectedCallbackChannel(
   hostWindow: NativeTransportWindow,
   callbackName: InjectedCallbackName,
+  callbackAliases: readonly InjectedCallbackName[] = [],
 ): InjectedCallbackChannel {
   let channels = injectedCallbackChannels.get(hostWindow)
   if (!channels) {
@@ -245,34 +285,20 @@ function getInjectedCallbackChannel(
     injectedCallbackChannels.set(hostWindow, channels)
   }
 
-  let channel = channels.get(callbackName)
+  const names = [...new Set([callbackName, ...callbackAliases])]
+  let channel = names.map((name) => channels?.get(name)).find(Boolean)
   if (!channel) {
-    const pending = new Map<string, InjectedCallbackPending>()
-    const existing = hostWindow[callbackName]
     channel = {
-      pending,
-      fallback: typeof existing === 'function' ? existing : undefined,
-      dispatcher(callbackId, payload) {
-        const request = pending.get(callbackId)
-        if (request) {
-          request.handle(payload)
-          return
-        }
-        channel?.fallback?.call(hostWindow, callbackId, payload)
-      },
-    }
-    channels.set(callbackName, channel)
-  } else {
-    const current = hostWindow[callbackName]
-    if (typeof current === 'function' && current !== channel.dispatcher) {
-      channel.fallback = current
+      pending: new Map(),
+      dispatchers: new Map(),
+      fallbacks: new Map(),
     }
   }
 
-  // Keep one stable dispatcher for the lifetime of this host window. Each invocation is correlated
-  // by callbackId in the shared pending map, so same-capability and cross-capability calls can overlap
-  // without replacing each other's global callback.
-  hostWindow[callbackName] = channel.dispatcher
+  for (const name of names) {
+    installInjectedCallbackEndpoint(hostWindow, channels, channel, name)
+  }
+
   return channel
 }
 
@@ -313,10 +339,14 @@ export function createCallbackInjectedObjectTransport<TInput, TResult>(
             )
           }
 
-          const callbackName = config.callbackName ?? 'androidBridgeCallback'
-          const channel = getInjectedCallbackChannel(hostWindow, callbackName)
+          const callbackName = config.callbackName ?? 'nativeBridgeCallback'
+          const channel = getInjectedCallbackChannel(
+            hostWindow,
+            callbackName,
+            config.callbackAliases,
+          )
           const callbackId = nextInjectedCallbackId(config.methodName)
-          const timeoutMs = config.timeoutMs ?? 120000
+          const timeoutMs = config.timeoutMs ?? INJECTED_CALLBACK_TIMEOUT_MS
 
           if (channel.pending.has(callbackId)) {
             throw new NativeTransportError(
