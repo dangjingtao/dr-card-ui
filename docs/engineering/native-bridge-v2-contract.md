@@ -274,7 +274,7 @@ H5 已注册双端 `openApp(json)` target contract：
 - 两端均为异步能力，H5 transport 自动在 JSON 中加入 `callbackId`；
 - action 仅允许 `open | store | detect`；
 - `inviteCode` / `fallbackUrl` 保留 Native 原字段；
-- 返回严格解析 `success:boolean + installed:boolean`；
+- 成功返回统一使用 `code/message/data` envelope：`detect` 的 `data.installed` 必须为 boolean；`open/store` 的 `data.action` 必须为 `open | store`（与当前 Android 实现一致）；迁移期旧同步宿主的 `success:boolean + installed:boolean` 仅保留兼容解析，不是双端目标协议；
 - `/buddy/invite/scan` 的 installed 状态不再来自 `?state=` fixture，只信 Native detect；
 - 打开 APP 不再以内跳 `/buddy/accept` 冒充唤起；
 - 现有 APP 引导弹窗的“下载链接”改为 Native store action；
