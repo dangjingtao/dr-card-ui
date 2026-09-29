@@ -298,8 +298,9 @@ describe('Bridge Lab page', () => {
     expect(labWindow.testFunc?.({ from: 'native', value: 1 })).toBe('h5 处理完成')
 
     await waitFor(() => {
-      expect(screen.getByText('window.testFunc(params)')).toBeTruthy()
-      expect(screen.getByText(/"from": "native"/)).toBeTruthy()
+      const logs = document.querySelector('[data-bridge-lab-logs]')
+      expect(logs?.textContent).toContain('window.testFunc(params)')
+      expect(logs?.textContent).toContain('"from": "native"')
     })
   })
 
