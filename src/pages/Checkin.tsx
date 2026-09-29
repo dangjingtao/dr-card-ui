@@ -29,7 +29,7 @@ import checkinRitualHero from '../assets/brand/bubble/checkin-ritual-hero-v2.web
  * - 签到：`POST /api/signrecords/add`
  * 月份与「今天」按本地系统时间渲染。
  *
- * 补签（文档未收录，7002 实测可用，2026-09-29 用户确认保留）：
+ * 补签（当前签到接口文档已正式收录，2026-09-29 对齐）：
  * **必须先看完 Native 激励广告（`showRewardAd` → status=completed），再发起
  * `POST /api/signrecords/makeup { day: 'YYYY-MM-DD' }`**；广告未通过不落库、不亮格。
  *
