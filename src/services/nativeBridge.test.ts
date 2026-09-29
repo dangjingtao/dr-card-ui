@@ -434,6 +434,16 @@ describe('JSBridge capability runtime', () => {
         }
         received.push(request)
         queueMicrotask(() => {
+          // H037: first success is scan recognition only; the same callbackId remains pending.
+          bridgeWindow.androidBridgeCallback?.(request.callbackId, {
+            code: 0,
+            message: 'ok',
+            data: {
+              text: 'QR-ANDROID-001',
+              scanType: 'qr',
+            },
+          })
+          // Native returns control to H5 only after the device transaction finishes.
           bridgeWindow.androidBridgeCallback?.(request.callbackId, {
             code: 0,
             message: 'ok',
