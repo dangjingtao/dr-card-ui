@@ -112,7 +112,7 @@ export default function ScanVerify() {
         <div className="relative z-10 mt-10 text-center">
           <p className="text-lg font-semibold">请将二维码对准扫描框</p>
           <p className="mt-1 text-sm text-white/60">
-            {supported ? '扫码成功后进入确认核销' : '请升级到支持扫码能力的 App 版本'}
+            {supported ? '扫码后请按页面提示完成设备操作' : '请升级到支持扫码能力的 App 版本'}
           </p>
         </div>
       </main>
