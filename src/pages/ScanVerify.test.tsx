@@ -108,9 +108,12 @@ describe('ScanVerify', () => {
     await waitFor(() => {
       expect(mocks.scanCode).toHaveBeenCalledWith({ scanType: 'all' })
     })
-    expect(mocks.navigate).toHaveBeenCalledWith('/card/verify/confirm?state=done', {
+    expect(mocks.navigate).toHaveBeenCalledWith('/card/verify/confirm', {
       replace: true,
-      state: { nativeScanCode: 'REAL-SCAN-CODE' },
+      state: {
+        nativeScanCode: 'REAL-SCAN-CODE',
+        nativeVerifyResult: 'done',
+      },
     })
   })
 
