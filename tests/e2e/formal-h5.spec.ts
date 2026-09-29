@@ -204,7 +204,9 @@ test('@formal-h5 H021 App title bar stays reachable while content scrolls', asyn
   await expect(back).toBeVisible()
   const before = await titleBar.boundingBox()
   await expect(page.locator('[data-rich-text-placeholder="/brand-culture"]')).toBeVisible()
-  await expect(page.locator('[data-rich-text-content]')).toBeEmpty()
+  const richText = page.locator('[data-rich-text-content]')
+  await expect(richText).toBeVisible()
+  await expect(richText).toContainText('极地种子品牌故事')
 
   await expect(titleBar).toBeVisible()
   const after = await titleBar.boundingBox()
