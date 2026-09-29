@@ -4,6 +4,21 @@
 **Phase:** Host Integration / Contract Alignment  
 **Depends on:** H029, H031, H033, H036
 
+## 设计证据
+
+本卡的设计与施工依据集中记录在：
+
+- [H037｜真实 Native 事务回调对齐设计证据](../evidence/h037-native-bridge-transaction-alignment.md)
+
+H037 不允许仅凭代码形态或历史 H5 contract 推断业务语义。以下关键结论必须同时满足“用户确认 + Native 实现事实 + H5 当前行为”三类证据中的适用项：
+
+- 扫码核销是一段 Native 托管的完整设备事务，而不是普通 scanner return；
+- 第一次扫码成功 callback 是中间态，设备最终 callback 才把控制权交回 H5；
+- 激励广告是否满足完整观看条件由 Native 最终结果决定，H5 不重复判定；
+- H5 负责 adapter / transport 收口，不反向规定 Native 内部实现。
+
+证据文件同时列出尚未确认事项；未补证前不得自行扩展为 iOS 已实现、Native 内部策略已确定等结论。
+
 ## 背景
 
 2026-09-29 第一波 H5 集成已合入 `dev`。当前 H5 需要继续对齐已经落地的真实 Native 行为，而不是反过来要求 Native 按 H5 旧协议改造。
