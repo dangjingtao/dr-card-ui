@@ -102,20 +102,20 @@ H5 必须：
 - 同步 Native return 统一 Promise 化给业务层；
 - token 结果按敏感信息处理。
 
-## 3. 已约定但 Native 尚未实现
+## 3. Native capability 当前实现状态
 
 | 能力 | 双端方法 | Native 当前状态 | 后续卡 |
 |---|---|---|---|
 | 关闭 WebView | `closeWebView()` | Android / iOS：否 | H030 |
-| 扫码 | `scanCode(json)` | Android / iOS：否 | H031 |
+| 扫码 | `scanCode(json)` | Android：已实现两阶段核销事务（H037 实证）；iOS：待真机确认 | H031 / H037 |
 | 拍照 | `takePhoto(json)` | Android / iOS：否 | H032 |
 | 相册选图 | `chooseImage(json)` | Android / iOS：否 | H032 |
 | 保存图片到相册 | `saveImageToAlbum(json)` | Android / iOS：否 | H032 |
 | 复制文本 | `copyText(json)` | Android / iOS：否 | H032 |
-| 激励广告 | `showRewardAd(json)` | Android / iOS：否 | H033 |
+| 激励广告 | `showRewardAd(json)` | Android：已实现（H037 实证）；iOS：待真机确认 | H033 / H037 |
 | APP 唤起 / 商店 | `openApp(json)` | Android / iOS：否 | H034 |
 
-这些方法名、参数字段与返回形态已经由 Native 回填，可以作为后续 H5 target contract；但在 Native 真正注入方法之前，production capability 必须保持 unsupported / fail-closed。
+表内状态随真实宿主实现与联调证据更新。未被当前 App build 注入的方法，production capability 仍必须保持 unsupported / fail-closed；某个平台已有源码实证也不自动代表另一平台已经完成。
 
 ## 4. 历史 iOS 协议
 
@@ -139,6 +139,7 @@ H029 起该协议降级为 **历史联调证据 / Bridge Lab Raw Probe preset**�
 - 正式调用统一经过 `src/services/nativeBridge.ts`；
 - injected-object 底层按**调用形态**选择 transport：同步能力使用 `createInjectedObjectTransport`；所有异步能力在 Android / iOS 均使用 `createCallbackInjectedObjectTransport`；
 - `callbackId` 由 H5 transport 生成、登记 pending、超时清理并按 id 关联 Promise；业务页面不得传入或感知 callbackId；Android / iOS 正式 injected-object 异步能力共用同一套 **120 秒** callback timeout；旧 `window.webkit.messageHandlers` transport 的 5 秒默认值仅属于历史兼容链，不适用于当前正式能力；
+- injected-object callback transport 默认仍是“一次 callback = 一次终态 settle”；只有已有宿主实证的 capability 才允许显式声明多阶段 callback。当前唯一例外是 H037 的 Android `scanCode`：第一次扫码成功为中间态，第二次设备结果才是终态；
 - 为兼容迁移期旧宿主，callback transport 若收到同步 return 会立即解析；**目标协议仍以异步 callback 为准**，不得据此把异步能力重新定义成同步；
 - Bridge Lab 可枚举 registered capabilities，并保留 Raw Probe；
 - 浏览器、旧 App 或方法未注入时必须明确 unsupported；
@@ -218,21 +219,24 @@ H5 已把双端 `closeWebView()` target contract 注册进 Capability Runtime：
 Native 回填仍标记 Android / iOS 当前均“否”，所以这里仅表示 **H5 contract 已就绪**，不表示当前 APK / IPA 已支持。
 
 
-## 7. H031 H5 扫码接线状态
+## 7. H031 / H037 H5 扫码核销接线状态
 
-H5 已把双端 `scanCode(json)` target contract 注册进 Capability Runtime：
+H5 已把双端 `scanCode(json)` 注册进 Capability Runtime；Android 当前由 H037 按真实宿主行为覆盖 H031 的早期“一次回调即完成”假设。
 
-- Android：`window.androidBridge.scanCode(json)`；H5 加入运行时生成的 `callbackId`，Native 通过 `window.androidBridgeCallback(callbackId, payload)` 回传；
-- iOS：`window.iosBridge.scanCode(json)`；同样加入 `callbackId`，Native 通过 `window.nativeBridgeCallback(callbackId, payload)` 回传；
-- `scanType` 保留 Native 原字段和值：`qr | bar | all`；
-- Android 当前兼容联调 envelope（例如 `{ code: 0, data: { text: "..." } }`）以及既有 `{ code: "..." }` 结果；iOS 继续接受既有 JSON-string 结果；
-- H5 以稳定的 `window.nativeBridgeCallback` 维护 callbackId pending channel；Android 同时挂载 `window.androidBridgeCallback` 兼容入口，两者命中同一 pending map，允许同能力与跨能力乱序返回，并在完成或超时后清理；
-- 扫码原始内容按敏感结果处理，Bridge Lab 默认脱敏；
-- `/card/verify` 已去掉“点击即模拟成功”，成功结果通过 route state 进入确认核销页；
+- Android：`window.androidBridge.scanCode(json)`；H5 自动加入 `callbackId`，Native 经 `window.androidBridgeCallback(callbackId, payload)` 回传；
+- Android 当前体验券核销是两阶段事务：
+  1. 第一次 `code=0 + data.text` 仅表示扫码识别成功，callbackId 保持 pending；
+  2. Native 继续设备查询 / 调货或启动流程；
+  3. 设备最终成功或失败后，以同一 callbackId 再次回调，H5 此时才 settle；
+- Android 扫码前取消、权限拒绝或失败仍可以在第一阶段直接终止；
+- iOS：`window.iosBridge.scanCode(json)` + `window.nativeBridgeCallback(callbackId, payload)` 的 callbackId transport 保留；在没有独立实证前，不套用 Android 两阶段语义；
+- `scanType` 保留 `qr | bar | all` 字段，不由 H5 推断 Native 内部码制策略；
+- H5 成功接回控制权后直接进入已有“已核销”结果反馈，不重复执行旧“即将核销 → 确认核销”前置链；
+- 真实 Native 成功使用正式 router state（`nativeVerifyResult: 'done'`）承载，不借 `?state=` fixture/debug query 表达业务结果；
+- 扫码正文按敏感结果处理，Bridge Lab 默认脱敏；
 - method 缺失时保持 unsupported，不启用 Web camera fallback。
 
-Native 回填的“是否已在当前 App build 可用”仍须以真机注入结果为准；这里描述的是 **当前 H5 contract 与联调适配实现**。
-
+Android 静态源码实证基线为 `sanchuang-dev/dr-card-android upstream/gitee/master@a8ac8469`；最终 Accepted 仍需要当前 APK 的 WebView 真机 smoke。iOS 继续独立验明。
 
 ## 8. H032 H5 图片与剪贴板接线状态
 
@@ -249,21 +253,24 @@ H5 已注册 `takePhoto / chooseImage / saveImageToAlbum / copyText` 的 Android
 Native 回填仍标记四项当前均“否”，所以这里只表示 H5 contract 与调用链已就绪。
 
 
-## 9. H033 H5 激励广告接线状态
+## 9. H033 / H037 H5 激励广告接线状态
 
-H5 已注册双端 `showRewardAd(json)` target contract：
+H5 已注册双端 `showRewardAd(json)`；Android 当前由 H037 按真实宿主结果 envelope 覆盖 H033 的早期 `data.status` target contract。
 
-- Android：`window.androidBridge.showRewardAd(json)`；H5 加入运行时生成的 `callbackId`，结果经共享 `window.androidBridgeCallback(callbackId, payload)` 分发；
-- iOS：`window.iosBridge.showRewardAd(json)`；同样加入 `callbackId`，结果经 `window.nativeBridgeCallback(callbackId, payload)` 分发；
+- Android：`window.androidBridge.showRewardAd(json)`，H5 自动加入 `callbackId`，结果经 `window.androidBridgeCallback(callbackId, payload)` 分发；
 - 当前仅开放 scene `h5CheckinResign`；
-- 返回 status 仅接受 `completed | closed | failed | no_fill`，Android 同时兼容当前联调 envelope 中的 `data.status`；
-- Android 扫码与激励广告共用同一 callback dispatcher，但各 invocation 由 `callbackId` 独立关联，不互相覆盖；
-- `/checkin` 只有 `completed` 能进入 `make-up-success`；
-- H5 的 5 秒 `DemoAdPlayer` 已退出正式补签完成链路；
-- `closed / failed / no_fill` 均保持补签未完成。
+- Android 当前返回 `code/message/data`，`data` 含 `scene / adLoadState / finishPlayState`；
+- Native 负责广告完整观看判定，H5 不重算观看时长，也不根据“用户最后是否点击关闭”自行推翻 Native 结果；
+- H5 adapter 当前归一规则：
+  - `code=0` → `completed`
+  - `code=1` → `closed`
+  - `code=5 | 6` → `failed`
+  - `code=7` → `no_fill`
+- 迁移期旧宿主若明确返回合法 `status=completed|closed|failed|no_fill`，仍兼容；若显式携带未知 status，则 fail-closed，不用 numeric code 掩盖协议污染；
+- `/checkin` 仍只有 H5 归一后的 `completed` 才继续补签；
+- iOS 保留同名 injected-object callback contract，但当前具体结果 envelope 仍待独立实证，不因 Android 已实现而自动宣称完成。
 
-Native 方法是否已在某个具体 APK / IPA 注入仍以真机证据为准；这里描述的是 **当前 H5 contract 与联调适配实现**。
-
+Android 静态源码实证基线为 `sanchuang-dev/dr-card-android upstream/gitee/master@a8ac8469`；最终 Accepted 仍依赖真机广告 smoke。
 
 ## 10. H034 H5 APP 唤起与商店承接状态
 
