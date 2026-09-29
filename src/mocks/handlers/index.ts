@@ -3,11 +3,13 @@ import { checkinHandlers } from './checkin'
 import { exchangeHandlers } from './exchange'
 import { homeHandlers } from './home'
 import { networkProbeHandler } from './networkProbe'
+import { myCouponsHandlers } from './myCoupons'
 import { userProfileHandlers } from './userProfile'
 import { userpointsHandlers } from './userpoints'
 
 export const handlers = [
   networkProbeHandler,
+  ...myCouponsHandlers,
   ...buddyPhoneHandlers,
   ...checkinHandlers,
   ...exchangeHandlers,
