@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 
 const bridgeMocks = vi.hoisted(() => ({
@@ -12,6 +12,7 @@ vi.mock('../../services/nativeBridge', () => bridgeMocks)
 import BottomNav from './BottomNav'
 
 afterEach(() => {
+  vi.useRealTimers()
   bridgeMocks.scanCode.mockClear()
   bridgeMocks.getNativeBridgeDiagnostics.mockReset()
 })
@@ -54,6 +55,27 @@ describe('BottomNav middle scan item', () => {
     await waitFor(() => {
       expect(bridgeMocks.scanCode).toHaveBeenCalledWith({ scanType: 'all' })
     })
+  })
+
+  it('stops background bridge polling after the late-injection discovery window', () => {
+    vi.useFakeTimers()
+    bridgeMocks.getNativeBridgeDiagnostics.mockReturnValue({
+      capabilities: { scanCode: false },
+    })
+
+    const { unmount } = renderNav()
+
+    act(() => {
+      vi.advanceTimersByTime(10_500)
+    })
+    const callsAfterDiscoveryWindow = bridgeMocks.getNativeBridgeDiagnostics.mock.calls.length
+
+    act(() => {
+      vi.advanceTimersByTime(5_000)
+    })
+
+    expect(bridgeMocks.getNativeBridgeDiagnostics.mock.calls.length).toBe(callsAfterDiscoveryWindow)
+    unmount()
   })
 
   it('silently swallows scan cancellation without leaving the current page', async () => {
