@@ -26,7 +26,7 @@ import { httpClient } from './http'
 /** 今日签到状态 / 今日可得泡泡值。 */
 export const SIGN_RECORDS_STATUS_PATH = '/api/signrecords/status'
 
-/** 签到记录列表（真实数据源：每条记录的 create_time + status 即打卡日历依据）。 */
+/** 签到记录列表。正常签到可按 create_time 归属日期；补签记录因缺少目标日期不能直接落到日历格。 */
 export const SIGN_RECORDS_INDEX_PATH = '/api/signrecords/index'
 
 /** 执行签到（空 body 即签到当天；重复签到由后端返回 400「今日已签到」）。 */
@@ -216,8 +216,13 @@ export async function fetchSignActivities(): Promise<SignActivity[]> {
 }
 
 /**
- * 把签到记录归约为「日期 → 已签/补签」映射，供打卡日历渲染。
- * 日期取 `create_time` 的前 10 位（后端格式 `YYYY-MM-DD HH:mm:ss`），
+ * 把可安全定位日期的正常签到记录归约为「日期 → 已签」映射，供打卡日历渲染。
+ *
+ * 重要：status=20 的补签记录不能使用 create_time 归属日期。7002 实测表明它记录的是
+ * 「执行补签的时刻」，不是 body.day 指定的被补日期；在后端补充目标日期字段前，
+ * 补签只由调用方的 optimisticMakeupDays 做会话内点亮，避免把操作日误标成补签日。
+ *
+ * 正常签到日期取 create_time 的前 10 位（后端格式 `YYYY-MM-DD HH:mm:ss`），
  * 与本地月份判断同一时区口径，不做 UTC 转换，避免跨日漂移。
  */
 export interface SignRecordDayMap {
@@ -231,6 +236,9 @@ export function buildSignRecordDayMap(records: SignRecord[]): SignRecordDayMap {
   const map = new Map<string, SignRecord>()
 
   for (const record of records) {
+    // 只有正常签到的 create_time 能安全代表被签到的日期。
+    if (record.status !== SIGN_RECORD_STATUS_SIGNED) continue
+
     const dateKey = record.create_time.slice(0, 10)
     if (!SIGN_MAKEUP_DAY_PATTERN.test(dateKey)) continue
 
