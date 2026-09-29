@@ -640,6 +640,41 @@ describe('JSBridge capability runtime', () => {
     ])
   })
 
+  it('normalizes Android code=0 callback envelopes for saveImageToAlbum and copyText', async () => {
+    const { saveImageToAlbum, copyText } = await loadBridge()
+    bridgeWindow.androidBridge = {
+      saveImageToAlbum(payload: unknown) {
+        const request = JSON.parse(payload as string) as { callbackId: string }
+        queueMicrotask(() => {
+          bridgeWindow.androidBridgeCallback?.(request.callbackId, {
+            code: 0,
+            message: 'ok',
+            data: {},
+          })
+        })
+      },
+      copyText(payload: unknown) {
+        const request = JSON.parse(payload as string) as { callbackId: string }
+        queueMicrotask(() => {
+          bridgeWindow.androidBridgeCallback?.(request.callbackId, {
+            code: 0,
+            message: 'ok',
+            data: {},
+          })
+        })
+      },
+    }
+
+    await expect(
+      saveImageToAlbum({
+        imageType: 'base64',
+        imageData: 'poster-base64',
+        fileName: 'kaboshi-invite.png',
+      }),
+    ).resolves.toEqual({ success: true })
+    await expect(copyText({ text: 'invite' })).resolves.toEqual({ success: true })
+  })
+
   it('keeps H032 capabilities fail-closed for missing methods and malformed results', async () => {
     const { takePhoto, chooseImage, saveImageToAlbum, copyText } = await loadBridge()
     bridgeWindow.androidBridge = {}

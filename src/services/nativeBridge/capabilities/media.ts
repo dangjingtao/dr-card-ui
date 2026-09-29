@@ -1,6 +1,7 @@
 import {
   createCallbackInjectedObjectTransport,
   NativeTransportError,
+  parseJsonPayload,
   serializeJsonValue,
   type NativeTransportWindow,
 } from '../../nativeBridgeTransport'
@@ -96,6 +97,12 @@ function parseImageResult(payload: unknown): NativeImageResult {
 }
 
 function parseSuccessResult(payload: unknown): NativeSuccessResult {
+  const raw = parseJsonPayload<unknown>(payload)
+  if (raw !== null && typeof raw === 'object' && typeof (raw as { code?: unknown }).code === 'number') {
+    const code = (raw as { code: number }).code
+    if (code === 0) return { success: true }
+  }
+
   const parsed = parseConfirmedNativeAsyncResult(payload)
   if (
     parsed === null ||
@@ -104,7 +111,7 @@ function parseSuccessResult(payload: unknown): NativeSuccessResult {
   ) {
     throw new NativeTransportError(
       'payload-invalid',
-      'Native success result must be a JSON string with a boolean success field.',
+      'Native success result requires code=0 callback envelope or a legacy boolean success field.',
     )
   }
 
