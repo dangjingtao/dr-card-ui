@@ -328,15 +328,17 @@ test('@formal-h5 H023 shared SearchField stays consistent across formal H5 consu
 test('@formal-h5 H023 shared empty-state visual is stable across data pages', async ({ page }) => {
   const runtimeErrors = collectRuntimeErrors(page)
 
-  for (const path of ['/address?state=empty', '/orders?state=empty']) {
+  for (const path of ['/address?state=empty', '/orders?state=empty', '/points/detail?state=empty']) {
     await page.goto(path, { waitUntil: 'domcontentloaded' })
     await expectHealthyFormalRoute(page)
-    const visual = page.locator('[data-empty-state-icon]')
+    const visual = page.locator('[data-empty-state-illustration]')
     await expect(visual).toHaveCount(1)
-    const box = await visual.boundingBox()
+    const image = visual.locator('img')
+    await expect(image).toHaveCount(1)
+    const box = await image.boundingBox()
     expect(box).not.toBeNull()
-    expect(Math.round(box?.width ?? 0)).toBe(96)
-    expect(Math.round(box?.height ?? 0)).toBe(96)
+    expect(Math.round(box?.width ?? 0)).toBe(112)
+    expect(Math.round(box?.height ?? 0)).toBe(112)
   }
 
   expect(runtimeErrors, runtimeErrors.join('\n')).toEqual([])

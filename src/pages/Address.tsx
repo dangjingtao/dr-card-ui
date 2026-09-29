@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Check, MapPin, Plus, SquarePen } from 'lucide-react'
+import { Check, Plus, SquarePen } from 'lucide-react'
 import { Button, EmptyState, Tag, Toast } from '../components/ui'
 import PageContainer from '../components/mobile/PageContainer'
-import EmptyStateIcon from '../components/mobile/EmptyStateIcon'
+import EmptyStateIllustration from '../components/mobile/EmptyStateIllustration'
 import DebugPanel from '../components/mobile/DebugPanel'
 import { findRouteByPathname } from '../app/router/routes'
 import { useFixtureState } from '../app/fixtures/useFixture'
@@ -42,7 +42,7 @@ export default function Address() {
       {list.length === 0 ? (
         <EmptyState
           className="flex-1 pt-16"
-          visual={<EmptyStateIcon icon={MapPin} />}
+          visual={<EmptyStateIllustration />}
           title={<span className="text-[15px] leading-[22px] text-text-secondary">{ADDRESS_COPY.emptyTitle}</span>}
           supportingText={<span className="text-xs leading-[18px]">{ADDRESS_COPY.emptyDesc}</span>}
         />

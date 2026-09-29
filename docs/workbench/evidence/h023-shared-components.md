@@ -120,3 +120,6 @@ H023 对既有 Core 组件补齐：
 ## 变更记录
 
 - **2026-09-29**：`/exchange`（洗护体验券专区）按用户参考图改版为「分类 Tab + 接口券列表」，页面不再渲染 `SearchField`。据此同步移除 `scripts/verify-h023-shared-components.mjs` 与 `tests/e2e/formal-h5.spec.ts` H023 SearchField 用例中的 Exchange 消费点，SearchField 的正式 H5 消费点由 3 个收敛为 2 个（CardShare / BuddyPhoneInvite）。本文件以上内容为 H023 结卡时的历史事实，保持不变。
+
+
+- **2026-09-29｜统一空状态视觉后续变更**：用户当日确认统一使用新的品牌空状态插画。Address / Orders / PointsDetail 的数据空态现统一消费 `mobile/EmptyStateIllustration`；`verify:h023` 与 formal-H5 E2E 同步改为校验当前 112×112 品牌插画。上文 `EmptyStateIcon` 章节保留为 H023 结卡时的历史证据，不回写历史结论。
