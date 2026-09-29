@@ -201,7 +201,7 @@ describe('Exchange（洗护体验券专区接口接入）', () => {
     await screen.findByText('Mock·洗护体验券')
 
     const redeemButton = screen.getByRole('button', { name: '立即兑换' })
-    expect(redeemButton).toBeDisabled()
+    expect((redeemButton as HTMLButtonElement).disabled).toBe(true)
     expect(screen.queryByText('泡泡值不足')).toBeNull()
   })
 
