@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
   createCallbackInjectedObjectTransport,
+  INJECTED_CALLBACK_TIMEOUT_MS,
   type NativeTransportResolution,
   type NativeTransportWindow,
 } from './nativeBridgeTransport'
@@ -116,6 +117,59 @@ describe('Android injected callback dispatcher', () => {
       'two-result',
       'three-result',
     ])
+  })
+
+  it('keeps the same long callback timeout for Android and iOS injected-object methods', async () => {
+    vi.useFakeTimers()
+
+    const androidRequests: CallbackRequest[] = []
+    const iosRequests: CallbackRequest[] = []
+
+    hostWindow.androidBridge = {
+      takePhoto(payload: unknown) {
+        androidRequests.push(JSON.parse(payload as string) as CallbackRequest)
+      },
+    }
+    hostWindow.iosBridge = {
+      takePhoto(payload: unknown) {
+        iosRequests.push(JSON.parse(payload as string) as CallbackRequest)
+      },
+    }
+
+    const createTransport = (objectName: 'androidBridge' | 'iosBridge') =>
+      createCallbackInjectedObjectTransport<string, string>({
+        objectName,
+        methodName: 'takePhoto',
+        callbackName: 'nativeBridgeCallback',
+        callbackAliases: objectName === 'androidBridge' ? ['androidBridgeCallback'] : undefined,
+        serializeArgs: (value, callbackId) => [JSON.stringify({ value, callbackId })],
+        parseResult: (payload) => (payload as { value: string }).value,
+      })
+
+    const android = invoke(createTransport('androidBridge').resolve(hostWindow, 'android'))
+    const ios = invoke(createTransport('iosBridge').resolve(hostWindow, 'ios'))
+
+    await vi.advanceTimersByTimeAsync(10_000)
+
+    let androidSettled = false
+    let iosSettled = false
+    android.finally(() => {
+      androidSettled = true
+    })
+    ios.finally(() => {
+      iosSettled = true
+    })
+    await Promise.resolve()
+
+    expect(androidSettled).toBe(false)
+    expect(iosSettled).toBe(false)
+    expect(INJECTED_CALLBACK_TIMEOUT_MS).toBe(120_000)
+
+    hostWindow.androidBridgeCallback?.(androidRequests[0].callbackId, { value: 'android-result' })
+    hostWindow.nativeBridgeCallback?.(iosRequests[0].callbackId, { value: 'ios-result' })
+
+    await expect(android).resolves.toBe('android-result')
+    await expect(ios).resolves.toBe('ios-result')
   })
 
   it('uses the same callbackId correlation model for iOS injected-object methods', async () => {
