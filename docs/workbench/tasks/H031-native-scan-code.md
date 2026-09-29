@@ -68,3 +68,24 @@ Native 当前回填状态：两端均“否”；最低版本目标 2.13。
 - 自动测试覆盖 JSON string 入参/返回、scanType、unsupported、late injection 恢复、页面跳转与 Bridge Lab；
 - 取消 / 权限 /系统失败语义等待真机联调，不提前定义；
 - 双端真实 App WebView smoke 仍是最终 Accepted 门槛。
+
+## H037 Android 实证覆盖
+
+2026-09-29，Android 当前实现已经提供了比 H031 原始 target contract 更完整的业务语义。H031 上方内容保留为当时的 H5 接线历史，不再作为 Android 当前完成条件的最终描述。
+
+当前 Android 实证基线：`sanchuang-dev/dr-card-android upstream/gitee/master@a8ac8469`。
+
+已确认：
+
+- `scanCode(json)` 使用 H5 生成的 `callbackId`；
+- 第一次 `code=0 + data.text` 只表示扫码识别成功，Native 继续进入设备查询 / 调货或启动流程；
+- Native 设备流程结束后使用**同一个 callbackId**再次回调成功或失败；
+- 因此 Android 的 H5 Promise 不能在第一次扫码成功回调时 settle；
+- 完整 Native 事务成功后，H5 直接接管结果与后续交互，不再重复执行旧“即将核销 → 确认核销”前置流程。
+
+H5 的当前适配由 H037 负责，详见：
+
+- `docs/workbench/tasks/H037-native-bridge-transaction-alignment.md`
+- `docs/workbench/evidence/h037-native-bridge-transaction-alignment.md`
+
+iOS 是否具有相同两阶段事务语义尚无真机/源码实证，H031 不据此推断。

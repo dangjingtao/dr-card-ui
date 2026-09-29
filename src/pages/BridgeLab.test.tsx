@@ -139,6 +139,11 @@ describe('Bridge Lab page', () => {
             message: 'ok',
             data: { text: 'bridge-lab-scan', scanType: 'qr' },
           })
+          labWindow.androidBridgeCallback?.(request.callbackId, {
+            code: 0,
+            message: 'ok',
+            data: { text: 'bridge-lab-scan', scanType: 'qr' },
+          })
         })
       },
     }

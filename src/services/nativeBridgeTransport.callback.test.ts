@@ -95,6 +95,37 @@ describe('Android injected callback dispatcher', () => {
     await expect(ad).resolves.toBe('ad-result')
   })
 
+  it('keeps a confirmed intermediate callback pending until the capability marks a later payload terminal', async () => {
+    const requests: CallbackRequest[] = []
+    hostWindow.androidBridge = {
+      scanCode(payload: unknown) {
+        requests.push(JSON.parse(payload as string) as CallbackRequest)
+      },
+    }
+
+    const transport = createCallbackInjectedObjectTransport<string, string>({
+      objectName: 'androidBridge',
+      methodName: 'scanCode',
+      callbackName: 'androidBridgeCallback',
+      serializeArgs: (value, callbackId) => [JSON.stringify({ value, callbackId })],
+      isTerminalPayload: (_payload, callbackCount) => callbackCount > 1,
+      parseResult: (payload) => (payload as { value: string }).value,
+    })
+
+    const promise = invoke(transport.resolve(hostWindow, 'voucher'))
+    let settled = false
+    promise.finally(() => {
+      settled = true
+    })
+
+    hostWindow.androidBridgeCallback?.(requests[0].callbackId, { value: 'scan-recognized' })
+    await Promise.resolve()
+    expect(settled).toBe(false)
+
+    hostWindow.androidBridgeCallback?.(requests[0].callbackId, { value: 'device-finished' })
+    await expect(promise).resolves.toBe('device-finished')
+  })
+
   it('resolves out-of-order callbacks by callbackId instead of invocation order', async () => {
     const requests: CallbackRequest[] = []
     hostWindow.androidBridge = {

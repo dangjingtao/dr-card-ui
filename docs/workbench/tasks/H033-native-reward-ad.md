@@ -67,3 +67,33 @@ Native 当前回填状态：两端均“否”；最低版本目标 2.13。
 - Native 当前仍标记 Android / iOS `showRewardAd` 尚未实现；
 - 自动验证覆盖四种 status、非法 payload、unsupported 与重复触发；
 - 双端真实 App WebView / 广告 SDK smoke 仍是最终 Accepted 门槛。
+
+## H037 Android 实证覆盖
+
+2026-09-29，Android 当前 `showRewardAd(json)` 已有真实实现，其结果 envelope 与 H033 早期 `data.status` target contract 不同。
+
+当前 Android 实证基线：`sanchuang-dev/dr-card-android upstream/gitee/master@a8ac8469`。
+
+真实回调使用：
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "scene": "h5CheckinResign",
+    "adLoadState": 1,
+    "finishPlayState": 1
+  }
+}
+```
+
+已确认业务边界：
+
+- Native 负责判断是否完整观看 / 满足时长；
+- `code=0` 表示 Native 已判定满足补签前置条件；
+- H5 不根据关闭动作、观看时长或广告 SDK 事件重新判定；
+- H5 Bridge adapter 将当前 Native code 归一成既有 `completed / closed / failed / no_fill` 业务语义；
+- 迁移期旧 `status` 结果继续兼容，但不要求 Native 恢复旧字段。
+
+当前适配由 H037 负责。iOS 当前结果形态仍待真机/源码实证。

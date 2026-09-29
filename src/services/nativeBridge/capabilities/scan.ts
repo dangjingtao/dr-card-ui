@@ -58,6 +58,31 @@ function parseResult(payload: unknown): NativeScanCodeResult {
   return { code }
 }
 
+function isAndroidScanTerminalPayload(payload: unknown, callbackCount: number): boolean {
+  // Current Android H5 voucher verification is a two-stage Native-owned transaction:
+  // 1) scanner recognized a code, 2) device start/dispense finished. Only the second success
+  // callback is terminal. A first-stage failure/cancel/permission result still settles immediately.
+  if (callbackCount > 1) return true
+
+  try {
+    const parsed = parseJsonPayload<unknown>(payload)
+    if (parsed === null || typeof parsed !== 'object') return true
+    if ('error' in parsed) return true
+
+    const nativeCode = (parsed as { code?: unknown }).code
+    const data = (parsed as { data?: unknown }).data
+    const text =
+      data !== null && typeof data === 'object'
+        ? (data as { text?: unknown }).text
+        : undefined
+
+    return !(nativeCode === 0 && typeof text === 'string' && text.length > 0)
+  } catch {
+    // Malformed payloads should settle and fail parsing instead of leaving the transaction pending.
+    return true
+  }
+}
+
 const androidTransport = createCallbackInjectedObjectTransport<
   NativeScanCodeInput,
   NativeScanCodeResult
@@ -67,6 +92,7 @@ const androidTransport = createCallbackInjectedObjectTransport<
   callbackName: 'nativeBridgeCallback',
   callbackAliases: ['androidBridgeCallback'],
   serializeArgs: (input, callbackId) => [serializeJsonValue({ ...validateInput(input), callbackId })],
+  isTerminalPayload: isAndroidScanTerminalPayload,
   parseResult,
 })
 

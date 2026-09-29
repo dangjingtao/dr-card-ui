@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   navigate: vi.fn(),
   scanCode: vi.fn(),
   getNativeBridgeDiagnostics: vi.fn(),
+  getNativeHost: vi.fn(),
   closeWebView: vi.fn(() => Promise.resolve()),
 }))
 
@@ -27,6 +28,7 @@ vi.mock('../services/nativeBridge', () => {
     NativeBridgeError,
     scanCode: mocks.scanCode,
     getNativeBridgeDiagnostics: mocks.getNativeBridgeDiagnostics,
+    getNativeHost: mocks.getNativeHost,
     closeWebView: mocks.closeWebView,
   }
 })
@@ -37,6 +39,8 @@ afterEach(() => {
   mocks.navigate.mockReset()
   mocks.scanCode.mockReset()
   mocks.getNativeBridgeDiagnostics.mockReset()
+  mocks.getNativeHost.mockReset()
+  mocks.getNativeHost.mockReturnValue('browser')
   mocks.closeWebView.mockClear()
 })
 
@@ -92,7 +96,8 @@ describe('ScanVerify', () => {
     })
   })
 
-  it('calls scanCode(all) and carries the real code into the confirmation route state', async () => {
+  it('waits for the confirmed Android transaction and resumes directly at the completed result state', async () => {
+    mocks.getNativeHost.mockReturnValue('android')
     mocks.getNativeBridgeDiagnostics.mockReturnValue({
       capabilities: {
         scanCode: true,
@@ -109,8 +114,38 @@ describe('ScanVerify', () => {
       expect(mocks.scanCode).toHaveBeenCalledWith({ scanType: 'all' })
     })
     expect(mocks.navigate).toHaveBeenCalledWith('/card/verify/confirm', {
-      state: { nativeScanCode: 'REAL-SCAN-CODE' },
+      replace: true,
+      state: {
+        nativeScanCode: 'REAL-SCAN-CODE',
+        nativeVerifyResult: 'done',
+      },
     })
+  })
+
+  it('keeps iOS on the existing confirmation flow until terminal transaction semantics are confirmed', async () => {
+    mocks.getNativeHost.mockReturnValue('ios')
+    mocks.getNativeBridgeDiagnostics.mockReturnValue({
+      capabilities: {
+        scanCode: true,
+        closeWebView: false,
+      },
+    })
+    mocks.scanCode.mockResolvedValue({ code: 'IOS-SCAN-CODE' })
+
+    render(<ScanVerify />)
+    fireEvent.click(screen.getByRole('button', { name: '开始扫码核销' }))
+
+    await waitFor(() => {
+      expect(mocks.navigate).toHaveBeenCalledWith('/card/verify/confirm', {
+        state: { nativeScanCode: 'IOS-SCAN-CODE' },
+      })
+    })
+    expect(mocks.navigate).not.toHaveBeenCalledWith(
+      '/card/verify/confirm',
+      expect.objectContaining({
+        state: expect.objectContaining({ nativeVerifyResult: 'done' }),
+      }),
+    )
   })
 
   it('keeps an unknown Native failure on the scan page', async () => {
