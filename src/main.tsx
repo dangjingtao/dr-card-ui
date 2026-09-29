@@ -21,8 +21,8 @@ async function prepareRuntime() {
 }
 
 async function prepareMobileDebugPanel() {
-  // Eruda is a dev/preview aid only. test/prod are production-like App WebView environments.
-  if (runtimePolicy.isProdLike) return
+  // Maintainer 2026-09-29: Eruda is required in dev/preview/test for WebView diagnostics.
+  if (runtimePolicy.appEnvironment === 'prod') return
 
   try {
     const { default: eruda } = await import('eruda')
