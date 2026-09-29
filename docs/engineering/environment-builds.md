@@ -4,7 +4,7 @@ H006 将 `preview → dev → test → prod` 的产品分支语义和 Vite mode�
 
 ## 环境矩阵
 
-| App env | Vite mode | 默认 data mode | fixture/debug | Bridge 默认 | 运行宿主要求 |
+| App env | Vite mode | 默认 data mode | fixture / 业务 DebugPanel | Bridge 默认 | 运行宿主要求 |
 |---|---|---|---|---|---|
 | `dev` | `development` | `mock` | 允许 | `disabled` | 不限（浏览器可独立预览） |
 | `preview` | `preview` | `mock` | 允许 | `disabled` | 不限（浏览器可独立预览） |
@@ -30,9 +30,9 @@ H006 将 `preview → dev → test → prod` 的产品分支语义和 Vite mode�
 
 ## 调试能力口径
 
-- `dev` / `preview`：2026-09-29 Maintainer 明确定案，Eruda 默认初始化，无需 `?debug=1`；这是开发/视觉联调能力，不代表业务 `DebugPanel` 常显。
-- 页面业务状态调试 `DebugPanel` 仍严格由 `?debug=1` 显式开启，两者互不替代。
-- `test` / `prod`：`runtimePolicy.isProdLike` 直接阻止 Eruda 初始化，正式产物不启用该调试控制台。
+- `dev` / `preview` / `test`：2026-09-29 Maintainer 明确定案，Eruda 默认初始化，无需 `?debug=1`。其中 `test` 仍保持真实 API + Native Bridge，仅保留 Eruda 作为 App WebView 联调诊断能力。
+- 页面业务状态调试 `DebugPanel` 仍严格由 `?debug=1` 显式开启，两者互不替代；上表的 fixture / 业务 DebugPanel 口径不包含 Eruda。
+- `prod`：不初始化 Eruda。
 
 ## 环境变量
 
