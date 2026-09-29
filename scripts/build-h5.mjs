@@ -98,7 +98,14 @@ if (
   errors.push(`Cloudflare ${target.appEnvironment} builds are fixed to VITE_DATA_MODE=mock.`)
 }
 
-const apiBaseUrl = readEnv('VITE_API_BASE_URL')?.trim() ?? ''
+const configuredApiBaseUrl = readEnv('VITE_API_BASE_URL')?.trim() ?? ''
+const apiBaseUrl =
+  cloudflareBuildContext && (target.appEnvironment === 'dev' || target.appEnvironment === 'preview')
+    ? ''
+    : configuredApiBaseUrl
+if (target.appEnvironment === 'test' && !apiBaseUrl) {
+  errors.push('test builds require VITE_API_BASE_URL; a production-like test bundle must target a real backend.')
+}
 if (apiBaseUrl) {
   try {
     const parsed = new URL(apiBaseUrl)

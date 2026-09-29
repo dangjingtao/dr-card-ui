@@ -65,15 +65,17 @@ CI 固定：
 ```text
 VITE_APP_ENV=test
 VITE_DATA_MODE=api
+VITE_BRIDGE_MODE=native
 ```
 
 并验证：
 
 - test bundle 能成功构建；
-- `build-meta.json` 为 `test + api`；
+- `build-meta.json` 为 `test + api + native`；
 - `dist/` 不存在 `mockServiceWorker.js`；
-- CI 启动 production-like test bundle，Playwright 通过 `PLAYWRIGHT_BASE_URL` 接入该产物；
-- `/`、`/profile`、`/settings` 三个关键正式 H5 路由可运行且无浏览器 runtime failure、坏图和明显横向溢出。
+- CI 启动 production-like test bundle，Playwright 通过 `PLAYWRIGHT_BASE_URL` 接入该产物。
+
+`VITE_BRIDGE_MODE=native` 为 H036 要求：`test` 的合法容器是原生宿主，Bridge 若停留在 `disabled`，每个真实宿主能力（含登录取凭证）都会以 `bridge-disabled` 失败。构建脚本会对 `test/prod` 拒绝显式 `disabled`。
 
 ### 2.4 浏览器容器在 `test` 的定位（H036）
 

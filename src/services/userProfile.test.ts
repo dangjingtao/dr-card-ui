@@ -1,11 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { AppError } from './http'
-import { fetchUserProfileDetail, parseUserProfileDetail } from './userProfile'
+import {
+  fetchUserProfile,
+  updateUserProfile,
+  USER_GENDER_MALE,
+} from './userProfile'
 
 const mocks = vi.hoisted(() => ({
   request: vi.fn(),
-  getAuthSession: vi.fn(),
 }))
 
 vi.mock('./http', async (importOriginal) => {
@@ -13,117 +15,113 @@ vi.mock('./http', async (importOriginal) => {
   return { ...actual, httpClient: { request: mocks.request } }
 })
 
-vi.mock('./auth/session', () => ({
-  getAuthSession: mocks.getAuthSession,
-}))
+vi.mock('./auth/session', () => ({ getAuthSession: () => undefined }))
 
-/** 真实 7002 用户实体字段形状（实测来源：登录 `userInfo` / `usercards` 关联 `user`）。 */
-const verifiedEnvelope = {
-  code: 0,
-  msg: 'success',
-  data: {
-    id: 2,
-    create_time: '2026-09-24 15:13:31',
-    update_time: '2026-09-24 15:13:31',
-    delete_time: null,
-    nick_name: '151****2709',
-    gender: '0',
-    platform: 'MP-WEIXIN',
-    avatar_img: 0,
-    balance: '0.00',
-    points: 0,
-    mobile: '15177272709',
-    real_name: null,
-    grade_id: 1,
-    grade: '大二',
-    status: 10,
-  },
+const PROFILE_DATA = {
+  couponsCount: 2,
+  grade: '普通会员',
+  grade_id: 1,
+  nextGrade: { id: 2, name: '白银会员', min_exp_number: 100 },
+  nick_name: '用户28123456',
+  avatar_img: 'https://app.kbscloud.com/statics/icons/user_default_icon.png',
+  country: '中国',
+  city: '南宁',
+  province: '广西',
+  mobile: '151****2709',
+  real_name: '',
+  points: 128,
+  kbs_id: 'K016998956',
 }
 
-describe('user profile detail contract', () => {
+describe('user profile contract', () => {
   beforeEach(() => {
     mocks.request.mockReset()
-    mocks.getAuthSession.mockReset()
   })
 
-  it('maps confirmed fields and tolerates the rest of the user entity', () => {
-    expect(parseUserProfileDetail(verifiedEnvelope)).toEqual({
-      nickname: '151****2709',
-      grade: '大二',
+  it('maps the envelope into a page-ready view model', async () => {
+    mocks.request.mockResolvedValue({ code: 0, msg: 'success', status: 'succ', data: PROFILE_DATA })
+
+    const profile = await fetchUserProfile()
+
+    expect(mocks.request).toHaveBeenCalledWith({ method: 'GET', url: '/api/user/profile' })
+    expect(profile).toEqual({
+      couponsCount: 2,
+      grade: '普通会员',
+      gradeId: 1,
+      nextGrade: { id: 2, name: '白银会员', min_exp_number: 100 },
+      nickname: '用户28123456',
+      avatar: 'https://app.kbscloud.com/statics/icons/user_default_icon.png',
+      country: '中国',
+      province: '广西',
+      city: '南宁',
+      mobile: '151****2709',
+      realName: undefined,
+      points: 128,
+      kbsId: 'K016998956',
     })
   })
 
-  it('returns empty values when the backend omits the fields', () => {
-    expect(parseUserProfileDetail({ code: 0, msg: 'success', data: { id: 2 } })).toEqual({
-      nickname: '',
-      grade: '',
+  it('treats nextGrade "" as no next level instead of throwing', async () => {
+    mocks.request.mockResolvedValue({
+      code: 0,
+      msg: 'success',
+      data: { ...PROFILE_DATA, grade: '钻石会员', grade_id: 5, nextGrade: '' },
+    })
+
+    await expect(fetchUserProfile()).resolves.toMatchObject({ nextGrade: undefined, grade: '钻石会员' })
+  })
+
+  it('keeps couponsCount 0 and points 0 as real values', async () => {
+    mocks.request.mockResolvedValue({
+      code: 0,
+      msg: 'success',
+      data: { ...PROFILE_DATA, couponsCount: 0, points: 0, avatar_img: '', kbs_id: '' },
+    })
+
+    await expect(fetchUserProfile()).resolves.toMatchObject({
+      couponsCount: 0,
+      points: 0,
+      avatar: undefined,
+      kbsId: undefined,
     })
   })
 
-  it('treats a non-zero code envelope as a business error with the message', () => {
-    const failure = { code: 400, message: '用户不存在！', data: [] }
+  it('throws a business error on failure so the page can degrade', async () => {
+    mocks.request.mockResolvedValue({ code: 401, message: '请先登录', data: [] })
 
-    try {
-      parseUserProfileDetail(failure)
-      throw new Error('expected parseUserProfileDetail to throw')
-    } catch (error) {
-      expect(error).toBeInstanceOf(AppError)
-      expect((error as AppError).kind).toBe('business')
-      expect((error as AppError).message).toBe('用户不存在！')
-    }
-  })
-
-  it('rejects a success envelope whose data is not the user entity', () => {
-    try {
-      parseUserProfileDetail({ code: 0, msg: 'success', data: [] })
-      throw new Error('expected parseUserProfileDetail to throw')
-    } catch (error) {
-      expect(error).toBeInstanceOf(AppError)
-      expect((error as AppError).kind).toBe('contract')
-    }
-  })
-
-  it('rejects payloads that are not the confirmed envelope', () => {
-    try {
-      parseUserProfileDetail({ nick_name: 'smile' })
-      throw new Error('expected parseUserProfileDetail to throw')
-    } catch (error) {
-      expect(error).toBeInstanceOf(AppError)
-      expect((error as AppError).kind).toBe('contract')
-    }
+    await expect(fetchUserProfile()).rejects.toMatchObject({ kind: 'business', message: '请先登录' })
   })
 })
 
-describe('user profile detail transport', () => {
+describe('user update contract', () => {
   beforeEach(() => {
     mocks.request.mockReset()
-    mocks.getAuthSession.mockReset()
   })
 
-  it('calls the confirmed path and carries the 7002-verified token header', async () => {
-    mocks.getAuthSession.mockReturnValue({ accessToken: 'session-token' })
-    mocks.request.mockResolvedValue(verifiedEnvelope)
+  it('posts only the changed fields and parses the returned user entity', async () => {
+    mocks.request.mockResolvedValue({
+      code: 0,
+      msg: 'success',
+      data: { id: 5, nick_name: '小明', gender: '1', avatar_img: '', points: 128, grade_id: 1, student_grade: '初二' },
+    })
 
-    await expect(fetchUserProfileDetail()).resolves.toEqual({
-      nickname: '151****2709',
-      grade: '大二',
+    await expect(updateUserProfile({ nick_name: '小明', gender: USER_GENDER_MALE })).resolves.toMatchObject({
+      nick_name: '小明',
+      gender: '1',
     })
     expect(mocks.request).toHaveBeenCalledWith({
-      method: 'GET',
-      url: '/api/user/detail',
-      headers: { token: 'session-token' },
+      method: 'POST',
+      url: '/api/user/update',
+      data: { nick_name: '小明', gender: '1' },
     })
   })
 
-  it('omits the token header when no session is available', async () => {
-    mocks.getAuthSession.mockReturnValue(undefined)
-    mocks.request.mockResolvedValue(verifiedEnvelope)
+  it('surfaces the backend message when validation fails', async () => {
+    mocks.request.mockResolvedValue({ code: 500, message: '"nick_name" is required', data: [] })
 
-    await fetchUserProfileDetail()
-    expect(mocks.request).toHaveBeenCalledWith({
-      method: 'GET',
-      url: '/api/user/detail',
-      headers: undefined,
+    await expect(updateUserProfile({ nick_name: '' })).rejects.toMatchObject({
+      kind: 'business',
+      message: '"nick_name" is required',
     })
   })
 })

@@ -27,7 +27,8 @@
 
 - `test` / `prod` 产物在浏览器等非原生宿主下展示环境提示页，不启动应用路由，不发业务请求；
 - `preview` / `dev` 行为完全不变，继续作为浏览器独立预览与 Mock 载体；
-- 宿主判定复用既有 Native Bridge 注入对象探测，不自行发明 UA 判断或宿主协议。
+- 宿主判定复用既有 Native Bridge 注入对象探测，不自行发明 UA 判断或宿主协议；
+- `test` / `prod` 的 `VITE_BRIDGE_MODE` 收敛为 `native`，避免门禁放行后真实宿主能力全线失败。
 
 ## 范围
 
@@ -35,6 +36,8 @@
 - Native Bridge façade 新增一等公民宿主查询 `getNativeHost()`；
 - 应用入口在挂载前按宿主分流：合格宿主渲染 `App`，不合格宿主渲染提示页；
 - 新增宿主受限提示页组件；
+- `scripts/build-h5.mjs` 的 `test`/`prod` 目标默认 `bridgeMode=native`，并新增一致性校验拒绝 `disabled`；
+- CI 为 `test`/`prod` 构建显式设置 `VITE_BRIDGE_MODE=native` 并断言 `build-meta.json` 的 `bridgeMode`；
 - 更新 `test` branch gate 的浏览器断言；
 - 同步环境 / Mock / Bridge / CI / 测试方案的既有规范文档。
 
@@ -78,14 +81,17 @@
 - [x] `npm run typecheck`、`npm run lint`、`npm run build:test`、`npm run build:prod` 通过；
 - [x] `test` bundle 仍不含 `mockServiceWorker.js`，`build-meta.json` 为 `test + api + native`；
 - [x] `test` branch gate 浏览器用例与新行为一致；
+- [x] `test` / `prod` 构建默认 `bridgeMode=native`，显式 `disabled` 被构建脚本拒绝；
 - [x] 规范文档已同步，且未把未落地能力写成已完成。
 
 ## 验证记录
 
 - `npm run typecheck`、`npm run lint`、`npm run build:test`、`npm run build:preview`、`npm run build:prod` 通过；
+- `build-meta.json`：`test → test/api/native`、`prod → prod/api/native`、`preview → preview/mock/disabled`；
+- 负向校验：`VITE_BRIDGE_MODE=disabled` 对 `test`/`prod` 均构建失败；`VITE_BRIDGE_MODE=mock` 对 `test` 构建失败；
 - `tests/e2e/test-gate.spec.ts` 7/7 通过（test 产物：浏览器拦截、无业务请求、注入宿主放行）；
 - `tests/e2e/formal-h5.spec.ts` 50/50 通过（preview 产物不受影响）；
-- `npx vitest run` 存在 5 项既有失败（`scanCode` / `showRewardAd` / `BuddyScanLanding`），已通过回滚本次 4 个代码文件复现，确认与本卡无关，属当前分支在途工作。
+- `npx vitest run` 存在 5 项既有失败（`scanCode` / `showRewardAd` / `BuddyScanLanding`），已通过回滚本次代码文件复现，确认与本卡无关，属当前分支在途工作。
 
 ## 当前实现口径
 

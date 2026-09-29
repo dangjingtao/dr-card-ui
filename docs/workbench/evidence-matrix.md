@@ -160,7 +160,7 @@ T006 本轮证据（2026-08-22）：`BASE_URL=http://127.0.0.1:5174 node scripts
 
 | # | 节点名 | 模块 | 卡 | 可达 | 等级 | 决策/风险 | 验收 |
 | ---: | --- | --- | --- | --- | --- | --- | --- |
-| 17 | 卡博士商城（H5嵌入） | 04 | T008 | `/mall`、`?state=loading`、`?state=error` | Implemented | WebView 边界页（D-031，关闭 B-007）：浏览器外壳占位 + 伪 URL + 加载/已加载/失败三态，不做原生还原、不接真实 H5 | 未验收 |
+| 17 | 卡博士商城（H5嵌入） | 04 | T008 | `/mall` | Implemented / App validation pending | D-082：`MallWebView` 在现有 H5 壳层内 iframe 承载 Maintainer 指定的 `http://www.3-wins.cn/`；HTTP scheme 不自动替换。真实 App WebView 的 cleartext/mixed-content、iframe policy 与鉴权仍待联调 | 未验收 |
 | 18 | 洗护兑换专区 | 04 | T008 | `/exchange` | Implemented | 本地原生页（D-032，关闭 B-008）：余额条 + 搜索 + 三维度排序 + 商品卡；只用已注册语义 Token，未引入 T11 深绿金 KV；`/exchange` 语义已纠正为兑换专区（兑换码页在 `/redeem`）；SKU 清单未定挂 B-025 | 未验收 |
 | 37 | 兑换量排行 | 04 | T008 | `/exchange?state=sort-exchange` | Implemented | 同一列表的排序状态而非独立页（D-033，原型 §2）；实测顺序与综合态不同 | 未验收 |
 | 38 | 泡泡值排行 | 04 | T008 | `/exchange?state=sort-points` | Implemented | 同 D-033；排序方向取「由低到高」，原型未标升降序，挂 B-024 | 未验收 |
