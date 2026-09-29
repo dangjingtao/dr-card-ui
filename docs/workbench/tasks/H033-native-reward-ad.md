@@ -26,8 +26,8 @@ iOS:     window.iosBridge.showRewardAd(json)
 双端均异步回调：
 
 ```text
-Android: window.androidBridgeCallback(callbackId, payload)
-iOS:     window.iosBridgeCallback(callbackId, payload)
+Target:  window.nativeBridgeCallback(callbackId, payload)
+Android compatibility: window.androidBridgeCallback(callbackId, payload)
 ```
 
 业务状态从 callback payload 的 `data.status` 解析。

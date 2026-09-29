@@ -15,7 +15,7 @@
 
 ## Native 目标协议
 
-双端 object 分别为 `androidBridge` / `iosBridge`，方法名和 JSON 字段一致。四项都属于异步能力：H5 transport 自动生成 `callbackId` 并写入 JSON；Android / iOS 分别经 `androidBridgeCallback` / `iosBridgeCallback` 回传同一 envelope。
+双端 object 分别为 `androidBridge` / `iosBridge`，方法名和 JSON 字段一致。四项都属于异步能力：H5 transport 自动生成 `callbackId` 并写入 JSON；Android / iOS 分别经 `nativeBridgeCallback`（Android 当前兼容 `androidBridgeCallback`） 回传同一 envelope。
 
 ### takePhoto(json)
 

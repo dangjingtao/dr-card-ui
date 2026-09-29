@@ -62,6 +62,8 @@ const androidTransport = createCallbackInjectedObjectTransport<
 >({
   objectName: 'androidBridge',
   methodName: 'showRewardAd',
+  callbackName: 'nativeBridgeCallback',
+  callbackAliases: ['androidBridgeCallback'],
   serializeArgs: (input, callbackId) => [serializeJsonValue({ ...validateInput(input), callbackId })],
   parseResult,
 })
@@ -72,7 +74,7 @@ const iosTransport = createCallbackInjectedObjectTransport<
 >({
   objectName: 'iosBridge',
   methodName: 'showRewardAd',
-  callbackName: 'iosBridgeCallback',
+  callbackName: 'nativeBridgeCallback',
   serializeArgs: (input, callbackId) => [serializeJsonValue({ ...validateInput(input), callbackId })],
   parseResult,
 })

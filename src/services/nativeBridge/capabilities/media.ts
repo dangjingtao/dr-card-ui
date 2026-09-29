@@ -123,7 +123,8 @@ const androidTakePhotoTransport = createCallbackInjectedObjectTransport<
   NativeImageResult
 >({
   objectName: 'androidBridge',
-  callbackName: 'androidBridgeCallback',
+  callbackName: 'nativeBridgeCallback',
+  callbackAliases: ['androidBridgeCallback'],
   methodName: 'takePhoto',
   serializeArgs: (input, callbackId) => [serializeJsonValue({ ...validateTakePhotoInput(input), callbackId })],
   parseResult: parseImageResult,
@@ -134,7 +135,7 @@ const iosTakePhotoTransport = createCallbackInjectedObjectTransport<
   NativeImageResult
 >({
   objectName: 'iosBridge',
-  callbackName: 'iosBridgeCallback',
+  callbackName: 'nativeBridgeCallback',
   methodName: 'takePhoto',
   serializeArgs: (input, callbackId) => [serializeJsonValue({ ...validateTakePhotoInput(input), callbackId })],
   parseResult: parseImageResult,
@@ -145,7 +146,8 @@ const androidChooseImageTransport = createCallbackInjectedObjectTransport<
   NativeImageResult
 >({
   objectName: 'androidBridge',
-  callbackName: 'androidBridgeCallback',
+  callbackName: 'nativeBridgeCallback',
+  callbackAliases: ['androidBridgeCallback'],
   methodName: 'chooseImage',
   serializeArgs: (input, callbackId) => [serializeJsonValue({ ...validateChooseImageInput(input), callbackId })],
   parseResult: parseImageResult,
@@ -156,7 +158,7 @@ const iosChooseImageTransport = createCallbackInjectedObjectTransport<
   NativeImageResult
 >({
   objectName: 'iosBridge',
-  callbackName: 'iosBridgeCallback',
+  callbackName: 'nativeBridgeCallback',
   methodName: 'chooseImage',
   serializeArgs: (input, callbackId) => [serializeJsonValue({ ...validateChooseImageInput(input), callbackId })],
   parseResult: parseImageResult,
@@ -167,7 +169,8 @@ const androidSaveImageToAlbumTransport = createCallbackInjectedObjectTransport<
   NativeSuccessResult
 >({
   objectName: 'androidBridge',
-  callbackName: 'androidBridgeCallback',
+  callbackName: 'nativeBridgeCallback',
+  callbackAliases: ['androidBridgeCallback'],
   methodName: 'saveImageToAlbum',
   serializeArgs: (input, callbackId) => [serializeJsonValue({ ...validateSaveImageInput(input), callbackId })],
   parseResult: parseSuccessResult,
@@ -178,7 +181,7 @@ const iosSaveImageToAlbumTransport = createCallbackInjectedObjectTransport<
   NativeSuccessResult
 >({
   objectName: 'iosBridge',
-  callbackName: 'iosBridgeCallback',
+  callbackName: 'nativeBridgeCallback',
   methodName: 'saveImageToAlbum',
   serializeArgs: (input, callbackId) => [serializeJsonValue({ ...validateSaveImageInput(input), callbackId })],
   parseResult: parseSuccessResult,
@@ -189,7 +192,8 @@ const androidCopyTextTransport = createCallbackInjectedObjectTransport<
   NativeSuccessResult
 >({
   objectName: 'androidBridge',
-  callbackName: 'androidBridgeCallback',
+  callbackName: 'nativeBridgeCallback',
+  callbackAliases: ['androidBridgeCallback'],
   methodName: 'copyText',
   serializeArgs: (input, callbackId) => [serializeJsonValue({ ...validateCopyTextInput(input), callbackId })],
   parseResult: parseSuccessResult,
@@ -200,7 +204,7 @@ const iosCopyTextTransport = createCallbackInjectedObjectTransport<
   NativeSuccessResult
 >({
   objectName: 'iosBridge',
-  callbackName: 'iosBridgeCallback',
+  callbackName: 'nativeBridgeCallback',
   methodName: 'copyText',
   serializeArgs: (input, callbackId) => [serializeJsonValue({ ...validateCopyTextInput(input), callbackId })],
   parseResult: parseSuccessResult,

@@ -15,8 +15,8 @@ type InjectedBridgeProbe = {
 
 type BridgeProbeWindow = Window & {
   androidBridge?: InjectedBridgeProbe
+  nativeBridgeCallback?: (callbackId: string, payload: unknown) => void
   androidBridgeCallback?: (callbackId: string, payload: unknown) => void
-  iosBridgeCallback?: (callbackId: string, payload: unknown) => void
   iosBridge?: InjectedBridgeProbe
   webkit?: {
     messageHandlers?: Record<string, { postMessage(payload: unknown): void } | undefined>
@@ -39,8 +39,8 @@ async function loadBridge(mode: 'disabled' | 'native' = 'native') {
 
 afterEach(() => {
   delete bridgeWindow.androidBridge
+  delete bridgeWindow.nativeBridgeCallback
   delete bridgeWindow.androidBridgeCallback
-  delete bridgeWindow.iosBridgeCallback
   delete bridgeWindow.iosBridge
   delete bridgeWindow.webkit
   vi.unstubAllEnvs()
@@ -466,7 +466,7 @@ describe('JSBridge capability runtime', () => {
         const request = JSON.parse(payload as string) as { scanType: string; callbackId: string }
         received.push(request)
         queueMicrotask(() => {
-          bridgeWindow.iosBridgeCallback?.(request.callbackId, '{"code":"IOS-CODE"}')
+          bridgeWindow.nativeBridgeCallback?.(request.callbackId, '{"code":"IOS-CODE"}')
         })
       },
     }
@@ -774,7 +774,7 @@ describe('JSBridge capability runtime', () => {
         const status = statuses[index]
         index += 1
         queueMicrotask(() => {
-          bridgeWindow.iosBridgeCallback?.(request.callbackId, JSON.stringify({ status }))
+          bridgeWindow.nativeBridgeCallback?.(request.callbackId, JSON.stringify({ status }))
         })
       },
     }

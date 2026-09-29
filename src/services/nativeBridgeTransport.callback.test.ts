@@ -17,6 +17,8 @@ function createProbeTransport(methodName: string, timeoutMs = 1_000) {
   return createCallbackInjectedObjectTransport<string, string>({
     objectName: 'androidBridge',
     methodName,
+    callbackName: 'nativeBridgeCallback',
+    callbackAliases: ['androidBridgeCallback'],
     timeoutMs,
     serializeArgs: (value, callbackId) => [JSON.stringify({ value, callbackId })],
     parseResult: (payload) => {
@@ -39,9 +41,9 @@ function invoke(
 
 afterEach(() => {
   delete hostWindow.androidBridge
+  delete hostWindow.nativeBridgeCallback
   delete hostWindow.androidBridgeCallback
   delete hostWindow.iosBridge
-  delete hostWindow.iosBridgeCallback
   vi.useRealTimers()
 })
 
@@ -61,8 +63,8 @@ describe('Android injected callback dispatcher', () => {
     expect(requests).toHaveLength(2)
     expect(requests[0].callbackId).not.toBe(requests[1].callbackId)
 
-    hostWindow.androidBridgeCallback?.(requests[0].callbackId, { value: 'first-result' })
-    hostWindow.androidBridgeCallback?.(requests[1].callbackId, { value: 'second-result' })
+    hostWindow.nativeBridgeCallback?.(requests[0].callbackId, { value: 'first-result' })
+    hostWindow.nativeBridgeCallback?.(requests[1].callbackId, { value: 'second-result' })
 
     await expect(first).resolves.toBe('first-result')
     await expect(second).resolves.toBe('second-result')
@@ -123,14 +125,14 @@ describe('Android injected callback dispatcher', () => {
         const request = JSON.parse(payload as string) as CallbackRequest
         requests.push(request)
         queueMicrotask(() => {
-          hostWindow.iosBridgeCallback?.(request.callbackId, { value: 'ios-result' })
+          hostWindow.nativeBridgeCallback?.(request.callbackId, { value: 'ios-result' })
         })
       },
     }
     const transport = createCallbackInjectedObjectTransport<string, string>({
       objectName: 'iosBridge',
       methodName: 'scanCode',
-      callbackName: 'iosBridgeCallback',
+      callbackName: 'nativeBridgeCallback',
       serializeArgs: (value, callbackId) => [JSON.stringify({ value, callbackId })],
       parseResult: (payload) => (payload as { value: string }).value,
     })

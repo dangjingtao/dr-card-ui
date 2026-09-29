@@ -28,8 +28,8 @@ iOS:     window.iosBridge.openApp(json)
 双端均异步回调：
 
 ```text
-Android: window.androidBridgeCallback(callbackId, payload)
-iOS:     window.iosBridgeCallback(callbackId, payload)
+Target:  window.nativeBridgeCallback(callbackId, payload)
+Android compatibility: window.androidBridgeCallback(callbackId, payload)
 ```
 
 `detect` 从 callback `data.installed` 读取安装状态；`open/store` 以 `code === 0` 判成功。

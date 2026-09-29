@@ -1,7 +1,7 @@
 # Native Bridge v2 契约基线
 
 > 来源：2026-09-21 Native 团队对 H028 能力征集清单的回填。  
-> H029 负责把该回填转为 H5 正式 Bridge 契约基线；未实现的 Native 方法仍保持 unsupported。
+> H029 负责把该回填转为 H5 正式 Bridge 契约基线；2026-09-28 H5 × Native 联调协议补充了 callbackId 与统一 callback 目标。未实现的 Native 方法仍保持 unsupported。
 
 ## 1. 双端统一约定
 
@@ -18,7 +18,8 @@ Native 团队确认：
 - 2026-09-21 原始回填中的“有参方法同步 return”已被后续真机实现与 2026-09-29 对齐结论覆盖：**调用形态按能力语义划分，不按平台划分**；
 - 同步能力不带 `callbackId`：`getLoginToken()` 同步 return JSON；`closeWebView()` 为无结果 fire-and-forget；
 - 异步能力必须带由 H5 transport 生成的 `callbackId`：`scanCode / takePhoto / chooseImage / saveImageToAlbum / copyText / showRewardAd / openApp`；
-- Android / iOS 的异步方法名、业务字段、返回 envelope 与 callbackId 语义保持一致；回调入口分别为 `window.androidBridgeCallback(callbackId, payload)` / `window.iosBridgeCallback(callbackId, payload)`，签名完全相同；
+- Android / iOS 的异步方法名、业务字段、返回 envelope 与 callbackId 语义保持一致；**统一目标 callback** 为 `window.nativeBridgeCallback(callbackId, payload)`；
+- 当前 Android 真机源码已验证 `window.androidBridgeCallback(callbackId, payload)`，H5 将其作为兼容入口挂到与统一目标相同的 pending channel；iOS 不新增平台专用 callback 名，真实宿主是否已实现统一目标仍须真机确认；
 - 回填中统一写明最低 App 版本目标为 **2.13**；
 - “最低版本 2.13”不等于方法已经实现，能力是否可用仍以“是否已有”和真机注入结果为准。
 
@@ -222,10 +223,10 @@ Native 回填仍标记 Android / iOS 当前均“否”，所以这里仅表示 
 H5 已把双端 `scanCode(json)` target contract 注册进 Capability Runtime：
 
 - Android：`window.androidBridge.scanCode(json)`；H5 加入运行时生成的 `callbackId`，Native 通过 `window.androidBridgeCallback(callbackId, payload)` 回传；
-- iOS：`window.iosBridge.scanCode(json)`；同样加入 `callbackId`，Native 通过 `window.iosBridgeCallback(callbackId, payload)` 回传；
+- iOS：`window.iosBridge.scanCode(json)`；同样加入 `callbackId`，Native 通过 `window.nativeBridgeCallback(callbackId, payload)` 回传；
 - `scanType` 保留 Native 原字段和值：`qr | bar | all`；
 - Android 当前兼容联调 envelope（例如 `{ code: 0, data: { text: "..." } }`）以及既有 `{ code: "..." }` 结果；iOS 继续接受既有 JSON-string 结果；
-- H5 的 Android callback dispatcher 在一个稳定的全局 `window.androidBridgeCallback` 上按 `callbackId` 分发 pending 请求，允许同能力与跨能力调用重叠、乱序返回，并在完成或超时后清理对应 pending；
+- H5 以稳定的 `window.nativeBridgeCallback` 维护 callbackId pending channel；Android 同时挂载 `window.androidBridgeCallback` 兼容入口，两者命中同一 pending map，允许同能力与跨能力乱序返回，并在完成或超时后清理；
 - 扫码原始内容按敏感结果处理，Bridge Lab 默认脱敏；
 - `/card/verify` 已去掉“点击即模拟成功”，成功结果通过 route state 进入确认核销页；
 - method 缺失时保持 unsupported，不启用 Web camera fallback。
@@ -253,7 +254,7 @@ Native 回填仍标记四项当前均“否”，所以这里只表示 H5 contra
 H5 已注册双端 `showRewardAd(json)` target contract：
 
 - Android：`window.androidBridge.showRewardAd(json)`；H5 加入运行时生成的 `callbackId`，结果经共享 `window.androidBridgeCallback(callbackId, payload)` 分发；
-- iOS：`window.iosBridge.showRewardAd(json)`；同样加入 `callbackId`，结果经 `window.iosBridgeCallback(callbackId, payload)` 分发；
+- iOS：`window.iosBridge.showRewardAd(json)`；同样加入 `callbackId`，结果经 `window.nativeBridgeCallback(callbackId, payload)` 分发；
 - 当前仅开放 scene `h5CheckinResign`；
 - 返回 status 仅接受 `completed | closed | failed | no_fill`，Android 同时兼容当前联调 envelope 中的 `data.status`；
 - Android 扫码与激励广告共用同一 callback dispatcher，但各 invocation 由 `callbackId` 独立关联，不互相覆盖；
@@ -269,7 +270,7 @@ Native 方法是否已在某个具体 APK / IPA 注入仍以真机证据为准�
 H5 已注册双端 `openApp(json)` target contract：
 
 - Android：`window.androidBridge.openApp(json)` → `window.androidBridgeCallback(callbackId, payload)`
-- iOS：`window.iosBridge.openApp(json)` → `window.iosBridgeCallback(callbackId, payload)`
+- iOS：`window.iosBridge.openApp(json)` → `window.nativeBridgeCallback(callbackId, payload)`
 - 两端均为异步能力，H5 transport 自动在 JSON 中加入 `callbackId`；
 - action 仅允许 `open | store | detect`；
 - `inviteCode` / `fallbackUrl` 保留 Native 原字段；

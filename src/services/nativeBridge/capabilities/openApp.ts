@@ -62,7 +62,8 @@ const androidTransport = createCallbackInjectedObjectTransport<
   NativeOpenAppResult
 >({
   objectName: 'androidBridge',
-  callbackName: 'androidBridgeCallback',
+  callbackName: 'nativeBridgeCallback',
+  callbackAliases: ['androidBridgeCallback'],
   methodName: 'openApp',
   serializeArgs: (input, callbackId) => [serializeJsonValue({ ...validateInput(input), callbackId })],
   parseResult,
@@ -73,7 +74,7 @@ const iosTransport = createCallbackInjectedObjectTransport<
   NativeOpenAppResult
 >({
   objectName: 'iosBridge',
-  callbackName: 'iosBridgeCallback',
+  callbackName: 'nativeBridgeCallback',
   methodName: 'openApp',
   serializeArgs: (input, callbackId) => [serializeJsonValue({ ...validateInput(input), callbackId })],
   parseResult,

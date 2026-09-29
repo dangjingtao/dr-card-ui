@@ -28,8 +28,8 @@ iOS:     window.iosBridge.scanCode(json)
 双端均为异步回调：
 
 ```text
-Android: window.androidBridgeCallback(callbackId, payload)
-iOS:     window.iosBridgeCallback(callbackId, payload)
+Target:  window.nativeBridgeCallback(callbackId, payload)
+Android compatibility: window.androidBridgeCallback(callbackId, payload)
 ```
 
 成功 payload 使用统一 envelope，扫码正文位于 `data.text`。
