@@ -11,22 +11,15 @@ import {
 } from '../fixtures/home'
 
 /**
- * 券列表 Mock 按请求参数做服务端过滤（与真实 7002 语义一致）：
- * - `status`：只返回该状态的券（不传则全量）；
- * - `category_id`：只返回该分类的券（不传则全量）。
- *
- * 页面切分类 Tab 时会带 `category_id` 重新请求，这里必须真的过滤，
- * 否则 Mock 会掩盖前端的分类逻辑错误。
+ * 券列表 Mock 只模拟当前已确认的 status 过滤。
+ * category_id / 服务端分类能力仍待后端确认，因此 Mock 不实现也不暗示该契约。
  */
 export function filterCouponList(url: URL) {
   const statusParam = url.searchParams.get('status')
-  const categoryParam = url.searchParams.get('category_id')
 
-  const list = COUPON_LIST_MOCK.data.data.filter((coupon) => {
-    const statusMatched = statusParam === null || String(coupon.status) === statusParam
-    const categoryMatched = categoryParam === null || String(coupon.category_id) === categoryParam
-    return statusMatched && categoryMatched
-  })
+  const list = COUPON_LIST_MOCK.data.data.filter(
+    (coupon) => statusParam === null || String(coupon.status) === statusParam,
+  )
 
   return {
     ...COUPON_LIST_MOCK,
