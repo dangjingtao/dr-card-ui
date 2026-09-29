@@ -95,6 +95,18 @@ function statusConsecutiveDays(): number {
   return currentMockSignStatus().consecutiveDays
 }
 
+/**
+ * signactivity.signed_days 是「已经完成的连续签到天数」：
+ * 今天已签取当前连续值；今天未签时 /status 的 consecutive_days 是投影值，因此减 1。
+ */
+export function deriveMockActivitySignedDays(
+  sourceRecords: SignRecordMock[],
+  today = new Date(),
+): number {
+  const status = deriveMockSignStatus(sourceRecords, today)
+  return status.signed ? status.consecutiveDays : Math.max(0, status.consecutiveDays - 1)
+}
+
 export const checkinHandlers = [
   http.get(`*${SIGN_RECORDS_STATUS_PATH}`, () =>
     HttpResponse.json({
@@ -114,7 +126,10 @@ export const checkinHandlers = [
   http.get(`*${SIGN_ACTIVITY_LIST_PATH}`, () =>
     HttpResponse.json({
       ...CHECKIN_ACTIVITY_MOCK,
-      data: CHECKIN_ACTIVITY_MOCK.data.map((item) => ({ ...item, signed_days: records.length })),
+      data: CHECKIN_ACTIVITY_MOCK.data.map((item) => ({
+        ...item,
+        signed_days: deriveMockActivitySignedDays(records),
+      })),
     }),
   ),
 
