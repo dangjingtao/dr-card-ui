@@ -5,7 +5,7 @@ import DebugPanel from '../components/mobile/DebugPanel'
 import PageContainer from '../components/mobile/PageContainer'
 import BubbleValueRedeemCard from '../components/card/BubbleValueRedeemCard'
 import { BottomSheet, Button, EmptyState, SegmentedControl } from '../components/ui'
-import { useOverlay } from '../app/fixtures/useFixture'
+import { useFixtureQueryControls, useOverlay } from '../app/fixtures/useFixture'
 import { findRouteByPathname } from '../app/router/routes'
 import { useUserPointsStat } from './points/usePointsFeed'
 import { useExchangeCoupons } from './exchange/useExchangeFeed'
@@ -55,7 +55,9 @@ const availabilityButtonLabel = (state: ExchangeAvailability): string =>
  *        点击卡片打开兑换弹窗（券图名 / x1 / 说明 / 泡泡值 / 立即兑换）。
  *
  * 数据口径（2026-09-29 与产品确认）：
- * - 分类 Tab 按 `category_id` **服务端过滤**，切换 Tab 重新请求；
+ * - 当前真实业务只开放「通用体验包」兑换；多分类 / 多券页面结构保留，作为后续恢复多体验券时的扩展位，
+ *   不代表当前后端必须实现多 SKU 兑换；
+ * - 分类 Tab 仍按 `category_id` **服务端过滤**，用于保留页面结构与未来扩展；切换 Tab 重新请求；
  * - 卡片所需泡泡值 ← `points_number`，兑换量 ← `exchanged_nuuur`，
  *   已兑完 ← `exchanged_nuuur >= total_number` 或已下架，泡泡值不足 ← `points_number > 我的余额`；
  * - 接口无 `desc` / `image` 时分别用 `short_desc` 与本地品牌图兜底。
@@ -68,6 +70,7 @@ export default function Exchange() {
   const navigate = useNavigate()
   const route = findRouteByPathname('/exchange')
   const { overlay, close } = useOverlay()
+  const { patch: patchFixtureQueryControls } = useFixtureQueryControls()
   const [searchParams, setSearchParams] = useSearchParams()
 
   /** 前台主 Tab 按用户参考图切换体验券分类；分类由后端 `category_id` 服务端过滤。 */
@@ -107,13 +110,19 @@ export default function Exchange() {
 
   const changeCategory = (value: string) => {
     const nextCategory = resolveExchangeCategory(value)
-    patchParams((next) => {
-      if (nextCategory === 'all') next.delete('category')
-      else next.set('category', nextCategory)
-      /** 分类切换后原券可能不在新列表里，清掉弹层选中券避免错配。 */
-      next.delete('product')
-    })
-    close()
+
+    /**
+     * 分类切换与关闭兑换弹层必须落在同一次导航里。
+     * test/prod 的 overlay 存在 router state，而普通 category/product 留在 search；
+     * 若先 setSearchParams 再 close()，close() 会基于旧 location.search 二次导航并回滚新分类。
+     */
+    patchFixtureQueryControls(
+      { overlay: null },
+      {
+        category: nextCategory === 'all' ? null : nextCategory,
+        product: null,
+      },
+    )
   }
 
   const openRedeem = (product: CouponRedeemView) => {
