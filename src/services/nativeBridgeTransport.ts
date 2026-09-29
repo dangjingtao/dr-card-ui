@@ -8,7 +8,7 @@ export type NativeTransportResolution<TResult> =
     }
   | {
       supported: true
-      invoke: () => TResult | PromiseLike<TResult>
+      invoke: (options?: NativeTransportInvocationOptions) => TResult | PromiseLike<TResult>
     }
 
 export type IOSMessageHandler = {
@@ -339,7 +339,7 @@ export function createCallbackInjectedObjectTransport<TInput, TResult>(
 
       return {
         supported: true,
-        invoke: () => {
+        invoke: (options: NativeTransportInvocationOptions = {}) => {
           if (!hostWindow) {
             throw new NativeTransportError(
               'callback-channel-unsafe',
@@ -354,7 +354,8 @@ export function createCallbackInjectedObjectTransport<TInput, TResult>(
             config.callbackAliases,
           )
           const callbackId = nextInjectedCallbackId(config.methodName)
-          const timeoutMs = config.timeoutMs ?? INJECTED_CALLBACK_TIMEOUT_MS
+          const timeoutMs =
+            options.timeoutMs ?? config.timeoutMs ?? INJECTED_CALLBACK_TIMEOUT_MS
 
           if (channel.pending.has(callbackId)) {
             throw new NativeTransportError(
