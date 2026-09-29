@@ -138,7 +138,7 @@ H029 起该协议降级为 **历史联调证据 / Bridge Lab Raw Probe preset**�
 - 业务页面不得直接访问 `window.androidBridge` / `window.iosBridge`；
 - 正式调用统一经过 `src/services/nativeBridge.ts`；
 - injected-object 底层按**调用形态**选择 transport：同步能力使用 `createInjectedObjectTransport`；所有异步能力在 Android / iOS 均使用 `createCallbackInjectedObjectTransport`；
-- `callbackId` 由 H5 transport 生成、登记 pending、超时清理并按 id 关联 Promise；业务页面不得传入或感知 callbackId；
+- `callbackId` 由 H5 transport 生成、登记 pending、超时清理并按 id 关联 Promise；业务页面不得传入或感知 callbackId；Android / iOS 正式 injected-object 异步能力共用同一套 **120 秒** callback timeout；旧 `window.webkit.messageHandlers` transport 的 5 秒默认值仅属于历史兼容链，不适用于当前正式能力；
 - 为兼容迁移期旧宿主，callback transport 若收到同步 return 会立即解析；**目标协议仍以异步 callback 为准**，不得据此把异步能力重新定义成同步；
 - Bridge Lab 可枚举 registered capabilities，并保留 Raw Probe；
 - 浏览器、旧 App 或方法未注入时必须明确 unsupported；
