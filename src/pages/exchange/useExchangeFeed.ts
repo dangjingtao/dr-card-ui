@@ -24,12 +24,12 @@ export interface ExchangeCouponsResult {
  *
  * 与我的页「热门体验券」共用同一 service，差别只在本页：
  * - 只取上架券（`status=10`）；
- * - 切换分类 Tab 时带 `category_id` 重新请求（服务端过滤，非前端本地分组）；
+ * - 当前不发送 `category_id`：分类能力尚未由后端确认；
  * - 首屏一次取满 `COUPON_PAGE_SIZE_MAX`，专区不做分页（后续如券量增长再接分页）。
  *
  * 页面不做 mock/api 分支：mock 模式下由 MSW 拦截同一路径返回同一信封。
  */
-export function useExchangeCoupons(categoryId?: number): ExchangeCouponsResult {
+export function useExchangeCoupons(): ExchangeCouponsResult {
   const [remote, setRemote] = useState<RemoteData<CouponRedeemView[]>>({ state: 'loading' })
   const [reloadToken, setReloadToken] = useState(0)
 
@@ -37,10 +37,9 @@ export function useExchangeCoupons(categoryId?: number): ExchangeCouponsResult {
     () =>
       fetchCouponIndex({
         status: COUPON_STATUS_ON_SHELF,
-        categoryId,
         pageSize: COUPON_PAGE_SIZE_MAX,
       }),
-    [categoryId],
+    [],
   )
 
   useEffect(() => {
