@@ -4,13 +4,14 @@ import { ScanLine } from 'lucide-react'
 import HostCloseButton from '../components/mobile/HostCloseButton'
 import {
   getNativeBridgeDiagnostics,
+  getNativeHost,
   NativeBridgeError,
   scanCode,
 } from '../services/nativeBridge'
 
 export interface ScanVerifyNavigationState {
   nativeScanCode: string
-  nativeVerifyResult: 'done'
+  nativeVerifyResult?: 'done'
 }
 
 export default function ScanVerify() {
@@ -46,14 +47,25 @@ export default function ScanVerify() {
     setError(null)
 
     try {
+      const host = getNativeHost()
       const result = await scanCode({ scanType: 'all' })
-      const state: ScanVerifyNavigationState = {
-        nativeScanCode: result.code,
-        nativeVerifyResult: 'done',
+
+      if (host === 'android') {
+        const state: ScanVerifyNavigationState = {
+          nativeScanCode: result.code,
+          nativeVerifyResult: 'done',
+        }
+        // H037 has Android evidence that scanCode resolves only after the device transaction
+        // completes, so H5 resumes directly at the completed result state.
+        navigate('/card/verify/confirm', { replace: true, state })
+        return
       }
-      // Native only resolves this call after the device transaction has completed. Do not send the
-      // user through the legacy pre-verification confirmation again; H5 resumes at the result state.
-      navigate('/card/verify/confirm', { replace: true, state })
+
+      // iOS still has only the retained one-callback scanner contract in H5 evidence. Until Native
+      // terminal transaction semantics are independently confirmed, preserve the existing
+      // confirmation flow and never label a scan recognition as completed verification.
+      const state: ScanVerifyNavigationState = { nativeScanCode: result.code }
+      navigate('/card/verify/confirm', { state })
     } catch (error) {
       if (error instanceof NativeBridgeError) {
         if (error.code === 'native-cancelled') {
