@@ -37,26 +37,13 @@ function parseResult(payload: unknown): NativeRewardAdResult {
     parsed = parseJsonPayload(payload)
   }
 
-  const status =
+  const nativeCode =
     parsed !== null && typeof parsed === 'object'
-      ? ((parsed as { status?: unknown; data?: { status?: unknown } }).status
-        ?? (parsed as { data?: { status?: unknown } }).data?.status)
+      ? (parsed as { code?: unknown }).code
       : undefined
 
-  // Keep the migration-era status contract when an older host still returns it. If a host
-  // explicitly sends that field, validate it strictly instead of silently falling through to the
-  // newer numeric code contract.
-  if (status !== undefined) {
-    if (['completed', 'closed', 'failed', 'no_fill'].includes(status as string)) {
-      return { status: status as NativeRewardAdStatus }
-    }
-    throw new NativeTransportError(
-      'payload-invalid',
-      'Native showRewardAd() returned an unknown legacy status.',
-    )
-  }
-
-  const nativeCode = (parsed as { code?: unknown })?.code
+  // H037 current Android contract: Native owns completion semantics and numeric code is the
+  // authoritative final result. Migration-era status must not override a confirmed current code.
   if (typeof nativeCode === 'number') {
     if (nativeCode === 0) return { status: 'completed' }
     if (nativeCode === 1) return { status: 'closed' }
@@ -69,9 +56,27 @@ function parseResult(payload: unknown): NativeRewardAdResult {
     )
   }
 
+  const status =
+    parsed !== null && typeof parsed === 'object'
+      ? ((parsed as { status?: unknown; data?: { status?: unknown } }).status
+        ?? (parsed as { data?: { status?: unknown } }).data?.status)
+      : undefined
+
+  // Legacy status is accepted only when the current numeric-code contract is absent.
+  if (['completed', 'closed', 'failed', 'no_fill'].includes(status as string)) {
+    return { status: status as NativeRewardAdStatus }
+  }
+
+  if (status !== undefined) {
+    throw new NativeTransportError(
+      'payload-invalid',
+      'Native showRewardAd() returned an unknown legacy status.',
+    )
+  }
+
   throw new NativeTransportError(
     'payload-invalid',
-    'Native showRewardAd() result requires a confirmed status or Native result code.',
+    'Native showRewardAd() result requires a confirmed Native code or legacy status.',
   )
 }
 
