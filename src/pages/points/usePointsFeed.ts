@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import {
   fetchSignActivities,
@@ -84,6 +84,10 @@ export interface UserPointsListResult {
   loadedPage: number
   /** 当前筛选下「加载更多」是否可用（已到末页则为 false）。 */
   canLoadMore: boolean
+  /** 仅表示追加页请求中；首屏数据继续保留渲染。 */
+  loadingMore: boolean
+  /** 追加页失败只在列表下方反馈，不把已加载列表替换成整页错误态。 */
+  loadMoreError: string | null
   /** 请求下一页；在当前筛选下追加，不整表替换。 */
   loadMore: () => void
   /** 强制重新加载（错误重试）；从第 1 页重新开始。 */
@@ -99,61 +103,95 @@ export interface UserPointsListResult {
  */
 export function useUserPointsList(query: UserPointsListQuery): UserPointsListResult {
   const { type, pageSize } = query
-  const [page, setPage] = useState(1)
   const [remote, setRemote] = useState<RemoteData<UserPointsPage>>({ state: 'loading' })
   const [records, setRecords] = useState<UserPointsRecord[]>([])
+  const [loadedPage, setLoadedPage] = useState(0)
   const [lastPage, setLastPage] = useState(1)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [loadMoreError, setLoadMoreError] = useState<string | null>(null)
   const [reloadToken, setReloadToken] = useState(0)
-  // 记录上一次的筛选键（type + reloadToken），用于在渲染期同步重置分页，
-  // 避免「先按旧页码发请求、再被重置」的竞态。
-  const [activeKey, setActiveKey] = useState(`${type ?? 'all'}#${reloadToken}`)
+  const requestVersionRef = useRef(0)
 
-  const currentKey = `${type ?? 'all'}#${reloadToken}`
-  if (currentKey !== activeKey) {
-    // 切换 Tab 或重新加载：立刻回到第 1 页并清空累计（React 渲染期调整状态，避免多发一次旧页码请求）。
-    setActiveKey(currentKey)
-    setPage(1)
-    setRecords([])
-  }
-
-  const requestPage = page
-
+  // 首屏 / Tab 切换 / 手动重载：从第 1 页重新建立列表。
   useEffect(() => {
+    const requestVersion = ++requestVersionRef.current
     let active = true
+
     setRemote({ state: 'loading' })
-    void fetchUserPointsList({ type, page: requestPage, pageSize }).then(
+    setRecords([])
+    setLoadedPage(0)
+    setLastPage(1)
+    setLoadingMore(false)
+    setLoadMoreError(null)
+
+    void fetchUserPointsList({ type, page: 1, pageSize }).then(
       (data) => {
-        if (!active) return
-        setRemote({ state: 'success', data })
+        if (!active || requestVersion !== requestVersionRef.current) return
+        setRecords(data.data)
+        setLoadedPage(data.current_page)
         setLastPage(data.last_page)
-        setRecords((prev) => (data.current_page === 1 ? data.data : [...prev, ...data.data]))
+        setRemote({ state: 'success', data })
       },
       (error: unknown) => {
-        if (active) {
-          setRemote({
-            state: 'error',
-            message: error instanceof Error ? error.message : '网络请求失败',
-          })
-        }
+        if (!active || requestVersion !== requestVersionRef.current) return
+        setRemote({
+          state: 'error',
+          message: error instanceof Error ? error.message : '网络请求失败',
+        })
       },
     )
+
     return () => {
       active = false
     }
-  }, [type, requestPage, pageSize, reloadToken])
+  }, [type, pageSize, reloadToken])
 
-  const loadMore = useCallback(() => setPage((value) => value + 1), [])
+  // 追加页独立于首屏 remote 状态：请求中/失败时都保留已加载 records。
+  const loadMore = useCallback(() => {
+    if (remote.state !== 'success' || loadingMore || loadedPage >= lastPage) return
+
+    const nextPage = loadedPage + 1
+    const requestVersion = requestVersionRef.current
+    setLoadingMore(true)
+    setLoadMoreError(null)
+
+    void fetchUserPointsList({ type, page: nextPage, pageSize }).then(
+      (data) => {
+        if (requestVersion !== requestVersionRef.current) return
+        setRecords((prev) => [...prev, ...data.data])
+        setLoadedPage(data.current_page)
+        setLastPage(data.last_page)
+        setLoadingMore(false)
+      },
+      (error: unknown) => {
+        if (requestVersion !== requestVersionRef.current) return
+        setLoadMoreError(error instanceof Error ? error.message : '网络请求失败')
+        setLoadingMore(false)
+      },
+    )
+  }, [lastPage, loadedPage, loadingMore, pageSize, remote.state, type])
+
   const reload = useCallback(() => setReloadToken((value) => value + 1), [])
 
   const merged: RemoteData<UserPointsPage> =
     remote.state === 'success'
-      ? { state: 'success', data: { ...remote.data, data: records, current_page: requestPage } }
+      ? {
+          state: 'success',
+          data: {
+            ...remote.data,
+            data: records,
+            current_page: loadedPage || remote.data.current_page,
+            last_page: lastPage,
+          },
+        }
       : remote
 
   return {
     remote: merged,
-    loadedPage: requestPage,
-    canLoadMore: remote.state === 'success' && requestPage < lastPage,
+    loadedPage,
+    canLoadMore: remote.state === 'success' && loadedPage < lastPage,
+    loadingMore,
+    loadMoreError,
     loadMore,
     reload,
   }
