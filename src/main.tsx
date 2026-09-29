@@ -21,8 +21,8 @@ async function prepareRuntime() {
 }
 
 async function prepareMobileDebugPanel() {
-  // Eruda is available in every non-prod environment without a query switch.
-  // Production keeps the debug console disabled regardless of URL parameters.
+  // Maintainer 2026-09-29: Eruda is intentionally enabled by default in dev/preview.
+  // test/prod are prod-like and keep the debug console disabled regardless of URL parameters.
   if (runtimePolicy.isProdLike) return
 
   const { default: eruda } = await import('eruda')
