@@ -32,6 +32,10 @@ const pathToLegacyKey = new Map(
 // 中间凸起的扫码项不再走 H5 路由，而是直接调用已确认的原生 scanCode 能力。
 const SCAN_TAB_PATH = mainItems.find((item) => item.fab)?.value
 
+// App WebView 可能晚于 React 首屏注入 Bridge；首屏做有限探测，避免浏览器预览永久轮询。
+const BRIDGE_DISCOVERY_INTERVAL_MS = 500
+const BRIDGE_DISCOVERY_MAX_ATTEMPTS = 20
+
 export default function BottomNav({ variant = 'main' }: { variant?: 'main' | 'legacy' }) {
   const location = useLocation()
   const navigate = useNavigate()
@@ -46,16 +50,31 @@ export default function BottomNav({ variant = 'main' }: { variant?: 'main' | 'le
   useEffect(() => {
     if (isLegacy || scanSupported) return
 
+    let attempts = 0
+    let intervalId: number | undefined
+
     const refreshSupport = () => {
-      setScanSupported(getNativeBridgeDiagnostics().capabilities.scanCode)
+      const supported = getNativeBridgeDiagnostics().capabilities.scanCode
+      if (supported) setScanSupported(true)
+      return supported
     }
 
-    const intervalId = window.setInterval(refreshSupport, 500)
+    const pollSupport = () => {
+      attempts += 1
+      if (refreshSupport() || attempts >= BRIDGE_DISCOVERY_MAX_ATTEMPTS) {
+        if (intervalId !== undefined) {
+          window.clearInterval(intervalId)
+          intervalId = undefined
+        }
+      }
+    }
+
+    intervalId = window.setInterval(pollSupport, BRIDGE_DISCOVERY_INTERVAL_MS)
     window.addEventListener('focus', refreshSupport)
     window.addEventListener('pageshow', refreshSupport)
 
     return () => {
-      window.clearInterval(intervalId)
+      if (intervalId !== undefined) window.clearInterval(intervalId)
       window.removeEventListener('focus', refreshSupport)
       window.removeEventListener('pageshow', refreshSupport)
     }
