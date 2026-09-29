@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { COUPON_PAGE_SIZE_DEFAULT, fetchCouponIndex } from './coupons'
+import { COUPON_PAGE_SIZE_DEFAULT, COUPON_STATUS_ON_SHELF, fetchCouponIndex } from './coupons'
 
 const mocks = vi.hoisted(() => ({
   request: vi.fn(),
@@ -48,6 +48,23 @@ describe('coupon index contract', () => {
     })
     expect(page.total).toBe(1)
     expect(page.data[0]).toMatchObject({ id: 1, name: 'Mock·洗护体验券' })
+  })
+
+  it('forwards the on-shelf status filter used by redeemable coupon surfaces', async () => {
+    mocks.request.mockResolvedValue({ code: 0, msg: 'success', status: 'succ', data: PAGE_DATA })
+
+    await fetchCouponIndex({ status: COUPON_STATUS_ON_SHELF })
+
+    expect(mocks.request).toHaveBeenCalledWith({
+      method: 'GET',
+      url: '/api/coupons/index',
+      params: {
+        category_id: undefined,
+        status: COUPON_STATUS_ON_SHELF,
+        page: 1,
+        pageSize: COUPON_PAGE_SIZE_DEFAULT,
+      },
+    })
   })
 
   it('tolerates string points_number / category_id from the backend', async () => {
