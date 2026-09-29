@@ -136,6 +136,8 @@ describe('Exchange（洗护体验券专区接口接入）', () => {
     renderExchange('/exchange?category=conditioner&product=1')
     await screen.findByText('Mock·洗护体验券')
 
+    expect(mocks.useExchangeCoupons).toHaveBeenCalledWith()
+
     fireEvent.click(screen.getByRole('tab', { name: '洗发体验' }))
 
     expect(mocks.patchFixtureQueryControls).toHaveBeenCalledWith(
@@ -143,6 +145,7 @@ describe('Exchange（洗护体验券专区接口接入）', () => {
       { category: 'shampoo', product: null },
     )
     expect(mocks.close).not.toHaveBeenCalled()
+    expect(mocks.useExchangeCoupons).toHaveBeenCalledWith()
   })
 
   it('shows a retry action when the coupon list fails', async () => {
