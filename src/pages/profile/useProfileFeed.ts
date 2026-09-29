@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 
-import { fetchCouponIndex, type CouponTemplate } from '../../services/coupons'
+import { COUPON_STATUS_ON_SHELF, fetchCouponIndex, type CouponTemplate } from '../../services/coupons'
 import { fetchUserProfile, type UserProfile } from '../../services/userProfile'
 
 export type RemoteData<T> =
@@ -60,5 +60,7 @@ export function useProfileFeed(): RemoteResult<UserProfile> {
  * 首屏只取第 1 页，「查看更多」跳券页承接完整分页。
  */
 export function useProfileCoupons(): RemoteResult<CouponTemplate[]> {
-  return useRemoteData(useCallback(async () => (await fetchCouponIndex()).data, []))
+  return useRemoteData(
+    useCallback(async () => (await fetchCouponIndex({ status: COUPON_STATUS_ON_SHELF })).data, []),
+  )
 }
