@@ -114,8 +114,7 @@ export default function PointsDetail() {
           />
         ) : records.length === 0 ? (
           /* 原型 §3 只给了「暂时没有更多记录啦」，不额外补写引导文案；
-             视觉档位改用品牌插画，与 Address / Orders 的图标版空态并存。
-             空态直接落在页面背景上，不再套白卡片容器。 */
+             视觉统一使用品牌插画空态，直接落在页面背景上，不再套白卡片容器。 */
           <EmptyState
             variant="no-data"
             visual={<EmptyStateIllustration />}
