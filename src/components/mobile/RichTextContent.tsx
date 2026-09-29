@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import DOMPurify from 'dompurify'
 import { Button, Skeleton } from '../ui'
 import { fetchRichTextSetting, type RichTextSettingKey } from '../../services/settings'
 import emptyIllustration from '../../assets/brand/empty/empty-illustration.webp'
@@ -86,11 +87,13 @@ export default function RichTextContent({ settingKey, title }: RichTextContentPr
     return <RichTextState kind="empty" title="这里还空空如也" description={`暂时没有可展示的${title}内容。`} />
   }
 
+  const safeContent = DOMPurify.sanitize(state.content)
+
   return (
     <div
       data-rich-text-content
       className="break-words py-4 text-sm leading-7 text-text-primary [&_a]:text-primary [&_a]:underline [&_h1]:mb-4 [&_h1]:text-2xl [&_h1]:font-bold [&_h2]:mb-3 [&_h2]:text-xl [&_h2]:font-bold [&_h3]:mb-2 [&_h3]:text-lg [&_h3]:font-semibold [&_img]:my-4 [&_img]:h-auto [&_img]:max-w-full [&_li]:ml-5 [&_ol]:my-3 [&_ol]:list-decimal [&_p]:mb-3 [&_table]:my-4 [&_table]:w-full [&_ul]:my-3 [&_ul]:list-disc"
-      dangerouslySetInnerHTML={{ __html: state.content }}
+      dangerouslySetInnerHTML={{ __html: safeContent }}
     />
   )
 }
