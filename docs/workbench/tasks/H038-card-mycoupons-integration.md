@@ -1,6 +1,6 @@
 # H038｜MyCoupons 用户卡包列表接入
 
-**Status:** Planned  
+**Status:** In Progress  
 **Phase:** API Integration / Card Package  
 **Depends on:** H007, H009, H013, H035
 
