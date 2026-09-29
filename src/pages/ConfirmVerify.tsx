@@ -81,7 +81,7 @@ export default function ConfirmVerify() {
         <div className="mt-auto px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-5">
           <button
             type="button"
-            onClick={() => navigate('/card?state=used')}
+            onClick={() => navigate(isNativeTransactionResult ? '/card' : '/card?state=used')}
             className="h-12 w-full rounded-full bg-primary text-base font-medium text-text-inverse active:bg-primary-pressed"
           >
             返回卡包
