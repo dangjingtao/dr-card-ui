@@ -24,8 +24,12 @@ async function prepareMobileDebugPanel() {
   // Maintainer 2026-09-29: Eruda should be available in every non-prod environment.
   if (runtimePolicy.appEnvironment === 'prod') return
 
-  const { default: eruda } = await import('eruda')
-  eruda.init()
+  try {
+    const { default: eruda } = await import('eruda')
+    eruda.init()
+  } catch (error) {
+    console.warn('[debug] Eruda initialization failed; continuing without the mobile console.', error)
+  }
 }
 
 async function bootstrap() {
