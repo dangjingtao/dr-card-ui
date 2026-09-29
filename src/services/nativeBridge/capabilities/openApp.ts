@@ -37,9 +37,16 @@ function parseResult(payload: unknown): NativeOpenAppResult {
     )
   }
 
-  const legacySuccess = (parsed as { success?: unknown }).success
-  const installed = (parsed as { installed?: unknown }).installed
-  if (typeof legacySuccess === 'boolean' && typeof installed === 'boolean') {
+  const result = parsed as { success?: unknown; installed?: unknown }
+  const legacySuccess = result.success
+  const installed = result.installed
+  if ('success' in result) {
+    if (typeof legacySuccess !== 'boolean' || typeof installed !== 'boolean') {
+      throw new NativeTransportError(
+        'payload-invalid',
+        'Native openApp() legacy result requires success:boolean and installed:boolean.',
+      )
+    }
     return { success: legacySuccess, installed }
   }
 
