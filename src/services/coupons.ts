@@ -31,7 +31,6 @@ export interface CouponTemplate {
   name: string
   short_desc?: string | null
   image?: string | null
-  category_id?: number | string | null
   /** 兑换所需泡泡值 */
   points_number?: number | string | null
   /** 可兑换数量 */
@@ -60,8 +59,9 @@ export interface CouponListEnvelope {
 
 /**
  * 我的页券模板契约：只强约束列表必备字段与分页结构，其余字段整体放行，
- * 避免后端新增字段触发契约失败。`points_number` / `category_id` 后端可能返回字符串，
- * 因此按 `number | string` 容错（与 `CouponTemplate` 声明一致）。
+ * 避免后端新增字段触发契约失败。`points_number` 后端可能返回字符串，
+ * 因此按 `number | string` 容错。未确认字段（包括可能存在的 `category_id`）由 passthrough 放行，
+ * 但不进入当前正式消费契约。
  */
 const couponTemplateSchema = z
   .object({
@@ -69,7 +69,6 @@ const couponTemplateSchema = z
     name: z.string(),
     short_desc: z.string().nullish(),
     image: z.string().nullish(),
-    category_id: z.union([z.number(), z.string()]).nullish(),
     points_number: z.union([z.number(), z.string()]).nullish(),
     total_number: z.number().nullish(),
     exchanged_nuuur: z.number().nullish(),
@@ -93,8 +92,6 @@ const couponListPageSchema = z
 export interface CouponListParams {
   /** coupons.status：10=上架（首页/卡券页固定），20=下架。2026-09-28 联调文档起为必填。 */
   status?: number
-  /** 按分类过滤。 */
-  categoryId?: number
   page?: number
   pageSize?: number
 }
@@ -105,7 +102,6 @@ export async function fetchCouponList(params: CouponListParams = {}): Promise<Co
     url: COUPON_LIST_PATH,
     params: {
       status: params.status ?? COUPON_STATUS_ON_SHELF,
-      category_id: params.categoryId,
       page: params.page ?? 1,
       pageSize: params.pageSize ?? 50,
     },
@@ -127,7 +123,6 @@ export interface CouponIndexParams {
   pageSize?: number
   /** 券状态过滤：10=上架，20=下架；不传由后端默认（全部）。 */
   status?: number
-  categoryId?: number
 }
 
 export async function fetchCouponIndex(
@@ -139,7 +134,6 @@ export async function fetchCouponIndex(
     method: 'GET',
     url: COUPON_LIST_PATH,
     params: {
-      category_id: params.categoryId,
       status: params.status,
       page: params.page ?? 1,
       pageSize,
@@ -181,7 +175,7 @@ export interface CouponRedeemView {
   soldOut: boolean
 }
 
-/** 后端 `points_number` / `category_id` 可能是字符串，统一收敛为正整数。 */
+/** 后端数值字段可能以字符串返回，统一收敛为正整数。 */
 function toCouponCount(value: number | string | null | undefined): number {
   const parsed = typeof value === 'string' ? Number(value) : value
   return typeof parsed === 'number' && Number.isFinite(parsed) && parsed > 0 ? parsed : 0
