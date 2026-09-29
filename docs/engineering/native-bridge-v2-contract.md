@@ -266,7 +266,7 @@ H5 已注册双端 `showRewardAd(json)`；Android 当前由 H037 按真实宿主
   - `code=1` → `closed`
   - `code=5 | 6` → `failed`
   - `code=7` → `no_fill`
-- 迁移期旧宿主若明确返回合法 `status=completed|closed|failed|no_fill`，仍兼容；若显式携带未知 status，则 fail-closed，不用 numeric code 掩盖协议污染；
+- 当前契约只要存在 numeric `code`，就以 Native code 作为最终结果事实；仅在 numeric code 缺失时读取迁移期 legacy `status=completed|closed|failed|no_fill`，此时未知 status 才按非法 legacy payload 拒绝；
 - `/checkin` 仍只有 H5 归一后的 `completed` 才继续补签；
 - iOS 保留同名 injected-object callback contract，但当前具体结果 envelope 仍待独立实证，不因 Android 已实现而自动宣称完成。
 
