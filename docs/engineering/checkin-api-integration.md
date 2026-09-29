@@ -67,8 +67,10 @@
 1. `signrecords/index` 是否应返回「被补日期」字段（如 `sign_date`），或补签时记录该日期；
 2. `index` 是否应支持按月过滤（避免前端全量拉取后在本地过滤）。
 
-**前端当前处理（不伪装成已持久化）：** 补签成功后做**会话内乐观点亮**，并在
-`buildCheckinCalendar` 中以 `makeupApplied` 标志区分「接口已确认」与「仅本次会话点亮」。
+**前端当前处理（不伪装成已持久化）：** `status=20` 的补签记录不会按 `create_time`
+写入日历，因为该日期只代表操作时刻。补签成功后仅对请求中的 `day` 做**会话内乐观点亮**，
+并以 `makeupApplied` 标记；刷新/重进后若后端仍未提供目标日期字段，该补签格不会被伪造为
+“接口已持久化日期”。
 
 ## 4. 改动清单
 
@@ -141,8 +143,8 @@
   （逐字回放 Native 文档的 Android `scene + callbackId` / `code:0 + data.status` 契约；
   确认 `closed / failed / no_fill` 是广告业务 status 而非 invocation error；
   并验证 `{"error":...}` envelope 在真实边界确实产出 `native-cancelled` / `native-permission-denied`）
-- 全量 `npm run test`：**仅剩 2 个既有失败**（`nativeBridge.test.ts` / `BuddyScanLanding.test.tsx`），
-  已用 `git stash` 在基线上复现确认与本次改动无关。
+- 原始 `feat/0928` 落地时的全量测试记录已被后续 `dev` 同步取代；PR #71 的最终
+  Build / OpenCode Review 作为当前合并证据，不再沿用旧分支上的历史失败计数。
 
 ### 5.1 真实接口联调（7002 实测）
 
