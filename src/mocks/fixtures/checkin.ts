@@ -94,7 +94,7 @@ export const CHECKIN_ACTIVITY_MOCK = {
       type: 10,
       image: '',
       is_makeup: 1,
-      status: 10,
+      status: 20,
       sort_number: 1,
       max_days: 31,
       signed_days: MOCK_SIGNED_OFFSETS.length,
