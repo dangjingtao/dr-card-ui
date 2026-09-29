@@ -61,7 +61,14 @@ export default function PointsDetail() {
   /** ?state=empty 用于验收空态；API 模式下该 fixture 失效，仍按真实数据渲染。 */
   const forceEmpty = state?.key === 'empty'
 
-  const { remote, canLoadMore, loadMore, reload } = useUserPointsList({
+  const {
+    remote,
+    canLoadMore,
+    loadingMore,
+    loadMoreError,
+    loadMore,
+    reload,
+  } = useUserPointsList({
     type: FILTER_TO_TYPE[filter],
     pageSize: PAGE_SIZE,
   })
@@ -150,10 +157,15 @@ export default function PointsDetail() {
             </div>
 
             {canLoadMore ? (
-              <div className="mt-4 flex justify-center">
-                <Button variant="outline" onClick={loadMore}>
-                  加载更多
+              <div className="mt-4 flex flex-col items-center gap-2">
+                <Button variant="outline" onClick={loadMore} disabled={loadingMore}>
+                  {loadingMore ? '加载中…' : '加载更多'}
                 </Button>
+                {loadMoreError ? (
+                  <p role="alert" className="text-center text-xs text-danger-text">
+                    {loadMoreError}，可再次点击重试
+                  </p>
+                ) : null}
               </div>
             ) : (
               <p className="mt-4 text-center text-xs text-text-tertiary">{BUBBLE_LIST_END}</p>
