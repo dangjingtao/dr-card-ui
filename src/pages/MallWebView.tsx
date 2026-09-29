@@ -5,8 +5,9 @@
  * 以 iframe 加载商城 H5（www.3-wins.cn），使底栏与手机壳层保持可见，
  * 不跳出 App / H5 外层界面。
  *
- * 真实域名与鉴权透传方式未定（见 T008 决策 §8），目标站是否允许被嵌套
- * （X-Frame-Options / CSP frame-ancestors）由对方决定，需在 App 内验证。
+ * 2026-09-29 Maintainer 明确定案：当前联调地址固定为 http://www.3-wins.cn/，
+ * 不自动替换 scheme。鉴权透传、cleartext/mixed-content 以及目标站 iframe 策略
+ * （X-Frame-Options / CSP frame-ancestors）仍需在真实 App WebView 内验证。
  */
 const MALL_H5_URL = 'http://www.3-wins.cn/'
 
