@@ -92,7 +92,7 @@ describe('ScanVerify', () => {
     })
   })
 
-  it('calls scanCode(all) and carries the real code into the confirmation route state', async () => {
+  it('waits for the Native transaction and resumes directly at the completed result state', async () => {
     mocks.getNativeBridgeDiagnostics.mockReturnValue({
       capabilities: {
         scanCode: true,
@@ -108,7 +108,8 @@ describe('ScanVerify', () => {
     await waitFor(() => {
       expect(mocks.scanCode).toHaveBeenCalledWith({ scanType: 'all' })
     })
-    expect(mocks.navigate).toHaveBeenCalledWith('/card/verify/confirm', {
+    expect(mocks.navigate).toHaveBeenCalledWith('/card/verify/confirm?state=done', {
+      replace: true,
       state: { nativeScanCode: 'REAL-SCAN-CODE' },
     })
   })
