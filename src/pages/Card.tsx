@@ -5,6 +5,7 @@ import DebugPanel from '../components/mobile/DebugPanel'
 import PageContainer from '../components/mobile/PageContainer'
 import { useFixtureState, useOverlay } from '../app/fixtures/useFixture'
 import { findRouteByPathname } from '../app/router/routes'
+import { runtimePolicy } from '../app/config/runtime'
 import {
   CARD_PACK_TABS,
   CARD_PACK_TIPS,
@@ -13,7 +14,12 @@ import {
   COUPON_USE_GUIDE,
 } from '../app/fixtures'
 import { probeDiscountCardList, type DiscountCardProbeResponse } from '../services/cardPackageProbe'
-import { COUPON_STATUS_ON_SHELF, fetchCouponList, type CouponTemplate } from '../services/coupons'
+import {
+  fetchMyCoupons,
+  MY_COUPONS_PAGE_SIZE_MAX,
+  type MyCouponRecord,
+  type MyCouponType,
+} from '../services/myCoupons'
 
 /**
  * 电影票样式卡券（自营页面专用 - 第一版）
@@ -28,15 +34,14 @@ import { COUPON_STATUS_ON_SHELF, fetchCouponList, type CouponTemplate } from '..
  * - 不引入 CSS 变量，固定值先用 Tailwind class 表达；金色渐变通过 inline style 注入。
  */
 /**
- * 票券视图模型：列表数据源已切到 7002 `/api/coupons/*`（券模板），
- * 接口没有面值与有效期，对应字段缺省时直接不渲染，不留空位、不臆造文案。
- * 夹具（`?coupon=` 直达验收链路）与接口数据共用本模型。
+ * 票券视图模型：正式数据来自 MyCoupons 用户持券记录。
+ * 原始金额与完整有效期仍保留在 service/domain 数据中；这里仅做展示映射。
  */
 interface CouponTicketView {
   id: string
   name: string
   amountLabel?: string
-  expireAt?: string
+  validityLabel?: string
   limitNote?: string
 }
 
@@ -50,12 +55,38 @@ interface MovieTicketProps {
   onShare: () => void
 }
 
-/** 接口券模板 → 票券视图模型：仅搬运接口已有字段，不补造金额/有效期。 */
-function toCouponTicketView(coupon: CouponTemplate): CouponTicketView {
+function toAmountLabel(value: string | number): string | undefined {
+  const text = String(value).trim()
+  return text || undefined
+}
+
+/** 用户持券记录 → 卡包票券视图；不混入券模板字段。 */
+function toCouponTicketView(coupon: MyCouponRecord): CouponTicketView {
   return {
     id: String(coupon.id),
-    name: coupon.name,
-    limitNote: coupon.short_desc?.trim() || undefined,
+    name: coupon.active_name,
+    amountLabel: toAmountLabel(coupon.enable_amount),
+    validityLabel: coupon.valid_date_range.trim() || undefined,
+    limitNote: coupon.dc_type_format.trim() || undefined,
+  }
+}
+
+const MY_COUPON_TYPE_BY_STATUS: Record<CardCouponStatus, MyCouponType> = {
+  available: 'unused',
+  used: 'used',
+  expired: 'out_of_date',
+}
+
+type CouponRemote =
+  | { state: 'loading' }
+  | { state: 'success'; coupons: MyCouponRecord[]; total: number }
+  | { state: 'error'; message: string }
+
+function createInitialCouponLists(): Record<CardCouponStatus, CouponRemote> {
+  return {
+    available: { state: 'loading' },
+    used: { state: 'loading' },
+    expired: { state: 'loading' },
   }
 }
 
@@ -138,10 +169,10 @@ function MovieTicket({ coupon, expired, used, onUse, onShare }: MovieTicketProps
               </span>
             </div>
 
-            {coupon.expireAt && (
+            {coupon.validityLabel && (
               <div className={`mt-1.5 flex items-center gap-1 text-[11px] ${isInactive ? 'text-text-inactive-muted' : 'text-text-tertiary'}`}>
                 <CalendarDays className="h-3 w-3" />
-                {coupon.expireAt} 到期
+                {coupon.validityLabel}
               </div>
             )}
 
@@ -209,59 +240,93 @@ export default function Card() {
     setTab((state?.key as CardCouponStatus) ?? 'available')
   }, [state?.key])
 
-  /**
-   * 券列表数据源：7002 `GET /api/coupons/index`（券模板）。
-   * 本地联调时 dev server 的 `/api` 已透传到 7002，同源请求即可，不需要 salt / token。
-   */
-  const [couponList, setCouponList] = useState<
-    | { state: 'loading' }
-    | { state: 'success'; coupons: CouponTemplate[] }
-    | { state: 'error'; message: string }
-  >({ state: 'loading' })
+  const [couponLists, setCouponLists] = useState<Record<CardCouponStatus, CouponRemote>>(
+    createInitialCouponLists,
+  )
 
+  /**
+   * MyCoupons 没有分页 UI，因此每个分类按服务端允许的最大 pageSize 拉取，
+   * 若仍有后续页则内部聚合；Tab badge 始终使用接口 total，而不是当前页长度。
+   */
   useEffect(() => {
     let active = true
-    void fetchCouponList()
-      .then((response) => {
-        if (active) setCouponList({ state: 'success', coupons: response.data?.data ?? [] })
-      })
-      .catch((error: unknown) => {
-        if (active) {
-          setCouponList({
+
+    const loadStatus = async (status: CardCouponStatus) => {
+      const type = MY_COUPON_TYPE_BY_STATUS[status]
+      try {
+        const first = await fetchMyCoupons({ type, page: 1, pageSize: MY_COUPONS_PAGE_SIZE_MAX })
+        const remainingPages = Array.from(
+          { length: Math.max(0, first.last_page - 1) },
+          (_, index) => index + 2,
+        )
+        const rest = await Promise.all(
+          remainingPages.map((page) =>
+            fetchMyCoupons({ type, page, pageSize: MY_COUPONS_PAGE_SIZE_MAX }),
+          ),
+        )
+        if (!active) return
+
+        setCouponLists((current) => ({
+          ...current,
+          [status]: {
+            state: 'success',
+            coupons: [first, ...rest].flatMap((page) => page.data),
+            total: first.total,
+          },
+        }))
+      } catch (error: unknown) {
+        if (!active) return
+        setCouponLists((current) => ({
+          ...current,
+          [status]: {
             state: 'error',
             message: error instanceof Error ? error.message : '网络请求失败',
-          })
-        }
-      })
+          },
+        }))
+      }
+    }
+
+    for (const item of CARD_PACK_TABS) void loadStatus(item.key)
+
     return () => {
       active = false
     }
   }, [])
 
-  /**
-   * 可用 Tab = 接口中 status=10（上架）的券。
-   * 已使用 / 已过期 在券模板接口里没有对应字段，保持空态，不自行发明状态映射。
-   */
-  const availableCoupons = useMemo(
-    () =>
-      couponList.state === 'success'
-        ? couponList.coupons
-            .filter((item) => item.status === COUPON_STATUS_ON_SHELF)
-            .map(toCouponTicketView)
-        : [],
-    [couponList],
-  )
+  const currentRemote = couponLists[tab]
+  const list =
+    currentRemote.state === 'success' ? currentRemote.coupons.map(toCouponTicketView) : []
 
-  /** 弹层内展示的券由 `?coupon=` 决定，保证「使用」弹层可复现 */
-  const activeCoupon: CouponTicketView = useMemo(() => {
+  const availableCoupons =
+    couponLists.available.state === 'success'
+      ? couponLists.available.coupons.map(toCouponTicketView)
+      : []
+
+  /**
+   * 使用弹层优先匹配真实 MyCoupons 记录。
+   * 只有 preview/dev fixture 环境允许用历史夹具支撑 ?coupon= 深链截图；
+   * test/prod 的真实 API 模式禁止未命中时静默显示假券。
+   */
+  const activeCoupon: CouponTicketView | null = useMemo(() => {
     const couponId = searchParams.get('coupon')
     const fromApi = availableCoupons.find((item) => item.id === couponId)
-    // 接口未命中时回退夹具，保留 `?coupon=` 直达截图与验收链路
-    return fromApi ?? resolveCardCoupon(couponId)
+    if (fromApi) return fromApi
+    if (!runtimePolicy.fixtureQueriesEnabled) return null
+
+    const fixture = resolveCardCoupon(couponId)
+    return {
+      id: fixture.id,
+      name: fixture.name,
+      amountLabel: fixture.amountLabel,
+      validityLabel: fixture.expireAt ? `${fixture.expireAt} 到期` : undefined,
+      limitNote: fixture.limitNote,
+    }
   }, [availableCoupons, searchParams])
 
-  const list = tab === 'available' ? availableCoupons : []
-  const couponCount = (key: CardCouponStatus) => (key === 'available' ? availableCoupons.length : 0)
+  const couponCount = (key: CardCouponStatus) => {
+    const remote = couponLists[key]
+    return remote.state === 'success' ? remote.total : 0
+  }
 
   useEffect(() => {
     if (!apiProbeEnabled) {
@@ -365,85 +430,63 @@ export default function Card() {
       </div>
 
       <div className="mt-4 space-y-4" aria-live="polite">
-        {tab === 'available' &&
+        {currentRemote.state === 'success' &&
           list.map((coupon) => (
             <MovieTicket
               key={coupon.id}
               coupon={coupon}
+              used={tab === 'used'}
+              expired={tab === 'expired'}
               onUse={() => openUseSheet(coupon)}
               onShare={() => navigate(`/card/share?coupon=${coupon.id}`)}
             />
           ))}
 
-        {tab === 'available' && couponList.state === 'loading' && (
+        {currentRemote.state === 'loading' && (
           <div className="flex flex-col items-center rounded-2xl bg-surface px-6 py-12 text-center shadow-sm">
             <span className="flex h-[60px] w-[60px] items-center justify-center rounded-full bg-surface-inactive text-icon-inactive">
               <Ticket className="h-7 w-7" />
             </span>
             <h3 className="mt-4 text-base font-semibold text-text-primary">正在加载体验券</h3>
-            <p className="mt-1 text-sm text-text-secondary">正在读取优惠券接口数据</p>
+            <p className="mt-1 text-sm text-text-secondary">正在读取我的优惠卡</p>
           </div>
         )}
 
-        {tab === 'available' && couponList.state === 'error' && (
+        {currentRemote.state === 'error' && (
           <div className="flex flex-col items-center rounded-2xl bg-surface px-6 py-12 text-center shadow-sm">
             <span className="flex h-[60px] w-[60px] items-center justify-center rounded-full bg-surface-inactive text-icon-inactive">
               <Info className="h-7 w-7" />
             </span>
             <h3 className="mt-4 text-base font-semibold text-text-primary">体验券加载失败</h3>
-            <p className="mt-1 text-sm text-text-secondary">{couponList.message}</p>
+            <p className="mt-1 text-sm text-text-secondary">{currentRemote.message}</p>
           </div>
         )}
 
-        {tab === 'available' && couponList.state === 'success' && list.length === 0 && (
+        {currentRemote.state === 'success' && list.length === 0 && (
           <div className="flex flex-col items-center rounded-2xl bg-surface px-6 py-12 text-center shadow-sm">
             <span className="flex h-[60px] w-[60px] items-center justify-center rounded-full bg-surface-inactive text-icon-inactive">
-              <Ticket className="h-7 w-7" />
+              {tab === 'available' ? (
+                <Ticket className="h-7 w-7" />
+              ) : tab === 'used' ? (
+                <ReceiptText className="h-7 w-7" />
+              ) : (
+                <Clock className="h-7 w-7" />
+              )}
             </span>
-            <h3 className="mt-4 text-base font-semibold text-text-primary">暂无可用的体验券</h3>
-            <p className="mt-1 text-sm text-text-secondary">领取到的体验券，会显示在这里</p>
-          </div>
-        )}
-
-        {tab === 'used' && list.length === 0 && (
-          <div className="flex flex-col items-center rounded-2xl bg-surface px-6 py-12 text-center shadow-sm">
-            <span className="flex h-[60px] w-[60px] items-center justify-center rounded-full bg-surface-inactive text-icon-inactive">
-              <ReceiptText className="h-7 w-7" />
-            </span>
-            <h3 className="mt-4 text-base font-semibold text-text-primary">暂无已使用的体验券</h3>
-            <p className="mt-1 text-sm text-text-secondary">已核销或已完成使用的体验券，会显示在这里</p>
-          </div>
-        )}
-
-        {tab === 'used' &&
-          list.map((coupon) => (
-            <MovieTicket
-              key={coupon.id}
-              coupon={coupon}
-              used
-              onUse={() => openUseSheet(coupon)}
-              onShare={() => navigate(`/card/share?coupon=${coupon.id}`)}
-            />
-          ))}
-
-        {tab === 'expired' &&
-          list.map((coupon) => (
-            <MovieTicket
-              key={coupon.id}
-              coupon={coupon}
-              expired
-              onUse={() => openUseSheet(coupon)}
-              onShare={() => navigate(`/card/share?coupon=${coupon.id}`)}
-            />
-          ))}
-
-        {tab === 'expired' && list.length === 0 && (
-          <div className="flex flex-col items-center rounded-2xl bg-surface px-6 py-12 text-center shadow-sm">
-            <span className="flex h-[60px] w-[60px] items-center justify-center rounded-full bg-surface-inactive text-icon-inactive">
-              <Clock className="h-7 w-7" />
-            </span>
-            <h3 className="mt-4 text-base font-semibold text-text-primary">暂无已过期的体验券</h3>
-            <p className="mt-1 text-sm text-text-secondary">超过有效期的体验券，会显示在这里</p>
+            <h3 className="mt-4 text-base font-semibold text-text-primary">
+              {tab === 'available'
+                ? '暂无可用的体验券'
+                : tab === 'used'
+                  ? '暂无已使用的体验券'
+                  : '暂无已过期的体验券'}
+            </h3>
+            <p className="mt-1 text-sm text-text-secondary">
+              {tab === 'available'
+                ? '领取到的体验券，会显示在这里'
+                : tab === 'used'
+                  ? '已核销或已完成使用的体验券，会显示在这里'
+                  : '超过有效期的体验券，会显示在这里'}
+            </p>
           </div>
         )}
       </div>
@@ -459,7 +502,7 @@ export default function Card() {
         ))}
       </div>
 
-      {overlay === 'use' && (
+      {overlay === 'use' && activeCoupon && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-scrim" onClick={close}>
           <div
             role="dialog"
@@ -491,9 +534,9 @@ export default function Card() {
                   <span className="block text-sm font-medium text-text-primary">
                     {activeCoupon.amountLabel ? `${activeCoupon.amountLabel} ${activeCoupon.name}` : activeCoupon.name}
                   </span>
-                  {(activeCoupon.expireAt || activeCoupon.limitNote) && (
+                  {(activeCoupon.validityLabel || activeCoupon.limitNote) && (
                     <span className="block text-xs text-text-tertiary">
-                      {[activeCoupon.expireAt ? `${activeCoupon.expireAt} 到期` : null, activeCoupon.limitNote ?? null]
+                      {[activeCoupon.validityLabel ?? null, activeCoupon.limitNote ?? null]
                         .filter(Boolean)
                         .join(' · ')}
                     </span>
