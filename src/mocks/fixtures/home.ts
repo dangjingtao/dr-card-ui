@@ -73,7 +73,8 @@ export const WELFARE_SETTING_MOCK = {
  *
  * 券名统一带「Mock·」前缀，明确可识别为 Mock，不伪装真实后台数据。
  * 当前不模拟 category_id：后端分类能力尚未确认，Mock 不应反向制造接口契约。
- * 覆盖卡片状态：可兑换、已兑完（exchanged_nuuur >= total_number）。
+ * 当前共享 Mock 只保留“通用体验包”，避免把历史多 SKU 设计伪装成当前业务事实。
+ * 售罄 / 泡泡值不足等边界由页面 / service 单测使用局部样本覆盖。
  */
 export const COUPON_LIST_MOCK = {
   code: 0,
@@ -83,68 +84,12 @@ export const COUPON_LIST_MOCK = {
     data: [
       {
         id: 1,
-        name: 'Mock·10 元无门槛券',
-        short_desc: '全场通用，满 0 元可用',
-        image: null,
-        points_number: '100',
-        total_number: 500,
-        exchanged_nuuur: 37,
-        extra_data: null,
-        status: 10,
-        create_time: '2026-09-01 12:00:00',
-        update_time: '2026-09-01 12:00:00',
-        delete_time: 0,
-      },
-      {
-        id: 2,
-        name: 'Mock·洗护体验券',
-        short_desc: '洗发 / 护发 / 沐浴体验，限到店核销',
+        name: 'Mock·通用体验包',
+        short_desc: '当前唯一开放的洗护体验包',
         image: null,
         points_number: '200',
-        total_number: 300,
-        exchanged_nuuur: 12,
-        extra_data: null,
-        status: 10,
-        create_time: '2026-09-01 12:00:00',
-        update_time: '2026-09-01 12:00:00',
-        delete_time: 0,
-      },
-      {
-        id: 3,
-        name: 'Mock·洗护组合体验券',
-        short_desc: '洗发 + 护发组合体验，限到店核销',
-        image: null,
-        points_number: '200',
-        total_number: 2000,
-        exchanged_nuuur: 1860,
-        extra_data: null,
-        status: 10,
-        create_time: '2026-09-01 12:00:00',
-        update_time: '2026-09-01 12:00:00',
-        delete_time: 0,
-      },
-      {
-        id: 4,
-        name: 'Mock·核心洗发水体验券',
-        short_desc: '限到店核销',
-        image: null,
-        points_number: '480',
-        total_number: 2000,
-        exchanged_nuuur: 1240,
-        extra_data: null,
-        status: 10,
-        create_time: '2026-09-01 12:00:00',
-        update_time: '2026-09-01 12:00:00',
-        delete_time: 0,
-      },
-      {
-        id: 5,
-        name: 'Mock·洗护体验券（已兑完）',
-        short_desc: '单次洗发体验，限到店核销',
-        image: null,
-        points_number: '320',
-        total_number: 720,
-        exchanged_nuuur: 720,
+        total_number: 1000,
+        exchanged_nuuur: 128,
         extra_data: null,
         status: 10,
         create_time: '2026-09-01 12:00:00',
@@ -154,7 +99,7 @@ export const COUPON_LIST_MOCK = {
     ],
     current_page: 1,
     per_page: 15,
-    total: 5,
+    total: 1,
     last_page: 1,
   },
 } as const
