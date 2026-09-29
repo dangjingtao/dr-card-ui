@@ -27,6 +27,12 @@ export default function ConfirmVerify() {
     typeof (location.state as { nativeScanCode?: unknown }).nativeScanCode === 'string'
       ? (location.state as { nativeScanCode: string }).nativeScanCode
       : null
+  const nativeVerifyResult =
+    location.state &&
+    typeof location.state === 'object' &&
+    (location.state as { nativeVerifyResult?: unknown }).nativeVerifyResult === 'done'
+      ? 'done'
+      : null
 
   const [toast, setToast] = useState(false)
 
@@ -36,7 +42,9 @@ export default function ConfirmVerify() {
     return () => window.clearTimeout(id)
   }, [toast, navigate])
 
-  const result = state?.key === 'done' || state?.key === 'repeat' ? state.key : null
+  const result =
+    nativeVerifyResult ??
+    (state?.key === 'done' || state?.key === 'repeat' ? state.key : null)
 
   if (result) {
     const copy = result === 'done' ? VERIFY_FEEDBACK.done : VERIFY_FEEDBACK.repeat
