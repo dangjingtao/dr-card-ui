@@ -13,7 +13,6 @@ import {
   EXCHANGE_CATEGORIES,
   EXCHANGE_COPY,
   resolveExchangeCategory,
-  resolveExchangeCategoryId,
 } from '../app/fixtures'
 import type { CouponRedeemView } from '../services/coupons'
 import { redeemExchangeProduct } from '../services/exchange'
@@ -57,7 +56,8 @@ const availabilityButtonLabel = (state: ExchangeAvailability): string =>
  * 数据口径（2026-09-29 与产品确认）：
  * - 当前真实业务只开放「通用体验包」兑换；多分类 / 多券页面结构保留，作为后续恢复多体验券时的扩展位，
  *   不代表当前后端必须实现多 SKU 兑换；
- * - 分类 Tab 仍按 `category_id` **服务端过滤**，用于保留页面结构与未来扩展；切换 Tab 重新请求；
+ * - 分类 Tab 只保留 H5 历史页面状态；后端是否支持 `category_id` / 服务端分类过滤仍待确认，
+ *   当前请求不携带分类参数，也不预设后端分类主键；
  * - 卡片所需泡泡值 ← `points_number`，兑换量 ← `exchanged_nuuur`，
  *   已兑完 ← `exchanged_nuuur >= total_number` 或已下架，泡泡值不足 ← `points_number > 我的余额`；
  * - 接口无 `desc` / `image` 时分别用 `short_desc` 与本地品牌图兜底。
@@ -73,12 +73,11 @@ export default function Exchange() {
   const { patch: patchFixtureQueryControls } = useFixtureQueryControls()
   const [searchParams, setSearchParams] = useSearchParams()
 
-  /** 前台主 Tab 按用户参考图切换体验券分类；分类由后端 `category_id` 服务端过滤。 */
+  /** 前台保留历史分类 Tab；当前仅作为 H5 页面状态，不映射为后端 category_id。 */
   const category = resolveExchangeCategory(searchParams.get('category'))
-  const categoryId = resolveExchangeCategoryId(category)
 
-  /** GET /api/coupons/index：分类切换带 category_id 重新请求（服务端过滤）。 */
-  const { remote: listRemote, reload } = useExchangeCoupons(categoryId)
+  /** GET /api/coupons/index：当前只请求可展示体验装，不附带尚未确认的分类参数。 */
+  const { remote: listRemote, reload } = useExchangeCoupons()
   const list = listRemote.state === 'success' ? listRemote.data : []
 
   /** GET /api/userpoints/stat：可用余额严格取 points，不用 income - expense 反推。 */
