@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { SIGN_RECORD_STATUS_MAKEUP, SIGN_RECORD_STATUS_SIGNED } from '../../services/signrecords'
 import type { SignRecordMock } from '../fixtures/checkin'
-import { deriveMockSignStatus } from './checkin'
+import { deriveMockActivitySignedDays, deriveMockSignStatus } from './checkin'
 
 const record = (id: number, createTime: string, status: number): SignRecordMock => ({
   id,
@@ -27,6 +27,19 @@ describe('checkin mock sign status', () => {
     )
 
     expect(status).toEqual({ signed: false, consecutiveDays: 2 })
+  })
+
+  it('reports activity signed_days as already-completed consecutive days', () => {
+    const today = new Date(2026, 8, 29)
+    const records = [
+      record(1, '2026-09-28 09:00:00', SIGN_RECORD_STATUS_SIGNED),
+      record(2, '2026-09-27 09:00:00', SIGN_RECORD_STATUS_SIGNED),
+      record(3, '2026-09-26 09:00:00', SIGN_RECORD_STATUS_SIGNED),
+      record(4, '2026-09-25 09:00:00', SIGN_RECORD_STATUS_MAKEUP),
+    ]
+
+    expect(deriveMockSignStatus(records, today)).toEqual({ signed: false, consecutiveDays: 4 })
+    expect(deriveMockActivitySignedDays(records, today)).toBe(3)
   })
 
   it('returns the actual consecutive count once today is normally signed', () => {
