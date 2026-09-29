@@ -27,20 +27,16 @@ describe('main bootstrap', () => {
     vi.unstubAllEnvs()
   })
 
-  it('keeps eruda disabled in the production-like test environment', async () => {
+  it('initializes eruda in the test environment', async () => {
     const erudaMock = (await import('eruda')).default as unknown as { init: ReturnType<typeof vi.fn> }
 
     await import('./main')
 
-    expect(erudaMock.init).not.toHaveBeenCalled()
+    expect(erudaMock.init).toHaveBeenCalledTimes(1)
     await waitFor(() => expect(screen.getByText('App')).toBeTruthy())
   })
 
-  it('continues booting in dev when eruda initialization fails', async () => {
-    vi.stubEnv('MODE', 'development')
-    vi.stubEnv('VITE_APP_ENV', 'dev')
-    vi.stubEnv('VITE_DATA_MODE', 'api')
-
+  it('continues booting in test when eruda initialization fails', async () => {
     const erudaMock = (await import('eruda')).default as unknown as { init: ReturnType<typeof vi.fn> }
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
     erudaMock.init.mockImplementationOnce(() => {
