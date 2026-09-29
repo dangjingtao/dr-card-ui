@@ -852,13 +852,20 @@ describe('JSBridge capability runtime', () => {
     ])
   })
 
-  it('preserves inviteCode/fallbackUrl strings on iOS and parses both result booleans', async () => {
+  it('keeps iOS openApp aligned with the Android callback envelope', async () => {
     const { openApp } = await loadBridge()
     const received: Array<Record<string, unknown>> = []
     bridgeWindow.iosBridge = {
       openApp(payload: unknown) {
-        received.push(JSON.parse(payload as string) as Record<string, unknown>)
-        return '{"success":false,"installed":false}'
+        const request = JSON.parse(payload as string) as Record<string, unknown> & { callbackId: string }
+        received.push(request)
+        queueMicrotask(() => {
+          bridgeWindow.nativeBridgeCallback?.(request.callbackId, {
+            code: 0,
+            message: 'ok',
+            data: { action: 'open' },
+          })
+        })
       },
     }
 
@@ -869,8 +876,8 @@ describe('JSBridge capability runtime', () => {
         fallbackUrl: 'https://example.com/fallback',
       }),
     ).resolves.toEqual({
-      success: false,
-      installed: false,
+      success: true,
+      installed: true,
     })
 
     expect(received).toEqual([
