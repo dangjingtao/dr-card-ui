@@ -25,7 +25,7 @@ import checkinRitualHero from '../assets/brand/bubble/checkin-ritual-hero-v2.web
  *
  * 2026-09-28 真实接口接入（feat/0928，7002 实测）：
  * - 今日状态：`GET /api/signrecords/status`
- * - 打卡日历：`GET /api/signrecords/index`（按记录 local 日期归属）
+ * - 打卡日历：`GET /api/signrecords/index`（只有正常签到按记录 local 日期归属；补签目标日期由会话内请求值暂存）
  * - 签到：`POST /api/signrecords/add`
  * - 补签：**先看完 Native 激励广告（`showRewardAd` → status=completed），再发起
  *   `POST /api/signrecords/makeup { day: 'YYYY-MM-DD' }`**（2026-09-28 用户确认）。
