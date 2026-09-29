@@ -4,16 +4,22 @@ import { SIGN_RECORD_STATUS_MAKEUP, SIGN_RECORD_STATUS_SIGNED } from '../../serv
 import type { SignRecordMock } from '../fixtures/checkin'
 import { deriveMockActivitySignedDays, deriveMockSignStatus } from './checkin'
 
-const record = (id: number, createTime: string, status: number): SignRecordMock => ({
-  id,
-  create_time: createTime,
-  update_time: createTime,
-  delete_time: null,
-  user_id: 9001,
-  points: 0,
-  consecutive_days: 0,
-  status,
-})
+const record = (id: number, createTime: string, status: number): SignRecordMock => {
+  const [year, month, day] = createTime.slice(0, 10).split('-')
+  return {
+    id,
+    create_time: createTime,
+    update_time: createTime,
+    delete_time: null,
+    user_id: 9001,
+    points: 0,
+    consecutive_days: 0,
+    status,
+    day,
+    month,
+    year,
+  }
+}
 
 describe('checkin mock sign status', () => {
   it('does not treat a makeup operation created today as today signed', () => {

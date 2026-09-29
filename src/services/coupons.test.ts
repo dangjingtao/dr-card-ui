@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { COUPON_PAGE_SIZE_DEFAULT, COUPON_STATUS_ON_SHELF, fetchCouponIndex } from './coupons'
+import {
+  COUPON_PAGE_SIZE_DEFAULT,
+  COUPON_STATUS_ON_SHELF,
+  fetchCouponIndex,
+  toCouponRedeemView,
+} from './coupons'
 
 const mocks = vi.hoisted(() => ({
   request: vi.fn(),
@@ -87,5 +92,66 @@ describe('coupon index contract', () => {
     mocks.request.mockResolvedValue({ code: 401, message: '请先登录', data: [] })
 
     await expect(fetchCouponIndex()).rejects.toMatchObject({ kind: 'business', message: '请先登录' })
+  })
+})
+
+describe('toCouponRedeemView', () => {
+  const base = {
+    id: 7,
+    name: 'Mock·洗护体验券',
+    short_desc: '洗发 / 护发 / 沐浴体验，限到店核销',
+    image: 'https://cdn.example.com/coupon.png',
+    category_id: '2',
+    points_number: '200',
+    total_number: 300,
+    exchanged_nuuur: 12,
+    status: COUPON_STATUS_ON_SHELF,
+  }
+
+  it('maps points_number / exchanged_nuuur into the redeem view', () => {
+    expect(toCouponRedeemView(base)).toEqual({
+      id: 7,
+      name: 'Mock·洗护体验券',
+      desc: '洗发 / 护发 / 沐浴体验，限到店核销',
+      cost: 200,
+      redeemed: 12,
+      image: 'https://cdn.example.com/coupon.png',
+      soldOut: false,
+    })
+  })
+
+  it('treats exchanged_nuuur >= total_number as sold out', () => {
+    expect(toCouponRedeemView({ ...base, exchanged_nuuur: 300 }).soldOut).toBe(true)
+    expect(toCouponRedeemView({ ...base, exchanged_nuuur: 301 }).soldOut).toBe(true)
+  })
+
+  it('treats an off-shelf coupon (status !== 10) as sold out', () => {
+    expect(toCouponRedeemView({ ...base, status: 20 }).soldOut).toBe(true)
+  })
+
+  it('falls back to safe defaults for missing / invalid fields', () => {
+    const view = toCouponRedeemView({
+      id: 8,
+      name: 'Mock·空值券',
+      short_desc: null,
+      image: '   ',
+      points_number: null,
+      exchanged_nuuur: null,
+      status: COUPON_STATUS_ON_SHELF,
+    })
+
+    expect(view).toEqual({
+      id: 8,
+      name: 'Mock·空值券',
+      desc: '',
+      cost: 0,
+      redeemed: 0,
+      image: undefined,
+      soldOut: false,
+    })
+  })
+
+  it('does not mark sold out when total_number is absent', () => {
+    expect(toCouponRedeemView({ ...base, total_number: null }).soldOut).toBe(false)
   })
 })

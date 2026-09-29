@@ -10,11 +10,21 @@ export const EXCHANGE_SORTS: Array<{ key: ExchangeSort; label: string }> = [
 
 export type ExchangeCategory = 'all' | 'shampoo' | 'conditioner' | 'scalp-care'
 
-export const EXCHANGE_CATEGORIES: Array<{ key: ExchangeCategory; label: string }> = [
+/**
+ * 专区分类 Tab 与后端 `coupons.category_id` 的映射（2026-09-29 与产品确认按服务端过滤）。
+ *
+ * `categoryId` 是后端券分类主键；`all` 不传参，由后端返回全部上架券。
+ * 具体取值以 7002 券分类表为准，如后端调整只需改这里，页面不感知。
+ */
+export const EXCHANGE_CATEGORIES: Array<{
+  key: ExchangeCategory
+  label: string
+  categoryId?: number
+}> = [
   { key: 'all', label: '全部' },
-  { key: 'shampoo', label: '洗发体验' },
-  { key: 'conditioner', label: '护发体验' },
-  { key: 'scalp-care', label: '头皮护理' },
+  { key: 'shampoo', label: '洗发体验', categoryId: 2 },
+  { key: 'conditioner', label: '护发体验', categoryId: 3 },
+  { key: 'scalp-care', label: '头皮护理', categoryId: 4 },
 ]
 
 export type ExchangeStock = 'in-stock' | 'sold-out'
@@ -48,6 +58,11 @@ export function exchangeProductsBySort(sort: ExchangeSort): ExchangeProductFixtu
 
 export function resolveExchangeCategory(raw: string | null): ExchangeCategory {
   return EXCHANGE_CATEGORIES.some((item) => item.key === raw) ? raw as ExchangeCategory : 'all'
+}
+
+/** 取分类对应的后端 `category_id`；`all` / 未配置返回 `undefined`（不传参 = 全部）。 */
+export function resolveExchangeCategoryId(category: ExchangeCategory): number | undefined {
+  return EXCHANGE_CATEGORIES.find((item) => item.key === category)?.categoryId
 }
 
 export function exchangeProductsByCategory(list: ExchangeProductFixture[], category: ExchangeCategory): ExchangeProductFixture[] {
@@ -89,8 +104,10 @@ export const EXCHANGE_COPY = {
   insufficient: '泡泡值不足',
   submitting: '兑换中',
   emptyTitle: '没有找到相关体验券',
-  emptyDesc: '换个关键词试试，或浏览全部洗护体验券。',
-  emptyAction: '清空搜索',
+  emptyDesc: '换个分类看看，或浏览全部洗护体验券。',
+  emptyAction: '查看全部',
+  errorTitle: '体验券加载失败',
+  retryAction: '重新加载',
   successTitle: '兑换成功，卡券已经存入你的卡包啦～',
   successAction: '查看我的卡包',
   successClose: '关闭',

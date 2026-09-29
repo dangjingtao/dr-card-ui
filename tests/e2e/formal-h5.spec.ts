@@ -305,23 +305,6 @@ test('@formal-h5 H022 prototype states stay on one route implementation', async 
 test('@formal-h5 H023 shared SearchField stays consistent across formal H5 consumers', async ({ page }) => {
   const runtimeErrors = collectRuntimeErrors(page)
 
-  await page.goto('/exchange', { waitUntil: 'domcontentloaded' })
-  await expectHealthyFormalRoute(page)
-  const exchangeField = page.locator('[data-search-field="pill"][data-search-field-size="compact"] input')
-  await expect(exchangeField).toHaveCount(1)
-  await exchangeField.fill('__no_match__')
-  await expect(page.getByRole('button', { name: '清除搜索' })).toBeVisible()
-  await page.getByRole('button', { name: '清除搜索' }).click()
-  await expect(exchangeField).toHaveValue('')
-  const exchangeSearchBox = await page
-    .locator('[data-search-field="pill"][data-search-field-size="compact"]')
-    .boundingBox()
-  const exchangeBalanceBox = await page
-    .locator('[data-search-field="pill"][data-search-field-size="compact"] + button')
-    .boundingBox()
-  expect(Math.round(exchangeSearchBox?.height ?? 0)).toBe(40)
-  expect(Math.round(exchangeBalanceBox?.height ?? 0)).toBe(40)
-
   await page.goto('/card/share', { waitUntil: 'domcontentloaded' })
   await expectHealthyFormalRoute(page)
   const cardShareField = page.locator('[data-search-field="subtle"][data-search-field-size="regular"] input')

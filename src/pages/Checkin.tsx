@@ -23,16 +23,18 @@ import checkinRitualHero from '../assets/brand/bubble/checkin-ritual-hero-v2.web
  * -------------------------------------------------------------
  * 事实源：docs/prototype/02-membership-and-checkin.md §4 §5 §6 §7
  *
- * 2026-09-28 真实接口接入（feat/0928，7002 实测）：
- * - 今日状态：`GET /api/signrecords/status`
- * - 打卡日历：`GET /api/signrecords/index`（只有正常签到按记录 local 日期归属；补签目标日期由会话内请求值暂存）
+ * 2026-09-29 对齐《签到页面接口文档》：
+ * - 今日状态：`GET /api/signrecords/status`（day/month/year 为当前业务日，已签到/未签到都返回）
+ * - 本月记录：`GET /api/signrecords/index?range=month`（整月裸数组，按记录的业务日期 year/month/day 归属日历格）
  * - 签到：`POST /api/signrecords/add`
- * - 补签：**先看完 Native 激励广告（`showRewardAd` → status=completed），再发起
- *   `POST /api/signrecords/makeup { day: 'YYYY-MM-DD' }`**（2026-09-28 用户确认）。
  * 月份与「今天」按本地系统时间渲染。
  *
+ * 补签（文档未收录，7002 实测可用，2026-09-29 用户确认保留）：
+ * **必须先看完 Native 激励广告（`showRewardAd` → status=completed），再发起
+ * `POST /api/signrecords/makeup { day: 'YYYY-MM-DD' }`**；广告未通过不落库、不亮格。
+ *
  * ⚠️ 仍未决（不自行定稿，保留隔离）：B-019 月份切换范围；B-020 补签消耗、次数上限与
- * 不可补签判定；且接口未回显补签对应的具体日期，补签格为会话内乐观点亮。
+ * 不可补签判定。
  * 可复现状态：?state=success；?overlay=reminder / make-up-success
  */
 export default function Checkin() {
@@ -44,7 +46,7 @@ export default function Checkin() {
   const isSuccess = state?.key === 'success'
   const debug = useFixtureDebug()
 
-  // 接口数据：今日状态 + 签到记录（打卡日历依据）。mock 与 api 走同一 service。
+  // 接口数据：今日状态 + 本月签到记录（打卡日历依据）。mock 与 api 走同一 service。
   const signStatus = useSignStatus()
   const signRecords = useSignRecords()
 
@@ -58,7 +60,7 @@ export default function Checkin() {
   const handleActionSuccess = useCallback(
     (kind: 'sign-in' | 'makeup', day?: string) => {
       if (kind === 'makeup' && day) {
-        // 接口不回显被补日期，先做会话内乐观点亮，再刷新真实记录。
+        // 接口刷新返回前先做会话内乐观点亮，及时反馈补签成功的那一格。
         setOptimisticMakeupDays((prev) => (prev.includes(day) ? prev : [...prev, day]))
         open('make-up-success')
       }
@@ -95,12 +97,14 @@ export default function Checkin() {
       }
       if (error.code === 'native-cancelled') return '广告未完整观看，补签未完成'
       if (error.code === 'native-permission-denied') return '需要广告权限，请检查系统设置后重试'
+      // 超时与一般调用失败原因不同：超时是等待广告回调过久，不是广告本身出错。
+      if (error.code === 'invocation-timeout') return '广告加载超时，请重试'
     }
     return '广告调用失败，请重试'
   }
 
   /**
-   * 补签：**先看完 Native 激励广告，再发起补签请求**（2026-09-28 用户确认）。
+   * 补签：**先看完 Native 激励广告，再发起补签请求**（2026-09-29 用户确认保留）。
    * 只有 `status === 'completed'` 才调用 `POST /api/signrecords/makeup`；
    * closed / failed / no_fill 不落库、不亮格。Native 自己承载广告 UI。
    */

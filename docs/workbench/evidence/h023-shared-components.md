@@ -116,3 +116,7 @@ H023 对既有 Core 组件补齐：
 - 不改商城。
 - 不把相似但职责不同的卡片 / 选择器 / 成功反馈强行做成“大而全”组件。
 - H023 抽象只服务已经发生的真实重复，后续扩展仍应满足“至少两个消费点或明确稳定扩展点”。
+
+## 变更记录
+
+- **2026-09-29**：`/exchange`（洗护体验券专区）按用户参考图改版为「分类 Tab + 接口券列表」，页面不再渲染 `SearchField`。据此同步移除 `scripts/verify-h023-shared-components.mjs` 与 `tests/e2e/formal-h5.spec.ts` H023 SearchField 用例中的 Exchange 消费点，SearchField 的正式 H5 消费点由 3 个收敛为 2 个（CardShare / BuddyPhoneInvite）。本文件以上内容为 H023 结卡时的历史事实，保持不变。

@@ -89,6 +89,7 @@ import SignInPage from '../../pages/legacy/SignInPage'
 import PointsPage from '../../pages/legacy/PointsPage'
 import NotFound from '../../pages/NotFound'
 import ErrorPage, { PageErrorBoundary } from '../../pages/ErrorPage'
+import EmptyStatePage from '../../pages/EmptyStatePage'
 import { ROUTES } from './routes'
 import type { RouteMeta } from './routes'
 import type { ReactElement } from 'react'
@@ -120,7 +121,6 @@ const customPages: Record<string, ReactElement> = {
   '/legacy-home/scan': <LegacyScan />,
   '/mall': <MallWebView />,
   '/dearseed': <DearseedColumn />,
-  '/checkin': <Checkin />,
   '/profile': <Profile />,
   '/luck': <Luck />,
   '/luck/result': <DrawSuccess />,
@@ -138,11 +138,15 @@ const customPages: Record<string, ReactElement> = {
   '/points': <Points />,
   /* T022：泡泡值页面承载资产/福利/任务占位，纯流水明细拆到 /points/detail */
   '/points/detail': <PointsDetail />,
+  '/checkin': (
+    <HomeAuthGate>
+      <Checkin />
+    </HomeAuthGate>
+  ),
   '/settings': <Settings />,
   '/onboarding': <Onboarding />,
-  /* 公益与品牌故事均预留为服务富文本承载页，当前不发起请求、不渲染假内容。 */
-  '/cause': <RichTextPlaceholder routePath="/cause" />,
-  '/brand-culture': <RichTextPlaceholder routePath="/brand-culture" />,
+  '/cause': <RichTextPlaceholder routePath="/cause" settingKey="welfare" />,
+  '/brand-culture': <RichTextPlaceholder routePath="/brand-culture" settingKey="brand_culture_setting" />,
   '/service/welfare-officer': <WelfareOfficer />,
   /* T013：#58 智能客服承载 #71 弹层，#70 为转人工后的排队/接入两态 */
   '/service/chat': <ServiceChat />,
@@ -250,6 +254,9 @@ export const router = createBrowserRouter([
    * - /error：独立预览路由（工程参照页，不属于业务节点，不进入业务导航）。
    * - 顶层 errorElement：任何子路由渲染抛错时整页替换壳层，展示同一错误页。 */
   { path: '/error', element: <ErrorPage /> },
+  /* 页面级空状态（参考稿空态插画）：
+   * /empty：独立预览路由（工程参照页，不属于业务节点，不进入业务导航）。 */
+  { path: '/empty', element: <EmptyStatePage /> },
   {
     element: <MobileLayout />,
     errorElement: <PageErrorBoundary />,

@@ -10,7 +10,7 @@ import { useFixtureState, useOverlay } from '../app/fixtures/useFixture'
 import { findRouteByPathname } from '../app/router/routes'
 import { COLUMN_HOME_SECTIONS, NEWCOMER_COUPON_RULE_STATUS } from '../app/fixtures'
 import { resolveBannerLink, type BannerItem } from '../services/banners'
-import { useHomeBanners, useHomeSettings, useSignStatus } from './home/useHomeFeed'
+import { useHomeBanners, useSignStatus } from './home/useHomeFeed'
 import { useSignRecords } from './checkin/useCheckinFeed'
 import avatar from '../assets/brand/home/home-avatar.webp'
 
@@ -38,11 +38,10 @@ export default function Home() {
 
   const debug = searchParams.get('debug') === '1'
 
-  /* 首页接口数据：轮播 / 今日签到状态 / 品牌文化配置（mock 与 api 走同一 service）。 */
+  /* 首页接口数据：轮播 / 今日签到状态。详情页各自请求对应的富文本配置。 */
   const banners = useHomeBanners()
   const signStatus = useSignStatus()
   const signRecords = useSignRecords()
-  const homeSettings = useHomeSettings()
 
   const bannerSlides = useMemo(
     () =>
@@ -63,14 +62,6 @@ export default function Home() {
     }
     return map
   }, [banners])
-
-  /** 公益 / 品牌故事描述：接口命中时以后台配置为准，未命中回退已确认静态文案（字段名待联调收口）。 */
-  const sectionDesc = (key: string) => {
-    const fallback = COLUMN_HOME_SECTIONS.find((item) => item.key === key)?.desc ?? ''
-    if (homeSettings.state !== 'success') return fallback
-    const text = key === 'cause' ? homeSettings.data.causeText : homeSettings.data.brandCultureText
-    return text ?? fallback
-  }
 
   return (
     <PageContainer className="pb-24 pt-4" inset={false}>
@@ -107,11 +98,13 @@ export default function Home() {
         </button>
       </section>
 
-      {/* 接口空列表时隐藏轮播区域，不渲染空容器（2026-09-28 首页联调文档）。 */}
-      {bannerSlides.length > 0 && (
+      {/* 请求期间保留同尺寸占位，避免 banner 出现/消失造成尺寸抖动；
+          接口返回空列表时隐藏轮播区域，不渲染空容器（2026-09-28 首页联调文档）。 */}
+      {(banners.state === 'loading' || bannerSlides.length > 0) && (
         <div className="mx-4 mt-4">
           <BannerCarousel
             label="首页活动轮播"
+            loading={banners.state === 'loading'}
             slides={bannerSlides}
             onSelect={(slide) => {
               const item = bannerItems.get(slide.key)
@@ -130,6 +123,7 @@ export default function Home() {
         <CheckinBoard
           mode="home"
           debug={debug}
+          loading={signStatus.state === 'loading' || signRecords.remote.state === 'loading'}
           records={signRecords.remote.state === 'success' ? signRecords.remote.data : null}
           signStatus={
             signStatus.state === 'success'
@@ -154,7 +148,7 @@ export default function Home() {
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-[15px] font-bold leading-5 text-text-primary">{item.title}</span>
-                <span className="mt-1 block text-xs leading-5 text-text-tertiary">{sectionDesc(item.key)}</span>
+                <span className="mt-1 block text-xs leading-5 text-text-tertiary">{item.desc}</span>
               </span>
               {item.action && (
                 <span className="flex flex-none items-center gap-0.5 text-xs text-reward-text">

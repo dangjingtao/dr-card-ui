@@ -139,17 +139,29 @@ export function copyText(
 }
 
 /**
+ * 激励广告属于「用户交互型长任务」：用户完整看完广告通常需要 15~30 秒，
+ * 不能吃 runtime 层 5 秒的通用默认超时，否则会在用户还在看广告时就判超时。
+ * 这里显式抬到 2 分钟，仍在 transport 内层 120 秒兜底的时间量级内。
+ */
+const REWARD_AD_TIMEOUT_MS = 120_000
+
+/**
  * H033 rewarded-ad boundary for check-in resign.
  *
  * Only the confirmed scene h5CheckinResign is exposed. Both hosts use the asynchronous
  * callbackId contract targeting nativeBridgeCallback; current Android hosts may return through
  * androidBridgeCallback. H5 normalizes the result and only rewards on completed.
+ *
+ * options 放在后面，调用方仍可用自定义 timeoutMs 覆盖默认的广告时长。
  */
 export function showRewardAd(
   input: NativeRewardAdInput = { scene: 'h5CheckinResign' },
   options: NativeInvocationOptions = {},
 ): Promise<NativeRewardAdResult> {
-  return invokeNativeCapability(capabilityRegistry.showRewardAd, input, options)
+  return invokeNativeCapability(capabilityRegistry.showRewardAd, input, {
+    timeoutMs: REWARD_AD_TIMEOUT_MS,
+    ...options,
+  })
 }
 
 /**

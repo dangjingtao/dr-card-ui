@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { fetchHomeSettings, parseHomeSettings } from './settings'
+import {
+  fetchHomeSettings,
+  fetchRichTextSetting,
+  parseHomeSettings,
+  parseRichTextSetting,
+} from './settings'
 
 const mocks = vi.hoisted(() => ({
   request: vi.fn(),
@@ -36,10 +41,31 @@ describe('home settings contract', () => {
     expect(() => parseHomeSettings({ code: 500, message: '参数错误', data: [] })).toThrowError('参数错误')
   })
 
-  it('fetches the settings detail path', async () => {
+  it('fetches the brand culture setting with its documented key', async () => {
     mocks.request.mockResolvedValue({ code: 0, msg: 'success', data: { cause: '公益描述' } })
 
     await expect(fetchHomeSettings()).resolves.toEqual({ causeText: '公益描述' })
-    expect(mocks.request).toHaveBeenCalledWith({ method: 'GET', url: '/api/settings/detail' })
+    expect(mocks.request).toHaveBeenCalledWith({
+      method: 'GET',
+      url: '/api/settings/detail',
+      params: { key: 'brand_culture_setting' },
+    })
+  })
+
+  it('reads rich text from the documented setting response', () => {
+    expect(
+      parseRichTextSetting({ code: 0, msg: 'success', data: { key: 'welfare', value: '<p>公益内容</p>' } }),
+    ).toBe('<p>公益内容</p>')
+  })
+
+  it('requests the welfare rich text with its documented key', async () => {
+    mocks.request.mockResolvedValue({ code: 0, msg: 'success', data: { value: '<p>公益内容</p>' } })
+
+    await expect(fetchRichTextSetting('welfare')).resolves.toBe('<p>公益内容</p>')
+    expect(mocks.request).toHaveBeenCalledWith({
+      method: 'GET',
+      url: '/api/settings/detail',
+      params: { key: 'welfare' },
+    })
   })
 })

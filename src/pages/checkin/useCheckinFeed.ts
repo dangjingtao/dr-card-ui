@@ -58,7 +58,7 @@ export function useSignStatus(): CheckinRemoteResult<SignStatus> {
   return useRemoteData(fetchSignStatus)
 }
 
-/** GET /api/signrecords/index：签到记录（打卡日历的已签/补签依据）。 */
+/** GET /api/signrecords/index：本月签到记录（打卡日历的已签/补签依据）。 */
 export function useSignRecords(): CheckinRemoteResult<SignRecord[]> {
   return useRemoteData(fetchSignRecords)
 }
@@ -88,9 +88,11 @@ export interface CheckinActionsResult {
 /**
  * 签到 / 补签动作。走真实 service（`add` / `makeup`），页面不做模式分支。
  *
- * ⚠️ 补签的记录里没有「被补日期」字段（见 services/signrecords.ts 顶部说明），
- * 接口无法回显补的是哪一天，因此这里额外返回 `lastMakeupDay` 供月历做**会话内乐观点亮**，
- * 不把它当作已持久化的真实日期。
+ * ℹ️ 补签不在最新《签到页面接口文档》内，但为 7002 实测可用能力，2026-09-29 用户确认保留；
+ * 调用前必须先通过 Native 激励广告闸门（在宿主页面完成，本 hook 只负责接口调用）。
+ *
+ * `index` 记录带业务日期字段 `year`/`month`/`day`，接口刷新后能正确归属；
+ * 这里额外返回 `lastMakeupDay` 供月历在刷新返回前做**会话内乐观点亮**。
  */
 export function useCheckinActions(onSuccess?: (kind: CheckinActionKind, day?: string) => void): CheckinActionsResult {
   const [pending, setPending] = useState<CheckinActionKind | null>(null)

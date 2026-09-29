@@ -20,7 +20,6 @@ import { findRouteByPathname } from '../app/router/routes'
 import {
   LUCK_PLACEHOLDER,
   POINTS_TASK_PLACEHOLDERS,
-  POINTS_TASK_PLACEHOLDER_NOTE,
   type PointsTaskPlaceholder,
 } from '../app/fixtures'
 import {
@@ -53,6 +52,8 @@ import pointsBenefitVoucher from '../assets/brand/bubble/points-benefit-voucher.
  * 2026-09-28（续）：泡泡任务区接入 GET /api/signactivity/list —— 签到类任务（每日打卡 /
  *    连续签到）的标题与进度改读接口（title / signed_days / max_days）；「观看视频」「邀请好友」
  *    在该接口无对应数据，继续读 fixtures 占位。接口返回什么状态就展示什么，前端暂不过滤。
+ * 2026-09-29：泡泡任务区移除「占位」标签与占位说明文案；「进行中」任务的状态色由金色
+ *    改为品牌橙（浅橙底 + 主色图标/文字），避免与相邻任务并排时出现厚重金色块。
  */
 
 /** 占位任务与图标的对应关系；任务语义沿用流水夹具中的同名条目 */
@@ -82,9 +83,9 @@ const TASK_STATE_STYLES = {
     bar: '[&>div>div]:bg-checkin-success',
   },
   active: {
-    icon: 'bg-reward text-reward-strong',
-    tag: 'bg-reward text-reward-strong',
-    bar: '[&>div>div]:bg-reward-strong',
+    icon: 'bg-secondary text-text-brand',
+    tag: 'bg-secondary text-text-brand',
+    bar: '[&>div>div]:bg-primary',
   },
   todo: {
     icon: 'bg-surface-subtle text-text-tertiary',
@@ -349,18 +350,15 @@ export default function Points() {
         </div>
       </section>
 
-      {/* 需求 §4.2：原流水区域释放给任务内容，当前为视觉完整的占位卡 */}
+      {/* 需求 §4.2：原流水区域释放给任务内容 */}
       <section className="relative z-10 mx-4 mt-5 flex-1" aria-labelledby="points-tasks-title">
-        <div className="mb-2 flex items-center justify-between px-0.5">
-          <h2 id="points-tasks-title" className="flex items-center gap-1.5 text-base font-semibold text-text-primary">
-            <ListTodo className="h-4 w-4 text-reward-strong" aria-hidden />
-            泡泡任务
-          </h2>
-          <span className="inline-flex items-center rounded-pill bg-secondary px-2 py-0.5 text-[11px] font-semibold text-text-brand">
-            占位
-          </span>
-        </div>
-        <p className="mb-2 px-0.5 text-[11px] leading-5 text-text-tertiary">{POINTS_TASK_PLACEHOLDER_NOTE}</p>
+        <h2
+          id="points-tasks-title"
+          className="mb-2 flex items-center gap-1.5 px-0.5 text-base font-semibold text-text-primary"
+        >
+          <ListTodo className="h-4 w-4 text-reward-strong" aria-hidden />
+          泡泡任务
+        </h2>
         <div className="overflow-hidden rounded-feature border border-border-subtle bg-surface shadow-bubble">
           {taskCards.map((task) => (
             <PointsTaskCard key={task.id} task={task} />

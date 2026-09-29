@@ -2,14 +2,20 @@ import { describe, expect, it } from 'vitest'
 
 import { buildCheckinCalendar, buildCycleDays, resolveChallengeCompletedDays } from './components/CheckinBoard'
 
-const record = (id: number, createTime: string, status: number) => ({
-  id,
-  create_time: createTime,
-  user_id: 3,
-  points: 0,
-  consecutive_days: 0,
-  status,
-})
+const record = (id: number, createTime: string, status: number) => {
+  const [year, month, day] = createTime.slice(0, 10).split('-')
+  return {
+    id,
+    create_time: createTime,
+    user_id: 3,
+    points: 0,
+    consecutive_days: 0,
+    status,
+    day,
+    month,
+    year,
+  }
+}
 
 describe('buildCheckinCalendar', () => {
   it('renders the local month with correct length and week offset', () => {
@@ -56,7 +62,58 @@ describe('buildCheckinCalendar', () => {
     expect(unsigned.todaySigned).toBe(false)
   })
 
-  it('lights up optimistic makeup days not yet returned by the API', () => {
+  it('lights up a makeup record on its supplemented date (create_time is the supplemented date)', () => {
+    const calendar = buildCheckinCalendar({
+      today: new Date(2026, 8, 28),
+      records: [record(1, '2026-09-20 00:00:00', 20)],
+    })
+
+    const day = calendar.days.find((item) => item.dateKey === '2026-09-20')
+    expect(day?.state).toBe('done')
+    expect(day?.signed).toBe(true)
+    expect(day?.makeup).toBe(true)
+  })
+
+  it('attributes a makeup record to its business date even when create_time is today', () => {
+    // 今天(9-29)补签 9-20：create_time 是操作时刻 9-29，业务日期字段才是 9-20。
+    const calendar = buildCheckinCalendar({
+      today: new Date(2026, 8, 29),
+      records: [
+        {
+          id: 7,
+          create_time: '2026-09-29 15:57:18',
+          user_id: 3,
+          points: 0,
+          consecutive_days: 0,
+          status: 20,
+          day: '20',
+          month: '09',
+          year: '2026',
+        },
+      ],
+    })
+
+    expect(calendar.days.find((item) => item.dateKey === '2026-09-20')?.makeup).toBe(true)
+
+    const today = calendar.days.find((item) => item.dateKey === '2026-09-29')
+    expect(today?.makeup).toBe(false)
+    expect(today?.signed).toBe(false)
+    expect(calendar.todaySigned).toBe(false)
+    expect(calendar.litDays).toBe(1)
+  })
+
+  it('keeps past missed days static without counting them as signed', () => {
+    const calendar = buildCheckinCalendar({
+      today: new Date(2026, 8, 28),
+      records: [],
+    })
+
+    const missed = calendar.days.find((item) => item.dateKey === '2026-09-20')
+    expect(missed?.state).toBe('makeup')
+    expect(missed?.signed).toBe(false)
+  })
+
+  it('lights up optimistic makeup days before the API refresh returns', () => {
     const calendar = buildCheckinCalendar({
       today: new Date(2026, 8, 28),
       records: [],
@@ -69,10 +126,10 @@ describe('buildCheckinCalendar', () => {
     expect(day?.makeupApplied).toBe(true)
   })
 
-  it('does not flag a normal API-backed day as optimistic', () => {
+  it('does not flag an API-backed day as optimistic', () => {
     const calendar = buildCheckinCalendar({
       today: new Date(2026, 8, 28),
-      records: [record(1, '2026-09-20 09:00:00', 10)],
+      records: [record(1, '2026-09-20 00:00:00', 20)],
       optimisticMakeupDays: ['2026-09-20'],
     })
 
@@ -80,14 +137,15 @@ describe('buildCheckinCalendar', () => {
     expect(day?.makeupApplied).toBe(false)
   })
 
-  it('does not treat a makeup operation created today as today signed', () => {
+  it('does not treat a makeup record created today as today signed', () => {
+    // 文档口径：补签记录的 create_time 是被补签日期；若补的是今天之前，则今天仍未签。
     const calendar = buildCheckinCalendar({
       today: new Date(2026, 8, 28),
-      records: [record(1, '2026-09-28 15:23:27', 20)],
+      records: [record(1, '2026-09-20 00:00:00', 20)],
     })
 
     expect(calendar.todaySigned).toBe(false)
-    expect(calendar.litDays).toBe(0)
+    expect(calendar.litDays).toBe(1)
   })
 
   it('counts lit days as signed days, including today when signed', () => {

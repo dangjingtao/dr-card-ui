@@ -77,10 +77,21 @@ vi.mock('../app/router/routes', () => ({
 }))
 
 vi.mock('./checkin/components/CheckinBoard', () => ({
-  default: ({ onMakeupDay }: { onMakeupDay?: (day: string) => void }) => (
-    <button type="button" onClick={() => onMakeupDay?.('2026-09-20')}>
-      补签
-    </button>
+  default: ({
+    onMakeupDay,
+    onSignIn,
+  }: {
+    onMakeupDay?: (day: string) => void
+    onSignIn?: () => void
+  }) => (
+    <>
+      <button type="button" onClick={() => onMakeupDay?.('2026-09-20')}>
+        补签
+      </button>
+      <button type="button" onClick={() => onSignIn?.()}>
+        立即签到
+      </button>
+    </>
   ),
 }))
 
@@ -114,7 +125,38 @@ afterEach(() => {
 })
 
 /**
- * 补签 = 先看完激励广告，再发起真实补签请求（2026-09-28 用户确认）。
+ * 签到走真实接口（`POST /api/signrecords/add`），成功后刷新状态与记录。
+ */
+describe('Checkin sign-in flow (API)', () => {
+  it('calls the sign-in API and refreshes status and records', async () => {
+    mocks.signIn.mockResolvedValue(undefined)
+
+    render(<Checkin />)
+    fireEvent.click(screen.getByRole('button', { name: '立即签到' }))
+
+    await waitFor(() => {
+      expect(mocks.reloadRecords).toHaveBeenCalled()
+    })
+    expect(mocks.signIn).toHaveBeenCalled()
+    expect(mocks.reloadStatus).toHaveBeenCalled()
+  })
+
+  it('does not refresh when the sign-in request fails', async () => {
+    mocks.signIn.mockRejectedValue(new Error('今日已签到'))
+
+    render(<Checkin />)
+    fireEvent.click(screen.getByRole('button', { name: '立即签到' }))
+
+    await waitFor(() => {
+      expect(mocks.signIn).toHaveBeenCalled()
+    })
+    expect(mocks.reloadRecords).not.toHaveBeenCalled()
+    expect(mocks.reloadStatus).not.toHaveBeenCalled()
+  })
+})
+
+/**
+ * 补签 = 先看完激励广告，再发起真实补签请求（2026-09-29 用户确认保留）。
  *
  * 因此这里同时验证两段：
  * 1) 广告闸门：只有 `status=completed` 才允许落库；closed / failed / no_fill / 不支持的宿主都不发请求；
@@ -208,7 +250,7 @@ describe('Checkin makeup flow (rewarded ad gate + API)', () => {
     ['native-cancelled', '广告未完整观看，补签未完成'],
     ['native-permission-denied', '需要广告权限，请检查系统设置后重试'],
     ['native-failed', '广告调用失败，请重试'],
-    ['invocation-timeout', '广告调用失败，请重试'],
+    ['invocation-timeout', '广告加载超时，请重试'],
   ] as const)('maps %s to its own message and never calls makeup', async (code, message) => {
     const { NativeBridgeError } = await import('../services/nativeBridge')
     mocks.showRewardAd.mockRejectedValue(new NativeBridgeError(code, 'showRewardAd', code))

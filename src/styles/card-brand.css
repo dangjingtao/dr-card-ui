@@ -127,6 +127,16 @@
   --color-checkin-home-muted: var(--ink-500);
   --color-checkin-home-today: var(--premium-600);
   --color-checkin-home-today-text: var(--color-text-inverse);
+  /* 首页「每日任务」卡（用户 2026-09-29 参考图确认）：橙调图标底 /
+   * 奖励文案走 premium-500；进度条仍走 checkin-success 绿；
+   * 骨架占位底沿用 warm-100，只做无位移脉冲。 */
+  --color-checkin-mission-icon-bg: var(--brand-50);
+  --color-checkin-mission-icon: var(--brand-500);
+  --color-checkin-mission-reward: var(--premium-500);
+  --color-checkin-mission-done: var(--success-500);
+  --color-checkin-mission-done-bg: var(--success-100);
+  --color-checkin-mission-track: var(--warm-100);
+  --color-checkin-mission-skeleton: var(--warm-100);
   --color-redpacket: var(--danger-500); /* 红包红（占位，原型取样见 token-sampling.md） */
 
   /* ------------------------------------------------------------------------
