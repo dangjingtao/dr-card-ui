@@ -6,6 +6,7 @@
 > 决策范围：Mockplus 节点 #17、#18、#37、#38、#39、#40、#48、#49
 > 决策人：智能体按 `AGENTS.md` §11 证据阶梯裁定；B-007 / B-008 由用户当轮指令定案关闭，未新增产品规则
 > 状态：Accepted（B-007 / B-008 已关闭；新增 B-024 / B-025 / B-026 未决，见 §8）
+> 2026-09-29 更新：Maintainer 明确定案 `/mall` 主入口改为在现有 H5 壳层内 iframe 承载 `http://www.3-wins.cn/`，由 D-082 覆盖 D-031 对 `/mall` 主入口的旧边界占位口径；商品详情/购物车边界未随本次改动扩展。
 
 ## 1. 决策目的
 
@@ -27,15 +28,17 @@ T008 原状态是 `Draft / Blocked`，两个阻塞项挡在施工前：
 | D-035 | **#39 兑换确认为弹层而非页面**：`?overlay=redeem&product=<id>`，弹窗内呈现商品/数量/说明/消耗泡泡值/当前余额；余额不足与售罄时主按钮 `disabled` 且按钮文案换为「泡泡值不足」/「已售罄」，同时在列表卡上以 Tag / 蒙层同步标记 | T008 卡实施要求「兑换确认显示商品、消耗、余额和不足/不可兑换状态」；不可兑换必须在列表与弹窗双处可见，才不是静态文案 | #39 #18 |
 | D-036 | **#40 存入卡包沿用兑换专区作为背景层** + `PromptOverlay` 成功提示，双 CTA：「查看我的卡包」→ `/card`、「关闭」→ `/exchange`；提交中态为固定 700ms，不引入随机 | 原型 §4 成功态是覆盖在专区之上的提示层；固定时长保证截图可复现（与 T009 提交中态同款处理） | #40 |
 | D-037 | 兑换未决业务规则集中在夹具 `EXCHANGE_RULE_STATUS`（`confirmed` / `blocker` / `note`），页面与组件不得硬编码，也不得把夹具当成已确认规则 | T009 D-017 已确立该模式；本轮三条规则（排序方向 / SKU 清单 / 结算写入）均未确认 | #18 #37 #38 #39 #40 |
+| D-082 | **/mall 主入口改为真实商城 iframe 承载**：`router/index.tsx` 对 `/mall` 使用 `MallWebView`，在现有手机壳层与底部导航内嵌 `http://www.3-wins.cn/`。HTTP scheme 为 2026-09-29 Maintainer 明确指定的当前联调口径，不自动升级或替换；真实 App WebView 的 cleartext/mixed-content、鉴权及目标站 iframe 策略仍需真机验证。D-031 对 `/mall` 主入口的占位口径由本决策覆盖，`/mall/goods/:id`、`/mall/cart` 仍沿用既有边界页，除非另有定案。 | Maintainer 2026-09-29 当轮明确要求；当前实现 `MallWebView.tsx` | #17 |
 
 ## 3. 决策细节
 
-### 3.1 WebView 边界（D-031）
+### 3.1 商城承载（D-031 → D-082）
 
-- 边界声明留在 `routes.ts`：`/mall`、`/mall/goods/:id`、`/mall/cart` 三条各带 `boundary: 'webview'`，`router/index.tsx` 见到该字段即渲染 `WebViewBoundary`，不需要为每个节点写页面组件。
-- 页面呈现「WebView 边界」标识 + 伪 URL（`https://mall.shiideli.example/list` / `/goods/:id` / `/cart`）+ 三态占位，`?state=loading` / 默认已加载 / `?state=error`。
-- 本轮同时修正了该页两处问题（见 §6「附带修正」）：过期文案仍写「H5 内容与跳转由 T008 施工」，以及页面自带一组**常显**状态切换胶囊——后者违反 D-021「调试面板只在 `?debug=1` 下出现」。已删除自带胶囊，改挂共享 `DebugPanel`。
-- 修改 `WebViewBoundary.tsx` 属于本卡范围：全仓 `boundary: 'webview'` 仅出现在 `routes.ts` 的 T008 区段三处，`boundary === 'webview'` 的消费点只有 `router/index.tsx`，该页当前只服务 T008 三个节点。
+- D-031 是 2026-08-22 的历史事实：三条商城路由最初统一由 `WebViewBoundary` 承载占位。
+- 2026-09-29 D-082 覆盖其中 **`/mall` 主入口**：`router/index.tsx` 直接渲染 `MallWebView`，iframe 地址固定为 Maintainer 指定的 `http://www.3-wins.cn/`，手机壳层与底部导航继续保留。
+- `/mall/goods/:id`、`/mall/cart` 当前仍按 `routes.ts` 的 `boundary: 'webview'` 落到 `WebViewBoundary`，本次没有擅自把两个子路由改成真实商城 URL。
+- HTTP scheme 是当前联调输入，不在本仓库自动重写；cleartext / mixed-content、X-Frame-Options / CSP frame-ancestors、鉴权透传均属于 App WebView 联调证据，不因浏览器 preview 构建成功而宣称已通过。
+- D-021 的业务 `DebugPanel` 规则不变：仍仅由 `?debug=1` 显式开启。
 
 ### 3.2 兑换专区视觉与排序（D-032、D-033）
 
@@ -64,7 +67,8 @@ T008 原状态是 `Draft / Blocked`，两个阻塞项挡在施工前：
 | 商品/余额/排序/搜索/未决规则夹具 | [fixtures/index.ts](../../../src/app/fixtures/index.ts) |
 | 洗护兑换专区与兑换确认（#18 #37 #38 #39） | [Exchange.tsx](../../../src/pages/Exchange.tsx) |
 | 存入卡包成功态（#40） | [ExchangeResult.tsx](../../../src/pages/ExchangeResult.tsx) |
-| H5 商城 / 商品详情 / 购物车边界（#17 #48 #49） | [WebViewBoundary.tsx](../../../src/pages/WebViewBoundary.tsx) |
+| H5 商城主入口（#17，D-082） | [MallWebView.tsx](../../../src/pages/MallWebView.tsx) |
+| 商品详情 / 购物车边界（#48 #49，D-031 保留部分） | [WebViewBoundary.tsx](../../../src/pages/WebViewBoundary.tsx) |
 | 页面注册与 `boundary` 分派 | [router/index.tsx](../../../src/app/router/index.tsx) |
 | 证据脚本 | [capture-t008.mjs](../../../scripts/capture-t008.mjs) |
 
@@ -79,7 +83,7 @@ T008 原状态是 `Draft / Blocked`，两个阻塞项挡在施工前：
 | #39 兑换确认（余额不足） | `/exchange?overlay=redeem&product=e5` |
 | #39 兑换确认（售罄） | `/exchange?overlay=redeem&product=e4` |
 | #40 存入卡包成功 | `/exchange/result?product=e1` |
-| #17 卡博士商城（WebView 边界） | `/mall`、`/mall?state=loading`、`/mall?state=error` |
+| #17 卡博士商城（真实商城 iframe，D-082） | `/mall` |
 | #48 商品详情（WebView 边界） | `/mall/goods/1001` |
 | #49 购物车（WebView 边界） | `/mall/cart` |
 
@@ -107,7 +111,7 @@ T008 原状态是 `Draft / Blocked`，两个阻塞项挡在施工前：
 
 | 编号 | 定案内容 |
 | --- | --- |
-| `B-007` | **用户定案（2026-08-22）**：H5 商城、商品详情、购物车统一使用明确的 WebView 边界页，不做本地高保真还原、不接真实 H5。对应 D-031。 |
+| `B-007` | **历史定案（2026-08-22）**：三条商城路由最初统一使用 WebView 边界页（D-031）。**2026-09-29 Maintainer 新定案 D-082 已覆盖 `/mall` 主入口**，改为 iframe 承载 `http://www.3-wins.cn/`；商品详情/购物车仍保留原边界。 |
 | `B-008` | **用户定案（2026-08-22）**：洗护兑换专区在本仓库本地实现（搜索、综合/兑换量/泡泡值排序、商品卡、兑换确认、余额不足、售罄、成功存入卡包）；禁止照搬历史 T11 稿的深绿金 KV 和私有配色，视觉只消费已注册语义 Token。对应 D-032、D-033。 |
 
 ## 8. 未决与风险
@@ -123,5 +127,5 @@ T008 原状态是 `Draft / Blocked`，两个阻塞项挡在施工前：
 其他风险：
 
 - 商品缩略图目前复用 `dearseed-kit` 物料，真实商品图未提供；一旦拿到正式素材需重新评估卡面比例。
-- WebView 边界页的伪 URL host（`mall.shiideli.example`）是占位，真实商城域名与鉴权透传方式未定，属 T010 之后的集成范围。
+- `/mall` 当前真实联调地址已由 Maintainer 指定为 `http://www.3-wins.cn/`；scheme 不自动替换。真实 App WebView 的 cleartext/mixed-content、目标站 iframe 策略与鉴权透传仍需联调验证。商品详情/购物车仍是边界占位。
 - #40 成功态未与 T009 卡包夹具联动（受 B-026 约束），若后续产品要求兑换即写入卡包，需要新决策而非按缺陷修复。

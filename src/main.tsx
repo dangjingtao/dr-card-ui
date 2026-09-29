@@ -2,7 +2,6 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
 import { runtimePolicy } from './app/config/runtime'
-import { isFixtureDebugRequested } from './app/fixtures/useFixture'
 import UnsupportedHostNotice, { isUnsupportedHost } from './pages/UnsupportedHostNotice'
 import './styles/globals.css'
 
@@ -22,7 +21,9 @@ async function prepareRuntime() {
 }
 
 async function prepareMobileDebugPanel() {
-  if (!isFixtureDebugRequested()) return
+  // Maintainer 2026-09-29: Eruda is intentionally enabled by default in dev/preview.
+  // test/prod are prod-like and keep the debug console disabled regardless of URL parameters.
+  if (runtimePolicy.isProdLike) return
 
   const { default: eruda } = await import('eruda')
   eruda.init()
