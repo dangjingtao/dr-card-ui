@@ -27,6 +27,12 @@ export default function ConfirmVerify() {
     typeof (location.state as { nativeScanCode?: unknown }).nativeScanCode === 'string'
       ? (location.state as { nativeScanCode: string }).nativeScanCode
       : null
+  const nativeVerifyResult =
+    location.state &&
+    typeof location.state === 'object' &&
+    (location.state as { nativeVerifyResult?: unknown }).nativeVerifyResult === 'done'
+      ? 'done'
+      : null
 
   const [toast, setToast] = useState(false)
 
@@ -36,7 +42,10 @@ export default function ConfirmVerify() {
     return () => window.clearTimeout(id)
   }, [toast, navigate])
 
-  const result = state?.key === 'done' || state?.key === 'repeat' ? state.key : null
+  const result =
+    nativeVerifyResult ??
+    (state?.key === 'done' || state?.key === 'repeat' ? state.key : null)
+  const isNativeTransactionResult = nativeVerifyResult === 'done'
 
   if (result) {
     const copy = result === 'done' ? VERIFY_FEEDBACK.done : VERIFY_FEEDBACK.repeat
@@ -57,20 +66,22 @@ export default function ConfirmVerify() {
           <p className="max-w-[260px] text-sm leading-6 text-text-secondary">{copy.desc}</p>
         </div>
 
-        <section className="mx-4 mt-5 rounded-container bg-surface p-4 shadow-sm">
-          <div className="flex items-center gap-3">
-            <Store className="h-5 w-5 flex-none text-text-tertiary" aria-hidden />
-            <div className="min-w-0">
-              <p className="truncate text-sm text-text-primary">{voucher.store}</p>
-              <p className="mt-0.5 text-xs text-text-tertiary">核销时间 {voucher.verifyTime}</p>
+        {!isNativeTransactionResult && (
+          <section className="mx-4 mt-5 rounded-container bg-surface p-4 shadow-sm">
+            <div className="flex items-center gap-3">
+              <Store className="h-5 w-5 flex-none text-text-tertiary" aria-hidden />
+              <div className="min-w-0">
+                <p className="truncate text-sm text-text-primary">{voucher.store}</p>
+                <p className="mt-0.5 text-xs text-text-tertiary">核销时间 {voucher.verifyTime}</p>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
         <div className="mt-auto px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-5">
           <button
             type="button"
-            onClick={() => navigate('/card?state=used')}
+            onClick={() => navigate(isNativeTransactionResult ? '/card' : '/card?state=used')}
             className="h-12 w-full rounded-full bg-primary text-base font-medium text-text-inverse active:bg-primary-pressed"
           >
             返回卡包

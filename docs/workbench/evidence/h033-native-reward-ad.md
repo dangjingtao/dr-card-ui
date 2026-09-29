@@ -135,3 +135,18 @@ Native 当前仍标记双端 `showRewardAd` 未实现，因此最终 Accepted �
 6. 无广告库存返回 `no_fill`，不补签。
 
 真机 smoke 前，本卡保持 In Review。
+
+## 8. H037 Android 实证覆盖
+
+H033 第 1–7 节保留早期 target contract 历史。2026-09-29 Android `H5RewardAdHelper` 源码证明当前宿主已经改为 numeric code + Native 状态字段：
+
+- 完播后关闭：`code=0`
+- 未完播关闭：`code=1`
+- 普通加载失败：`code=5`
+- timeout：`code=6`
+- no fill：`code=7`
+- `data` 当前包含 `scene / adLoadState / finishPlayState`
+
+用户同时明确：完整观看条件由 Native 判定；即便最终由用户点击关闭，只要 Native 已判定完整观看，H5 仍应接受 `code=0` 为完成。
+
+因此 H037 在 adapter 内做兼容归一，不让 Android SDK 细节进入 Checkin 页面。H033 的页面级原则“只有 completed 才继续补签”保持不变。

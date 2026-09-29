@@ -221,6 +221,14 @@ export interface CallbackInjectedObjectTransportConfig<TInput, TResult>
   callbackName?: InjectedCallbackName
   callbackAliases?: readonly InjectedCallbackName[]
   timeoutMs?: number
+  /**
+   * Optional capability-specific multi-stage callback gate.
+   *
+   * The default remains one callback = one settled invocation. Capabilities with a confirmed
+   * intermediate callback may return false here to keep the callbackId pending until a later
+   * terminal payload arrives.
+   */
+  isTerminalPayload?: (payload: unknown, callbackCount: number) => boolean
 }
 
 type InjectedCallbackPending = {
@@ -357,6 +365,7 @@ export function createCallbackInjectedObjectTransport<TInput, TResult>(
 
           return new Promise<TResult>((resolve, reject) => {
             let settled = false
+            let callbackCount = 0
 
             const cleanup = () => {
               channel.pending.delete(callbackId)
@@ -369,6 +378,28 @@ export function createCallbackInjectedObjectTransport<TInput, TResult>(
               work()
             }
             const handlePayload = (payload: unknown) => {
+              callbackCount += 1
+
+              let isTerminal = true
+              try {
+                isTerminal = config.isTerminalPayload?.(payload, callbackCount) ?? true
+              } catch (error) {
+                finish(() =>
+                  reject(
+                    error instanceof NativeTransportError
+                      ? error
+                      : new NativeTransportError(
+                          'payload-invalid',
+                          `Native ${config.methodName} callback stage classifier failed.`,
+                          error,
+                        ),
+                  ),
+                )
+                return
+              }
+
+              if (!isTerminal) return
+
               finish(() => {
                 try {
                   resolve(parseResult(payload))

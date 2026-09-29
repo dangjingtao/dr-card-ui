@@ -166,3 +166,18 @@ Native 当前回填仍是“双端尚未实现”。因此最终 Accepted 需要
 - H5 自动进入确认核销页。
 
 取消、权限拒绝、普通失败的返回 envelope 已确认；真机仍需验证实际系统扫码页是否在对应场景稳定返回上述 error 值。
+
+## 8. H037 Android 实证覆盖
+
+H031 本文件第 1–7 节记录的是早期 Native 回填与 H5 target contract。2026-09-29 Android 实际源码已经补齐，并证明“扫码正文返回即完成”的旧假设不足以描述体验券核销业务。
+
+Android `upstream/gitee/master@a8ac8469` 实证：
+
+1. `H5ScanHelper` 扫码成功后先以原 callbackId 回 `code=0 + data.text`；
+2. 同一 helper 随后查询设备并把 `h5_callback_id` 带入 `BleGoodsDetailActivity`；
+3. 设备启动/调货最终成功或失败后，`BleGoodsDetailActivity.notifyH5StartResult()` 通过 `H5BridgeCallbackEvent` 使用同一 callbackId 回到原 H5 宿主；
+4. 因此第一条成功 callback 是中间态，第二条设备结果才是事务终态。
+
+这条实证覆盖 H031 中“扫码成功即进入确认核销”的旧完成语义，但不删除历史记录。当前施工与验收以 H037 设计证据为准。
+
+iOS 仍待独立实证。
