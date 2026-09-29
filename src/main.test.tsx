@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { screen, waitFor } from '@testing-library/react'
 
 vi.mock('eruda', () => ({
@@ -23,15 +23,24 @@ describe('main bootstrap', () => {
     vi.resetModules()
   })
 
-  it('initializes eruda in the test environment without changing the prod/test debugPanel contract', async () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
+  it('keeps eruda disabled in the production-like test environment', async () => {
     const erudaMock = (await import('eruda')).default as unknown as { init: ReturnType<typeof vi.fn> }
 
     await import('./main')
 
-    expect(erudaMock.init).toHaveBeenCalledTimes(1)
+    expect(erudaMock.init).not.toHaveBeenCalled()
+    await waitFor(() => expect(screen.getByText('App')).toBeTruthy())
   })
 
-  it('continues booting when eruda initialization fails', async () => {
+  it('continues booting in dev when eruda initialization fails', async () => {
+    vi.stubEnv('MODE', 'development')
+    vi.stubEnv('VITE_APP_ENV', 'dev')
+    vi.stubEnv('VITE_DATA_MODE', 'api')
+
     const erudaMock = (await import('eruda')).default as unknown as { init: ReturnType<typeof vi.fn> }
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
     erudaMock.init.mockImplementationOnce(() => {
@@ -41,6 +50,7 @@ describe('main bootstrap', () => {
     await import('./main')
 
     await waitFor(() => expect(screen.getByText('App')).toBeTruthy())
+    expect(erudaMock.init).toHaveBeenCalledTimes(1)
     expect(warn).toHaveBeenCalledWith(
       '[debug] Eruda initialization failed; continuing without the mobile console.',
       expect.any(Error),
