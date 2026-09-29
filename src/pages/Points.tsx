@@ -24,6 +24,7 @@ import {
 } from '../app/fixtures'
 import {
   SIGN_ACTIVITY_STATUS_ACTIVE,
+  SIGN_ACTIVITY_STATUS_CLOSED,
   type SignActivity,
 } from '../services/signrecords'
 import { useSignActivityList, useUserPointsStat } from './points/usePointsFeed'
@@ -133,14 +134,15 @@ function toPlaceholderView(task: PointsTaskPlaceholder): TaskCardView {
 /**
  * 签到活动 → 视图模型。
  * 进度用文档建议的 `signed_days / max_days`，并用 Math.min 兜底避免超过 100%。
- * 状态映射：`status === 20`（使用中）为进行中，否则视为未开始；
- * 进度打满时记为已完成 —— 这是纯展示派生，不写入任何业务结算。
+ * 状态映射：20=进行中、40=已关闭，其余未开始；
+ * 进度打满时优先记为已完成 —— 这是纯展示派生，不写入任何业务结算。
  */
-function toActivityView(activity: SignActivity): TaskCardView {
+export function toActivityView(activity: SignActivity): TaskCardView {
   const target = Math.max(activity.max_days, 0)
   const current = Math.min(Math.max(activity.signed_days, 0), target)
   const done = target > 0 && current >= target
   const active = activity.status === SIGN_ACTIVITY_STATUS_ACTIVE
+  const closed = activity.status === SIGN_ACTIVITY_STATUS_CLOSED
 
   return {
     id: `signactivity-${activity.id}`,
@@ -149,7 +151,7 @@ function toActivityView(activity: SignActivity): TaskCardView {
     current,
     target,
     state: done ? 'done' : active ? 'active' : 'todo',
-    stateLabel: done ? '已完成' : active ? '进行中' : '未开始',
+    stateLabel: done ? '已完成' : closed ? '已关闭' : active ? '进行中' : '未开始',
     rewardBubble: null,
     icon: resolveTaskIcon(activity.title),
   }
