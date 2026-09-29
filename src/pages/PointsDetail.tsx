@@ -1,17 +1,22 @@
 import { useMemo, useState } from 'react'
-import { ArrowDownLeft, ArrowUpRight } from 'lucide-react'
+import { ArrowDownLeft, ArrowUpRight, RefreshCw } from 'lucide-react'
 import DebugPanel from '../components/mobile/DebugPanel'
 import PageContainer from '../components/mobile/PageContainer'
-import { EmptyState, SegmentedControl } from '../components/ui'
+import { Button, EmptyState, LoadingIndicator, SegmentedControl } from '../components/ui'
 import { useFixtureState } from '../app/fixtures/useFixture'
 import { findRouteByPathname } from '../app/router/routes'
 import {
   BUBBLE_FILTERS,
   BUBBLE_LIST_END,
-  filterBubbleRecords,
   isBubbleFilter,
   type BubbleFilter,
 } from '../app/fixtures'
+import {
+  USER_POINTS_TYPE_EXPENSE,
+  USER_POINTS_TYPE_INCOME,
+  type UserPointsRecord,
+} from '../services/userpoints'
+import { useUserPointsList } from './points/usePointsFeed'
 
 /**
  * 泡泡值明细（#5 明细分支）
@@ -21,9 +26,31 @@ import {
  *   本页是「纯明细页」，内容只包含全部 / 收入 / 消耗 Tab、泡泡值流水列表与已有空态；
  *   Tab 与列表样式直接继承原泡泡值页面，不新增视觉方案。
  * 因此本页不承载任务、泡泡福利、资产营销与底部兑换主操作。
- * ⚠️ B-002 未决：15 条 mock 与配色方案未定稿，余额与流水一律读 fixtures。
- * 可复现状态：?state=income / expense / empty
+ * 2026-09-28：接入 GET /api/userpoints/index —— 三个 Tab 复用同一接口，切换只改 type；
+ *   Tab 与列表视觉保持不变，分页每页 15 条。
+ * 可复现状态：?state=income / expense / empty（仅 preview/dev，用于视觉验收）
  */
+
+const PAGE_SIZE = 15
+
+/** Tab → 接口 type：全部不传，收入=10，消费=20。 */
+const FILTER_TO_TYPE: Record<BubbleFilter, number | undefined> = {
+  all: undefined,
+  income: USER_POINTS_TYPE_INCOME,
+  expense: USER_POINTS_TYPE_EXPENSE,
+}
+
+/**
+ * object_type → 列表展示文案。
+ * 当前只有 task=签到；order 待兑换功能上线后才会出现，未知值给通用兜底文案，
+ * 不硬编码业务不可知项。
+ */
+function resolveRecordTitle(record: UserPointsRecord): string {
+  if (record.object_type === 'task') return '每日签到'
+  if (record.object_type === 'order') return '兑换消耗'
+  return '泡泡值变动'
+}
+
 export default function PointsDetail() {
   const route = findRouteByPathname('/points/detail')
   const { state } = useFixtureState(route)
@@ -31,9 +58,21 @@ export default function PointsDetail() {
   const initialFilter: BubbleFilter = isBubbleFilter(state?.key ?? null) ? (state!.key as BubbleFilter) : 'all'
   const [filter, setFilter] = useState<BubbleFilter>(initialFilter)
 
-  /** ?state=empty 用于验收空态，不代表业务上真的没有数据 */
+  /** ?state=empty 用于验收空态；API 模式下该 fixture 失效，仍按真实数据渲染。 */
   const forceEmpty = state?.key === 'empty'
-  const records = useMemo(() => (forceEmpty ? [] : filterBubbleRecords(filter)), [filter, forceEmpty])
+
+  const { remote, canLoadMore, loadMore, reload } = useUserPointsList({
+    type: FILTER_TO_TYPE[filter],
+    pageSize: PAGE_SIZE,
+  })
+
+  const records = useMemo(
+    () => (forceEmpty || remote.state !== 'success' ? [] : remote.data.data),
+    [forceEmpty, remote],
+  )
+
+  const isLoading = !forceEmpty && remote.state === 'loading'
+  const isError = !forceEmpty && remote.state === 'error'
 
   return (
     <PageContainer inset={false} className="pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
@@ -49,7 +88,24 @@ export default function PointsDetail() {
       </div>
 
       <section className="mx-4 mt-4" aria-label="泡泡值变动记录">
-        {records.length === 0 ? (
+        {isLoading ? (
+          <div className="flex justify-center rounded-feature border border-border-subtle bg-surface py-10 shadow-bubble">
+            <LoadingIndicator label="加载中" />
+          </div>
+        ) : isError ? (
+          <div className="rounded-feature border border-border-subtle bg-surface py-6 shadow-bubble">
+            <EmptyState
+              variant="recoverable-error"
+              title="明细加载失败"
+              supportingText={remote.message}
+              primaryAction={
+                <Button variant="outline" leadingIcon={RefreshCw} onClick={reload}>
+                  重新加载
+                </Button>
+              }
+            />
+          </div>
+        ) : records.length === 0 ? (
           <div className="rounded-feature border border-border-subtle bg-surface py-6 shadow-bubble">
             {/* 原型 §3 只给了「暂时没有更多记录啦」，不额外补写引导文案 */}
             <EmptyState variant="no-data" title={BUBBLE_LIST_END} />
@@ -64,29 +120,44 @@ export default function PointsDetail() {
                 >
                   <span
                     className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-                      record.kind === 'income' ? 'bg-success-bg text-success-text' : 'bg-danger-bg text-danger-text'
+                      record.type === USER_POINTS_TYPE_INCOME
+                        ? 'bg-success-bg text-success-text'
+                        : 'bg-danger-bg text-danger-text'
                     }`}
                     aria-hidden
                   >
-                    {record.kind === 'income' ? <ArrowDownLeft className="h-4 w-4" /> : <ArrowUpRight className="h-4 w-4" />}
+                    {record.type === USER_POINTS_TYPE_INCOME ? (
+                      <ArrowDownLeft className="h-4 w-4" />
+                    ) : (
+                      <ArrowUpRight className="h-4 w-4" />
+                    )}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-text-primary">{record.title}</p>
-                    <p className="mt-0.5 text-xs text-text-tertiary">{record.time}</p>
+                    <p className="truncate text-sm font-medium text-text-primary">{resolveRecordTitle(record)}</p>
+                    <p className="mt-0.5 text-xs text-text-tertiary">{record.create_time}</p>
                   </div>
                   <span
                     className={`text-base font-semibold ${
-                      record.kind === 'income' ? 'text-success-text' : 'text-danger-text'
+                      record.type === USER_POINTS_TYPE_INCOME ? 'text-success-text' : 'text-danger-text'
                     }`}
                   >
-                    {record.kind === 'income' ? '+' : '-'}
-                    {record.amount}
+                    {record.type === USER_POINTS_TYPE_INCOME ? '+' : '-'}
+                    {record.points}
                     <span className="ml-0.5 text-xs font-normal">🫧</span>
                   </span>
                 </div>
               ))}
             </div>
-            <p className="mt-4 text-center text-xs text-text-tertiary">{BUBBLE_LIST_END}</p>
+
+            {canLoadMore ? (
+              <div className="mt-4 flex justify-center">
+                <Button variant="outline" onClick={loadMore}>
+                  加载更多
+                </Button>
+              </div>
+            ) : (
+              <p className="mt-4 text-center text-xs text-text-tertiary">{BUBBLE_LIST_END}</p>
+            )}
           </>
         )}
       </section>

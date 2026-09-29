@@ -188,7 +188,7 @@ jobs:
 
       - name: Verify test build identity
         run: |
-          node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('dist/build-meta.json','utf8'));if(m.appEnvironment!=='test'||m.dataMode!=='api')process.exit(1)"
+          node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('dist/build-meta.json','utf8'));if(m.appEnvironment!=='test'||m.dataMode!=='api'||m.bridgeMode!=='native')process.exit(1)"
           test ! -f dist/mockServiceWorker.js
 
       - name: Reject Mock in production-like builds
@@ -202,13 +202,17 @@ jobs:
             echo 'prod accepted forbidden Bridge Mock configuration.'
             exit 1
           fi
+          if VITE_BRIDGE_MODE=disabled node scripts/build-h5.mjs test --dry-run; then
+            echo 'test accepted a disabled Bridge, which would fail every real host capability.'
+            exit 1
+          fi
 
       - name: Build production bundle
         run: npm run build:prod
 
       - name: Verify production build identity
         run: |
-          node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('dist/build-meta.json','utf8'));if(m.appEnvironment!=='prod'||m.dataMode!=='api'||m.build.sha!==process.env.GITHUB_SHA)process.exit(1)"
+          node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('dist/build-meta.json','utf8'));if(m.appEnvironment!=='prod'||m.dataMode!=='api'||m.bridgeMode!=='native'||m.build.sha!==process.env.GITHUB_SHA)process.exit(1)"
           test ! -f dist/mockServiceWorker.js
 
       - name: Verify production excludes Bridge Lab
@@ -258,6 +262,7 @@ jobs:
     env:
       VITE_APP_ENV: test
       VITE_DATA_MODE: api
+      VITE_BRIDGE_MODE: native
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -277,6 +282,7 @@ jobs:
           test "$VITE_APP_ENV" = "test"
           test "$VITE_DATA_MODE" = "api"
           test "$VITE_DATA_MODE" != "mock"
+          test "$VITE_BRIDGE_MODE" = "native"
 
       - name: Build test bundle
         run: npm run build:test

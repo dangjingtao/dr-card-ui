@@ -2,7 +2,6 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
 import { runtimePolicy } from './app/config/runtime'
-import { isFixtureDebugRequested } from './app/fixtures/useFixture'
 import UnsupportedHostNotice, { isUnsupportedHost } from './pages/UnsupportedHostNotice'
 import './styles/globals.css'
 
@@ -22,7 +21,9 @@ async function prepareRuntime() {
 }
 
 async function prepareMobileDebugPanel() {
-  if (!isFixtureDebugRequested()) return
+  // Eruda is available in every non-prod environment without a query switch.
+  // Production keeps the debug console disabled regardless of URL parameters.
+  if (runtimePolicy.isProdLike) return
 
   const { default: eruda } = await import('eruda')
   eruda.init()

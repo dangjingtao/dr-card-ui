@@ -11,6 +11,7 @@ import { findRouteByPathname } from '../app/router/routes'
 import { COLUMN_HOME_SECTIONS, NEWCOMER_COUPON_RULE_STATUS } from '../app/fixtures'
 import { resolveBannerLink, type BannerItem } from '../services/banners'
 import { useHomeBanners, useHomeSettings, useSignStatus } from './home/useHomeFeed'
+import { useSignRecords } from './checkin/useCheckinFeed'
 import avatar from '../assets/brand/home/home-avatar.webp'
 
 const sectionIcons = {
@@ -33,13 +34,14 @@ export default function Home() {
   const route = findRouteByPathname('/')
   /* 保持夹具注册与 DebugPanel 工作；首页正式状态暂不直接驱动新人券弹窗。 */
   useFixtureState(route)
-  const { overlay, open, close } = useOverlay()
+  const { overlay, close } = useOverlay()
 
   const debug = searchParams.get('debug') === '1'
 
   /* 首页接口数据：轮播 / 今日签到状态 / 品牌文化配置（mock 与 api 走同一 service）。 */
   const banners = useHomeBanners()
   const signStatus = useSignStatus()
+  const signRecords = useSignRecords()
   const homeSettings = useHomeSettings()
 
   const bannerSlides = useMemo(
@@ -127,8 +129,8 @@ export default function Home() {
       <div className="mt-4">
         <CheckinBoard
           mode="home"
-          onMakeup={() => open('make-up-success')}
           debug={debug}
+          records={signRecords.remote.state === 'success' ? signRecords.remote.data : null}
           signStatus={
             signStatus.state === 'success'
               ? {

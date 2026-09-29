@@ -90,6 +90,14 @@ if (prodLike && dataMode === 'mock') {
 if (prodLike && bridgeMode !== 'native') {
   errors.push(`${target.appEnvironment} builds require VITE_BRIDGE_MODE=native.`)
 }
+/* H036: test/prod carry real API + Native Bridge integration and are host-gated to the App WebView.
+ * Leaving bridgeMode at `disabled` would let the host gate pass while every real capability call
+ * (login included) fails with bridge-disabled at runtime, so refuse that combination up front. */
+if (prodLike && bridgeMode === 'disabled') {
+  errors.push(
+    `${target.appEnvironment} builds require VITE_BRIDGE_MODE=native; got disabled. A disabled Bridge would fail every real host capability, including login.`,
+  )
+}
 if (
   cloudflareBuildContext &&
   (target.appEnvironment === 'dev' || target.appEnvironment === 'preview') &&
