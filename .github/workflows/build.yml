@@ -353,6 +353,90 @@ jobs:
           cat /tmp/dr-card-test-playwright.log
           exit 1
 
+      - name: Verify formal test Pages configuration
+        if: github.event_name == 'push' && github.ref_name == 'test'
+        id: formal-test-pages-config
+        shell: bash
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CF_PROJECT: ${{ vars.CF_TEST_PROJECT || 'dr-card-ui-test' }}
+        run: |
+          test -n "$VITE_API_BASE_URL"
+          test -n "$CF_TOKEN"
+          test -n "$CF_ACCOUNT"
+          test -n "$CF_PROJECT"
+          test "$CF_PROJECT" != "dr-card-ui"
+          echo "project=$CF_PROJECT" >> "$GITHUB_OUTPUT"
+
+      - name: Ensure formal test Pages project
+        if: github.event_name == 'push' && github.ref_name == 'test'
+        id: formal-test-pages-project
+        shell: bash
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CF_PROJECT: ${{ steps.formal-test-pages-config.outputs.project }}
+        run: |
+          API_BASE="https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT/pages/projects"
+          HTTP_CODE="$(curl --silent --show-error --output /tmp/formal-test-pages.json --write-out '%{http_code}' \
+            -H "Authorization: Bearer $CF_TOKEN" \
+            -H 'Accept: application/json' \
+            "$API_BASE/$CF_PROJECT")"
+
+          if [ "$HTTP_CODE" = "200" ]; then
+            node -e "const fs=require('fs');const r=JSON.parse(fs.readFileSync('/tmp/formal-test-pages.json','utf8'));if(r.success!==true)process.exit(1)"
+            echo "Formal test Pages project already exists: $CF_PROJECT"
+            exit 0
+          fi
+
+          if [ "$HTTP_CODE" != "404" ]; then
+            cat /tmp/formal-test-pages.json
+            echo "Unexpected Cloudflare project lookup status: $HTTP_CODE"
+            exit 1
+          fi
+
+          CREATE_BODY="$(node -e "process.stdout.write(JSON.stringify({name:process.env.CF_PROJECT,production_branch:'test'}))")"
+          CREATE_CODE="$(curl --silent --show-error --output /tmp/formal-test-pages-create.json --write-out '%{http_code}' \
+            --request POST \
+            -H "Authorization: Bearer $CF_TOKEN" \
+            -H 'Content-Type: application/json' \
+            --data "$CREATE_BODY" \
+            "$API_BASE")"
+          cat /tmp/formal-test-pages-create.json
+          if [ "$CREATE_CODE" -lt 200 ] || [ "$CREATE_CODE" -ge 300 ]; then
+            echo "Cloudflare project create returned status: $CREATE_CODE"
+            exit 1
+          fi
+          node -e "const fs=require('fs');const r=JSON.parse(fs.readFileSync('/tmp/formal-test-pages-create.json','utf8'));if(r.success!==true)process.exit(1)"
+
+      - name: Deploy formal test Pages
+        if: github.event_name == 'push' && github.ref_name == 'test'
+        id: formal-test-pages-deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=${{ steps.formal-test-pages-config.outputs.project }} --branch=test
+
+      - name: Verify deployed formal test identity
+        if: github.event_name == 'push' && github.ref_name == 'test'
+        shell: bash
+        env:
+          CF_PROJECT: ${{ steps.formal-test-pages-config.outputs.project }}
+        run: |
+          URL="https://$CF_PROJECT.pages.dev/build-meta.json"
+          for attempt in {1..20}; do
+            if curl --fail --silent --show-error "$URL" --output /tmp/formal-test-build-meta.json; then
+              node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('/tmp/formal-test-build-meta.json','utf8'));if(m.appEnvironment!=='test'||m.dataMode!=='api'||m.bridgeMode!=='native'||m.apiBaseConfigured!==true||m.build.sha!==process.env.GITHUB_SHA)process.exit(1)"
+              echo "Formal test deployment verified: https://$CF_PROJECT.pages.dev"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Formal test deployment did not become readable at $URL"
+          exit 1
+
       - name: Assemble H019 evidence site
         if: always() && steps.evidence-restore.outcome == 'success'
         env:

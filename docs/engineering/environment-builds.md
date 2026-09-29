@@ -59,20 +59,24 @@ GitHub Actions 的 `test` gate 从仓库 Actions Variable `VITE_API_BASE_URL` �
 
 ## Cloudflare Pages
 
-仓库当前没有 `wrangler.toml` 或可声明 Pages Dashboard build command 的仓库配置，因此仅凭 GitHub 仓库 API不能证明或修改现有 Dashboard 设置。
+正式 H5 现在区分两个 Pages 项目：
 
-仓库内的目标规则是：
+- `dr-card-ui`：UI preview / 正式 prod 的现有项目；继续按仓库既有 Git 分支映射工作；
+- `dr-card-ui-test`：独立 test 环境。只有 `test` 分支 push 且 Test branch gate 通过后，GitHub Actions 才会把已构建的 `dist/` 直接部署到该项目；其生产分支语义固定为 `test`。
+
+`dr-card-ui-test` 的测试后端地址来自 GitHub Actions Variable `VITE_API_BASE_URL`，构建时写入 test bundle；Cloudflare 只托管静态产物，不再要求在 Pages Dashboard 额外维护同一份 test API 地址。部署后 CI 会读取 `https://<test-project>.pages.dev/build-meta.json`，确认 `test + api + native + apiBaseConfigured=true` 且 SHA 与当前 `test` commit 一致。
+
+现有 `dr-card-ui` 项目继续遵循：
 
 - Pages build command：`npm run build:cf`
 - 正式 production branch：`prod`
 - `prod` → production/prod/API/native
-- `test` → test/test/API/native
 - `dev` → development/dev/Mock/disabled
 - `preview` → preview/preview/Mock/disabled
 - 其它 feature / PR branch → preview/preview/Mock/disabled
 - `main` → hard fail；它是 legacy 保留分支，不允许被误发布为正式 H5 production
 
-在 Dashboard 完成切换前，`npm run build` 的 auto 模式提供迁移保护，但它不是最终推荐的 Pages 配置。
+Cloudflare 的 Preview 配置作用域不是产品 `preview` 环境本身，不能用来表达独立的 test 运行环境；test 因此使用独立 Pages 项目而不是复用现有项目的 Preview 变量。
 
 ## 构建身份排查
 
