@@ -24,7 +24,7 @@ const COUPON_COVER_FALLBACK = kitThumb
 
 const EXCHANGE_REQUEST_ERROR_COPY = '兑换失败，请稍后重试'
 
-type ExchangeAvailability = 'redeemable' | 'insufficient' | 'sold-out'
+type ExchangeAvailability = 'redeemable' | 'insufficient' | 'sold-out' | 'balance-unavailable'
 
 /**
  * 券可兑换状态（与接口字段口径对齐）：
@@ -34,7 +34,7 @@ type ExchangeAvailability = 'redeemable' | 'insufficient' | 'sold-out'
  */
 function resolveAvailability(coupon: CouponRedeemView, balance: number | null): ExchangeAvailability {
   if (coupon.soldOut) return 'sold-out'
-  if (balance == null) return 'redeemable'
+  if (balance == null) return 'balance-unavailable'
   return coupon.cost > balance ? 'insufficient' : 'redeemable'
 }
 
@@ -305,7 +305,7 @@ export default function Exchange() {
               <span className="font-medium text-text-primary">{balance == null ? '--' : `${balance.toLocaleString()} 🫧`}</span>
             </div>
 
-            {availability !== 'redeemable' && (
+            {(availability === 'sold-out' || availability === 'insufficient') && (
               <p className="mt-2 text-xs text-danger-text" role="status">
                 {availability === 'sold-out' ? EXCHANGE_COPY.soldOut : EXCHANGE_COPY.insufficient}
               </p>

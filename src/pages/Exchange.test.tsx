@@ -7,6 +7,10 @@ const mocks = vi.hoisted(() => ({
   redeem: vi.fn(),
   close: vi.fn(),
   useExchangeCoupons: vi.fn(),
+  pointsRemote: { state: 'success', data: { points: 500, income: 0, expense: 0 } } as
+    | { state: 'success'; data: { points: number; income: number; expense: number } }
+    | { state: 'loading' }
+    | { state: 'error'; message: string },
   overlay: null as string | null,
 }))
 
@@ -20,7 +24,7 @@ vi.mock('./exchange/useExchangeFeed', () => ({
 
 vi.mock('./points/usePointsFeed', () => ({
   useUserPointsStat: () => ({
-    remote: { state: 'success', data: { points: 500, income: 0, expense: 0 } },
+    remote: mocks.pointsRemote,
     reload: vi.fn(),
   }),
 }))
@@ -93,6 +97,7 @@ afterEach(() => {
   mocks.redeem.mockReset()
   mocks.close.mockReset()
   mocks.useExchangeCoupons.mockReset()
+  mocks.pointsRemote = { state: 'success', data: { points: 500, income: 0, expense: 0 } }
   mocks.overlay = null
 })
 
@@ -184,6 +189,20 @@ describe('Exchange（洗护体验券专区接口接入）', () => {
     await screen.findByText('Mock·洗护体验券')
 
     expect(screen.queryByText('确认兑换')).toBeNull()
+  })
+
+
+  it('fails closed when the points balance is unavailable', async () => {
+    mocks.overlay = 'redeem'
+    mocks.pointsRemote = { state: 'error', message: '泡泡值获取失败' }
+    mocks.useExchangeCoupons.mockReturnValue(successRemote())
+
+    renderExchange('/exchange?overlay=redeem&product=1')
+    await screen.findByText('Mock·洗护体验券')
+
+    const redeemButton = screen.getByRole('button', { name: '立即兑换' })
+    expect(redeemButton).toBeDisabled()
+    expect(screen.queryByText('泡泡值不足')).toBeNull()
   })
 
 })
