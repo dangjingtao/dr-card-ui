@@ -93,9 +93,12 @@
 
 1. **月份改为本地时间**：删除 `CHECKIN_CYCLE_LABEL`（固定 `2026.06`）、`CHECKIN_TODAY`（固定 12 日）、
    `CHECKIN_CALENDAR`、`CHECKIN_STREAK` 等夹具，改由 `new Date()` 推导当月天数 / 首日星期 / 今天。
-2. **日历状态读接口记录**：`done`（已签）/ `makeup`（补签）由记录的 `status` 决定，
-   日期归属取 `create_time` 前 10 位（本地口径，不做 UTC 转换，避免跨日漂移）。
-3. **补签保持「先看广告再落库」**：2026-09-28 用户确认，补签必须**先看完 Native 激励广告**
+2. **日历只对正常签到做持久日期归属**：`status=10` 的记录按 `create_time` 前 10 位落到 `done`；
+   `status=20` 的补签记录不按 `create_time` 入格，因为该字段是补签操作时刻。补签目标日仅按当前请求的 `day`
+   做会话内乐观点亮，避免把操作日误标成被补日。
+3. **7 天挑战使用已发生的时间窗与权威连续值**：轨道为过去 6 天 + 今天；累计优先读
+   `/api/signrecords/status` 的连续签到口径，不再用今天 + 未来 6 天推导进度。
+4. **补签保持「先看广告再落库」**：2026-09-28 用户确认，补签必须**先看完 Native 激励广告**
    （`showRewardAd({scene:'h5CheckinResign'})` → `status=completed`）**再发起** `POST /api/signrecords/makeup`。
    因此 H033 的广告闸门被**保留**，只把广告通过后的「演示奖励信号」替换为真实补签接口：
    `closed` / `failed` / `no_fill` / 宿主不支持均不发起请求、不落库、不亮格。
