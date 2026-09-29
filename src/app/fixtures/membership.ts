@@ -99,7 +99,6 @@ export function sumBubbleRecords(kind: BubbleFlowKind): number {
 
 export const BUBBLE_LIST_END = '暂时没有更多记录啦'
 
-export const POINTS_TASK_PLACEHOLDER_NOTE = '任务体系未定稿，以下为占位任务卡，进度与奖励不参与真实结算。'
 
 export type PointsTaskPlaceholderState = 'done' | 'active' | 'todo'
 
