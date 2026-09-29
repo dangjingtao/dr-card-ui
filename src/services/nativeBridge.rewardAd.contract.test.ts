@@ -4,18 +4,9 @@ import { showRewardAd } from './nativeBridge'
 import type { NativeTransportWindow } from './nativeBridgeTransport'
 
 /**
- * 按 Native 团队给出的 Android 契约回放真实 payload（逐字对照）：
- *
- * 调用：window.androidBridge.showRewardAd(JSON.stringify({
- *   scene: "h5CheckinResign", callbackId: "showRewardAd-xxx"
- * }))
- * 回调：window.androidBridgeCallback("showRewardAd-xxx", {
- *   code: 0, message: "ok",
- *   data: { scene: "h5CheckinResign", status: "completed" }
- * })
- *
- * 本文件验证 H5 侧发送的入参形状与回调解析（含 code:0 + 嵌套 data.status），
- * 确保文档里的契约在 H5 这一端没有被误读。
+ * H037 verifies the current Android envelope while retaining migration compatibility with the
+ * earlier status-based H5 target contract. Native owns the completed-view judgment; H5 maps the
+ * final Native code to a stable business status and does not recalculate SDK timing.
  */
 const hostWindow = window as NativeTransportWindow
 
@@ -53,6 +44,34 @@ describe('showRewardAd Android documented contract', () => {
     // 文档示例为 "showRewardAd-xxx"，实现按 methodName 前缀生成。
     expect(String(captured?.callbackId)).toMatch(/^showRewardAd-/)
   })
+
+  it.each([
+    [0, 1, 1, 'completed'],
+    [1, 1, 2, 'closed'],
+    [5, 2, 2, 'failed'],
+    [6, 2, 2, 'failed'],
+    [7, 2, 2, 'no_fill'],
+  ] as const)(
+    'maps current Native code %s (load=%s, finish=%s) to %s',
+    async (code, adLoadState, finishPlayState, status) => {
+      hostWindow.androidBridge = {
+        showRewardAd(payload: unknown) {
+          const { callbackId } = JSON.parse(payload as string) as CapturedRequest
+          hostWindow.androidBridgeCallback?.(callbackId as string, {
+            code,
+            message: code === 0 ? 'ok' : code === 1 ? 'cancel' : code === 7 ? 'no_fill' : 'fail',
+            data: {
+              scene: 'h5CheckinResign',
+              adLoadState,
+              finishPlayState,
+            },
+          })
+        },
+      }
+
+      await expect(showRewardAd({ scene: 'h5CheckinResign' })).resolves.toEqual({ status })
+    },
+  )
 
   it.each(['closed', 'failed', 'no_fill'] as const)(
     'surfaces %s as an ad business status (not an invocation error)',
@@ -159,7 +178,11 @@ describe('showRewardAd Android documented contract', () => {
     hostWindow.androidBridgeCallback?.(callbackId as string, {
       code: 0,
       message: 'ok',
-      data: { scene: 'h5CheckinResign', status: 'completed' },
+      data: {
+        scene: 'h5CheckinResign',
+        adLoadState: 1,
+        finishPlayState: 1,
+      },
     })
 
     await expect(promise).resolves.toEqual({ status: 'completed' })
