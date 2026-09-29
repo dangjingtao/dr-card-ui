@@ -14,7 +14,6 @@ import exchangePromoShampoo from '../../../assets/brand/exchange/exchange-promo-
 
 const CHECKIN_CYCLE_TARGET = 7
 const CHECKIN_WEEK_LABELS = ['日', '一', '二', '三', '四', '五', '六'] as const
-const CHECKIN_CYCLE_WEEK_LABELS = ['一', '二', '三', '四', '五', '六', '日'] as const
 const CHECKIN_MONTH_WEEK_LABELS = ['日', '一', '二', '三', '四', '五', '六'] as const
 
 /** 一个月的天数（本地时区）。 */
@@ -62,7 +61,7 @@ export interface CheckinCalendarModel {
   litDays: number
   /** 今天在该月内。 */
   todayInMonth: boolean
-  /** 今天已签到（含补签记录）。 */
+  /** 今天已正常签到；补签操作记录不会冒充今日签到。 */
   todaySigned: boolean
 }
 
@@ -80,7 +79,8 @@ export interface BuildCalendarOptions {
  *
  * 数据口径（2026-09-28 实测）：
  * - 月份与「今天」取**本地系统时间**（本次约定：今日暂用本地时间）；
- * - `done` / `makeup` 状态来自接口签到记录，按 `create_time` 的本地日期归属；
+ * - `done` 只来自正常签到记录（status=10），按 `create_time` 的本地日期归属；
+ * - status=20 的补签记录不会按 `create_time` 入格，因为该字段是补签操作时刻而非被补日期；
  * - 过往未签且允许补签的格子显示「补签」（沿用原规则，补签资格判定仍属未决 B-020）；
  * - 接口无法回显补签对应的具体日期，`optimisticMakeupDays` 用于会话内即时点亮。
  */
@@ -127,26 +127,33 @@ export function buildCheckinCalendar(options: BuildCalendarOptions = {}): Checki
   }
 }
 
-/** 7 天签到挑战轨道：以本地「今天」为第 1 格，已签位点由接口记录驱动。 */
-function buildCycleDays(records: SignRecord[] | null | undefined, today: Date): CheckinCalendarDay[] {
+/** 7 天签到挑战轨道：展示过去 6 天 + 今天，不把未来日期当成可累计进度。 */
+export function buildCycleDays(
+  records: SignRecord[] | null | undefined,
+  today: Date,
+  optimisticMakeupDays: string[] = [],
+): CheckinCalendarDay[] {
   const dayMap = buildSignRecordDayMap(records ?? [])
+  const optimistic = new Set(optimisticMakeupDays)
+  const todayKey = toLocalDateKey(today)
 
   return Array.from({ length: CHECKIN_CYCLE_TARGET }, (_, index) => {
     const date = new Date(today)
-    date.setDate(today.getDate() + index)
+    date.setDate(today.getDate() - (CHECKIN_CYCLE_TARGET - 1 - index))
     const dateKey = toLocalDateKey(date)
 
     const record = dayMap.get(dateKey)
-    const signed = Boolean(record)
-    const state: CheckinDayState = index === 0 ? 'today' : signed ? 'done' : 'upcoming'
+    const isOptimistic = optimistic.has(dateKey)
+    const signed = Boolean(record) || isOptimistic
+    const state: CheckinDayState = dateKey === todayKey ? 'today' : signed ? 'done' : 'makeup'
 
     return {
       day: date.getDate(),
       dateKey,
       state,
       signed,
-      makeup: record?.status === SIGN_RECORD_STATUS_MAKEUP,
-      makeupApplied: false,
+      makeup: isOptimistic,
+      makeupApplied: isOptimistic && !record,
     }
   })
 }
@@ -164,6 +171,24 @@ export interface HomeSignStatusView {
   consecutiveDays: number
   points: number
   rewardDesc: string
+}
+
+/**
+ * 7 天挑战累计值优先使用 status 接口的连续签到口径。
+ * 未签到时后端 consecutive_days 表示「今天签到后将达到的值」，因此当前值减 1。
+ */
+export function resolveChallengeCompletedDays(
+  signStatus: HomeSignStatusView | null | undefined,
+  cycleDays: CheckinCalendarDay[],
+): number {
+  if (signStatus) {
+    const current = signStatus.signed
+      ? signStatus.consecutiveDays
+      : Math.max(0, signStatus.consecutiveDays - 1)
+    return Math.min(CHECKIN_CYCLE_TARGET, Math.max(0, current))
+  }
+
+  return Math.min(CHECKIN_CYCLE_TARGET, cycleDays.filter((item) => item.signed).length)
 }
 
 export interface CheckinBoardProps {
@@ -227,10 +252,13 @@ export default function CheckinBoard({
     () => buildCheckinCalendar({ today: now, records, optimisticMakeupDays }),
     [now, records, optimisticMakeupDays],
   )
-  const cycleDays = useMemo(() => buildCycleDays(records, now), [records, now])
+  const cycleDays = useMemo(
+    () => buildCycleDays(records, now, optimisticMakeupDays),
+    [records, now, optimisticMakeupDays],
+  )
 
-  // 7 天挑战计数：只计真实已签。第 1 格即使已签，state 仍是 today，故读 signed。
-  const completedDays = cycleDays.filter((item) => item.signed).length
+  // 7 天挑战累计值以 status 接口的连续签到口径为准；接口不可用时才回退近 7 日记录。
+  const completedDays = resolveChallengeCompletedDays(signStatus, cycleDays)
   const remainingDays = Math.max(0, CHECKIN_CYCLE_TARGET - completedDays)
 
   const handleMakeupDay = (dateKey: string) => {
@@ -238,7 +266,8 @@ export default function CheckinBoard({
     onMakeupDay?.(dateKey)
   }
 
-  const todaySigned = calendar.todaySigned
+  // status 接口是「今日是否已签到」的权威来源；记录列表只在 status 不可用时兜底。
+  const todaySigned = signStatus?.signed ?? calendar.todaySigned
 
   return (
     <>
@@ -387,10 +416,10 @@ export default function CheckinBoard({
               />
 
               <div className="mt-5 grid grid-cols-7 gap-1.5">
-                {cycleDays.map((item, index) => (
+                {cycleDays.map((item) => (
                   <div key={item.dateKey} className="min-w-0">
                     <span className="mb-1.5 block text-center text-[10px] font-medium text-text-tertiary">
-                      周{CHECKIN_CYCLE_WEEK_LABELS[index]}
+                      周{CHECKIN_WEEK_LABELS[new Date(`${item.dateKey}T00:00:00`).getDay()]}
                     </span>
                     <CalendarCell item={item} onMakeup={handleMakeupDay} />
                   </div>
