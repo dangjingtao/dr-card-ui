@@ -30,7 +30,7 @@ describe('RichTextPlaceholder', () => {
 
   it('sanitizes server rich text before rendering', async () => {
     mocks.fetchRichTextSetting.mockResolvedValue(
-      '<script>window.__xss = true</script><img src="x" onerror="window.androidBridge?.closeWebView?.()"><a href="javascript:alert(1)">危险链接</a><p>安全内容</p>',
+      '<script>window.__xss = true</script><img src="x" onerror="window.__xss = true"><a href="javascript:alert(1)">危险链接</a><p>安全内容</p>',
     )
 
     const { container } = render(
