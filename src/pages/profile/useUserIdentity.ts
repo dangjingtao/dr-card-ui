@@ -90,7 +90,11 @@ export function useUserIdentity() {
     void refreshUserIdentity()
     const onAuthChange = () => { clearUserIdentity(); void refreshUserIdentity(true) }
     window.addEventListener('dr-card-ui:auth-session-changed', onAuthChange)
-    return () => window.removeEventListener('dr-card-ui:auth-session-changed', onAuthChange)
+    window.addEventListener('dr-card-ui:auth-session-cleared', clearUserIdentity)
+    return () => {
+      window.removeEventListener('dr-card-ui:auth-session-changed', onAuthChange)
+      window.removeEventListener('dr-card-ui:auth-session-cleared', clearUserIdentity)
+    }
   }, [])
   return { remote, reload: () => refreshUserIdentity(true) }
 }
