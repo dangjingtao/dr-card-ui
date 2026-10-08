@@ -3,7 +3,9 @@ import type { LucideIcon } from 'lucide-react'
 import DebugPanel from '../components/mobile/DebugPanel'
 import PageContainer from '../components/mobile/PageContainer'
 import { findRouteByPathname } from '../app/router/routes'
-import { MEMBER_CARD_FACES, MEMBER_LEVELS, MEMBER_LEVELS_REMARK, MEMBER_RULE_STATUS } from '../app/fixtures'
+import { useProfileFeed } from './profile/useProfileFeed'
+import { useMemberGrades } from './membership/useMembershipFeed'
+import { MEMBER_CARD_FACES, MEMBER_LEVELS_REMARK, MEMBER_RULE_STATUS } from '../app/fixtures'
 import membershipHero from '../assets/brand/member/membership-levels-reference-hero.webp'
 import roseCard from '../assets/brand/member/member-card-rose.webp'
 import lavenderCard from '../assets/brand/member/member-card-lavender.webp'
@@ -38,6 +40,10 @@ const cardFaceVisuals = [
 
 export default function MembershipLevels() {
   const route = findRouteByPathname('/membership/levels')
+  const { remote: gradesRemote, reload: reloadGrades } = useMemberGrades()
+  const { remote: profileRemote, reload: reloadProfile } = useProfileFeed()
+  const grades = gradesRemote.state === 'success' ? gradesRemote.data : []
+  const gradeId = profileRemote.state === 'success' ? profileRemote.data.gradeId : null
 
   return (
     <PageContainer inset={false} className="pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
@@ -59,29 +65,47 @@ export default function MembershipLevels() {
       <section className="relative z-10 mx-2 -mt-6 rounded-[22px] bg-surface px-2 pb-5 pt-5 shadow-[0_10px_30px_rgba(37,43,61,0.07)]" aria-labelledby="membership-level-title">
         <div className="px-2">
           <h2 id="membership-level-title" className="text-base font-bold text-text-primary">会员等级</h2>
-          <p className="mt-1 text-xs leading-5 text-text-secondary">四级会员视觉分层，当前等级以高亮标识</p>
+          <p className="mt-1 text-xs leading-5 text-text-secondary">等级按后台配置展示，当前等级以高亮标识</p>
         </div>
 
-        <div className="mt-3 grid grid-cols-4 gap-2" aria-label={`${MEMBER_LEVELS.length} 个会员等级`}>
-          {MEMBER_LEVELS.map((level, index) => {
+        {gradesRemote.state === 'loading' ? (
+          <p className="mt-3 text-xs text-text-secondary" role="status">正在加载会员等级…</p>
+        ) : null}
+        {gradesRemote.state === 'error' ? (
+          <div className="mt-3 flex items-center justify-between gap-2 text-xs text-text-secondary" role="alert">
+            <span>会员等级暂不可用</span>
+            <button type="button" className="font-semibold text-reward-text" onClick={reloadGrades}>重试</button>
+          </div>
+        ) : null}
+        {profileRemote.state === 'error' ? (
+          <div className="mt-2 flex items-center justify-between gap-2 text-xs text-text-secondary" role="status">
+            <span>当前会员等级暂不可用</span>
+            <button type="button" className="font-semibold text-reward-text" onClick={reloadProfile}>重试</button>
+          </div>
+        ) : null}
+        {gradesRemote.state === 'success' && grades.length === 0 ? (
+          <p className="mt-3 text-xs text-text-secondary" role="status">暂无启用的会员等级</p>
+        ) : null}
+        <div className="mt-3 grid grid-cols-4 gap-2" aria-label={`${grades.length} 个会员等级`}>
+          {grades.map((level, index) => {
             const visual = levelVisuals[index] ?? levelVisuals[0]
             const Icon = visual.icon
-            const inverse = index === levelVisuals.length - 1
+            const inverse = index % levelVisuals.length === levelVisuals.length - 1
             return (
               <div
-                key={level.label}
+                key={level.id}
                 className="flex min-h-[112px] min-w-0 flex-col items-center rounded-xl border px-1 pb-2 pt-3 text-center"
                 style={{ backgroundColor: visual.surface, borderColor: visual.border }}
-                data-level={level.label}
-                data-level-current={level.current ? 'true' : undefined}
-                aria-current={level.current ? 'true' : undefined}
+                data-level={level.name}
+                data-level-current={gradeId === level.id ? 'true' : undefined}
+                aria-current={gradeId === level.id ? 'true' : undefined}
               >
                 <Icon className="h-7 w-7 stroke-[1.8]" style={{ color: visual.accent }} aria-hidden />
-                <span className={`mt-2 text-xs font-semibold ${inverse ? 'text-white' : 'text-text-primary'}`}>{level.label}</span>
+                <span className={`mt-2 text-xs font-semibold ${inverse ? 'text-white' : 'text-text-primary'}`}>{`LV.${index + 1}`}</span>
                 <span className={`mt-1 whitespace-nowrap text-[10px] leading-4 ${inverse ? 'text-white/90' : 'text-text-secondary'}`}>
                   {level.name}
                 </span>
-                {level.current ? (
+                {gradeId === level.id ? (
                   <span className="mt-auto rounded-full bg-white/10 px-2 py-0.5 text-[9px] leading-4 text-[#F6C65B]">当前</span>
                 ) : null}
               </div>
