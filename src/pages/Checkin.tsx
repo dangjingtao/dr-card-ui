@@ -15,6 +15,7 @@ import {
 import { findRouteByPathname } from '../app/router/routes'
 import { CHECKIN_REMINDER } from '../app/fixtures'
 import { useCheckinActions, useSignRecords, useSignStatus } from './checkin/useCheckinFeed'
+import { SIGN_RECORDS_RANGE_MONTH } from '../services/signrecords'
 import { NativeBridgeError, showRewardAd, type NativeRewardAdStatus } from '../services/nativeBridge'
 import checkinRitualHero from '../assets/brand/bubble/checkin-ritual-hero-v2.webp'
 
@@ -48,7 +49,7 @@ export default function Checkin() {
 
   // 接口数据：今日状态 + 本月签到记录（打卡日历依据）。mock 与 api 走同一 service。
   const signStatus = useSignStatus()
-  const signRecords = useSignRecords()
+  const signRecords = useSignRecords(SIGN_RECORDS_RANGE_MONTH)
 
   const [optimisticMakeupDays, setOptimisticMakeupDays] = useState<string[]>([])
   const [actionMessage, setActionMessage] = useState<string | null>(null)
