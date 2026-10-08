@@ -20,12 +20,13 @@ beforeEach(() => {
 
 afterEach(cleanup)
 
-describe('H044 / #89: sign records are scoped to the route', () => {
+describe('Issue #89: sign records are scoped to the route', () => {
   it('requests only the current week for the compact home check-in board', async () => {
     const { result, rerender } = renderHook(() => useSignRecords(SIGN_RECORDS_RANGE_WEEK))
 
     await waitFor(() => expect(result.current.remote.state).toBe('success'))
-    expect(mocks.fetchSignRecords).toHaveBeenCalledExactlyOnceWith({ range: 'week' })
+    expect(mocks.fetchSignRecords).toHaveBeenCalledTimes(1)
+    expect(mocks.fetchSignRecords).toHaveBeenCalledWith({ range: 'week' })
 
     rerender()
     expect(mocks.fetchSignRecords).toHaveBeenCalledTimes(1)
@@ -35,13 +36,15 @@ describe('H044 / #89: sign records are scoped to the route', () => {
     const { result } = renderHook(() => useSignRecords(SIGN_RECORDS_RANGE_MONTH))
 
     await waitFor(() => expect(result.current.remote.state).toBe('success'))
-    expect(mocks.fetchSignRecords).toHaveBeenCalledExactlyOnceWith({ range: 'month' })
+    expect(mocks.fetchSignRecords).toHaveBeenCalledTimes(1)
+    expect(mocks.fetchSignRecords).toHaveBeenCalledWith({ range: 'month' })
   })
 
   it('keeps legacy callers on month rather than changing the default', async () => {
     const { result } = renderHook(() => useSignRecords())
     await waitFor(() => expect(result.current.remote.state).toBe('success'))
-    expect(mocks.fetchSignRecords).toHaveBeenCalledExactlyOnceWith({ range: 'month' })
+    expect(mocks.fetchSignRecords).toHaveBeenCalledTimes(1)
+    expect(mocks.fetchSignRecords).toHaveBeenCalledWith({ range: 'month' })
   })
 
   it('refetches with the newly selected range without looping on re-render', async () => {
