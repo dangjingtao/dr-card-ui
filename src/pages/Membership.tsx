@@ -13,7 +13,7 @@ import {
   MEMBER_PROFILE,
   MEMBER_SECTION_LABELS,
 } from '../app/fixtures'
-import lv4Hero from '../assets/brand/member/member-lv4-hero.webp'
+import { getMemberCardTheme, UNASSIGNED_MEMBER_CARD_THEME } from './membership/memberCardTheme'
 import campaignThumb from '../assets/brand/member/checkin-dearseed-kit.webp'
 
 /**
@@ -34,7 +34,7 @@ import campaignThumb from '../assets/brand/member/checkin-dearseed-kit.webp'
  * 视觉口径：
  * - 会员页优先消费既有 token / Tailwind 语义类与 CSS 变量（如 --gradient-bubble、
  *   --gradient-member），避免在页面内另起一套组件 Token。
- * - hero 卡面满幅呈现既有绿金素材。
+ * - hero 卡面按后台 grade_id 显示四款素材；未知等级显示中性卡，不冒充最高等级。
  * - 「前往领取」继续复用全局 Button primary 语义，不另起按钮颜色、按压态和圆角规则。
  */
 export default function Membership() {
@@ -49,6 +49,8 @@ export default function Membership() {
   const pointsText = pointsRemote.state === 'success' ? pointsRemote.data.points.toLocaleString() : '--'
   const profileError = profileRemote.state === 'error' ? profileRemote.message : null
   const pointsError = pointsRemote.state === 'error' ? pointsRemote.message : null
+  const cardTheme = getMemberCardTheme(profile?.gradeId)
+  const palette = cardTheme ?? UNASSIGNED_MEMBER_CARD_THEME
 
   const entryIcons: Record<string, LucideIcon> = {
     luck: Clover,
@@ -60,18 +62,27 @@ export default function Membership() {
   return (
     <PageContainer inset={false} className="space-y-4 pb-24 pt-2">
       <section
-        className="relative mx-4 overflow-hidden rounded-feature bg-member-surface shadow-member"
+        className="relative mx-4 overflow-hidden rounded-feature shadow-member"
+        style={{ backgroundColor: palette.surface }}
+        data-member-card-grade={profile?.gradeId ?? 'unknown'}
         aria-label="会员等级与泡泡值"
       >
-        <img src={lv4Hero} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover" />
+        {cardTheme?.image ? (
+          <img src={cardTheme.image} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover" />
+        ) : null}
+        <div className="pointer-events-none absolute inset-0" style={{ backgroundImage: palette.wash }} aria-hidden />
         <div className="relative px-5 pb-4 pt-5">
-          <p className="text-[11px] tracking-[0.2em] text-member-accent">{MEMBER_PROFILE.brandLine}</p>
+          <p className="text-[11px] tracking-[0.2em]" style={{ color: palette.accent }}>
+            DEARSEED · {gradeName === '--' ? '会员' : gradeName}
+          </p>
           <div className="mt-4 flex items-end justify-between gap-3">
             <div className="min-w-0">
-              <p className="truncate text-[22px] font-medium leading-tight text-member-text">{nickname}</p>
+              <p className="truncate text-[22px] font-medium leading-tight" style={{ color: palette.foreground }}>
+                {nickname}
+              </p>
               <span
-                className="mt-2.5 inline-flex items-center rounded-pill px-3 py-1 text-xs font-semibold text-bubble-on-gold"
-                style={{ backgroundImage: 'var(--gradient-bubble)' }}
+                className="mt-2.5 inline-flex items-center rounded-pill px-3 py-1 text-xs font-semibold"
+                style={{ backgroundColor: palette.badgeBackground, color: palette.badgeForeground }}
               >
                 会员 · {gradeName}
               </span>
@@ -82,21 +93,24 @@ export default function Membership() {
               aria-label={`泡泡值余额 ${pointsText}，查看明细`}
               className="flex-none rounded-container text-right"
             >
-              <span className="block text-[28px] font-semibold leading-none text-member-accent">
+              <span className="block text-[28px] font-semibold leading-none" style={{ color: palette.accent }}>
                 {pointsText}
               </span>
-              <span className="mt-1.5 block text-[11px] tracking-[0.02em] text-member-muted">
+              <span className="mt-1.5 block text-[11px] tracking-[0.02em]" style={{ color: palette.muted }}>
                 {MEMBER_PROFILE.bubbleUnit}
               </span>
             </button>
           </div>
-          <div className="mt-4 h-px bg-member-muted/45" aria-hidden />
+          <div className="mt-4 h-px" style={{ backgroundColor: palette.divider }} aria-hidden />
           <div className="mt-3 flex items-center justify-between">
-            <span className="text-[11px] tracking-[0.14em] text-member-muted">{profile?.kbsId ? `会员 ID ${profile.kbsId}` : '会员 ID --'}</span>
+            <span className="text-[11px] tracking-[0.14em]" style={{ color: palette.muted }}>
+              {profile?.kbsId ? `会员 ID ${profile.kbsId}` : '会员 ID --'}
+            </span>
             <button
               type="button"
               onClick={() => navigate('/membership/levels')}
-              className="flex items-center gap-0.5 text-xs text-member-accent"
+              className="flex items-center gap-0.5 text-xs"
+              style={{ color: palette.accent }}
             >
               {MEMBER_PROFILE.levelEntryLabel}
               <ChevronRight className="h-3.5 w-3.5" aria-hidden />
@@ -110,7 +124,7 @@ export default function Membership() {
           <span>{profileError ? '会员资料暂不可用' : '泡泡值暂不可用'}</span>
           <button
             type="button"
-            className="font-semibold text-member-accent"
+            className="font-semibold text-reward-text"
             onClick={() => {
               if (profileError) reloadProfile()
               if (pointsError) reloadPoints()

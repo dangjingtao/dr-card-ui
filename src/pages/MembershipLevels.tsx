@@ -16,7 +16,8 @@ import emeraldCard from '../assets/brand/member/member-card-emerald.webp'
  * 会员等级（#26）
  * 产品事实源：docs/prototype/02-membership-and-checkin.md §2。
  * 视觉方向：Penpot《卡博士补充UI》/「会员中心 / 01-会员等级」；仅继承构图、层级与卡面物料。
- * H040: 等级业务数据取后台，四张艺术卡面仅保留历史视觉参考（B-022），不对应业务等级。
+ * H040: 等级业务数据取后台；会员中心按 2026-10-08 已配置的等级 ID 1–4 展示相应卡面。
+ * 卡面是视觉素材，不代表后台已开通额外权益或独立发卡能力。
  * ⚠️ 权益、升级门槛与解锁判断未在原型中确认（B-023），本页不补写。
  */
 const levelVisuals: Array<{
@@ -119,7 +120,7 @@ export default function MembershipLevels() {
       <section className="px-3 pt-5" aria-labelledby="member-card-face-title">
         <div className="px-1">
           <h2 id="member-card-face-title" className="text-base font-bold text-text-primary">会员卡面设计参考</h2>
-          <p className="mt-1 text-xs leading-5 text-text-secondary">以下四款为历史设计稿，不代表当前后台等级、已开放卡面或会员权益。</p>
+          <p className="mt-1 text-xs leading-5 text-text-secondary">以下四款为会员中心当前四级卡面参考，仅展示视觉设计，不代表额外会员权益或独立发卡。</p>
           <p className="mt-0.5 text-[10px] font-medium tracking-[0.08em] text-text-tertiary">MEMBERSHIP CARD COLLECTION</p>
         </div>
 
