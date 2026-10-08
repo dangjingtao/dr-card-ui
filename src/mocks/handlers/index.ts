@@ -7,6 +7,7 @@ import { memberGradesHandlers } from './memberGrades'
 import { myCouponsHandlers } from './myCoupons'
 import { userProfileHandlers } from './userProfile'
 import { userpointsHandlers } from './userpoints'
+import { welfareOfficerHandlers } from './welfareOfficer'
 
 export const handlers = [
   networkProbeHandler,
@@ -15,6 +16,8 @@ export const handlers = [
   ...buddyPhoneHandlers,
   ...checkinHandlers,
   ...exchangeHandlers,
+  // 两者匹配同一个 settings/detail URL，专用 key 要在通用 fallback 前命中。
+  ...welfareOfficerHandlers,
   ...homeHandlers,
   ...userProfileHandlers,
   ...userpointsHandlers,
