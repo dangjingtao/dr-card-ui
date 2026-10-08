@@ -71,6 +71,27 @@ describe('user profile contract', () => {
     await expect(fetchUserProfile()).resolves.toMatchObject({ nextGrade: undefined, grade: '钻石会员' })
   })
 
+  it('keeps profile visible when no default membership grade is configured', async () => {
+    const { grade: _grade, grade_id: _gradeId, ...withoutGrade } = PROFILE_DATA
+    mocks.request.mockResolvedValue({
+      code: 0, msg: 'success',
+      data: { ...withoutGrade, nextGrade: { id: 2, name: '白银会员', min_exp_number: 100 } },
+    })
+    const profile = await fetchUserProfile()
+    expect(profile).toMatchObject({
+      nickname: '用户28123456',
+      grade: '',
+      gradeId: undefined,
+      nextGrade: undefined,
+      points: 128,
+    })
+  })
+
+  it('rejects inconsistent grade name and ID instead of silently guessing', async () => {
+    mocks.request.mockResolvedValue({ code: 0, data: { ...PROFILE_DATA, grade_id: undefined } })
+    await expect(fetchUserProfile()).rejects.toThrow()
+  })
+
   it('keeps couponsCount 0 and points 0 as real values', async () => {
     mocks.request.mockResolvedValue({
       code: 0,
