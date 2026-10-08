@@ -331,3 +331,12 @@ T011 本轮证据（2026-08-22）：`BASE_URL=http://127.0.0.1:5175 node scripts
 - **回归边界：** 页面请求参数、Hook 默认 / 切换范围 / 不重复请求由 Vitest 锁定；签到/补签记录的 `year/month/day` 业务日归属及 UI/Native 交互保持不变。
 - **验收：** GitHub CI/PR 审查通过后可合入 `dev`；真机 test 登录态确认首页的实际网络请求为 `range=week`、签到页为 `range=month`；不得把 dev 构建成功当作 App WebView 业务验收。
 - 关联：[Issue #89](https://github.com/dangjingtao/dr-card-ui/issues/89)、总卡 [#92](https://github.com/dangjingtao/dr-card-ui/issues/92)。
+
+
+## H044｜用户真实资料统一与保存（#103，2026-10-08，实施中）
+
+- **事实源**：`dev` 现有 `src/services/userProfile.ts`；本地后端 `workspace/API/docs/api-profile.md`、`src/app/api/controller/{User,Upload}.ts`、`src/app/api/service/User.ts` 的只读核对。源码存在不等于 test 环境部署可用。
+- **身份读取**：正式 H5 的头像/昵称统一取当前用户 `GET /api/user/detail`，避免 `GET /api/user/profile` 登录 Redis 快照盖回已写入资料；现有 `profile` 仍负责等级、优惠券等快照字段。采用非持久化、按认证会话隔离的共享状态。
+- **提交**：昵称/年级/头像在「确认修改」后才调用 `POST /api/user/update`；以写入结果更新页面状态，失败保留编辑稿并提示，不再假成功。头像先由 Native 选择，经 multipart `POST /api/upload/image` 得 URL 后再更新；拒绝非公网 HTTPS URL。
+- **未确认合同**：生日和消费密码没有本期已证实的写入合同，UI 明确不可保存而不伪造完成；后端图片域名、上传字段、App 相机/相册调用仍需 test WebView 实测。
+- **验证状态**：工程改动与聚焦单测已提交至 `feat/103-h044-user-profile`，GitHub CI 与 PR Review 待核；**真账号图片上传、资料修改后重载、Android/iOS WebView 尚未验收，Issue 不应因此关闭**。
