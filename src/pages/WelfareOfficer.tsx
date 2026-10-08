@@ -12,13 +12,16 @@ function WelfareQrImage({ src }: { src: string }) {
   return failed ? (
     <p className="mt-4 text-xs text-text-tertiary" role="status">二维码加载失败，请稍后再试</p>
   ) : (
-    <div className="mt-4 rounded-xl bg-white p-3 shadow-sm">
-      <img
-        src={src}
-        alt="福利官企业微信二维码"
-        className="h-[176px] w-[176px] object-contain"
-        onError={() => setFailed(true)}
-      />
+    <div className="mt-4 flex flex-col items-center">
+      <div className="rounded-xl bg-white p-3 shadow-sm">
+        <img
+          src={src}
+          alt="福利官企业微信二维码"
+          className="h-[176px] w-[176px] object-contain"
+          onError={() => setFailed(true)}
+        />
+      </div>
+      <p className="mt-3 text-xs text-text-tertiary">长按或扫描二维码，联系福利官</p>
     </div>
   )
 }
@@ -97,9 +100,6 @@ export default function WelfareOfficer() {
         {config.qrcodeUrl ? <WelfareQrImage src={config.qrcodeUrl} /> : null}
         {config.qrcodeUnavailable ? (
           <p className="mt-4 text-xs text-text-tertiary" role="status">二维码暂不可用，请稍后查看</p>
-        ) : null}
-        {config.qrcodeUrl ? (
-          <p className="mt-3 text-xs text-text-tertiary">长按或扫描二维码，联系福利官</p>
         ) : null}
       </section>
 
