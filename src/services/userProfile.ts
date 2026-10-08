@@ -100,8 +100,9 @@ const nextGradeSchema = z
 const userProfileSchema = z
   .object({
     couponsCount: z.number(),
-    grade: z.string(),
-    grade_id: z.number(),
+    // 后端没有默认等级时，这两个键会在 JSON 序列化时一起缺席。
+    grade: z.string().nullish(),
+    grade_id: z.number().nullish(),
     nextGrade: z.union([nextGradeSchema, z.literal('')]),
     nick_name: z.string(),
     avatar_img: z.string().nullish(),
@@ -114,6 +115,17 @@ const userProfileSchema = z
     kbs_id: z.string().nullish(),
   })
   .passthrough()
+  .superRefine((value, context) => {
+    const hasGrade = typeof value.grade === 'string' && value.grade.trim().length > 0
+    const hasGradeId = typeof value.grade_id === 'number'
+    if (hasGrade !== hasGradeId) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['grade_id'],
+        message: '会员等级名称与等级 ID 必须同时存在或同时缺席',
+      })
+    }
+  })
 
 export type UserProfileNextGrade = z.infer<typeof nextGradeSchema>
 
@@ -123,8 +135,8 @@ export interface UserProfile {
   couponsCount: number
   /** 会员等级名称。 */
   grade: string
-  /** 会员等级 ID，与 `grade` 同生共死。 */
-  gradeId: number
+  /** 会员等级 ID；未配置默认等级时缺席。 */
+  gradeId?: number
   /** 下一等级；没有下一等级时为 `undefined`（后端返回 `""`）。 */
   nextGrade?: UserProfileNextGrade
   /** 昵称。 */
@@ -159,9 +171,10 @@ export function parseUserProfile(payload: unknown): UserProfile {
 
   return {
     couponsCount: profile.couponsCount,
-    grade: profile.grade,
-    gradeId: profile.grade_id,
-    nextGrade: profile.nextGrade === '' ? undefined : profile.nextGrade,
+    grade: profile.grade ?? '',
+    gradeId: profile.grade_id ?? undefined,
+    // 没有当前等级时不能宣称已存在升级关系，即使上游按 >0 算出 nextGrade。
+    nextGrade: profile.grade_id == null || profile.nextGrade === '' ? undefined : profile.nextGrade,
     nickname: profile.nick_name,
     avatar: trimOrUndefined(profile.avatar_img),
     country: trimOrUndefined(profile.country),
