@@ -5,7 +5,7 @@ import PageContainer from '../components/mobile/PageContainer'
 import { findRouteByPathname } from '../app/router/routes'
 import { useProfileFeed } from './profile/useProfileFeed'
 import { useMemberGrades } from './membership/useMembershipFeed'
-import { MEMBER_CARD_FACES, MEMBER_LEVELS_REMARK, MEMBER_RULE_STATUS } from '../app/fixtures'
+import { MEMBER_CARD_FACES, MEMBER_RULE_STATUS } from '../app/fixtures'
 import membershipHero from '../assets/brand/member/membership-levels-reference-hero.webp'
 import roseCard from '../assets/brand/member/member-card-rose.webp'
 import lavenderCard from '../assets/brand/member/member-card-lavender.webp'
@@ -16,7 +16,7 @@ import emeraldCard from '../assets/brand/member/member-card-emerald.webp'
  * 会员等级（#26）
  * 产品事实源：docs/prototype/02-membership-and-checkin.md §2。
  * 视觉方向：Penpot《卡博士补充UI》/「会员中心 / 01-会员等级」；仅继承构图、层级与卡面物料。
- * ⚠️ 等级数量 / 命名 / 卡面清单仍沿用历史夹具，未经产品确认（B-022）。
+ * H040: 等级业务数据取后台，四张艺术卡面仅保留历史视觉参考（B-022），不对应业务等级。
  * ⚠️ 权益、升级门槛与解锁判断未在原型中确认（B-023），本页不补写。
  */
 const levelVisuals: Array<{
@@ -53,11 +53,11 @@ export default function MembershipLevels() {
         <div className="relative flex h-full max-w-[62%] flex-col px-6 py-8">
           <p className="text-[11px] font-semibold tracking-[0.12em] text-[#5B5EF7]">DEARSEED MEMBERSHIP</p>
           <h2 id="membership-hero-title" className="mt-2 text-[24px] font-bold leading-8 tracking-[-0.02em] text-[#252B3D]">
-            会员等级参考
+            会员等级
           </h2>
-          <p className="mt-1.5 text-[13px] leading-5 text-[#535D72]">会员等级与专属卡面视觉</p>
+          <p className="mt-1.5 text-[13px] leading-5 text-[#535D72]">已启用等级按后台配置展示</p>
           <p className="mt-auto w-fit rounded-full bg-white/70 px-2.5 py-1 text-[10px] leading-4 text-[#687288] backdrop-blur-sm">
-            {MEMBER_LEVELS_REMARK}
+            会员卡面为设计展示，不代表已开通权益
           </p>
         </div>
       </section>
@@ -84,11 +84,12 @@ export default function MembershipLevels() {
           </div>
         ) : null}
         {gradesRemote.state === 'success' && grades.length === 0 ? (
-          <p className="mt-3 text-xs text-text-secondary" role="status">暂无启用的会员等级</p>
+          <p className="mt-3 text-xs text-text-secondary" role="status">会员等级尚未配置</p>
         ) : null}
-        <div className="mt-3 grid grid-cols-4 gap-2" aria-label={`${grades.length} 个会员等级`}>
+        {gradesRemote.state === 'success' && grades.length > 0 ? (
+        <div className={`mt-3 grid gap-2 ${grades.length <= 2 ? 'grid-cols-2' : 'grid-cols-4'}`} aria-label={`${grades.length} 个会员等级`}>
           {grades.map((level, index) => {
-            const visual = levelVisuals[index] ?? levelVisuals[0]
+            const visual = levelVisuals[index % levelVisuals.length]
             const Icon = visual.icon
             const inverse = index % levelVisuals.length === levelVisuals.length - 1
             return (
@@ -112,11 +113,13 @@ export default function MembershipLevels() {
             )
           })}
         </div>
+        ) : null}
       </section>
 
       <section className="px-3 pt-5" aria-labelledby="member-card-face-title">
         <div className="px-1">
-          <h2 id="member-card-face-title" className="text-base font-bold text-text-primary">会员卡面</h2>
+          <h2 id="member-card-face-title" className="text-base font-bold text-text-primary">会员卡面设计参考</h2>
+          <p className="mt-1 text-xs leading-5 text-text-secondary">以下四款为历史设计稿，不代表当前后台等级、已开放卡面或会员权益。</p>
           <p className="mt-0.5 text-[10px] font-medium tracking-[0.08em] text-text-tertiary">MEMBERSHIP CARD COLLECTION</p>
         </div>
 
