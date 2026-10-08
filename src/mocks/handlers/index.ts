@@ -7,6 +7,7 @@ import { memberGradesHandlers } from './memberGrades'
 import { myCouponsHandlers } from './myCoupons'
 import { userProfileHandlers } from './userProfile'
 import { userpointsHandlers } from './userpoints'
+import { welfareOfficerHandlers } from './welfareOfficer'
 
 export const handlers = [
   networkProbeHandler,
@@ -18,4 +19,5 @@ export const handlers = [
   ...homeHandlers,
   ...userProfileHandlers,
   ...userpointsHandlers,
+  ...welfareOfficerHandlers,
 ]
