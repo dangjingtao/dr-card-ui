@@ -139,7 +139,6 @@ export const CHECKIN_STATUS_TEXT = '今日未签到'
 export const CHECKIN_DAILY_TASK = {
   title: '每日打卡',
   description: '完成今日签到',
-  rewardBubble: 100,
   progress: '1 / 1',
 } as const
 

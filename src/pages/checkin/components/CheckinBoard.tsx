@@ -533,9 +533,11 @@ export default function CheckinBoard({
                 <p className="text-[15px] font-bold leading-5 text-text-primary">{CHECKIN_DAILY_TASK.title}</p>
                 <p className="mt-1 text-xs leading-[18px] text-text-secondary">
                   {CHECKIN_DAILY_TASK.description}
-                  <span className="text-checkin-mission-reward">
-                    +{CHECKIN_DAILY_TASK.rewardBubble} 泡泡值
-                  </span>
+                  {signStatus && (
+                    <span className="text-checkin-mission-reward">
+                      +{signStatus.points} 泡泡值
+                    </span>
+                  )}
                 </p>
               </div>
               <span className="flex flex-none flex-col items-end gap-1.5">
