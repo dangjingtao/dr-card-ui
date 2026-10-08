@@ -161,7 +161,11 @@ export default function Profile() {
           <div className="mb-2 flex items-baseline justify-between text-xs text-[#4A3206]/85">
             <span>当前等级 {gradeName}</span>
             {/* nextGrade 为空字符串时后端表示「已是最高等级」，此时不展示升级文案。 */}
-            {nextGrade ? (
+            {!profile ? (
+              <span className="font-semibold text-[#4A3206]">--</span>
+            ) : profile.gradeId === undefined ? (
+              <span className="font-semibold text-[#4A3206]">会员等级尚未配置</span>
+            ) : nextGrade ? (
               <span className="font-semibold text-[#4A3206]">
                 距 {nextGrade.name} 还差 {nextGrade.min_exp_number} 经验值
               </span>
