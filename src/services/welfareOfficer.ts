@@ -34,7 +34,13 @@ export function resolveWelfareImageUrl(raw: string): string | undefined {
   try {
     const parsed = new URL(value)
     if (parsed.protocol !== 'https:' || !parsed.hostname || parsed.username || parsed.password) return undefined
-    if (parsed.hostname === 'localhost' || parsed.hostname.endsWith('.localhost')) return undefined
+    const host = parsed.hostname.toLowerCase()
+    if (
+      host === 'localhost' || host.endsWith('.localhost') || host.endsWith('.local') ||
+      host === '[::1]' || host === '0.0.0.0' ||
+      /^127\./.test(host) || /^10\./.test(host) || /^192\.168\./.test(host) ||
+      /^169\.254\./.test(host) || /^172\.(1[6-9]|2[0-9]|3[01])\./.test(host)
+    ) return undefined
     return parsed.toString()
   } catch {
     return undefined
