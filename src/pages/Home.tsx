@@ -12,6 +12,7 @@ import { COLUMN_HOME_SECTIONS, NEWCOMER_COUPON_RULE_STATUS } from '../app/fixtur
 import { resolveBannerLink, type BannerItem } from '../services/banners'
 import { useHomeBanners, useSignStatus } from './home/useHomeFeed'
 import { useSignRecords } from './checkin/useCheckinFeed'
+import { SIGN_RECORDS_RANGE_WEEK } from '../services/signrecords'
 import avatar from '../assets/brand/home/home-avatar.webp'
 
 const sectionIcons = {
@@ -41,7 +42,8 @@ export default function Home() {
   /* 首页接口数据：轮播 / 今日签到状态。详情页各自请求对应的富文本配置。 */
   const banners = useHomeBanners()
   const signStatus = useSignStatus()
-  const signRecords = useSignRecords()
+  // 首页只需要本周七日记录，不读取完整月份。
+  const signRecords = useSignRecords(SIGN_RECORDS_RANGE_WEEK)
 
   const bannerSlides = useMemo(
     () =>

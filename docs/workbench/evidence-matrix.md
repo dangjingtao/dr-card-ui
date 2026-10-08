@@ -321,3 +321,13 @@ T011 本轮证据（2026-08-22）：`BASE_URL=http://127.0.0.1:5175 node scripts
 - [ ] GitHub CI：typecheck、服务/页面测试、lint、build、浏览器基础回归
 - [ ] test App WebView：响应与 UI 字段一一对应；二维码变为公网 HTTPS 后扫码，真实设备可识别
 - [ ] 不修改同事 `workspace/API`、不更改 `ServiceChat` 的人工客服二维码占位语义
+
+
+## #89｜首页与签到页记录查询范围修复（2026-10-08，待 CI / test 验收）
+
+- **问题证据：** 正式 H5 `/` 首页仅展示 7 日签到入口，`/checkin` 详情页使用完整月历，但改造前共用 `useSignRecords()` 默认按 `range=month` 查询，首页请求了不必要的本月记录。
+- **后端依据：** 只读 `API/master@4f91aa2` 的 `src/app/api/service/SignRecords.ts`、`docs/api-index.md` 和 `docs/api-checkin.md`：`GET /api/signrecords/index` 已提供 `range=week|month`，周起始以周一计；不需要修改后端。
+- **修复：** `Home` 显式 `useSignRecords('week')`、`Checkin` 显式 `useSignRecords('month')`（代码通过同名常量）；共享 hook 使用依赖范围的稳定回调，保持历史默认 `month`，避免无意破坏其他调用者。
+- **回归边界：** 页面请求参数、Hook 默认 / 切换范围 / 不重复请求由 Vitest 锁定；签到/补签记录的 `year/month/day` 业务日归属及 UI/Native 交互保持不变。
+- **验收：** GitHub CI/PR 审查通过后可合入 `dev`；真机 test 登录态确认首页的实际网络请求为 `range=week`、签到页为 `range=month`；不得把 dev 构建成功当作 App WebView 业务验收。
+- 关联：[Issue #89](https://github.com/dangjingtao/dr-card-ui/issues/89)、总卡 [#92](https://github.com/dangjingtao/dr-card-ui/issues/92)。
