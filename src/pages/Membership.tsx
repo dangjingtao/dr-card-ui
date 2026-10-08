@@ -45,7 +45,7 @@ export default function Membership() {
   const { remote: pointsRemote, reload: reloadPoints } = useUserPointsStat()
   const profile = profileRemote.state === 'success' ? profileRemote.data : null
   const nickname = profile?.nickname?.trim() || '--'
-  const gradeName = profile?.grade?.trim() || '--'
+  const gradeName = profile ? (profile.grade.trim() || '尚未配置') : '--'
   const pointsText = pointsRemote.state === 'success' ? pointsRemote.data.points.toLocaleString() : '--'
   const profileError = profileRemote.state === 'error' ? profileRemote.message : null
   const pointsError = pointsRemote.state === 'error' ? pointsRemote.message : null
