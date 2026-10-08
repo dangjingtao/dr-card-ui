@@ -295,3 +295,29 @@ T011 本轮证据（2026-08-22）：`BASE_URL=http://127.0.0.1:5175 node scripts
 - [ ] PR #97 代码审查与 CI：会员等级数量动态变化（0 / 1 / 2 / 4 / 8+）、对比度正确、空态和错误态可恢复。
 - [ ] test WebView：用登录用户核对 `profile.grade_id` / `usergrade.index.id`、实时 `userpoints.stat.points`；用户等级不在启用表内时记录后端数据异常。
 - [ ] 产品/后台确认 B-022/B-023，决定是否把历史四级作为真实业务等级（不能由 H5 自动填充）。
+
+
+## H041｜福利官配置真 API 接入增量证据（2026-10-08，待真机验收）
+
+> 保留 T013/D-038 原有设计验收结论；此处记录业务数据由 Mockplus 静态展示迁为真实后端配置。施工卡 [#94](https://github.com/dangjingtao/dr-card-ui/issues/94)，接口文档 [#90](https://github.com/dangjingtao/dr-card-ui/issues/90)。**实现、构建与真实 WebView 验收是不同状态；不得因本记录提前将真机验收改为通过。**
+
+| 链路 | 历史状态 | H041 对齐后的状态与验收边界 |
+| --- | --- | --- |
+| `/service/welfare-officer` 文案 | 固定 `WELFARE_OFFICER`（吴哥、诗得丽等） | `GET /api/settings/detail?key=brand_welfare_setting` 的 `title/subtitle`，未配置则为空态，不在 API 模式回退固定姓名 |
+| 福利官二维码 | `WecomQrPlaceholder`，明确非真二维码 | 只有后端给出安全、可被 HTTPS WebView 加载的二维码 URL 才显示真图；无 URL / 非法 URL / 图片加载失败不能伪装可扫码 |
+| 福利项列表 | 固定三项 D-038 视觉说明 | 后端 `benefits[].image/title/description` 动态驱动，无配置隐藏列表，无跳转动作，保留列表的视觉结构 |
+| `settings/detail` 的 key | 既有 `welfare` 仍是品牌文化富文本别名 | 福利官严格传 `brand_welfare_setting`，不可把两种业务混用；Mock handler 必须按 key 精确过滤 |
+| 例外状态 | 只展示 fixture | loading / error-retry / empty / unsafe image URL / image error 有显式行为；API 模式不使用静态业务模拟 |
+
+### 后台资源地址待修（真实联调前置）
+
+2026-10-08 对开发后端 URL `https://tunnel-dev.3cgroup.cn/api/settings/detail?key=brand_welfare_setting` **只读**请求：HTTP 200 / `code=0`；title 与 subtitle 配置存在，benefits 实际三项为「人工客服、活动咨询、福利抽奖」。但配置中的 **qrcode 和三个 benefit.image 均为 `http://127.0.0.1:7002/storage/...`**；这是后端服务器环回地址，手机 WebView 指向自身，且会形成 HTTPS 混合内容风险。
+
+- H5 按安全规则隐藏不可加载的二维码/图片，明确提示；**不能猜测公网 CDN 或自行替换 hostname**。
+- 后端/运营需提供浏览器可直接访问的公网 HTTPS 图片 URL，再进入 test App WebView 扫码实测。
+- 这个后端资源配置问题不应与「H5 已接入 API」混为一谈。可不阻塞代码 PR → dev，但不能宣布真正扫码功能已验收。
+
+### H041 验收待办
+- [ ] GitHub CI：typecheck、服务/页面测试、lint、build、浏览器基础回归
+- [ ] test App WebView：响应与 UI 字段一一对应；二维码变为公网 HTTPS 后扫码，真实设备可识别
+- [ ] 不修改同事 `workspace/API`、不更改 `ServiceChat` 的人工客服二维码占位语义
