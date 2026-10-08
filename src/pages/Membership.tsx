@@ -5,8 +5,9 @@ import DebugPanel from '../components/mobile/DebugPanel'
 import PageContainer from '../components/mobile/PageContainer'
 import { Button, ProgressIndicator } from '../components/ui'
 import { findRouteByPathname } from '../app/router/routes'
+import { useProfileFeed } from './profile/useProfileFeed'
+import { useUserPointsStat } from './points/usePointsFeed'
 import {
-  BUBBLE_BALANCE,
   CAMPAIGN_FIXTURE,
   MEMBER_ENTRIES,
   MEMBER_PROFILE,
@@ -40,6 +41,14 @@ export default function Membership() {
   const navigate = useNavigate()
   const route = findRouteByPathname('/membership')
   const campaign = CAMPAIGN_FIXTURE
+  const { remote: profileRemote, reload: reloadProfile } = useProfileFeed()
+  const { remote: pointsRemote, reload: reloadPoints } = useUserPointsStat()
+  const profile = profileRemote.state === 'success' ? profileRemote.data : null
+  const nickname = profile?.nickname?.trim() || '--'
+  const gradeName = profile ? (profile.grade.trim() || '尚未配置') : '--'
+  const pointsText = pointsRemote.state === 'success' ? pointsRemote.data.points.toLocaleString() : '--'
+  const profileError = profileRemote.state === 'error' ? profileRemote.message : null
+  const pointsError = pointsRemote.state === 'error' ? pointsRemote.message : null
 
   const entryIcons: Record<string, LucideIcon> = {
     luck: Clover,
@@ -59,22 +68,22 @@ export default function Membership() {
           <p className="text-[11px] tracking-[0.2em] text-member-accent">{MEMBER_PROFILE.brandLine}</p>
           <div className="mt-4 flex items-end justify-between gap-3">
             <div className="min-w-0">
-              <p className="truncate text-[22px] font-medium leading-tight text-member-text">{MEMBER_PROFILE.nickname}</p>
+              <p className="truncate text-[22px] font-medium leading-tight text-member-text">{nickname}</p>
               <span
                 className="mt-2.5 inline-flex items-center rounded-pill px-3 py-1 text-xs font-semibold text-bubble-on-gold"
                 style={{ backgroundImage: 'var(--gradient-bubble)' }}
               >
-                {MEMBER_PROFILE.levelLabel} {MEMBER_PROFILE.levelName}
+                会员 · {gradeName}
               </span>
             </div>
             <button
               type="button"
               onClick={() => navigate('/points')}
-              aria-label={`泡泡值余额 ${BUBBLE_BALANCE}，查看明细`}
+              aria-label={`泡泡值余额 ${pointsText}，查看明细`}
               className="flex-none rounded-container text-right"
             >
               <span className="block text-[28px] font-semibold leading-none text-member-accent">
-                {BUBBLE_BALANCE.toLocaleString()}
+                {pointsText}
               </span>
               <span className="mt-1.5 block text-[11px] tracking-[0.02em] text-member-muted">
                 {MEMBER_PROFILE.bubbleUnit}
@@ -83,7 +92,7 @@ export default function Membership() {
           </div>
           <div className="mt-4 h-px bg-member-muted/45" aria-hidden />
           <div className="mt-3 flex items-center justify-between">
-            <span className="text-[11px] tracking-[0.14em] text-member-muted">{MEMBER_PROFILE.cardNo}</span>
+            <span className="text-[11px] tracking-[0.14em] text-member-muted">{profile?.kbsId ? `会员 ID ${profile.kbsId}` : '会员 ID --'}</span>
             <button
               type="button"
               onClick={() => navigate('/membership/levels')}
@@ -95,6 +104,20 @@ export default function Membership() {
           </div>
         </div>
       </section>
+
+      {(profileError || pointsError) ? (
+        <div className="mx-4 flex items-center justify-between gap-2 rounded-container bg-surface px-3 py-2 text-xs text-text-secondary" role="status">
+          <span>{profileError ? '会员资料暂不可用' : '泡泡值暂不可用'}</span>
+          <button
+            type="button"
+            className="font-semibold text-member-accent"
+            onClick={() => {
+              if (profileError) reloadProfile()
+              if (pointsError) reloadPoints()
+            }}
+          >重试</button>
+        </div>
+      ) : null}
 
       <section
         className="mx-4 rounded-feature border border-border-subtle bg-claim-surface p-4 shadow-[0_10px_28px_rgba(51,37,20,0.06)]"

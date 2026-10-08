@@ -270,3 +270,28 @@ T011 本轮证据（2026-08-22）：`BASE_URL=http://127.0.0.1:5175 node scripts
 - 决策索引：`docs/workbench/decisions/README.md`。
 - 任务卡：`docs/workbench/tasks/T001…T015`。
 - 工程证据：`npm run typecheck`、`npm run build`、`scripts/verify-t001.mjs` 均通过（见 T001 卡）。
+
+
+## 8. H040｜会员业务数据与历史四级展示分离（2026-10-08，实施待验收）
+
+> **增量变更记录，不回写历史验收结论。** 原有 T006 / D-028 / D-029 保留为 2026-08 产品视觉历史证据，不能误认为后台已配置这四级。H040 追踪 [#93](https://github.com/dangjingtao/dr-card-ui/issues/93) 和 [PR #97](https://github.com/dangjingtao/dr-card-ui/pull/97)，未通过真实 App test 验收前状态仍为 **Implemented / Pending acceptance**。
+
+| 维度 | T006 旧展示 | H040 当前施工目标 / 事实 | 验收边界 |
+| --- | --- | --- | --- |
+| `/membership` 当前会员 | `MEMBER_PROFILE` 历史视觉夹具：昵称、固定 LV.4 / 溱蜜传说、展示编号 | 会员昵称与等级从 `GET /api/user/profile` 读取；余额从 `GET /api/userpoints/stat` 读取；未配置则清楚标示，不伪造四级身份 | 需真实登录用户与真实响应对照 |
+| `/membership/levels` 等级名单 | T006 固定 LV.1–LV.4，B-022 数量、名称、卡面未定 | `GET /api/usergrade/index` 仅渲染已启用等级；0 条显示未配置，失败显示失败/重试；`grade_id` 与后端等级 `id` 对齐 | 后台列表是唯一业务等级事实源；不因设计有四张图擅自增等级 |
+| 卡面画廊 | 四张历史限定卡面艺术稿 | **保留四张静态视觉参考**，在 UI 明确不代表后台等级、实际生效卡面或权益。品牌素材与视觉结构不丢失 | 不得把四张卡面拿来推算启用会员等级数 |
+| 等级未配置 | 原型没有这个数据态 | 后端 `User.profile` 无默认等级时可能省略 `grade/grade_id`；H5 应仍保留可用个人资料，等级标「尚未配置」，不得宣称「已是最高等级」 | service 契约测试 + 无数据/未配置页面态 |
+
+### 开发后端现场证据与差异
+
+- 本地只读后端 `API/master@4f91aa2` 的 `src/app/api/controller/UserGrade.ts`、`src/app/api/service/User.ts`、`docs/api-membership—levels.md`；未修改后台仓库。
+- 2026-10-08 对 `https://tunnel-dev.3cgroup.cn/api/usergrade/index?status=10&page=1&pageSize=15` 的只读探测得到 HTTP 200、`code=0`、**2 条启用等级**：`id=1 泡泡新生 min_exp_number=1000`（默认）、`id=2 泡泡萌芽 min_exp_number=10000`。此为**开发环境瞬时状态**，不是 test/prod 的配置承诺。
+- 历史设计四级：海泡泡新生、春氧达人、头皮管理员、溱蜜传说；当前并不与后台两级一一对应。B-022/B-023 仍待产品决定是否扩充后台等级、如何映射卡面、升级门槛与权益。**前端不新造等级、不代替后台配置。**
+- 前端实现进度和后端是否已经部署、是否可在真机使用是三件不同的事；CI 全绿不能代替 App WebView 验收。
+
+### 本卡验收余项
+
+- [ ] PR #97 代码审查与 CI：会员等级数量动态变化（0 / 1 / 2 / 4 / 8+）、对比度正确、空态和错误态可恢复。
+- [ ] test WebView：用登录用户核对 `profile.grade_id` / `usergrade.index.id`、实时 `userpoints.stat.points`；用户等级不在启用表内时记录后端数据异常。
+- [ ] 产品/后台确认 B-022/B-023，决定是否把历史四级作为真实业务等级（不能由 H5 自动填充）。
