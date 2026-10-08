@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   close: vi.fn(),
   patch: vi.fn(),
   reloadRecords: vi.fn(),
+  useSignRecords: vi.fn(),
   reloadStatus: vi.fn(),
 }))
 
@@ -31,7 +32,10 @@ vi.mock('../services/nativeBridge', () => {
 
 vi.mock('./checkin/useCheckinFeed', () => ({
   useSignStatus: () => ({ remote: { state: 'loading' }, reload: mocks.reloadStatus }),
-  useSignRecords: () => ({ remote: { state: 'loading' }, reload: mocks.reloadRecords }),
+  useSignRecords: (...args: unknown[]) => {
+    mocks.useSignRecords(...args)
+    return { remote: { state: 'loading' }, reload: mocks.reloadRecords }
+  },
   useCheckinActions: (
     onSuccess?: (kind: 'sign-in' | 'makeup', day?: string) => void,
   ) => ({
@@ -121,7 +125,15 @@ afterEach(() => {
   mocks.close.mockReset()
   mocks.patch.mockReset()
   mocks.reloadRecords.mockReset()
+  mocks.useSignRecords.mockReset()
   mocks.reloadStatus.mockReset()
+})
+
+describe('Issue #89: checkin monthly calendar scope', () => {
+  it('requests the full month rather than the homepage week', () => {
+    render(<Checkin />)
+    expect(mocks.useSignRecords).toHaveBeenCalledWith('month')
+  })
 })
 
 /**
