@@ -2,11 +2,9 @@ import { Fragment, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ChevronRight,
-  ClipboardList,
   Crown,
   Gift,
   Headphones,
-  MapPin,
   Pencil,
   Ticket,
   UserRoundPlus,
@@ -33,8 +31,6 @@ type Tile = {
 const tiles: Tile[] = [
   { icon: Ticket, name: '卡券兑换', from: '#FFF8E6', deep: '#F4DFA9', color: '#B5793B', to: '/redeem' },
   { icon: Crown, name: '会员权益', from: '#FFF4CF', deep: '#E8C361', color: '#8A5A10', to: '/membership' },
-  { icon: ClipboardList, name: '订单管理', from: '#FFF3EB', deep: '#FFD3C0', color: '#D63D10', to: '/orders' },
-  { icon: MapPin, name: '地址管理', from: '#FFF8E6', deep: '#F3DFA9', color: '#9A6110', to: '/address' },
   { icon: UserRoundPlus, name: '绑定搭子', from: '#EFFCFE', deep: '#CDEFF5', color: '#0E9FB3', to: '/buddy' },
   { icon: Gift, name: '品牌福利官', from: '#EEFAF3', deep: '#CDEAD9', color: '#147A4C', to: '/service/welfare-officer' },
   { icon: Headphones, name: '客服中心', from: '#F6F8FB', deep: '#E1E6ED', color: '#535D72', to: '/service/chat' },
@@ -208,19 +204,15 @@ export default function Profile() {
           </h3>
           <span className="text-[10px] tracking-[0.12em] text-[#9A8060]">常用功能</span>
         </header>
-        <div className="grid grid-cols-6 grid-rows-[60px_60px_66px] gap-2.5">
+        <div className="grid grid-cols-6 grid-rows-[60px_66px] gap-2.5">
           {tiles.map((tile, index) => {
-            const isPrimaryRow = index < 4
+            const isPrimaryRow = index < 2
             const placement =
               index === 0
                 ? 'col-span-3 col-start-1 row-start-1'
                 : index === 1
-                  ? 'col-span-3 col-start-1 row-start-2'
-                  : index === 2
-                    ? 'col-span-3 col-start-4 row-start-1'
-                    : index === 3
-                      ? 'col-span-3 col-start-4 row-start-2'
-                      : 'col-span-2 row-start-3'
+                  ? 'col-span-3 col-start-4 row-start-1'
+                  : 'col-span-2 row-start-2'
 
             return (
               <button
