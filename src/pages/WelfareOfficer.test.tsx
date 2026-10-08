@@ -89,5 +89,6 @@ describe('WelfareOfficer page remote states', () => {
     fireEvent.error(screen.getByRole('img', { name: '福利官企业微信二维码' }))
     expect(screen.getByText('二维码加载失败，请稍后再试')).toBeTruthy()
     expect(screen.queryByRole('img', { name: '福利官企业微信二维码' })).toBeNull()
+    expect(screen.queryByText('长按或扫描二维码，联系福利官')).toBeNull()
   })
 })
