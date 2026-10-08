@@ -18,7 +18,7 @@ export interface RemoteResult<T> {
  * 通用远程数据 hook（mock/api 同路径，页面不做模式分支）。
  * 与 `usePointsFeed` 的同名实现同构：单个接口失败只落在对应区域，不阻塞其它模块。
  */
-function useRemoteData<T>(load: () => Promise<T>): RemoteResult<T> {
+export function useRemoteData<T>(load: () => Promise<T>): RemoteResult<T> {
   const [remote, setRemote] = useState<RemoteData<T>>({ state: 'loading' })
   const [reloadToken, setReloadToken] = useState(0)
 
