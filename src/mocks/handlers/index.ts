@@ -16,8 +16,9 @@ export const handlers = [
   ...buddyPhoneHandlers,
   ...checkinHandlers,
   ...exchangeHandlers,
+  // 两者匹配同一个 settings/detail URL，专用 key 要在通用 fallback 前命中。
+  ...welfareOfficerHandlers,
   ...homeHandlers,
   ...userProfileHandlers,
   ...userpointsHandlers,
-  ...welfareOfficerHandlers,
 ]
