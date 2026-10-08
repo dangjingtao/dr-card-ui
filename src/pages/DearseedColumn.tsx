@@ -28,7 +28,8 @@ import {
   NEWCOMER_COUPON_VARIANTS,
 } from '../app/fixtures'
 import columnBanner from '../assets/brand/home/home-banner-carousel.webp'
-import avatar from '../assets/brand/home/home-avatar.webp'
+import UserAvatar from '../components/mobile/UserAvatar'
+import { useUserIdentity } from './profile/useUserIdentity'
 import campaignThumb from '../assets/brand/member/checkin-dearseed-kit.webp'
 import pickShampooA from '../assets/brand/exchange/exchange-pick-shampoo-a.webp'
 import pickShampooB from '../assets/brand/exchange/exchange-pick-shampoo-b.webp'
@@ -52,6 +53,7 @@ const columnEntries = [
  */
 export default function DearseedColumn() {
   const navigate = useNavigate()
+  const { remote: identity } = useUserIdentity()
   const route = findRouteByPathname('/dearseed')
   const { state } = useFixtureState(route)
   const { overlay, open, close } = useOverlay()
@@ -190,12 +192,12 @@ export default function DearseedColumn() {
             onClick={() => navigate('/dearseed/membership')}
             className="h-12 w-12 flex-none overflow-hidden rounded-full border-2 border-member-accent/70 shadow-sm"
           >
-            <img src={avatar} alt="用户头像" className="h-full w-full object-cover" />
+            <UserAvatar src={identity.state === 'success' ? identity.data.avatar : undefined} />
           </button>
           {/* T046｜中部「DEARSEED MEMBER / 昵称 / 等级」卡也跳会员中心，与头像入口语义一致 */}
           <button type="button" onClick={() => navigate('/dearseed/membership')} className="min-w-0 flex-1 text-left">
             <span className="block text-[10px] tracking-[0.18em] text-member-accent">DEARSEED MEMBER</span>
-            <span className="mt-1 block truncate text-[17px] font-semibold text-member-text">{MEMBER_PROFILE.nickname}</span>
+            <span className="mt-1 block truncate text-[17px] font-semibold text-member-text">{identity.state === 'success' ? identity.data.nickname : '--'}</span>
             <span className="mt-1 block text-[11px] text-member-muted">{MEMBER_PROFILE.levelLabel} · {MEMBER_PROFILE.levelName}</span>
           </button>
           <button
