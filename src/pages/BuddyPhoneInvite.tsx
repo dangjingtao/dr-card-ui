@@ -46,6 +46,25 @@ export default function BuddyPhoneInvite() {
     return () => { mounted.current = false; searchSeq.current++ }
   }, [])
 
+  // DebugPanel updates ?state= on the same mounted route. Reconcile all derived
+  // prototype UI rather than retaining stale search results or a success overlay.
+  useEffect(() => {
+    searchSeq.current++
+    setPhone(demoState in BUDDY_SEARCH_SAMPLE_PHONES
+      ? BUDDY_SEARCH_SAMPLE_PHONES[demoState as keyof typeof BUDDY_SEARCH_SAMPLE_PHONES]
+      : '')
+    setOutcome(demoState)
+    setUser(demoState === 'invitable' || demoState === 'invited'
+      ? { id: 'mock-prototype', nickname: '演示搭子', avatarUrl: null }
+      : null)
+    setInvitationId(null)
+    setPending(false)
+    setConfirmOpen(false)
+    setSuccess(buddyPhoneContractReady && routeState === 'success')
+    setStatusText(null)
+    setError(null)
+  }, [routeState, demoState])
+
   const resetSearch = (next: string) => {
     searchSeq.current++
     setPhone(next)
