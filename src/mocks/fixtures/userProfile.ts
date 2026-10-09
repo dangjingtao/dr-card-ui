@@ -10,7 +10,9 @@ export const USER_PROFILE_DETAIL_MOCK = {
   data: {
     id: 1,
     nick_name: 'Mock会员昵称',
-    grade: '大二',
+    // `grade` may be a membership title; the actual school year is student_grade.
+    grade: '普通会员',
+    student_grade: '大二',
     avatar_img: 0,
   },
 } as const
