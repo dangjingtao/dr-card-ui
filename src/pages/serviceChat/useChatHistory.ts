@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getAuthSession } from '../../services/auth/session'
-import { fetchChatHistoryPage, mapChatRecord, mergeChatHistory, chatRecordSchema, type ChatHistoryMessage } from '../../services/chatMessages'
+import { fetchChatHistoryPage, mapChatRecord, mergeChatHistory, chatRecordSchema, CHAT_HISTORY_PAGE_SIZE, type ChatHistoryMessage } from '../../services/chatMessages'
 
 export type ChatHistoryState =
   | { status: 'loading'; messages: ChatHistoryMessage[]; page: number; lastPage: number; loadingMore: false; moreError: null }
@@ -29,6 +29,9 @@ export function useChatHistory() {
   const pageRevision = useRef(0)
   const latestRevision = useRef(0)
   const missedRevision = useRef(0)
+  // Socket can become ready before GET index; hold validated pushes by session
+  // until the first successful history load instead of silently dropping them.
+  const queuedPushes = useRef({ token: sessionToken(), messages: new Map<string, ChatHistoryMessage>() })
   const update = useCallback((next: Snapshot) => { current.current = next; setSnapshot(next) }, [])
 
   const reload = useCallback(() => {
@@ -42,6 +45,9 @@ export function useChatHistory() {
     const controller = new AbortController()
     pending.current = controller
     const key = sessionToken()
+    if (queuedPushes.current.token !== key) {
+      queuedPushes.current = { token: key, messages: new Map() }
+    }
     const requestRevision = ++revision.current
     update({ token: key, data: loading })
     if (!key) {
@@ -51,10 +57,15 @@ export function useChatHistory() {
     void fetchChatHistoryPage(1, undefined, controller.signal).then(
       page => {
         if (controller.signal.aborted || revision.current !== requestRevision || sessionToken() !== key) return
+        // Drain pushes received while history was loading/error, and dedup by server ID.
+        // Keep the queue if an earlier request failed; never carry it across accounts.
+        const staged = queuedPushes.current.token === key
+          ? [...queuedPushes.current.messages.values()] : []
         update({ token: key, data: {
-          status: 'ready', messages: mergeChatHistory([], page.data.map(mapChatRecord)),
+          status: 'ready', messages: mergeChatHistory(page.data.map(mapChatRecord), staged),
           page: page.current_page, lastPage: page.last_page, loadingMore: false, moreError: null,
         } })
+        if (queuedPushes.current.token === key) queuedPushes.current.messages.clear()
       },
       error => {
         if (controller.signal.aborted || revision.current !== requestRevision || sessionToken() !== key) return
@@ -80,7 +91,7 @@ export function useChatHistory() {
         if (controller.signal.aborted || pageRevision.current !== requestRevision || sessionToken() !== key) return
         const now = current.current
         if (now.token !== key || now.data.status !== 'ready') return
-        if (page.current_page !== requestedPage || page.last_page !== ready.lastPage) {
+        if (page.current_page !== requestedPage || page.last_page !== now.data.lastPage) {
           update({ token: key, data: { ...now.data, loadingMore: false, moreError: '客服历史分页已变化，请重新加载' } })
           return
         }
@@ -115,6 +126,7 @@ export function useChatHistory() {
       const latest = page.data.map(mapChatRecord)
       update({ token: key, data: {
         ...now.data, messages: mergeChatHistory(now.data.messages, latest),
+        lastPage: page.last_page,
       } })
       return latest
     } catch {
@@ -130,9 +142,17 @@ export function useChatHistory() {
     if (user && typeof user === 'object' && 'id' in user && user.id != null && String(user.id) !== String(record.data.user_id)) return
     const key = sessionToken()
     const now = current.current
-    if (!key || now.token !== key || now.data.status !== 'ready') return
+    if (!key || now.token !== key) return
+    const mapped = mapChatRecord(record.data)
+    if (now.data.status !== 'ready') {
+      if (queuedPushes.current.token !== key) {
+        queuedPushes.current = { token: key, messages: new Map() }
+      }
+      queuedPushes.current.messages.set(mapped.id, mapped)
+      return
+    }
     update({ token: key, data: {
-      ...now.data, messages: mergeChatHistory(now.data.messages, [mapChatRecord(record.data)]),
+      ...now.data, messages: mergeChatHistory(now.data.messages, [mapped]),
     } })
   }, [update])
 
@@ -158,6 +178,9 @@ export function useChatHistory() {
           if (now.token !== key || now.data.status !== 'ready') return false
           update({ token: key, data: {
             ...now.data, messages: mergeChatHistory(now.data.messages, newer),
+            // Backfill fetches 100/page; regular history uses 30/page.
+            // Normalize the server total to the regular pagination unit.
+            lastPage: Math.max(1, Math.ceil(page.total / CHAT_HISTORY_PAGE_SIZE)),
           } })
           return true
         }
