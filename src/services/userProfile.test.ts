@@ -32,6 +32,7 @@ const PROFILE_DATA = {
   real_name: '',
   points: 128,
   kbs_id: 'K016998956',
+  identify_code: '123e4567-e89b-42d3-a456-426614174000',
 }
 
 describe('live user detail contract', () => {
@@ -86,6 +87,7 @@ describe('user profile contract', () => {
       realName: undefined,
       points: 128,
       kbsId: 'K016998956',
+      identifyCode: '123e4567-e89b-42d3-a456-426614174000',
     })
   })
 
@@ -139,6 +141,18 @@ describe('user profile contract', () => {
     mocks.request.mockResolvedValue({ code: 401, message: '请先登录', data: [] })
 
     await expect(fetchUserProfile()).rejects.toMatchObject({ kind: 'business', message: '请先登录' })
+  })
+})
+
+describe('profile identify_code parsing', () => {
+  beforeEach(() => mocks.request.mockReset())
+
+  it('returns absent code as undefined and rejects a malformed UUID', async () => {
+    const { identify_code: _code, ...withoutCode } = PROFILE_DATA
+    mocks.request.mockResolvedValue({ code: 0, data: withoutCode })
+    await expect(fetchUserProfile()).resolves.toMatchObject({ identifyCode: undefined })
+    mocks.request.mockResolvedValue({ code: 0, data: { ...PROFILE_DATA, identify_code: 'invalid' } })
+    await expect(fetchUserProfile()).rejects.toThrow()
   })
 })
 
