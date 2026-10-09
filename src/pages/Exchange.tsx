@@ -1,21 +1,23 @@
 import { useRef, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
-import { ChevronRight, Droplets, Ticket } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { ChevronRight, Droplets, PartyPopper, Ticket } from 'lucide-react'
 import DebugPanel from '../components/mobile/DebugPanel'
 import PageContainer from '../components/mobile/PageContainer'
+import PromptOverlay from '../components/mobile/PromptOverlay'
 import BubbleValueRedeemCard from '../components/card/BubbleValueRedeemCard'
 import { BottomSheet, Button, EmptyState, SegmentedControl } from '../components/ui'
-import { useFixtureQueryControls, useOverlay } from '../app/fixtures/useFixture'
 import { findRouteByPathname } from '../app/router/routes'
+import { runtimePolicy } from '../app/config/runtime'
 import { useUserPointsStat } from './points/usePointsFeed'
 import { useExchangeCoupons } from './exchange/useExchangeFeed'
 import {
   EXCHANGE_CATEGORIES,
   EXCHANGE_COPY,
   resolveExchangeCategory,
+  type ExchangeCategory,
 } from '../app/fixtures'
 import type { CouponRedeemView } from '../services/coupons'
-import { redeemExchangeProduct } from '../services/exchange'
+import { redeemExchangeProduct, H014_EXCHANGE_REDEEM_UNAVAILABLE_COPY } from '../services/exchange'
 import kitThumb from '../assets/brand/member/checkin-dearseed-kit.webp'
 
 /** 接口 `image` 为空时的券图兜底（沿用已验收品牌图，不新增假字段）。 */
@@ -64,72 +66,63 @@ const availabilityButtonLabel = (state: ExchangeAvailability): string =>
  *
  * ⚠️ B-024 / B-025 / B-026：排序方向、完整 SKU 清单与泡泡值扣减 / 卡包写入均为服务端规则，
  *    页面只展示接口结果，不做持久化扣减。
- * 可复现状态：?category=shampoo / conditioner / scalp-care，?overlay=redeem&product=<券id>。
+ * UX-E（2026-10-09）：分类 / 券选择 / 确认 / 兑换结果只用组件状态，绝不通过 URL 驱动。
+ * H014 占位仅允许 Mock 演示；正式 API 未接通之前禁止假成功或模拟扣点入包。
  */
 export default function Exchange() {
   const navigate = useNavigate()
   const route = findRouteByPathname('/exchange')
-  const { overlay, close } = useOverlay()
-  const { patch: patchFixtureQueryControls } = useFixtureQueryControls()
-  const [searchParams, setSearchParams] = useSearchParams()
-
-  /** 前台保留历史分类 Tab；当前仅作为 H5 页面状态，不映射为后端 category_id。 */
-  const category = resolveExchangeCategory(searchParams.get('category'))
-
-  /** GET /api/coupons/index：当前只请求可展示体验装，不附带尚未确认的分类参数。 */
-  const { remote: listRemote, reload } = useExchangeCoupons()
-  const list = listRemote.state === 'success' ? listRemote.data : []
-
-  /** GET /api/userpoints/stat：可用余额严格取 points，不用 income - expense 反推。 */
-  const { remote: statRemote } = useUserPointsStat()
-  const balance = statRemote.state === 'success' ? statRemote.data.points : null
-
-  /** 弹层内展示的体验券由 `?product=` 决定，保证兑换弹窗可复现 */
-  const activeProductId = searchParams.get('product')
-  const activeProduct =
-    activeProductId === null
-      ? null
-      : list.find((item) => String(item.id) === activeProductId) ?? null
-  const availability = activeProduct ? resolveAvailability(activeProduct, balance) : 'redeemable'
-
-  const couponListRef = useRef<HTMLElement>(null)
+  /** 当前分类只是一项 H5 展示状态，不映射成后台分类参数或 URL。 */
+  const [category, setCategory] = useState<ExchangeCategory>('all')
+  const [activeProductId, setActiveProductId] = useState<string | null>(null)
+  const [simulationComplete, setSimulationComplete] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const submissionLock = useRef(false)
+  const couponListRef = useRef<HTMLElement>(null)
 
-  const patchParams = (patch: (next: URLSearchParams) => void) => {
-    setSearchParams(
-      (prev) => {
-        const next = new URLSearchParams(prev)
-        patch(next)
-        return next
-      },
-      { replace: true },
-    )
+  /** GET /api/coupons/index：保持真实列表来源及服务端字段语义。 */
+  const { remote: listRemote, reload: reloadCoupons } = useExchangeCoupons()
+  const list = listRemote.state === 'success' ? listRemote.data : []
+
+  /** GET /api/userpoints/stat：余额严格取 points。兑换结果不在页面伪扣款。 */
+  const { remote: statRemote, reload: reloadPoints } = useUserPointsStat()
+  const balance = statRemote.state === 'success' ? statRemote.data.points : null
+
+  // Resolve against current list to prevent a stale coupon selection after a reload.
+  const activeProduct = activeProductId === null
+    ? null
+    : list.find((product) => String(product.id) === activeProductId) ?? null
+  const availability = activeProduct ? resolveAvailability(activeProduct, balance) : 'balance-unavailable'
+
+  const closeRedeem = () => {
+    if (submissionLock.current) return
+    setActiveProductId(null)
+    setSubmitError(null)
   }
 
   const changeCategory = (value: string) => {
-    const nextCategory = resolveExchangeCategory(value)
-
-    /**
-     * 分类切换与关闭兑换弹层必须落在同一次导航里。
-     * test/prod 的 overlay 存在 router state，而普通 category/product 留在 search；
-     * 若先 setSearchParams 再 close()，close() 会基于旧 location.search 二次导航并回滚新分类。
-     */
-    patchFixtureQueryControls(
-      { overlay: null },
-      {
-        category: nextCategory === 'all' ? null : nextCategory,
-        product: null,
-      },
-    )
+    if (submissionLock.current) return
+    setCategory(resolveExchangeCategory(value))
+    setActiveProductId(null)
+    setSubmitError(null)
   }
 
   const openRedeem = (product: CouponRedeemView) => {
+    if (submissionLock.current || simulationComplete) return
+    setActiveProductId(String(product.id))
     setSubmitError(null)
-    patchParams((next) => {
-      next.set('product', String(product.id))
-      next.set('overlay', 'redeem')
-    })
+  }
+
+  const closeResult = () => {
+    setSimulationComplete(false)
+    setActiveProductId(null)
+    setSubmitError(null)
+  }
+
+  const openCardPack = () => {
+    closeResult()
+    navigate('/card')
   }
 
   /** 顶部卡已经位于兑换专区内，「立即兑换」只需把用户带到券列表，不应离开本页。 */
@@ -138,19 +131,28 @@ export default function Exchange() {
   }
 
   const submit = async () => {
-    if (!activeProduct || availability !== 'redeemable' || submitting) return
+    if (!activeProduct || availability !== 'redeemable' || submissionLock.current) return
+    // #74: No confirmed production endpoint exists. H014 mock is strictly a dev/preview
+    // simulation and must not emit a real issue/settlement success in API/test/prod.
+    if (runtimePolicy.dataMode !== 'mock') {
+      setSubmitError(H014_EXCHANGE_REDEEM_UNAVAILABLE_COPY)
+      return
+    }
 
+    submissionLock.current = true
     setSubmitting(true)
     setSubmitError(null)
     try {
       await redeemExchangeProduct(String(activeProduct.id))
+      setActiveProductId(null)
+      setSimulationComplete(true)
+      // A mock response does NOT decrement points, issue a coupon or prove real settlement.
+      // #74 owns the eventual real endpoint and authoritative refresh rules.
+    } catch (error) {
+      setSubmitError(error instanceof Error && error.message ? error.message : EXCHANGE_REQUEST_ERROR_COPY)
+    } finally {
+      submissionLock.current = false
       setSubmitting(false)
-      const query = new URLSearchParams({ product: String(activeProduct.id) })
-      if (searchParams.get('debug') === '1') query.set('debug', '1')
-      navigate(`/exchange/result?${query.toString()}`)
-    } catch {
-      setSubmitting(false)
-      setSubmitError(EXCHANGE_REQUEST_ERROR_COPY)
     }
   }
 
@@ -191,7 +193,7 @@ export default function Exchange() {
               title={EXCHANGE_COPY.errorTitle}
               supportingText={listRemote.message}
               primaryAction={
-                <Button variant="outline" onClick={reload}>
+                <Button variant="outline" onClick={reloadCoupons}>
                   {EXCHANGE_COPY.retryAction}
                 </Button>
               }
@@ -278,7 +280,7 @@ export default function Exchange() {
       </button>
 
       {/* #39 体验券兑换弹窗（原型 §3） */}
-      <BottomSheet open={overlay === 'redeem' && activeProduct !== null} title="确认兑换" onClose={close}>
+      <BottomSheet open={activeProduct !== null} title="确认兑换" onClose={closeRedeem}>
         {activeProduct && (
           <>
             <div className="flex gap-3">
@@ -319,6 +321,12 @@ export default function Exchange() {
               </p>
             )}
 
+            {runtimePolicy.dataMode !== 'mock' && (
+              <p className="mt-2 text-xs text-text-secondary" role="status">
+                {H014_EXCHANGE_REDEEM_UNAVAILABLE_COPY}
+              </p>
+            )}
+
             {submitError && (
               <p className="mt-2 text-xs text-danger-text" role="alert">
                 {submitError}
@@ -329,7 +337,7 @@ export default function Exchange() {
               size="large"
               className="mt-4 w-full rounded-full"
               loading={submitting}
-              disabled={availability !== 'redeemable'}
+              disabled={availability !== 'redeemable' || runtimePolicy.dataMode !== 'mock'}
               onClick={() => void submit()}
             >
               {submitting ? EXCHANGE_COPY.submitting : availabilityButtonLabel(availability)}
@@ -337,6 +345,33 @@ export default function Exchange() {
           </>
         )}
       </BottomSheet>
+
+      <PromptOverlay
+        open={simulationComplete}
+        label="模拟兑换结果"
+        onDismiss={closeResult}
+        className="bg-surface px-6 pb-6 pt-7 text-center"
+      >
+        <div
+          className="mx-auto flex h-20 w-20 items-center justify-center rounded-full"
+          style={{ background: 'var(--gradient-claim)' }}
+          aria-hidden
+        >
+          <PartyPopper className="h-9 w-9 text-claim-text" />
+        </div>
+        <h2 className="mt-4 text-lg font-bold leading-6 text-text-primary">
+          兑换成功演示
+        </h2>
+        <p className="mt-2 text-sm leading-6 text-text-secondary">
+          仅供 H5 预览。未实际扣除泡泡值，也未发放卡券。
+        </p>
+        <Button size="large" className="mt-6 h-11 w-full rounded-full" onClick={openCardPack}>
+          {EXCHANGE_COPY.successAction}
+        </Button>
+        <Button variant="ghost" className="mt-2 w-full rounded-full" onClick={closeResult}>
+          {EXCHANGE_COPY.successClose}
+        </Button>
+      </PromptOverlay>
 
       <DebugPanel route={route} />
     </PageContainer>
