@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { CalendarDays, Check, Clock, Info, KeyRound, QrCode, ReceiptText, Ticket, X } from 'lucide-react'
 import DebugPanel from '../components/mobile/DebugPanel'
 import PageContainer from '../components/mobile/PageContainer'
+import { Button, EmptyState } from '../components/ui'
 import { useFixtureState, useOverlay } from '../app/fixtures/useFixture'
 import { findRouteByPathname } from '../app/router/routes'
 import { runtimePolicy } from '../app/config/runtime'
@@ -243,6 +244,7 @@ export default function Card() {
   const [couponLists, setCouponLists] = useState<Record<CardCouponStatus, CouponRemote>>(
     createInitialCouponLists,
   )
+  const [retryVersion, setRetryVersion] = useState(0)
 
   /**
    * MyCoupons 没有分页 UI，因此每个分类按服务端允许的最大 pageSize 拉取，
@@ -291,7 +293,12 @@ export default function Card() {
     return () => {
       active = false
     }
-  }, [])
+  }, [retryVersion])
+
+  const retryCouponList = () => {
+    setCouponLists((current) => ({ ...current, [tab]: { state: 'loading' } }))
+    setRetryVersion((version) => version + 1)
+  }
 
   const currentRemote = couponLists[tab]
   const list =
@@ -443,51 +450,65 @@ export default function Card() {
           ))}
 
         {currentRemote.state === 'loading' && (
-          <div className="flex flex-col items-center rounded-2xl bg-surface px-6 py-12 text-center shadow-sm">
-            <span className="flex h-[60px] w-[60px] items-center justify-center rounded-full bg-surface-inactive text-icon-inactive">
-              <Ticket className="h-7 w-7" />
-            </span>
-            <h3 className="mt-4 text-base font-semibold text-text-primary">正在加载体验券</h3>
-            <p className="mt-1 text-sm text-text-secondary">正在读取我的优惠卡</p>
-          </div>
+          <EmptyState
+            className="rounded-2xl bg-surface shadow-sm"
+            visual={
+              <span className="flex h-[60px] w-[60px] items-center justify-center rounded-full bg-surface-inactive text-icon-inactive">
+                <Ticket className="h-7 w-7" />
+              </span>
+            }
+            title="正在加载体验券"
+            supportingText="正在读取我的优惠卡"
+          />
         )}
 
         {currentRemote.state === 'error' && (
-          <div className="flex flex-col items-center rounded-2xl bg-surface px-6 py-12 text-center shadow-sm">
-            <span className="flex h-[60px] w-[60px] items-center justify-center rounded-full bg-surface-inactive text-icon-inactive">
-              <Info className="h-7 w-7" />
-            </span>
-            <h3 className="mt-4 text-base font-semibold text-text-primary">体验券加载失败</h3>
-            <p className="mt-1 text-sm text-text-secondary">{currentRemote.message}</p>
-          </div>
+          <EmptyState
+            variant="recoverable-error"
+            className="rounded-2xl bg-surface shadow-sm"
+            visual={
+              <span className="flex h-[60px] w-[60px] items-center justify-center rounded-full bg-surface-inactive text-icon-inactive">
+                <Info className="h-7 w-7" />
+              </span>
+            }
+            title="体验券加载失败"
+            supportingText={currentRemote.message}
+            primaryAction={
+              <Button variant="outline" onClick={retryCouponList}>重试</Button>
+            }
+          />
         )}
 
         {currentRemote.state === 'success' && list.length === 0 && (
-          <div className="flex flex-col items-center rounded-2xl bg-surface px-6 py-12 text-center shadow-sm">
-            <span className="flex h-[60px] w-[60px] items-center justify-center rounded-full bg-surface-inactive text-icon-inactive">
-              {tab === 'available' ? (
-                <Ticket className="h-7 w-7" />
-              ) : tab === 'used' ? (
-                <ReceiptText className="h-7 w-7" />
-              ) : (
-                <Clock className="h-7 w-7" />
-              )}
-            </span>
-            <h3 className="mt-4 text-base font-semibold text-text-primary">
-              {tab === 'available'
+          <EmptyState
+            variant="no-data"
+            className="rounded-2xl bg-surface shadow-sm"
+            visual={
+              <span className="flex h-[60px] w-[60px] items-center justify-center rounded-full bg-surface-inactive text-icon-inactive">
+                {tab === 'available' ? (
+                  <Ticket className="h-7 w-7" />
+                ) : tab === 'used' ? (
+                  <ReceiptText className="h-7 w-7" />
+                ) : (
+                  <Clock className="h-7 w-7" />
+                )}
+              </span>
+            }
+            title={
+              tab === 'available'
                 ? '暂无可用的体验券'
                 : tab === 'used'
                   ? '暂无已使用的体验券'
-                  : '暂无已过期的体验券'}
-            </h3>
-            <p className="mt-1 text-sm text-text-secondary">
-              {tab === 'available'
+                  : '暂无已过期的体验券'
+            }
+            supportingText={
+              tab === 'available'
                 ? '领取到的体验券，会显示在这里'
                 : tab === 'used'
                   ? '已核销或已完成使用的体验券，会显示在这里'
-                  : '超过有效期的体验券，会显示在这里'}
-            </p>
-          </div>
+                  : '超过有效期的体验券，会显示在这里'
+            }
+          />
         )}
       </div>
 
