@@ -21,7 +21,9 @@ export default function NotificationDetail() {
   const { id } = useParams<{ id: string }>()
   const item = useNotification(id)
   const detailLoadingId = useApiNoticeStore(s => s.detailLoadingId)
-  const detailError = useApiNoticeStore(s => s.detailError)
+  const remoteError = useApiNoticeStore(s => s.detailError)
+  const detailErrorId = useApiNoticeStore(s => s.detailErrorId)
+  const detailError = detailErrorId === id ? remoteError : null
 
   /** The authenticated GET detail marks read server-side; Mock still uses fixture state. */
   useEffect(() => {
