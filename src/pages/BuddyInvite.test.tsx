@@ -4,7 +4,6 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 const mocks = vi.hoisted(() => ({
   navigate: vi.fn(),
   saveInvitePoster: vi.fn(),
-  copyInviteLink: vi.fn(),
 }))
 
 vi.mock('../app/fixtures/useFixture', () => ({
@@ -14,7 +13,6 @@ vi.mock('../app/fixtures/useFixture', () => ({
 
 vi.mock('../app/adapters/buddyShare', () => ({
   saveInvitePoster: mocks.saveInvitePoster,
-  copyInviteLink: mocks.copyInviteLink,
 }))
 
 import BuddyInvite from './BuddyInvite'
@@ -22,10 +20,18 @@ import BuddyInvite from './BuddyInvite'
 afterEach(() => {
   mocks.navigate.mockReset()
   mocks.saveInvitePoster.mockReset()
-  mocks.copyInviteLink.mockReset()
 })
 
-describe('BuddyInvite Native share outcomes', () => {
+describe('BuddyInvite #102 QR-only product contract', () => {
+  it('only offers poster saving, never copy-link', () => {
+    render(<BuddyInvite />)
+
+    expect(screen.getByRole('button', { name: /保存到本地/ })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /复制链接/ })).toBeNull()
+    expect(screen.getByText('二维码正在接入后台，暂不可扫码')).toBeTruthy()
+    expect(mocks.saveInvitePoster).not.toHaveBeenCalled()
+  })
+
   it('routes poster failure to the existing poster-failed result state', async () => {
     mocks.saveInvitePoster.mockResolvedValue({
       outcome: 'poster-failed',
@@ -37,6 +43,7 @@ describe('BuddyInvite Native share outcomes', () => {
     fireEvent.click(screen.getByRole('button', { name: /保存到本地/ }))
 
     await waitFor(() => {
+      expect(mocks.saveInvitePoster).toHaveBeenCalledTimes(1)
       expect(mocks.navigate).toHaveBeenCalledWith('/buddy/invite/qrcode', {
         state: 'poster-failed',
         debug: null,
@@ -44,39 +51,22 @@ describe('BuddyInvite Native share outcomes', () => {
     })
   })
 
-  it('routes clipboard failure to link-failed instead of the old fake success state', async () => {
-    mocks.copyInviteLink.mockResolvedValue({
-      outcome: 'link-failed',
-      ok: false,
-      text: '链接复制失败',
-    })
-
-    render(<BuddyInvite />)
-    fireEvent.click(screen.getByRole('button', { name: /复制链接/ }))
-
-    await waitFor(() => {
-      expect(mocks.navigate).toHaveBeenCalledWith('/buddy/invite/qrcode', {
-        state: 'link-failed',
-        debug: null,
-      })
-    })
-  })
-
-  it('keeps successful outcomes mapped to their existing result states', async () => {
-    mocks.copyInviteLink.mockResolvedValue({
-      outcome: 'link-copied',
+  it('keeps poster success feedback mapped to the saved result state without a link action', async () => {
+    mocks.saveInvitePoster.mockResolvedValue({
+      outcome: 'poster-saved',
       ok: true,
-      text: '复制成功',
+      text: '已保存到本地',
     })
 
     render(<BuddyInvite />)
-    fireEvent.click(screen.getByRole('button', { name: /复制链接/ }))
+    fireEvent.click(screen.getByRole('button', { name: /保存到本地/ }))
 
     await waitFor(() => {
       expect(mocks.navigate).toHaveBeenCalledWith('/buddy/invite/qrcode', {
-        state: 'link-copied',
+        state: 'saved',
         debug: null,
       })
     })
+    expect(screen.queryByRole('button', { name: /复制链接/ })).toBeNull()
   })
 })
