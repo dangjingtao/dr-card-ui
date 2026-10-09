@@ -14,7 +14,8 @@ import { Button, Dialog, EmptyState, SegmentedControl, Toast } from '../componen
 import { useFixtureState, useOverlay } from '../app/fixtures/useFixture'
 import { findRouteByPathname } from '../app/router/routes'
 import { notificationCategoryLabel, notificationGroupLabel } from '../app/fixtures'
-import { markAllNotificationsRead, useNotifications, type NotificationItem } from '../app/state/notifications'
+import { markAllNotificationsRead, refreshRemoteNotices, loadMoreRemoteNotices, useNotifications, type NotificationItem } from '../app/state/notifications'
+import { runtimePolicy } from '../app/config/runtime'
 
 type TabKey = 'all' | 'unread' | 'system' | 'activity' | 'event'
 
@@ -69,10 +70,15 @@ export default function Notifications() {
   const route = findRouteByPathname('/notifications')
   const { state } = useFixtureState(route)
   const { overlay, close } = useOverlay()
-  const { items, unreadCount } = useNotifications()
+  const { items, unreadCount, total, loading, loadingMore, loaded, hasMore, error } = useNotifications()
 
   const [tab, setTab] = useState<TabKey>(state?.key === 'unread' ? 'unread' : 'all')
   const [toast, setToast] = useState<string | null>(null)
+  const [markingRead, setMarkingRead] = useState(false)
+
+  useEffect(() => {
+    if (runtimePolicy.dataMode === 'api') void refreshRemoteNotices()
+  }, [])
 
   const list = useMemo(
     () =>
@@ -94,7 +100,7 @@ export default function Notifications() {
   }, [list])
 
   const tabs = [
-    { value: 'all', label: <TabLabel text="全部" count={unreadCount > 0 ? unreadCount : items.length} active={tab === 'all'} /> },
+    { value: 'all', label: <TabLabel text="全部" count={unreadCount > 0 ? unreadCount : total} active={tab === 'all'} /> },
     { value: 'unread', label: <TabLabel text="未读" count={unreadCount} active={tab === 'unread'} /> },
     { value: 'system', label: <TabLabel text="推送" active={tab === 'system'} /> },
     { value: 'event', label: <TabLabel text="活动" active={tab === 'event'} /> },
@@ -106,10 +112,19 @@ export default function Notifications() {
     return () => window.clearTimeout(timer)
 }, [toast])
 
-  const confirmMarkAll = () => {
-    markAllNotificationsRead()
-    close()
-    setToast('已全部标为已读')
+  const confirmMarkAll = async () => {
+    if (markingRead) return
+    setMarkingRead(true)
+    try {
+      await markAllNotificationsRead()
+      close()
+      setToast('已全部标为已读')
+    } catch {
+      close()
+      setToast('操作失败，请稍后重试')
+    } finally {
+      setMarkingRead(false)
+    }
   }
 
   const openItem = (item: NotificationItem) => {
@@ -126,7 +141,14 @@ export default function Notifications() {
       {/* Business invitation status does not change when a generic notification is marked read. */}
       {(tab === 'all' || tab === 'unread') && <BuddyInvitationInbox />}
       <div className="px-4 pt-3" aria-live="polite">
-        {groups.length > 0 ? (
+        {runtimePolicy.dataMode === 'api' && (!loaded || loading) ? (
+          <p role="status" className="py-10 text-center text-sm text-text-secondary">正在加载通知…</p>
+        ) : error && groups.length === 0 ? (
+          <div role="alert" className="py-10 text-center text-sm text-text-secondary">
+            <p>{error}</p>
+            <Button variant="outline" onClick={() => void refreshRemoteNotices()}>重试</Button>
+          </div>
+        ) : groups.length > 0 ? (
           <div className="flex flex-col gap-2.5">
             {groups.map((group) => (
               <section key={group.label} className="flex flex-col gap-2.5">
@@ -203,12 +225,20 @@ export default function Notifications() {
                 <BellOff className="h-12 w-12 text-[#D4A853]" strokeWidth={1.6} />
               </span>
             }
-            title={<span className="text-[15px] leading-[22px] text-text-secondary">暂无通知</span>}
-            supportingText={<span className="text-xs leading-[18px]">当前分类下还没有消息 · 下拉刷新看看</span>}
+            title={<span className="text-[15px] leading-[22px] text-text-secondary">{hasMore ? '当前已加载消息中暂无此类通知' : '暂无通知'}</span>}
+            supportingText={<span className="text-xs leading-[18px]">{hasMore ? '还可以继续加载更多消息' : '当前分类下还没有消息'}</span>}
           />
         )}
       </div>
 
+      {runtimePolicy.dataMode === 'api' && loaded && !loading && (hasMore || loadingMore) && (
+        <div className="px-4 pt-4">
+          <Button variant="outline" className="w-full" disabled={loadingMore} onClick={() => void loadMoreRemoteNotices()}>
+            {loadingMore ? '加载中…' : '加载更多通知'}
+          </Button>
+        </div>
+      )}
+      {error && groups.length > 0 && <p role="alert" className="px-4 pt-2 text-xs text-text-secondary">{error}</p>}
       {toast && (
         <div className="pointer-events-none fixed inset-x-0 bottom-24 z-40 flex justify-center px-6">
           <Toast message={toast} />
@@ -224,7 +254,7 @@ export default function Notifications() {
             <Button variant="outline" onClick={close}>
               取消
             </Button>
-            <Button onClick={confirmMarkAll}>确认</Button>
+            <Button disabled={markingRead} onClick={() => void confirmMarkAll()}>{markingRead ? '处理中…' : '确认'}</Button>
           </>
         }
       >
