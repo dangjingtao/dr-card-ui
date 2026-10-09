@@ -24,9 +24,6 @@ export default function ApiServiceChat() {
     chat.activateHuman,
   )
   useEffect(() => {
-    if (human.active && chat.phase === 'idle' && !chat.humanAwait) human.markAi()
-  }, [human.active, human.markAi, chat.phase, chat.humanAwait])
-  useEffect(() => {
     if (human.active && !chat.humanAwait && chat.phase === 'idle') human.confirmAiMode()
   }, [human.active, human.confirmAiMode, chat.humanAwait, chat.phase])
 

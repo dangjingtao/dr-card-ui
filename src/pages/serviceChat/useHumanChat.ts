@@ -146,12 +146,8 @@ export function useHumanChat(
     queueMicrotask(() => setSession(token))
   }, [])
 
-  const markAi = useCallback(() => {
-    setSnapshot(previous => previous.key === tokenKey() ? { ...previous, active: false } : previous)
-  }, [])
-
   return {
-    ...state, transfer, refresh, confirmAiMode, markAi,
+    ...state, transfer, refresh, confirmAiMode,
     canTransfer: state.status === 'connected' && !state.active && !state.transferring,
   }
 }
