@@ -65,7 +65,10 @@ export default function ApiServiceChat() {
             {history.moreError && (
               <div role="alert" className="mb-3 text-center text-xs text-danger-text">
                 {history.moreError}
-                <Button variant="outline" onClick={history.loadMore}>重试加载更早消息</Button>
+                <Button variant="outline" onClick={history.moreError.includes('分页已变化')
+                  ? history.reload : history.loadMore}>
+                  {history.moreError.includes('分页已变化') ? '重新加载历史' : '重试加载更早消息'}
+                </Button>
               </div>
             )}
             {messages.length === 0
