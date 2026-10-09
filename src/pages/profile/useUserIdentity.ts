@@ -102,11 +102,24 @@ export function useUserIdentity() {
   useEffect(() => {
     void refreshUserIdentity()
     const onAuthChange = () => { clearUserIdentity(); void refreshUserIdentity(true) }
+    // WebViews often resume without remounting the SPA. Revalidate on foreground
+    // and bfcache restore, while sharing the same in-flight request across
+    // multiple identity consumers. Do not invalidate a valid snapshot meanwhile.
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void refreshUserIdentity()
+    }
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) void refreshUserIdentity()
+    }
     window.addEventListener('dr-card-ui:auth-session-changed', onAuthChange)
     window.addEventListener('dr-card-ui:auth-session-cleared', clearUserIdentity)
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('pageshow', onPageShow)
     return () => {
       window.removeEventListener('dr-card-ui:auth-session-changed', onAuthChange)
       window.removeEventListener('dr-card-ui:auth-session-cleared', clearUserIdentity)
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('pageshow', onPageShow)
     }
   }, [])
   return { remote, reload: () => refreshUserIdentity(true) }
