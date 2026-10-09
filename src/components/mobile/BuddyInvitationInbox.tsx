@@ -17,13 +17,16 @@ export default function BuddyInvitationInbox() {
   const [submitting, setSubmitting] = useState(false)
   const [completedMessage, setCompletedMessage] = useState<string | null>(null)
 
-  const refresh = async () => {
+  const refresh = async (afterApproval = false) => {
     if (!buddyPhoneInboxReady) return
     setLoading(true)
     setError(null)
     try { setItems(await getBuddyPhoneInvitations()) }
-    catch { setError('加载搭子邀请失败，请稍后重试') }
-    finally { setLoading(false) }
+    catch {
+      setError(afterApproval
+        ? '申请已同意，但通知列表刷新失败，请点击重试加载'
+        : '加载搭子邀请失败，请稍后重试')
+    } finally { setLoading(false) }
   }
 
   useEffect(() => {
@@ -38,15 +41,27 @@ export default function BuddyInvitationInbox() {
 
   const confirm = async () => {
     if (!selected || selected.status !== 'pending' || submitting) return
+    const acceptedId = selected.id
     setSubmitting(true)
     setError(null)
     try {
-      await acceptBuddyPhoneInvitation(selected.id)
-      setSelected(null)
-      await refresh() // server/mock transport is the only invitation status truth
-      if (!buddyPhoneContractReady) setCompletedMessage('已同意申请。后台会移除已处理通知，可到搭子列表查看真实关系。')
-    } catch { setError('确认失败，请稍后重试') }
-    finally { setSubmitting(false) }
+      await acceptBuddyPhoneInvitation(acceptedId)
+    } catch {
+      // A failed acceptance must never be presented as an approved relation.
+      setError('确认失败，请稍后重试')
+      setSubmitting(false)
+      return
+    }
+
+    // The accept transaction has SUCCEEDED. Refresh is now a separate, best-effort
+    // read, and cannot change the transaction outcome or expose a retryable accept.
+    setSelected(null)
+    setItems(current => current.filter(item => item.id !== acceptedId))
+    if (!buddyPhoneContractReady) {
+      setCompletedMessage('已同意申请。后台会移除已处理通知，可到搭子列表查看真实关系。')
+    }
+    setSubmitting(false)
+    await refresh(true)
   }
 
   return (
