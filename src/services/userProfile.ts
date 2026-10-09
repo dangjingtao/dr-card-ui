@@ -66,9 +66,9 @@ export function parseUserProfileDetail(payload: unknown): UserProfileDetail {
     // `grade` may be a membership title; `student_grade` is the academic year
     // written by POST /api/user/update. An explicit empty academic year is valid
     // and must not silently fall back to a potentially unrelated membership tier.
-    grade: typeof detail.student_grade === 'string'
-      ? detail.student_grade.trim()
-      : detail.grade?.trim() ?? '',
+    grade: detail.student_grade === undefined
+      ? detail.grade?.trim() ?? ''
+      : detail.student_grade?.trim() ?? '',
     avatar: typeof detail.avatar_img === 'string' ? trimOrUndefined(detail.avatar_img) : undefined,
   }
 }
