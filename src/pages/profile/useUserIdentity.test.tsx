@@ -29,6 +29,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup()
   clearUserIdentity()
+  Reflect.deleteProperty(document, 'visibilityState')
 })
 
 describe('H044 user identity re-entry and stale response guards', () => {
@@ -44,6 +45,37 @@ describe('H044 user identity re-entry and stale response guards', () => {
     render(<IdentityConsumer />)
     await waitFor(() => expect(mocks.fetchDetail).toHaveBeenCalledTimes(2))
     await waitFor(() => expect(screen.getByTestId('identity').textContent).toBe('另一设备已修改'))
+  })
+
+  it('refreshes on visible WebView resume without remounting the SPA', async () => {
+    mocks.fetchDetail
+      .mockResolvedValueOnce({ nickname: '切后台前', grade: '', avatar: undefined })
+      .mockResolvedValueOnce({ nickname: '后台更新后', grade: '', avatar: undefined })
+
+    render(<IdentityConsumer />)
+    await waitFor(() => expect(screen.getByTestId('identity').textContent).toBe('切后台前'))
+
+    Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'hidden' })
+    act(() => document.dispatchEvent(new Event('visibilitychange')))
+    expect(mocks.fetchDetail).toHaveBeenCalledTimes(1)
+
+    Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'visible' })
+    act(() => document.dispatchEvent(new Event('visibilitychange')))
+    await waitFor(() => expect(mocks.fetchDetail).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(screen.getByTestId('identity').textContent).toBe('后台更新后'))
+  })
+
+  it('revalidates bfcache restoration without a route remount', async () => {
+    mocks.fetchDetail
+      .mockResolvedValueOnce({ nickname: '缓存昵称', grade: '' })
+      .mockResolvedValueOnce({ nickname: '恢复后昵称', grade: '' })
+    render(<IdentityConsumer />)
+    await waitFor(() => expect(screen.getByTestId('identity').textContent).toBe('缓存昵称'))
+    const restored = new Event('pageshow')
+    Object.defineProperty(restored, 'persisted', { value: true })
+    act(() => window.dispatchEvent(restored))
+    await waitFor(() => expect(mocks.fetchDetail).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(screen.getByTestId('identity').textContent).toBe('恢复后昵称'))
   })
 
   it('keeps the authoritative POST update when an older GET resolves later', async () => {
