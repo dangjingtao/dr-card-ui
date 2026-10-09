@@ -14,6 +14,10 @@ const TAG_CLASS: Record<string, string> = {
   balance: 'bg-red-50 text-red-700',
   event: 'bg-violet-50 text-violet-700',
   service: 'bg-orange-50 text-orange-700',
+  reward: 'bg-amber-50 text-amber-700',
+  transfer: 'bg-violet-50 text-violet-700',
+  other: 'bg-slate-100 text-slate-700',
+  buddy: 'bg-amber-50 text-amber-700',
 }
 
 export default function NotificationDetail() {
