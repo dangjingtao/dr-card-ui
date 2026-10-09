@@ -43,7 +43,7 @@ jobs:
           test ! -f dist/mockServiceWorker.js
 
   upload-oss:
-    name: Upload immutable release to OSS
+    name: Upload immutable H5 package to OSS (not site launch)
     if: github.event_name == 'push' && github.ref == 'refs/heads/prod'
     needs: package-check
     runs-on: ubuntu-latest
@@ -63,20 +63,23 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      - name: Reject missing or unsuitable production settings
+      - name: Check immutable artifact upload settings (not website go-live)
         shell: bash
         run: |
           set -euo pipefail
           test -n "$OSS_ACCESS_KEY_ID"
           test -n "$OSS_ACCESS_KEY_SECRET"
           [[ "$VITE_API_BASE_URL" == https://* ]]
-          [[ "$VITE_BUDDY_PUBLIC_ORIGIN" == https://* ]]
-          if [[ "$VITE_BUDDY_PUBLIC_ORIGIN" == *.aliyuncs.com ]]; then
-            echo "OSS default Bucket domains cannot serve an H5 page; configure a real public origin."
-            exit 1
+          # Environment variables may contain accidental surrounding whitespace.
+          # Normalize for the build; build-h5.mjs still validates the HTTPS origin.
+          origin="$(node -e 'process.stdout.write(process.env.VITE_BUDDY_PUBLIC_ORIGIN.trim())')"
+          [[ "$origin" == https://* ]]
+          echo "VITE_BUDDY_PUBLIC_ORIGIN=$origin" >> "$GITHUB_ENV"
+          if [[ "$origin" == *.aliyuncs.com ]]; then
+            echo "::warning::Default OSS Bucket domain may download HTML instead of displaying H5. Artifact upload is allowed; this is NOT a public website launch."
           fi
       - run: npm ci --no-audit --no-fund
-      - name: Build production H5 with real production configuration
+      - name: Build immutable H5 verification package
         run: npm run build:prod
       - name: Validate production package
         shell: bash
@@ -110,4 +113,5 @@ jobs:
           ossutil stat "${target}index.html"
           ossutil stat "${target}build-meta.json"
           echo "Uploaded OSS release: $target" >> "$GITHUB_STEP_SUMMARY"
-          echo "This is an immutable deployment artifact, NOT a publicly usable H5 URL." >> "$GITHUB_STEP_SUMMARY"
+          echo "This is an immutable artifact for human OSS verification, NOT a launched H5 website." >> "$GITHUB_STEP_SUMMARY"
+          echo "Default-Bucket URL (may download HTML or return 403): https://kbs-sdl.oss-cn-guangzhou.aliyuncs.com/h5/releases/${GITHUB_SHA}/${GITHUB_RUN_ID}.${GITHUB_RUN_ATTEMPT}/index.html" >> "$GITHUB_STEP_SUMMARY"
