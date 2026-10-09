@@ -51,12 +51,13 @@ interface ApiNoticeStore {
   error: string | null
   detailLoadingId: string | null
   detailError: string | null
+  detailErrorId: string | null
 }
 
 const initialApiState: ApiNoticeStore = {
   items: [], details: {}, unreadCount: 0, countLoaded: false, total: 0, page: 0, lastPage: 1,
   loading: false, loadingMore: false, loaded: false, error: null,
-  detailLoadingId: null, detailError: null,
+  detailLoadingId: null, detailError: null, detailErrorId: null,
 }
 export const useApiNoticeStore = create<ApiNoticeStore>(() => ({ ...initialApiState }))
 let lastAccessToken: string | undefined
@@ -107,7 +108,8 @@ export async function refreshRemoteUnreadCount(): Promise<void> {
 export async function refreshRemoteNotices(): Promise<void> {
   if (!isApi) return
   const request = ++feedRequest
-  useApiNoticeStore.setState({ loading: true, loaded: false, error: null })
+  // Supersede pagination without stranding its loading spinner.
+  useApiNoticeStore.setState({ loading: true, loadingMore: false, loaded: false, error: null })
   let epoch = 0
   let seq = 0
   try {
@@ -119,11 +121,11 @@ export async function refreshRemoteNotices(): Promise<void> {
     useApiNoticeStore.setState({
       items: result.data.map(mapNotice),
       page: result.current_page, lastPage: result.last_page, total: result.total,
-      loading: false, loaded: true, error: null,
+      loading: false, loadingMore: false, loaded: true, error: null,
     })
   } catch {
     if (feedRequest === request && (seq === 0 || (currentGeneration() === epoch && feedSequence === seq))) {
-      useApiNoticeStore.setState({ loading: false, loaded: true, error: errorLabel() })
+      useApiNoticeStore.setState({ loading: false, loadingMore: false, loaded: true, error: errorLabel() })
     }
   }
   if (seq !== 0) void refreshRemoteUnreadCount()
@@ -159,7 +161,7 @@ export async function loadMoreRemoteNotices(): Promise<void> {
 export async function loadRemoteNoticeDetail(id: string): Promise<void> {
   if (!isApi) return
   const request = ++detailRequest
-  useApiNoticeStore.setState({ detailLoadingId: id, detailError: null })
+  useApiNoticeStore.setState({ detailLoadingId: id, detailError: null, detailErrorId: null })
   let epoch = 0
   let seq = 0
   try {
@@ -172,12 +174,12 @@ export async function loadRemoteNoticeDetail(id: string): Promise<void> {
     useApiNoticeStore.setState(prev => ({
       details: { ...prev.details, [id]: item },
       items: prev.items.map(existing => existing.id === id ? item : existing),
-      detailLoadingId: null, detailError: null,
+      detailLoadingId: null, detailError: null, detailErrorId: null,
     }))
     void refreshRemoteUnreadCount()
   } catch {
     if (detailRequest === request && (seq === 0 || (currentGeneration() === epoch && detailSequence === seq))) {
-      useApiNoticeStore.setState({ detailLoadingId: null, detailError: '通知无法加载，可能已删除或无权查看' })
+      useApiNoticeStore.setState({ detailLoadingId: null, detailError: '通知无法加载，可能已删除或无权查看', detailErrorId: id })
     }
   }
 }
