@@ -1,11 +1,11 @@
 # Non-production, non-destructive OSS connectivity smoke.
-# This runs only when THIS workflow file changes on dev (e.g. when merged).
+# This runs only when THIS workflow is first promoted or changed on prod.
 # It never deploys the application or modifies an existing release.
 name: OSS Connection Smoke
 
 on:
   push:
-    branches: [dev]
+    branches: [prod]
     paths:
       - '.github/workflows/oss-connection-smoke.yml'
 
