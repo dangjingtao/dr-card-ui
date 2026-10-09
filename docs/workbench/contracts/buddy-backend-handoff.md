@@ -91,3 +91,13 @@ H5 已在 #111 分支补齐搜索结果状态、真实资料字段展示、反�
 - 方法/path/DTO/错误码、token 归属、dev/test 地址、真实双账号证据由 Backend Owner 签署。
 
 以上是草案语义，不代表现有后台接口；H5 仍缺真实联调与 Android/iOS WebView 验收。
+
+
+## 2026-10-09｜#107 H5 第三刀 · 扫码预览/关系列表接线
+
+- `src/services/buddyRelations.ts` 新增 **H5-only** `BuddyRelationsBackend` 合同：`trustedOrigin`、`previewQr(qrUrl)`、`acceptQr(qrUrl)`、`list()`，以服务端已登录用户为可信主体；DTO（示例）为 `{ inviter: {id,nickname,avatarUrl}, relationship:'available'|'self'|'already-buddies'|'unavailable' }`、`{result:'accepted'|'already-buddies'}`、`{items:[{id,nickname,avatarUrl}]}`。这些**仅是前端草案**，不是后台现有路径或返回字段。Owner 确认后统一在服务层适配最终字段；不能把原始 Friends CRUD 当业务确认。
+- `src/pages/BuddyAccept.tsx` 只消费未来 Native **专用的二维码纯识别**传参：App 内 React Router location state `{ buddyScan: { source: 'native-buddy-recognition', raw: '<official HTTPS QR>' } }`。此形状只是 H5 内部消费提案，**不是已落地 JSBridge 名称/回调**。禁止外部网页、公开 query 或 Android 设备事务回调直接注入。
+- 预览必须先从服务端读真实邀请人昵称头像及关系状态。**查询和取消均不写关系**；只有点击「确认成为搭子」才调用后端接受事务；成功路由至 `/buddy`，页面重新请求自己的真实搭子列表；已绑定直接提供「查看我的搭子」，自邀/不可用不允许确认。
+- `src/pages/Buddy.tsx`：正式模式从关系服务取得当前登录人的 `items`，支持 loading / 空态 / 请求失败重试 / 列表头像回退。**不得混用本地 fixture 写成真实列表**。
+- 目前后台 `#105` 与 Native `#110` 均未签署：`signedBackend` 默认未配置，API/test/prod 显示不可用和重试，但**不执行写操作、不假建关系**；preview/dev 的演示二维码和搭子列表明确标注模拟数据，点击演示确认只回显「不建立真实关系」。
+- 双方联调必须证明：App 底部共用扫码识别搭子码→H5 预览/确认→真实列表刷新，并且**设备/卡券二维码能继续原事务与最终结果回调**；微信/system 相机只进入静态提示页。未知码不得执行任何交易。至少两个真实账号验证无效/自己/重复/取消/幂等/刷新重进。
