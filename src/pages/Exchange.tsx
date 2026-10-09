@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronRight, Droplets, PartyPopper, Ticket } from 'lucide-react'
 import DebugPanel from '../components/mobile/DebugPanel'
@@ -9,13 +9,8 @@ import { BottomSheet, Button, EmptyState, SegmentedControl } from '../components
 import { findRouteByPathname } from '../app/router/routes'
 import { runtimePolicy } from '../app/config/runtime'
 import { useUserPointsStat } from './points/usePointsFeed'
-import { useExchangeCoupons } from './exchange/useExchangeFeed'
-import {
-  EXCHANGE_CATEGORIES,
-  EXCHANGE_COPY,
-  resolveExchangeCategory,
-  type ExchangeCategory,
-} from '../app/fixtures'
+import { useExchangeCategories, useExchangeCoupons } from './exchange/useExchangeFeed'
+import { EXCHANGE_COPY } from '../app/fixtures'
 import type { CouponRedeemView } from '../services/coupons'
 import { redeemExchangeProduct, H014_EXCHANGE_REDEEM_UNAVAILABLE_COPY } from '../services/exchange'
 import kitThumb from '../assets/brand/member/checkin-dearseed-kit.webp'
@@ -51,15 +46,16 @@ const availabilityButtonLabel = (state: ExchangeAvailability): string =>
  * -------------------------------------------------------------
  * 事实源：docs/prototype/04-mall-card-order.md §1–§3；用户 2026-09-29 提供的界面参考图（图一）。
  * 接口来源：`GET /api/coupons/index`（7002「优惠券管理」，券列表接口，用户 2026-09-29 提供图二）。
- * 已确认：顶部「我的泡泡值 + 立即兑换」余额条、四分类 Tab、两列体验券卡
+ * 已确认：顶部「我的泡泡值 + 立即兑换」余额条、后台动态分类 Tab、两列体验券卡
  *        （券图 / 名称 / 所需泡泡值 / 兑换量 / 已兑完遮罩 / 兑换按钮）、
  *        点击卡片打开兑换弹窗（券图名 / x1 / 说明 / 泡泡值 / 立即兑换）。
  *
  * 数据口径（2026-09-29 与产品确认）：
  * - 当前真实业务只开放「通用体验包」兑换；多分类 / 多券页面结构保留，作为后续恢复多体验券时的扩展位，
  *   不代表当前后端必须实现多 SKU 兑换；
- * - 分类 Tab 只保留 H5 历史页面状态；后端是否支持 `category_id` / 服务端分类过滤仍待确认，
- *   当前请求不携带分类参数，也不预设后端分类主键；
+ * - 分类从 couponscategory/index(pid=0) 动态读取；CouponsIndex DTO 仅声明分页，
+ *   不臆测 category_id 服务端过滤有效；读取完整券目录并校验分页后才允许本地分类，
+ *   不允许单页假筛选；错误明确阻断。UX-E 保留页面内部分类状态，不走 URL；
  * - 卡片所需泡泡值 ← `points_number`，兑换量 ← `exchanged_nuuur`，
  *   已兑完 ← `exchanged_nuuur >= total_number` 或已下架，泡泡值不足 ← `points_number > 我的余额`；
  * - 接口无 `desc` / `image` 时分别用 `short_desc` 与本地品牌图兜底。
@@ -72,8 +68,8 @@ const availabilityButtonLabel = (state: ExchangeAvailability): string =>
 export default function Exchange() {
   const navigate = useNavigate()
   const route = findRouteByPathname('/exchange')
-  /** 当前分类只是一项 H5 展示状态，不映射成后台分类参数或 URL。 */
-  const [category, setCategory] = useState<ExchangeCategory>('all')
+  /** UX-E 分类为页面本地状态；真实分类 key 来自后台，绝不靠 URL/硬编码维护。 */
+  const [category, setCategory] = useState<string>('all')
   const [activeProductId, setActiveProductId] = useState<string | null>(null)
   const [simulationComplete, setSimulationComplete] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -81,16 +77,31 @@ export default function Exchange() {
   const submissionLock = useRef(false)
   const couponListRef = useRef<HTMLElement>(null)
 
-  /** GET /api/coupons/index：保持真实列表来源及服务端字段语义。 */
-  const { remote: listRemote, reload: reloadCoupons } = useExchangeCoupons()
+  const { remote: categoriesRemote, reload: reloadCategories } = useExchangeCategories()
+  const categoryOptions = categoriesRemote.state === 'success' ? categoriesRemote.data : []
+  const validCategory = category === 'all' || categoryOptions.some(option => option.key === category)
+  // Selected categories are never silently treated as 'all' while backend options are unavailable.
+  const categoryPending = category !== 'all' && (categoriesRemote.state !== 'success' || !validCategory)
+  const { remote: listRemote, reload: reloadCoupons } = useExchangeCoupons(
+    category === 'all' ? undefined : category,
+    !categoryPending,
+  )
   const list = listRemote.state === 'success' ? listRemote.data : []
+
+  useEffect(() => {
+    if (categoriesRemote.state !== 'success' || validCategory) return
+    // Backend removed this category: reset selection and stale redeem sheet, not the URL.
+    setCategory('all')
+    setActiveProductId(null)
+    setSubmitError(null)
+  }, [categoriesRemote.state, validCategory])
 
   /** GET /api/userpoints/stat：余额严格取 points。兑换结果不在页面伪扣款。 */
   const { remote: statRemote } = useUserPointsStat()
   const balance = statRemote.state === 'success' ? statRemote.data.points : null
 
   // Resolve against current list to prevent a stale coupon selection after a reload.
-  const activeProduct = activeProductId === null
+  const activeProduct = activeProductId === null || categoryPending
     ? null
     : list.find((product) => String(product.id) === activeProductId) ?? null
   const availability = activeProduct ? resolveAvailability(activeProduct, balance) : 'balance-unavailable'
@@ -103,7 +114,8 @@ export default function Exchange() {
 
   const changeCategory = (value: string) => {
     if (submissionLock.current) return
-    setCategory(resolveExchangeCategory(value))
+    const next = value === 'all' || categoryOptions.some(option => option.key === value) ? value : 'all'
+    setCategory(next)
     setActiveProductId(null)
     setSubmitError(null)
   }
@@ -167,13 +179,26 @@ export default function Exchange() {
       <SegmentedControl
         variant="accent-pill"
         className="mx-4 mt-2.5"
-        items={EXCHANGE_CATEGORIES.map((item) => ({ value: item.key, label: item.label }))}
-        value={category}
+        items={[{ value: 'all', label: '全部' }, ...categoryOptions.map(item => ({ value: item.key, label: item.label }))]}
+        value={validCategory ? category : 'all'}
         onChange={changeCategory}
       />
+      {categoriesRemote.state === 'loading' && (
+        <p role="status" className="mx-4 mt-2 text-xs text-text-tertiary">正在加载体验券分类…</p>
+      )}
+      {categoriesRemote.state === 'error' && (
+        <div role="alert" className="mx-4 mt-2 flex items-center justify-between gap-2 text-xs text-text-secondary">
+          <span>分类加载失败：{categoriesRemote.message}</span>
+          <Button variant="outline" onClick={reloadCategories}>重试分类</Button>
+        </div>
+      )}
 
       <section ref={couponListRef} className="mx-4 mt-3 flex-1" aria-label="洗护体验券列表">
-        {listRemote.state === 'loading' ? (
+        {categoryPending ? (
+          <div role="status" className="py-8 text-center text-sm text-text-secondary">
+            {categoriesRemote.state === 'error' ? '请先重试分类加载' : '正在确认所选分类…'}
+          </div>
+        ) : listRemote.state === 'loading' ? (
           <ul className="grid grid-cols-2 gap-3" aria-busy>
             {Array.from({ length: 4 }).map((_, index) => (
               <li key={index} className="min-w-0">

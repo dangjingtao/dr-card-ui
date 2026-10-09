@@ -1,26 +1,4 @@
-export type ExchangeCategory = 'all' | 'shampoo' | 'conditioner' | 'scalp-care'
-
-/**
- * 兑换专区历史分类 UI。
- *
- * 2026-09-29 边界修正：
- * - 这些 key/label 只描述 H5 已保留的页面结构；
- * - 后端是否提供 category_id / 服务端分类过滤仍待确认；
- * - 不在前端预设 2/3/4 等后端主键，也不把 UI 分类反推成接口契约。
- */
-export const EXCHANGE_CATEGORIES: Array<{
-  key: ExchangeCategory
-  label: string
-}> = [
-  { key: 'all', label: '全部' },
-  { key: 'shampoo', label: '洗发体验' },
-  { key: 'conditioner', label: '护发体验' },
-  { key: 'scalp-care', label: '头皮护理' },
-]
-
-export function resolveExchangeCategory(raw: string | null): ExchangeCategory {
-  return EXCHANGE_CATEGORIES.some((item) => item.key === raw) ? raw as ExchangeCategory : 'all'
-}
+/** #124: Real category tabs come from the backend. No hardcoded category fixtures. */
 
 export const EXCHANGE_COPY = {
   balanceLabel: '泡泡值余额',

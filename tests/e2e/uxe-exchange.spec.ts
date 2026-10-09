@@ -5,7 +5,8 @@ test('@formal-h5 UX-E exchange tabs and confirmation remain within one URL', asy
   const urlBefore = new URL(page.url())
   expect(urlBefore.pathname).toBe('/exchange')
   expect(urlBefore.search).toBe('')
-  const tab = page.getByRole('tab', { name: '洗发体验' })
+  // #124: tabs come from backend category data; no historical hardcoded 洗发体验 category.
+  const tab = page.getByRole('tab', { name: 'Mock·通用体验包' })
   await expect(tab).toBeVisible()
   await tab.click()
   await expect(tab).toHaveAttribute('aria-selected', 'true')
