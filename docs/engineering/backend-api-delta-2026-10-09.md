@@ -99,7 +99,9 @@
 
 ## 5. 当时 H5 消费者缺口（14:25 历史快照，现已部分实施）
 
-| H5 页面 / service | 当前实际代码 | 下一步 |
+> 以下两列均为**当时观察/当时建议**，不再作为当前待办清单。已入 `dev` 的通知、分类、搭子、客服实施见文首 PR 链接；真实验收仍按对应 Issue。
+
+| H5 页面 / service | 14:25 当时的代码（历史） | 当时提出的下一步（现状请看文首） |
 | --- | --- | --- |
 | `/buddy`、`/buddy/invite/phone` / `src/services/buddyPhone.ts` | 列表仍有本地 fixture；手机号 search/invite 使用 `/__h014/*` 占位 | 与 #105 核对状态语义后接真正安全的 API，不直接把 `friends/add` 当扫码确认 |
 | `/notifications`、`/notifications/:id` | `src/app/state/notifications.ts` 读取 `NOTIFICATION_FIXTURES`，已读状态只存在本会话 | 增加独立通知 service，分页/未读/已读基于登录主体，保留原型 UI |
