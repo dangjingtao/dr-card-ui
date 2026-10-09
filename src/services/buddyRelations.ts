@@ -63,6 +63,19 @@ export function readBuddyScanNavigation(value: unknown): string | null {
 }
 
 function checkQr(raw: string, adapter?: BuddyRelationsBackend): boolean {
+  // Reject obviously malformed QR data before the backend is wired. A well-formed
+  // QR still requires #105's authenticated server verification, not a client-side guess.
+  try {
+    const url = new URL(raw)
+    if (raw.trim() !== raw || raw.length > 2048 || url.protocol !== 'https:' ||
+      url.username || url.password || url.hash || url.port ||
+      url.pathname !== '/buddy/invite/scan' ||
+      ![...url.searchParams.values()].some(v => v.length >= 16)) {
+      throw new Error('unsupported QR')
+    }
+  } catch {
+    throw new BuddyRelationsError('invalid-code')
+  }
   if (runtimePolicy.dataMode === 'mock' && raw === MOCK_BUDDY_SCAN_URL && !adapter) return true
   if (!adapter) throw new BuddyRelationsError('not-configured')
   try {
