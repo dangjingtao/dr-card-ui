@@ -186,6 +186,40 @@ describe('Card MyCoupons integration', () => {
     expect(screen.queryByText('核心洗发水体验券')).toBeNull()
   })
 
+  it('renders sparse backend records without inventing amount, dates or usable log IDs', async () => {
+    mocks.fetchMyCoupons.mockImplementation(({ type }: { type: 'unused' | 'used' | 'out_of_date' }) =>
+      Promise.resolve({
+        data: type === 'unused' ? [{ active_name: '精简体验券', enable_amount: null }] : [],
+        current_page: 1,
+        per_page: 100,
+        total: type === 'unused' ? 1 : 0,
+        last_page: 1,
+      }),
+    )
+
+    renderCard()
+
+    expect(await screen.findByText('精简体验券')).toBeTruthy()
+    expect(screen.getByRole('button', { name: '使用' }).hasAttribute('disabled')).toBe(true)
+    expect(screen.getByRole('button', { name: '转赠' }).hasAttribute('disabled')).toBe(true)
+    expect(screen.queryByText('null')).toBeNull()
+    expect(screen.getByRole('tab', { name: /可用/ }).textContent).toContain('1')
+  })
+
+  it('does not expose internal contract names in card pack error messages', async () => {
+    const { AppError } = await import('../lib/appError')
+    mocks.fetchMyCoupons.mockImplementation(({ type }: { type: 'unused' | 'used' | 'out_of_date' }) =>
+      type === 'unused'
+        ? Promise.reject(new AppError({ kind: 'contract', message: '外部数据不符合 coupons.myCoupons.data 契约' }))
+        : Promise.resolve({ data: [], current_page: 1, per_page: 100, total: 0, last_page: 1 }),
+    )
+
+    renderCard()
+
+    expect(await screen.findByText('体验券数据暂时无法展示，请稍后重试')).toBeTruthy()
+    expect(screen.queryByText(/coupons.myCoupons.data/)).toBeNull()
+  })
+
   it('renders the shared empty-state structure for each coupon tab', async () => {
     mocks.fetchMyCoupons.mockResolvedValue({
       data: [],
