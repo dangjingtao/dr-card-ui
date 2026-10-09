@@ -111,7 +111,7 @@ jobs:
           grep -F '"dataMode":"mock"' /tmp/cf-auto-build.txt
           grep -F '"apiBaseConfigured":false' /tmp/cf-auto-build.txt
 
-          CF_PAGES_BRANCH=test CF_PAGES_COMMIT_SHA="$GITHUB_SHA" VITE_API_BASE_URL=http://example.invalid node scripts/build-h5.mjs cf --dry-run | tee /tmp/cf-test-build.txt
+          CF_PAGES_BRANCH=test CF_PAGES_COMMIT_SHA="$GITHUB_SHA" VITE_API_BASE_URL=http://example.invalid VITE_BUDDY_PUBLIC_ORIGIN=https://test.dr-card-ui.pages.dev node scripts/build-h5.mjs cf --dry-run | tee /tmp/cf-test-build.txt
           grep -F '"appEnvironment":"test"' /tmp/cf-test-build.txt
           grep -F '"dataMode":"api"' /tmp/cf-test-build.txt
           grep -F '"bridgeMode":"native"' /tmp/cf-test-build.txt
@@ -194,6 +194,8 @@ jobs:
       - name: Build test bundle
         env:
           VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+          # CI build fixture; actual Pages deployments must configure their own official origin.
+          VITE_BUDDY_PUBLIC_ORIGIN: https://test.dr-card-ui.pages.dev
         run: npm run build:test
 
       - name: Verify test build identity
@@ -204,6 +206,10 @@ jobs:
       - name: Reject Mock in production-like builds
         shell: bash
         run: |
+          if VITE_API_BASE_URL=http://example.invalid node scripts/build-h5.mjs test --dry-run; then
+            echo 'test accepted an absent official Buddy QR origin.'
+            exit 1
+          fi
           if VITE_DATA_MODE=mock node scripts/build-h5.mjs test --dry-run; then
             echo 'test accepted forbidden API Mock configuration.'
             exit 1
@@ -214,6 +220,9 @@ jobs:
           fi
 
       - name: Build production bundle
+        env:
+          # CI build-only placeholder, not a production deployment configuration.
+          VITE_BUDDY_PUBLIC_ORIGIN: https://example.invalid
         run: npm run build:prod
 
       - name: Verify production build identity
@@ -272,6 +281,7 @@ jobs:
       VITE_APP_ENV: test
       VITE_DATA_MODE: api
       VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+      VITE_BUDDY_PUBLIC_ORIGIN: https://test.dr-card-ui.pages.dev
     steps:
       - name: Checkout
         uses: actions/checkout@v4

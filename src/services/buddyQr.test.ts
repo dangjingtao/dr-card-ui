@@ -1,10 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
 
-vi.mock('../app/config/runtime', () => ({
-  runtimePolicy: { dataMode: 'mock' },
-}))
+const mode = vi.hoisted(() => ({ dataMode: 'mock' }))
+const profiles = vi.hoisted(() => ({ fetchUserProfile: vi.fn() }))
+vi.mock('../app/config/runtime', () => ({ runtimePolicy: mode }))
+vi.mock('./userProfile', () => ({ fetchUserProfile: profiles.fetchUserProfile }))
 
-import { BuddyQrError, loadOwnBuddyQr, validateBuddyQrUrl } from './buddyQr'
+import { BuddyQrError, buildBuddyInviteUrl, loadOwnBuddyQr, validateBuddyQrUrl } from './buddyQr'
 
 const origin = 'https://card.example.org'
 const valid = `${origin}/buddy/invite/scan?token=secure-non-user-identifier-12345678`
@@ -15,6 +16,37 @@ describe('buddy QR contract boundary', () => {
     expect(qr.demo).toBe(true)
     expect(qr.url).toMatch(/^https:\/\/test\.dr-card-ui\.pages\.dev\/buddy\/invite\/scan/)
     expect(qr.url).toContain('demo=')
+  })
+
+  it('generates the official QR from the authenticated profile in API mode', async () => {
+    const code = '123e4567-e89b-42d3-a456-426614174000'
+    mode.dataMode = 'api'
+    vi.stubEnv('VITE_BUDDY_PUBLIC_ORIGIN', origin)
+    profiles.fetchUserProfile.mockResolvedValue({ identifyCode: code })
+    try {
+      expect(await loadOwnBuddyQr()).toEqual({ url: `${origin}/buddy/invite/scan?code=${code}`, demo: false })
+      expect(buildBuddyInviteUrl(code, origin)).toContain(`code=${code}`)
+    } finally {
+      mode.dataMode = 'mock'
+      vi.unstubAllEnvs()
+      profiles.fetchUserProfile.mockReset()
+    }
+  })
+
+  it('reports a missing identifier or public domain explicitly', async () => {
+    mode.dataMode = 'api'
+    try {
+      profiles.fetchUserProfile.mockResolvedValue({ identifyCode: undefined })
+      await expect(loadOwnBuddyQr()).rejects.toMatchObject({ reason: 'missing-code' })
+      profiles.fetchUserProfile.mockResolvedValue({ identifyCode: '123e4567-e89b-42d3-a456-426614174000' })
+      vi.stubEnv('VITE_BUDDY_PUBLIC_ORIGIN', '')
+      await expect(loadOwnBuddyQr()).rejects.toMatchObject({ reason: 'missing-origin' })
+      expect(() => buildBuddyInviteUrl('invalid', origin)).toThrow(BuddyQrError)
+    } finally {
+      mode.dataMode = 'mock'
+      vi.unstubAllEnvs()
+      profiles.fetchUserProfile.mockReset()
+    }
   })
 
   it('accepts trusted HTTPS URLs with an opaque identifier', () => {

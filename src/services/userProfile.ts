@@ -123,6 +123,7 @@ const userProfileSchema = z
     real_name: z.string().nullish(),
     points: z.number(),
     kbs_id: z.string().nullish(),
+    identify_code: z.string().uuid().nullish(),
   })
   .passthrough()
   .superRefine((value, context) => {
@@ -165,6 +166,7 @@ export interface UserProfile {
   points: number
   /** 上游 kbs 会员 ID（如 K016998956）。 */
   kbsId?: string
+  identifyCode?: string
 }
 
 function trimOrUndefined(value: string | null | undefined): string | undefined {
@@ -194,6 +196,7 @@ export function parseUserProfile(payload: unknown): UserProfile {
     realName: trimOrUndefined(profile.real_name),
     points: profile.points,
     kbsId: trimOrUndefined(profile.kbs_id),
+    identifyCode: profile.identify_code ?? undefined,
   }
 }
 
