@@ -53,7 +53,7 @@ export function useChatHistory() {
     const state = current.current
     const key = sessionToken()
     if (!key || state.token !== key || state.data.status !== 'ready'
-      || state.data.loadingMore || state.data.page >= ready.lastPage) return
+      || state.data.loadingMore || state.data.page >= state.data.lastPage) return
     const ready = state.data
     pending.current?.abort()
     const controller = new AbortController()
