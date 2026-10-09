@@ -125,6 +125,60 @@ describe('#135 chat history lifecycle and account isolation', () => {
     hook.unmount()
   })
 
+  it('buffers live agent pushes before GET index is ready and deduplicates when history resolves', async () => {
+    let finish!: (value: ReturnType<typeof page>) => void
+    mocks.fetch.mockImplementationOnce(() => new Promise(resolve => { finish = resolve }))
+    const hook = renderHook(() => useChatHistory())
+    expect(hook.result.current.status).toBe('loading')
+    act(() => {
+      hook.result.current.acceptPush({ ...record(32), create_time: 1790000000 })
+      hook.result.current.acceptPush({ ...record(32), create_time: 1790000000 })
+      hook.result.current.acceptPush({ ...record(31), create_time: 1790000001 })
+    })
+    expect(hook.result.current.messages).toEqual([])
+    await act(async () => finish(page([record(32), record(30)], 1, 3, 1)))
+    expect(hook.result.current.status).toBe('ready')
+    expect(hook.result.current.messages.map(m => m.id)).toEqual(['30', '31', '32'])
+    expect(hook.result.current.messages.filter(m => m.id === '32')).toHaveLength(1)
+    hook.unmount()
+  })
+
+  it('drops buffered pushes for old auth session during token rotation', async () => {
+    let finishOld!: (value: ReturnType<typeof page>) => void
+    mocks.fetch.mockImplementationOnce(() => new Promise(resolve => { finishOld = resolve }))
+      .mockResolvedValueOnce(page([record(50)], 1, 1, 1))
+    const hook = renderHook(() => useChatHistory())
+    act(() => hook.result.current.acceptPush(record(99)))
+    await act(async () => {
+      mocks.token = 'second-token'
+      window.dispatchEvent(new Event('dr-card-ui:auth-session-changed'))
+    })
+    await waitFor(() => expect(hook.result.current.status).toBe('ready'))
+    expect(hook.result.current.messages.map(m => m.id)).toEqual(['50'])
+    await act(async () => finishOld(page([record(99)])))
+    expect(hook.result.current.messages.map(m => m.id)).toEqual(['50'])
+    hook.unmount()
+  })
+
+  it('converts reconnect total from 100/page to the 30/page history cursor without false drift', async () => {
+    mocks.fetch.mockResolvedValueOnce(page([record(30)], 1, 59, 2))
+      .mockResolvedValueOnce({ ...page([record(65), record(30)], 1, 65, 1), per_page: 100 })
+      .mockResolvedValueOnce(page([record(29), record(28)], 2, 65, 3))
+    const hook = renderHook(() => useChatHistory())
+    await waitFor(() => expect(hook.result.current.status).toBe('ready'))
+    expect(hook.result.current.lastPage).toBe(2)
+    let recovered = false
+    await act(async () => { recovered = await hook.result.current.syncMissed(30) })
+    expect(recovered).toBe(true)
+    expect(hook.result.current.lastPage).toBe(3)
+    expect(hook.result.current.hasMore).toBe(true)
+    act(() => hook.result.current.loadMore())
+    await waitFor(() => expect(hook.result.current.page).toBe(2))
+    expect(hook.result.current.moreError).toBeNull()
+    expect(hook.result.current.messages.map(m => m.id)).toEqual(['28', '29', '30', '65'])
+    hook.unmount()
+  })
+
   it('re-entering page fetches again and an empty page is a real empty state', async () => {
     mocks.fetch.mockResolvedValue(page([]))
     const first = renderHook(() => useChatHistory())
