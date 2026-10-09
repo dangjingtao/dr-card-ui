@@ -128,6 +128,9 @@ export async function sendChatStream(content: string, options: ChatStreamOptions
     return human ? { mode: 'human', text: '' } : { mode: 'ai', text: reply, ...(messageId ? { messageId } : {}) }
   } catch (error) {
     if (timedOut) throw new AppError({ kind: 'timeout', message: '客服回复超时，请检查历史后再决定是否重发' })
+    // A server 401 may trigger our own auth refresh, which clears the old session.
+    // Preserve the authoritative 401 error instead of misreporting it as user cancellation.
+    if (error instanceof AppError && error.status === 401) throw error
     if (sessionChanged) throw new AppError({ kind: 'cancelled', message: '账号已变化，客服发送中止' })
     if (options.signal?.aborted) throw new AppError({ kind: 'cancelled', message: '客服发送已取消' })
     if (controller.signal.aborted && !(error instanceof AppError)) {
