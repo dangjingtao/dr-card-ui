@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import {
   BellOff,
   Wallet,
@@ -22,6 +22,23 @@ import { markAllNotificationsRead, refreshRemoteNotices, loadMoreRemoteNotices, 
 import { runtimePolicy } from '../app/config/runtime'
 
 type TabKey = 'all' | 'unread' | 'system' | 'activity' | 'event'
+
+/** Preserve the selected tab for this browser-history entry on detail-page POP; do not use URL/query. */
+const tabByHistoryEntry = new Map<string, TabKey>()
+
+export function notificationEmptyCopy(tab: TabKey, hasMore: boolean) {
+  if (hasMore) return {
+    title: '当前已加载消息中暂无此类通知',
+    description: '还有更多消息可加载，继续查看',
+  }
+  switch (tab) {
+    case 'all': return { title: '暂无通知', description: '有新消息时会在这里显示' }
+    case 'unread': return { title: '消息都已读完', description: '暂时没有未读通知' }
+    case 'system': return { title: '暂无推送通知', description: '暂时没有相关推送消息' }
+    case 'event': return { title: '暂无活动通知', description: '有新活动消息时会在这里显示' }
+    default: return { title: '暂无通知', description: '当前分类没有消息' }
+  }
+}
 
 const GROUP_ORDER = ['今天', '昨天', '更早'] as const
 
@@ -91,12 +108,35 @@ function getCatVisual(item: NotificationItem) {
 
 export default function Notifications() {
   const navigate = useNavigate()
+  const location = useLocation()
   const route = findRouteByPathname('/notifications')
   const { state } = useFixtureState(route)
   const { overlay, close } = useOverlay()
   const { items, unreadCount, total, loading, loadingMore, loaded, hasMore, error } = useNotifications()
 
-  const [tab, setTab] = useState<TabKey>(state?.key === 'unread' ? 'unread' : 'all')
+  const [tab, setTab] = useState<TabKey>(() => tabByHistoryEntry.get(location.key) ?? (state?.key === 'unread' ? 'unread' : 'all'))
+  const switchScrollReset = useRef(false)
+
+  // A tab change is not a navigation. Reset the existing shell scroll only after the new
+  // list commits; on history POP leave the shell's H5ScrollRestoration untouched.
+  useLayoutEffect(() => {
+    if (!switchScrollReset.current) return
+    switchScrollReset.current = false
+    document.querySelector<HTMLElement>('[data-page-scroll]')?.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+  }, [tab])
+
+  const changeTab = (value: string) => {
+    const nextTab = value as TabKey
+    if (tab === nextTab) return
+    tabByHistoryEntry.set(location.key, nextTab)
+    // A tiny bounded session cache: only remember current browser history entries, never persist.
+    if (tabByHistoryEntry.size > 100) {
+      const oldest = tabByHistoryEntry.keys().next().value
+      if (oldest) tabByHistoryEntry.delete(oldest)
+    }
+    switchScrollReset.current = true
+    setTab(nextTab)
+  }
   const [toast, setToast] = useState<string | null>(null)
   const [markingRead, setMarkingRead] = useState(false)
 
@@ -123,8 +163,11 @@ export default function Notifications() {
     })).filter((group) => group.items.length > 0)
   }, [list])
 
+  const emptyCopy = notificationEmptyCopy(tab, hasMore)
+
   const tabs = [
-    { value: 'all', label: <TabLabel text="全部" count={unreadCount > 0 ? unreadCount : total} active={tab === 'all'} /> },
+    // Counts never change meaning: 全部 = total notices, 未读 = unread notices.
+    { value: 'all', label: <TabLabel text="全部" count={total} active={tab === 'all'} /> },
     { value: 'unread', label: <TabLabel text="未读" count={unreadCount} active={tab === 'unread'} /> },
     { value: 'system', label: <TabLabel text="推送" active={tab === 'system'} /> },
     { value: 'event', label: <TabLabel text="活动" active={tab === 'event'} /> },
@@ -134,7 +177,7 @@ export default function Notifications() {
     if (!toast) return
     const timer = window.setTimeout(() => setToast(null), 1600)
     return () => window.clearTimeout(timer)
-}, [toast])
+  }, [toast])
 
   const confirmMarkAll = async () => {
     if (markingRead) return
@@ -158,9 +201,20 @@ export default function Notifications() {
   return (
     <PageContainer inset={false} className="pb-6">
       {/* Tab 切换（壳层 TitleBar 已展示标题，页面内不再重复金色标题块） */}
-      <div className="shrink-0 overflow-x-auto bg-white border-b border-divider px-4 pt-3 pb-1">
-        <SegmentedControl items={tabs} value={tab} onChange={(value) => setTab(value as TabKey)} />
+      <div
+        data-notifications-tabs
+        className="sticky top-0 z-20 border-b border-border-subtle bg-background px-4 pb-2 pt-3"
+      >
+        <SegmentedControl
+          variant="accent-pill"
+          className="!bg-surface-subtle"
+          items={tabs}
+          value={tab}
+          onChange={changeTab}
+        />
       </div>
+
+
 
       {/* Business invitation status does not change when a generic notification is marked read. */}
       {(tab === 'all' || tab === 'unread') && <BuddyInvitationInbox />}
@@ -249,8 +303,8 @@ export default function Notifications() {
                 <BellOff className="h-12 w-12 text-[#D4A853]" strokeWidth={1.6} />
               </span>
             }
-            title={<span className="text-[15px] leading-[22px] text-text-secondary">{hasMore ? '当前已加载消息中暂无此类通知' : '暂无通知'}</span>}
-            supportingText={<span className="text-xs leading-[18px]">{hasMore ? '还可以继续加载更多消息' : '当前分类下还没有消息'}</span>}
+            title={<span className="text-[15px] leading-[22px] text-text-secondary">{emptyCopy.title}</span>}
+            supportingText={<span className="text-xs leading-[18px]">{emptyCopy.description}</span>}
           />
         )}
       </div>
