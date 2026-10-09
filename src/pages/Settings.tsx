@@ -56,15 +56,17 @@ export default function Settings() {
   const [baseline, setBaseline] = useState(initialProfile)
   const profileLoad = identity.state === 'success' ? 'ready' : identity.state
   const dirty = nickname !== baseline.nickname || year !== baseline.year || pendingImage !== null
-  const dirtyRef = useRef(dirty)
-  dirtyRef.current = dirty
+  // Track which individual fields the user has touched, not just a global dirty
+  // boolean: a late /detail response must fill the untouched nickname even when
+  // the user picked a grade/avatar before the first request completed.
+  const touchedRef = useRef({ nickname: false, year: false, avatar: false })
 
   useEffect(() => {
-    if (identity.state !== 'success' || dirtyRef.current) return
+    if (identity.state !== 'success') return
     const next = { nickname: identity.data.nickname, year: matchYearOption(identity.data.grade) }
-    setNickname(next.nickname)
-    setYear(next.year)
-    setAvatarSrc(identity.data.avatar)
+    setNickname((current) => touchedRef.current.nickname ? current : next.nickname)
+    setYear((current) => touchedRef.current.year ? current : next.year)
+    setAvatarSrc((current) => touchedRef.current.avatar ? current : identity.data.avatar)
     setBaseline(next)
   }, [identity])
 
@@ -97,6 +99,7 @@ export default function Settings() {
           ? await takePhoto()
           : await chooseImage()
 
+      touchedRef.current.avatar = true
       setPendingImage(result)
       setAvatarSrc(`data:${result.mimeType};base64,${result.imageBase64}`)
       setSaveError(null)
@@ -152,6 +155,7 @@ export default function Settings() {
       setNickname(next.nickname)
       setYear(next.year)
       setBaseline(next)
+      touchedRef.current = { nickname: false, year: false, avatar: false }
       bypassGuard.current = true
       flashToast()
       close()
@@ -202,7 +206,7 @@ export default function Settings() {
       )}
       <section className="relative z-10 mt-2 rounded-2xl bg-surface shadow-sm">
         <div className="flex items-center gap-3 border-b border-border-subtle px-4 py-3">
-          <span className="w-12 shrink-0 text-sm text-text-tertiary">头像</span>
+          <span className="w-20 shrink-0 whitespace-nowrap text-sm text-text-tertiary">头像</span>
           <span className="flex min-w-0 flex-1 justify-end">
             <button type="button" onClick={() => setSheet('avatar')} className="h-11 w-11 overflow-hidden rounded-full" aria-label="修改头像">
               <UserAvatar src={avatarSrc} />
@@ -213,7 +217,7 @@ export default function Settings() {
           </button>
         </div>
         <div className="flex items-center gap-3 border-b border-border-subtle px-4 py-3">
-          <span className="w-12 shrink-0 text-sm text-text-tertiary">昵称</span>
+          <span className="w-20 shrink-0 whitespace-nowrap text-sm text-text-tertiary">昵称</span>
           <span className="min-w-0 flex-1 truncate text-right text-sm text-text-primary">
             {profileLoad === 'loading' ? <span className="text-text-tertiary">加载中…</span> : nickname}
           </span>
@@ -222,11 +226,11 @@ export default function Settings() {
           </button>
         </div>
         <div className="flex items-center gap-3 border-b border-border-subtle px-4 py-3">
-          <span className="w-12 shrink-0 text-sm text-text-tertiary">生日</span>
+          <span className="w-20 shrink-0 whitespace-nowrap text-sm text-text-tertiary">生日</span>
           <span className="min-w-0 flex-1 text-right text-sm text-text-tertiary">暂不支持修改（等待后台接口）</span>
         </div>
         <div className="flex items-center gap-3 px-4 py-3">
-          <span className="w-20 shrink-0 text-sm text-text-tertiary">消费密码</span>
+          <span className="w-20 shrink-0 whitespace-nowrap text-sm text-text-tertiary">消费密码</span>
           <span className="min-w-0 flex-1 text-right text-sm text-text-tertiary">暂不支持设置（等待后台接口）</span>
         </div>
       </section>
@@ -243,7 +247,7 @@ export default function Settings() {
                   <button
                     key={item}
                     type="button"
-                    onClick={() => setYear(item)}
+                    onClick={() => { touchedRef.current.year = true; setYear(item) }}
                     aria-pressed={year === item}
                     className={`h-9 rounded-lg border text-sm ${
                       year === item ? 'border-primary bg-surface-selected text-text-brand' : 'border-border bg-surface text-text-primary'
@@ -334,7 +338,7 @@ export default function Settings() {
                     <input
                       value={nickname}
                       maxLength={12}
-                      onChange={(e) => setNickname(e.target.value)}
+                      onChange={(e) => { touchedRef.current.nickname = true; setNickname(e.target.value) }}
                       placeholder="请输入昵称"
                       className="mt-1.5 block h-11 w-full rounded-control border border-border bg-surface px-3 text-base outline-none focus:border-primary"
                     />
