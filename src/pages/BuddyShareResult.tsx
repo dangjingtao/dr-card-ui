@@ -2,7 +2,6 @@ import { AlertCircle, CheckCircle2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import DebugPanel from '../components/mobile/DebugPanel'
 import PromptOverlay from '../components/mobile/PromptOverlay'
-import WecomQrPlaceholder from '../components/mobile/WecomQrPlaceholder'
 import { Button } from '../components/ui'
 import {
   BUDDY_INVITE_COPY,
@@ -69,12 +68,9 @@ export default function BuddyShareResult() {
         >
           {feedback.ok ? (
             <>
-              <WecomQrPlaceholder
-                className="mx-auto w-fit"
-                label="已生成的搭子邀请二维码占位"
-                caption={BUDDY_INVITE_COPY.qrScanHint}
-                cell={12}
-              />
+              <span aria-hidden className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-success-bg text-success-text">
+                <CheckCircle2 className="h-10 w-10" />
+              </span>
               <p className="mt-4 text-sm leading-6 text-text-secondary">{feedback.text}</p>
             </>
           ) : (
