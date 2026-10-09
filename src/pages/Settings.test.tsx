@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 
 const mocks = vi.hoisted(() => ({
   navigate: vi.fn(),
@@ -199,6 +199,56 @@ describe('Settings profile backfill', () => {
     })
     expect(mocks.fetchUserProfileDetail).toHaveBeenCalledTimes(2)
     expect(screen.queryByRole('alert')).toBeNull()
+  })
+})
+
+describe('H044 slow profile hydration and UX-A layout', () => {
+  it('keeps an early grade selection while filling the untouched nickname on late /detail', async () => {
+    let resolveDetail!: (value: { nickname: string; grade: string; avatar?: string }) => void
+    mocks.fetchUserProfileDetail.mockImplementation(() => new Promise((resolve) => { resolveDetail = resolve }))
+    mocks.updateUserProfile.mockResolvedValue({
+      id: 5, nick_name: '服务端昵称', avatar_img: null, student_grade: '大三',
+    })
+    render(<Settings />)
+    fireEvent.click(screen.getByRole('button', { name: '大三' }))
+    await act(async () => resolveDetail({ nickname: '服务端昵称', grade: '大二' }))
+    expect(await screen.findByText('服务端昵称')).toBeTruthy()
+    expect(screen.getByRole('button', { name: '大三' }).getAttribute('aria-pressed')).toBe('true')
+    fireEvent.click(screen.getByRole('button', { name: '确认修改' }))
+    await waitFor(() => expect(mocks.updateUserProfile).toHaveBeenCalledWith({ student_grade: '大三' }))
+    expect(screen.queryByText('昵称不能为空，且不能超过 50 个字符')).toBeNull()
+  })
+
+  it('keeps a staged Native avatar while hydrating an untouched nickname and grade', async () => {
+    let resolveDetail!: (value: { nickname: string; grade: string; avatar?: string }) => void
+    mocks.fetchUserProfileDetail.mockImplementation(() => new Promise((resolve) => { resolveDetail = resolve }))
+    mocks.takePhoto.mockResolvedValue({ mimeType: 'image/png', imageBase64: 'aGVsbG8=' })
+    mocks.uploadUserAvatar.mockResolvedValue('https://cdn.example.com/new-avatar.png')
+    mocks.updateUserProfile.mockResolvedValue({
+      id: 5, nick_name: '服务端昵称', avatar_img: 'https://cdn.example.com/new-avatar.png', student_grade: '大二',
+    })
+    render(<Settings />)
+    openAvatarSheet()
+    fireEvent.click(screen.getByRole('button', { name: '拍照' }))
+    await waitFor(() => expect((screen.getByAltText('会员头像') as HTMLImageElement).src).toContain('data:image/png;base64,aGVsbG8='))
+    await act(async () => resolveDetail({
+      nickname: '服务端昵称', grade: '大二', avatar: 'https://cdn.example.com/old-avatar.png',
+    }))
+    expect(await screen.findByText('服务端昵称')).toBeTruthy()
+    expect((screen.getByAltText('会员头像') as HTMLImageElement).src).toContain('data:image/png;base64,aGVsbG8=')
+    fireEvent.click(screen.getByRole('button', { name: '确认修改' }))
+    await waitFor(() => expect(mocks.updateUserProfile).toHaveBeenCalledWith({
+      avatar_img: 'https://cdn.example.com/new-avatar.png',
+    }))
+  })
+
+  it('uses one non-wrapping label width for every identity row', () => {
+    render(<Settings />)
+    for (const name of ['头像', '昵称', '生日', '消费密码']) {
+      const label = screen.getByText(name, { selector: 'span' })
+      expect(label.className).toContain('w-20')
+      expect(label.className).toContain('whitespace-nowrap')
+    }
   })
 })
 
