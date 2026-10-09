@@ -11,6 +11,7 @@ import {
 } from '../app/fixtures'
 import { useFixtureDebug, useFixtureQueryControls, withFixtureQuery } from '../app/fixtures/useFixture'
 import { findRouteByPathname } from '../app/router/routes'
+import { runtimePolicy } from '../app/config/runtime'
 import BuddyInvite from './BuddyInvite'
 
 /** routes.ts 登记的状态键 → 分享结果；`saved` 是 #34 成功态在路由上的键名 */
@@ -32,7 +33,9 @@ export default function BuddyShareResult() {
   const route = findRouteByPathname('/buddy/invite/qrcode')
   const { get } = useFixtureQueryControls()
   const debug = useFixtureDebug()
-  const outcome = STATE_OUTCOME[get('state') ?? ''] ?? 'poster-saved'
+  // API/test/prod 直接进入结果路由不能默认展示夹具的「保存成功」。
+  const outcome = STATE_OUTCOME[get('state') ?? ''] ??
+    (runtimePolicy.dataMode === 'mock' ? 'poster-saved' : 'poster-failed')
   const feedback = BUDDY_SHARE_FEEDBACK[outcome]
   const isLink = outcome.startsWith('link-')
   const back = () => navigate(withFixtureQuery('/buddy/invite', { debug: debug ? '1' : null }), { replace: true })
