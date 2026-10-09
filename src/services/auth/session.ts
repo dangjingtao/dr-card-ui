@@ -141,6 +141,12 @@ async function reauthenticateAfterUnauthorized() {
   }
 }
 
+/** Refresh the shared Native/H5 auth session after a failed non-idempotent request.
+ * Caller must surface the original error; NEVER replay the chat POST automatically. */
+export async function refreshChatAuthAfterUnauthorized(): Promise<void> {
+  if (authFlowEnabled) await reauthenticateAfterUnauthorized()
+}
+
 setHttpAuthHeadersProvider(() => {
   if (!authFlowEnabled) return undefined
   const session = readSession()
