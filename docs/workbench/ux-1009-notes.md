@@ -82,10 +82,22 @@
 - **验收点：** 对照截图在 Android Emulator / App WebView 验证布局；Loading→成功与 Loading→错误 / 未配置的切换；二维码实际图片异步到达时不再明显跳动；相关 `WelfareOfficer.test.tsx` 加载态断言随新 UI 调整，不删掉“不显示假二维码 / 静态假服务”的保护测试。
 - **本轮范围：** 仅写 UX 小本本，**不修改 `WelfareOfficer.tsx`、骨架组件、样式或测试代码**。
 
+## UX-07｜通知筛选 Tab 背景与滚动定位整改
+
+- **用户反馈：** 「通知模块，tab 背景不应该是白色。。。也不应该随页面滚动。」截图红框强调「全部 / 未读 / 推送 / 活动」筛选栏；希望筛选栏留在顶部、消息列表滚动。
+- **定位与根因（已核实）：**
+  - `src/pages/Notifications.tsx` 的 Tab 外层容器写死 `bg-white border-b border-divider px-4 pt-3 pb-1`；`SegmentedControl` 组件来自 `src/components/ui/ComDesign.tsx`，默认 track 为 `bg-surface-subtle`，选中项为 `bg-surface`（白色）。两层配色叠加，造成与暖色页面底不一致的白色横带。
+  - `src/layouts/MobileLayout.tsx` 的 `[data-page-scroll]` 是整条业务页面的 `overflow-y-auto` 滚动容器，`Notifications.tsx` 中 Tab 和列表都包在 `PageContainer` 下；当前外层的 `shrink-0` 在此布局中不是吸顶规则，Tab 因而跟着整个页面移动。
+  - `preview` 与 `dev` 的 `Notifications.tsx` 当前均使用这套静态结构，不能将其描述为已实现 sticky。
+- **待实施视觉方向：** Tab 区外层背景与项目页面暖色背景 / 设计 Token 对齐，取消生硬纯白色底；SegmentedControl 的选中项也应采用协调的浅品牌色或其它经当前视觉基线认可的高对比设计（不能仅改外层、留下显眼白块），保留数字 badge 的可读性。不因局部修复把全局共用 SegmentedControl 的其它页面误改。
+- **待实施滚动交互：** 通知 TitleBar 仍由壳层固定在最上方；筛选栏吸顶于 TitleBar **下方**，列表本身照常滚动。优先评估在现有 `[data-page-scroll]` 下为本页 Tab 容器使用 `sticky top-0 z-...` 与不透明的非白色背景，若 WebView / 路由容器约束造成 sticky 失效，再考虑局部滚动结构，不要为此重写全局 MobileLayout。避免通知卡片滚动穿透到 Tab 上方，也不遮挡标题或系统安全区。
+- **验收关注：** Android App WebView 长列表上下滚动时 Tab 稳定停在标题栏下方；切换四类 Tab 后位置正确，尤其列表变短、空状态、不同未读数量和重进页面；横向溢出、小屏尺寸、路由返回和滚动恢复不异常；筛选、打开详情、全部已读与 badge 逻辑不回归；对比 `preview` 的视觉事实源。
+- **边界：** 此轮仅登记 UX 问题，**不修改样式 / 页面 / 全局壳层代码，不新增功能，不验收、不合并**。
+
 ## 本轮边界
 
 - [x] 从 `dev` 建立 `feat/ux-1009`
-- [x] 将以上六项反馈、已核实事实与待验证点留档
+- [x] 将以上七项反馈、已核实事实与待验证点留档
 - [ ] 业务代码修改（本轮明确不做）
 - [ ] 自动化 / WebView 验证（尚未施工，不声称通过）
 - [ ] 发 PR、合并或发布（本轮不做）
