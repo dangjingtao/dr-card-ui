@@ -41,6 +41,19 @@ describe('buddy list backend truth', () => {
     expect(screen.queryByText('小美')).toBeNull()
   })
 
+  it('refreshes real list after an accepted relation without local fixtures', async () => {
+    mocks.list.mockResolvedValueOnce([{ id: 'server-1', nickname: '原好友', avatarUrl: null }])
+      .mockResolvedValueOnce([
+        { id: 'server-1', nickname: '原好友', avatarUrl: null },
+        { id: 'server-2', nickname: '新搭子', avatarUrl: null },
+      ])
+    mount()
+    await waitFor(() => expect(screen.getByText('原好友')).toBeTruthy())
+    fireEvent.click(screen.getByRole('button', { name: '刷新搭子列表' }))
+    await waitFor(() => expect(screen.getByText('新搭子')).toBeTruthy())
+    expect(mocks.list).toHaveBeenCalledTimes(2)
+  })
+
   it('allows retry after backend failure; never falls back to a mocked buddy', async () => {
     mocks.list.mockRejectedValueOnce(new Error('后台接口未接通'))
       .mockResolvedValueOnce([{ id: 'server-2', nickname: '恢复后的好友', avatarUrl: null }])
