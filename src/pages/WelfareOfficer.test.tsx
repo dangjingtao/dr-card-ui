@@ -96,12 +96,22 @@ describe('WelfareOfficer page remote states', () => {
     mocks.useRemoteData.mockReturnValue({ remote: { state: 'success', data: config }, reload: mocks.reload })
     render(<WelfareOfficer />)
     const qrButton = screen.getByRole('button', { name: '打开二维码保存菜单' })
-    fireEvent.pointerDown(qrButton, { pointerType: 'touch', clientX: 10, clientY: 20 })
-    fireEvent.pointerMove(qrButton, { pointerType: 'touch', clientX: 30, clientY: 40 })
+    // jsdom lacks a native PointerEvent on some Node versions: preserve pointerType explicitly.
+    const touch = (type: string, x: number, y: number) => {
+      const event = new Event(type, { bubbles: true, cancelable: true })
+      Object.defineProperties(event, {
+        pointerType: { value: 'touch' },
+        clientX: { value: x },
+        clientY: { value: y },
+      })
+      fireEvent(qrButton, event)
+    }
+    touch('pointerdown', 10, 20)
+    touch('pointermove', 30, 40)
     act(() => vi.advanceTimersByTime(600))
     expect(screen.queryByRole('dialog')).toBeNull()
 
-    fireEvent.pointerDown(qrButton, { pointerType: 'touch', clientX: 10, clientY: 20 })
+    touch('pointerdown', 10, 20)
     act(() => vi.advanceTimersByTime(560))
     expect(screen.getByRole('dialog', { name: '保存福利官二维码' })).toBeTruthy()
   })
