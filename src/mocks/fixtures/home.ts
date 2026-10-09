@@ -72,8 +72,8 @@ export const WELFARE_SETTING_MOCK = {
  * `GET /api/coupons/index` Mock 数据（契约来源：客户端《签到页面接口文档》第 4 节「体验券列表」）。
  *
  * 券名统一带「Mock·」前缀，明确可识别为 Mock，不伪装真实后台数据。
- * 当前不模拟 category_id：后端分类能力尚未确认，Mock 不应反向制造接口契约。
- * 当前共享 Mock 只保留“通用体验包”，避免把历史多 SKU 设计伪装成当前业务事实。
+ * 当前只提供一个带 category_id 的 Mock 通用体验包，以检验后台分类查询的只读 DTO。
+ * 不假装服务端 category_id 已支持过滤；共享 Mock 不创造历史多 SKU 数据。
  * 售罄 / 泡泡值不足等边界由页面 / service 单测使用局部样本覆盖。
  */
 export const COUPON_LIST_MOCK = {
@@ -85,6 +85,7 @@ export const COUPON_LIST_MOCK = {
       {
         id: 1,
         name: 'Mock·通用体验包',
+        category_id: '1',
         short_desc: '当前唯一开放的洗护体验包',
         image: null,
         points_number: '200',

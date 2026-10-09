@@ -7,6 +7,10 @@ const mocks = vi.hoisted(() => ({
   redeem: vi.fn(),
   useExchangeCoupons: vi.fn(),
   reloadCoupons: vi.fn(),
+  categoryRemote: { state: 'success', data: [
+    { key: '2', label: '洗发体验' }, { key: '3', label: '护发体验' },
+  ] } as { state: string; data?: Array<{ key: string; label: string }>; message?: string },
+  categoryReload: vi.fn(),
   mode: 'mock' as 'mock' | 'api',
   pointsRemote: { state: 'success', data: { points: 500, income: 0, expense: 0 } } as
     | { state: 'success'; data: { points: number; income: number; expense: number } }
@@ -23,6 +27,7 @@ vi.mock('../services/exchange', () => ({
 }))
 vi.mock('./exchange/useExchangeFeed', () => ({
   useExchangeCoupons: mocks.useExchangeCoupons,
+  useExchangeCategories: () => ({ remote: mocks.categoryRemote, reload: mocks.categoryReload }),
 }))
 vi.mock('./points/usePointsFeed', () => ({
   useUserPointsStat: () => ({ remote: mocks.pointsRemote, reload: vi.fn() }),
@@ -103,6 +108,10 @@ function openCoupon(id = 1) {
 }
 
 afterEach(() => {
+  mocks.categoryRemote = { state: 'success', data: [
+    { key: '2', label: '洗发体验' }, { key: '3', label: '护发体验' },
+  ] }
+  mocks.categoryReload.mockReset()
   mocks.redeem.mockReset()
   mocks.useExchangeCoupons.mockReset()
   mocks.reloadCoupons.mockReset()
@@ -147,6 +156,48 @@ describe('UX-E: page-local exchange flow', () => {
     expect(screen.getByRole('tab', { name: '全部' }).getAttribute('aria-selected')).toBe('true')
     fireEvent.click(screen.getByRole('tab', { name: '洗发体验' }))
     expect(screen.getByTestId('route').textContent).toBe('/exchange?category=conditioner&product=1&overlay=redeem')
+  })
+
+  it('uses dynamic category keys while retaining UX-E page-local state', () => {
+    mocks.useExchangeCoupons.mockReturnValue(successRemote())
+    renderExchange()
+    expect(mocks.useExchangeCoupons).toHaveBeenCalledWith(undefined, true)
+    fireEvent.click(screen.getByRole('tab', { name: '护发体验' }))
+    expect(mocks.useExchangeCoupons).toHaveBeenLastCalledWith('3', true)
+    expect(screen.getByTestId('route').textContent).toBe('/exchange')
+  })
+
+  it('surfaces category failure and exposes explicit retry without fabricated tabs', () => {
+    mocks.categoryRemote = { state: 'error', message: '分类服务器错误' }
+    mocks.useExchangeCoupons.mockReturnValue(successRemote())
+    renderExchange()
+    expect(screen.getByRole('alert').textContent).toContain('分类服务器错误')
+    expect(screen.queryByRole('tab', { name: '洗发体验' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: '重试分类' }))
+    expect(mocks.categoryReload).toHaveBeenCalledOnce()
+    expect(screen.getByTestId('route').textContent).toBe('/exchange')
+  })
+
+  it('blocks selected category data when backend categories are unavailable', () => {
+    mocks.useExchangeCoupons.mockReturnValue(successRemote())
+    const view = renderExchange()
+    fireEvent.click(screen.getByRole('tab', { name: '洗发体验' }))
+    mocks.categoryRemote = { state: 'error', message: '后台分类失败' }
+    // Re-render the SAME router/component tree so the UX-E local tab selection persists.
+    view.rerender(
+      <MemoryRouter initialEntries={['/previous', '/exchange']} initialIndex={1}>
+        <LocationProbe />
+        <Routes>
+          <Route path="/exchange" element={<Exchange />} />
+          <Route path="/exchange/result" element={<ExchangeResult />} />
+          <Route path="/card" element={<p>卡包页面</p>} />
+          <Route path="/previous" element={<p>上一个页面</p>} />
+        </Routes>
+      </MemoryRouter>,
+    )
+    expect(screen.getByText('请先重试分类加载')).toBeTruthy()
+    expect(screen.queryByText('Mock·洗护体验券')).toBeNull()
+    expect(mocks.useExchangeCoupons).toHaveBeenLastCalledWith('2', false)
   })
 
   it('keeps the top CTA inside the page and scrolls to the coupon list', () => {

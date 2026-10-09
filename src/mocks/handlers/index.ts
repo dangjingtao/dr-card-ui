@@ -1,5 +1,6 @@
 import { buddyPhoneHandlers } from './buddyPhone'
 import { checkinHandlers } from './checkin'
+import { couponCategoryHandlers } from './couponCategories'
 import { exchangeHandlers } from './exchange'
 import { homeHandlers } from './home'
 import { networkProbeHandler } from './networkProbe'
@@ -16,6 +17,7 @@ export const handlers = [
   ...memberGradesHandlers,
   ...buddyPhoneHandlers,
   ...noticeHandlers,
+  ...couponCategoryHandlers,
   ...checkinHandlers,
   ...exchangeHandlers,
   // 两者匹配同一个 settings/detail URL，专用 key 要在通用 fallback 前命中。

@@ -40,6 +40,7 @@ export interface CouponTemplate {
   /** 后端扩展字段，当前无消费方 */
   extra_data?: unknown
   status?: number | null
+  category_id?: string | number | null
 }
 
 export interface CouponListPage {
@@ -76,6 +77,7 @@ const couponTemplateSchema = z
     create_time: z.string().nullish(),
     update_time: z.string().nullish(),
     extra_data: z.unknown().nullish(),
+    category_id: z.union([z.number(), z.string()]).nullish(),
   })
   .passthrough()
 
@@ -173,6 +175,8 @@ export interface CouponRedeemView {
   image?: string
   /** 是否已兑完（`exchanged_nuuur >= total_number` 或已下架）。 */
   soldOut: boolean
+  /** Server category id (string/number normalized); absent means not safe to classify. */
+  categoryId?: string
 }
 
 /** 后端数值字段可能以字符串返回，统一收敛为正整数。 */
@@ -186,7 +190,11 @@ export function toCouponRedeemView(coupon: CouponTemplate): CouponRedeemView {
   const redeemed = toCouponCount(coupon.exchanged_nuuur)
   const total = coupon.total_number ?? null
 
+  const rawCategoryId = coupon.category_id
+  const categoryId = rawCategoryId == null ? undefined : String(rawCategoryId)
+
   return {
+    categoryId,
     id: coupon.id,
     name: coupon.name,
     desc: coupon.short_desc?.trim() ?? '',
