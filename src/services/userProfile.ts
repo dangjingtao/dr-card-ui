@@ -40,6 +40,8 @@ const userDetailSchema = z
   .object({
     nick_name: z.string().nullish(),
     grade: z.string().nullish(),
+    // Persisted academic year. Do not confuse it with the membership tier `grade`.
+    student_grade: z.string().nullish(),
     avatar_img: z.union([z.string(), z.number()]).nullish(),
   })
   .passthrough()
@@ -47,7 +49,7 @@ const userDetailSchema = z
 export interface UserProfileDetail {
   /** `nick_name`；接口未给时为空串。 */
   nickname: string
-  /** `grade` 名称；与资料设置年级芯片同名时可直接回填，接口未给时为空串。 */
+  /** Saved academic year: `student_grade` first; legacy `grade` only if absent. */
   grade: string
   avatar?: string
 }
@@ -61,7 +63,12 @@ export function parseUserProfileDetail(payload: unknown): UserProfileDetail {
 
   return {
     nickname: detail.nick_name?.trim() ?? '',
-    grade: detail.grade?.trim() ?? '',
+    // `grade` may be a membership title; `student_grade` is the academic year
+    // written by POST /api/user/update. An explicit empty academic year is valid
+    // and must not silently fall back to a potentially unrelated membership tier.
+    grade: typeof detail.student_grade === 'string'
+      ? detail.student_grade.trim()
+      : detail.grade?.trim() ?? '',
     avatar: typeof detail.avatar_img === 'string' ? trimOrUndefined(detail.avatar_img) : undefined,
   }
 }
