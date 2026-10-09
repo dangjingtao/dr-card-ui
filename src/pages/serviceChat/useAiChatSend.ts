@@ -119,10 +119,18 @@ export function useAiChatSend(syncLatest: () => Promise<ChatHistoryMessage[] | n
 
       const latest = await syncLatest()
       if (!alive()) return false
+      // Backend emits done.message_id for AI, but the SSE envelope permits a bare
+      // done. Reconcile missing IDs against the server's new persisted messages
+      // before deciding delivery is uncertain; never show duplicate optimistic bubbles.
+      const matchedUser = Boolean(latest?.some(item =>
+        item.role === 'user' && item.text === text && Number(item.id) > highestBefore))
+      const matchedBot = result.mode === 'ai' && Boolean(latest?.some(item =>
+        item.role === 'bot' && item.text === result.text && Number(item.id) > highestBefore))
       const confirmed = result.mode === 'ai'
-        ? Boolean(result.messageId && latest?.some(item => item.id === String(result.messageId)))
-        : Boolean(latest?.some(item => item.role === 'user' && item.text === text &&
-            Number(item.id) > highestBefore))
+        ? Boolean(result.messageId
+          ? latest?.some(item => item.id === String(result.messageId))
+          : matchedUser && matchedBot)
+        : matchedUser
       if (confirmed) {
         update(previous => ({
           ...previous, messages: [], error: null,
@@ -133,6 +141,8 @@ export function useAiChatSend(syncLatest: () => Promise<ChatHistoryMessage[] | n
         update(previous => ({
           ...previous, phase: 'failed',
           humanAwait: result.mode === 'human',
+          messages: previous.messages.filter(item =>
+            !(matchedUser && item.id === userId) && !(matchedBot && item.id === botId)),
           error: '消息已发送，但最新历史尚未确认。' + CHECK_HISTORY,
         }))
       }

@@ -82,6 +82,33 @@ describe('#138 human chat connection, transfer, and lifecycle', () => {
     hook.unmount()
   })
 
+  it('retains a content-free uncertain-transfer warning across 401 auth reset', async () => {
+    const onTransferred = vi.fn()
+    mocks.transfer.mockImplementationOnce(async () => {
+      mocks.token = ''
+      window.dispatchEvent(new Event('dr-card-ui:auth-session-cleared'))
+      throw new Error('HTTP 401')
+    })
+    const hook = renderHook(() => useHumanChat(vi.fn(), vi.fn().mockResolvedValue(true), 0, onTransferred))
+    act(() => mocks.events?.onStatus('connected'))
+    await act(async () => { expect(await hook.result.current.transfer()).toBe(false) })
+    expect(hook.result.current.needsHistoryCheck).toBe(true)
+    expect(hook.result.current.error).toContain('转接结果尚未确认')
+    expect(hook.result.current.error).not.toContain('user-a-token')
+    expect(onTransferred).not.toHaveBeenCalled()
+    await act(async () => {
+      mocks.token = 'refreshed-token'
+      window.dispatchEvent(new Event('dr-card-ui:auth-session-changed'))
+    })
+    act(() => mocks.events?.onStatus('connected'))
+    expect(hook.result.current.needsHistoryCheck).toBe(true)
+    expect(hook.result.current.canTransfer).toBe(false)
+    act(() => hook.result.current.acknowledgeHistory())
+    expect(hook.result.current.needsHistoryCheck).toBe(false)
+    expect(hook.result.current.error).toBeNull()
+    hook.unmount()
+  })
+
   it('disconnects old socket on token rotation and ignores late old user pushes', async () => {
     const receive = vi.fn()
     const hook = renderHook(() => useHumanChat(receive, vi.fn().mockResolvedValue(true), 10, vi.fn()))

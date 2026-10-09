@@ -46,6 +46,38 @@ describe('#137 AI stream UI state machine', () => {
     hook.unmount()
   })
 
+  it('reconciles bare done without message_id when both messages exist in server history', async () => {
+    mocks.send.mockImplementationOnce(async (_content, options) => {
+      options.onDelta?.('真实回答')
+      return { mode: 'ai', text: '真实回答' }
+    })
+    const sync = vi.fn().mockResolvedValue([
+      message(35, 'user', '问题'),
+      message(36, 'bot', '真实回答'),
+    ])
+    const hook = renderHook(() => useAiChatSend(sync))
+    await act(async () => { await hook.result.current.send('问题', [message(31)]) })
+    expect(hook.result.current.messages).toEqual([])
+    expect(hook.result.current.phase).toBe('idle')
+    expect(hook.result.current.error).toBeNull()
+    hook.unmount()
+  })
+
+  it('removes only persisted bubbles if missing-id completion is not fully confirmed', async () => {
+    mocks.send.mockImplementationOnce(async (_content, options) => {
+      options.onDelta?.('尚未落库')
+      return { mode: 'ai', text: '尚未落库' }
+    })
+    const sync = vi.fn().mockResolvedValue([message(35, 'user', '问题')])
+    const hook = renderHook(() => useAiChatSend(sync))
+    await act(async () => { await hook.result.current.send('问题', [message(31)]) })
+    expect(hook.result.current.phase).toBe('failed')
+    expect(hook.result.current.error).toContain('检查聊天历史')
+    expect(hook.result.current.messages.map(m => m.role)).toEqual(['bot'])
+    expect(hook.result.current.messages[0]?.text).toBe('尚未落库')
+    hook.unmount()
+  })
+
   it('retains uncertain server results with an explicit history check, not silent resend', async () => {
     mocks.send.mockResolvedValueOnce({ mode: 'ai', text: '完成', messageId: 42 })
     const sync = vi.fn().mockResolvedValueOnce(null)

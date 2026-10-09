@@ -110,7 +110,12 @@ export default function ApiServiceChat() {
           </div>
         )}
         {human.error && <div role="alert" className="mb-2 text-center text-xs text-danger-text">
-          {human.error}
+          <p>{human.error}</p>
+          {human.needsHistoryCheck && (
+            <Button variant="outline" onClick={() => { history.reload(); human.acknowledgeHistory() }}>
+              核对人工转接记录
+            </Button>
+          )}
         </div>}
         <div className="flex items-end gap-2">
           <button type="button" data-chat-human-entry
