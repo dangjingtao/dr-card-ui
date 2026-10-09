@@ -86,7 +86,7 @@ export default function Exchange() {
   const list = listRemote.state === 'success' ? listRemote.data : []
 
   /** GET /api/userpoints/stat：余额严格取 points。兑换结果不在页面伪扣款。 */
-  const { remote: statRemote, reload: reloadPoints } = useUserPointsStat()
+  const { remote: statRemote } = useUserPointsStat()
   const balance = statRemote.state === 'success' ? statRemote.data.points : null
 
   // Resolve against current list to prevent a stale coupon selection after a reload.
