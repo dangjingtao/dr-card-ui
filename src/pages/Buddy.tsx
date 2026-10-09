@@ -155,6 +155,15 @@ export default function Buddy() {
         </section>
       )}
 
+      {!fixtureMode && remote.status === 'ready' && (
+        <div className="mt-3 px-4 text-right">
+          <Button variant="outline" size="regular" leadingIcon={RefreshCw}
+            onClick={() => setRetry(value => value + 1)}>
+            刷新搭子列表
+          </Button>
+        </div>
+      )}
+
       <section className="mt-4 px-4" aria-label={BUDDY_FEATURE_INTRO.title}>
         <p className="px-1 text-sm font-medium text-buddy-text">{BUDDY_FEATURE_INTRO.title}</p>
         <ul className="mt-2 overflow-hidden rounded-container bg-surface shadow-card">
