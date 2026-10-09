@@ -5,7 +5,7 @@ const gateway = vi.hoisted(() => ({
   getBuddyPhoneInvitations: vi.fn(),
   acceptBuddyPhoneInvitation: vi.fn(),
 }))
-vi.mock('../../services/buddyPhoneGateway', () => ({ ...gateway, buddyPhoneContractReady: true }))
+vi.mock('../../services/buddyPhoneGateway', () => ({ ...gateway, buddyPhoneContractReady: true, buddyPhoneInboxReady: true }))
 import BuddyInvitationInbox from './BuddyInvitationInbox'
 
 const pending = {

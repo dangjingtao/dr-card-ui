@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { runtimePolicy } from '../app/config/runtime'
 import { validateBuddyQrUrl } from './buddyQr'
+import { fetchBackendBuddyList } from './buddyBackend'
 
 /**
  * #107 H5-only contract. #105 Backend and #110 Native have not signed their APIs:
@@ -126,9 +127,11 @@ export async function acceptBuddyQr(
 export async function loadBuddyRelations(
   adapter: BuddyRelationsBackend | null = signedBackend,
 ): Promise<BuddyMember[]> {
-  if (!adapter) throw new BuddyRelationsError('not-configured')
+  // This read-only relation list endpoint exists on kbs/API master@b6d2821.
+  // QR preview/confirmation remain deliberately unavailable until #105 is implemented.
+  if (!adapter && runtimePolicy.dataMode !== 'api') throw new BuddyRelationsError('not-configured')
   try {
-    const parsed = listSchema.safeParse(await adapter.list())
+    const parsed = listSchema.safeParse(adapter ? await adapter.list() : await fetchBackendBuddyList())
     if (!parsed.success) throw new BuddyRelationsError('invalid-response')
     return parsed.data.items
   } catch (error) {

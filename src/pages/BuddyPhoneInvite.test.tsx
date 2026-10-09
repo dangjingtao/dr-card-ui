@@ -8,7 +8,7 @@ const gateway = vi.hoisted(() => ({
 }))
 
 vi.mock('../services/buddyPhoneGateway', () => ({
-  ...gateway, buddyPhoneContractReady: true,
+  ...gateway, buddyPhoneContractReady: true, buddyPhoneDirectSendReady: false,
 }))
 const fixture = vi.hoisted(() => ({ state: null as string | null }))
 
