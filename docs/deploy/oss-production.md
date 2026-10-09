@@ -58,3 +58,14 @@
 如果 CI 中上传返回 `PublicEndpointForbidden`，应由公司管理员按官方方案配置自定义 OSS API 域名或授权可用的企业部署接入方式；**不要**绕过政策或把临时测试地址当成正式域名。详见 https://www.alibabacloud.com/zh/notice/oss_update_notice_policy_change_in_calling_data_api_operations_via_the_default_public_domain_name_45a
 
 当前上传地址只是企业对象存储，不是用户可浏览的 H5 页面 URL；不能把默认 Bucket 域名填入 `OSS_PROD_PUBLIC_ORIGIN`。
+
+## 2026-10-09 OSS 连通性验证（不属于上线）
+
+本阶段用户明确只想验证 GitHub Actions 能否使用公司凭证访问广州 Bucket，不要求 OSS 默认域名直接渲染 H5。
+公开 Origin 暂时填写 `https://kbs-sdl.oss-cn-guangzhou.aliyuncs.com` 不影响**独立连通性探针**，但生产流水线保留默认域名的上线拦截。
+
+专用工作流 `.github/workflows/oss-connection-smoke.yml` 仅在文件发生变化且提交进入 `dev` 时触发，调用 `oss-production` Environment 中已配置的两项 Secret，把一小段证明文本写入 `h5/releases/_ci-smoke/<run-id>.<attempt>/proof.txt`，执行 stat 和读回字节比较。不会部署任何业务 H5 文件、修改域名、清空 Bucket、晋级 `prod`。
+
+如果 Environment 的部署分支规则已限制为 `prod`，这个 `dev` 连通性探针会被 GitHub 安全门禁拒绝；不要偷偷绕过限制。应由管理员明确授权临时 smoke 策略或单独建立具有最小权限的测试 Environment 后再执行。
+
+可能遇到的 `PublicEndpointForbidden` 是 OSS 内地公共 Endpoint 使用限制，应走公司云账号官方支持的接入方案，不能把错误归因于前端或擅自改到个人账户。
