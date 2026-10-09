@@ -197,7 +197,7 @@ export default function DearseedColumn() {
           {/* T046｜中部「DEARSEED MEMBER / 昵称 / 等级」卡也跳会员中心，与头像入口语义一致 */}
           <button type="button" onClick={() => navigate('/dearseed/membership')} className="min-w-0 flex-1 text-left">
             <span className="block text-[10px] tracking-[0.18em] text-member-accent">DEARSEED MEMBER</span>
-            <span className="mt-1 block truncate text-[17px] font-semibold text-member-text">{identity.state === 'success' ? identity.data.nickname : '--'}</span>
+            <span className="mt-1 block truncate text-[17px] font-semibold text-member-text">{identity.state === 'success' ? identity.data.nickname.trim() || '--' : '--'}</span>
             <span className="mt-1 block text-[11px] text-member-muted">{MEMBER_PROFILE.levelLabel} · {MEMBER_PROFILE.levelName}</span>
           </button>
           <button
