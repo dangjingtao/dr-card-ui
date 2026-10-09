@@ -77,3 +77,14 @@ H5 已独立实现二维码绘制与可保存的 PNG 海报（`src/lib/buddyQrPo
 - 仅 preview/dev Mock 环境可以生成含 `demo` 参数的**演示二维码**，明确标注不可建立真实关系；此码不依赖任何真实账号或固定的 `user_id`。
 - H5 的初步 URL 校验要求 HTTPS、同一受信 Origin、`/buddy/invite/scan` 路径、不可空的识别信息，禁止凭证、fragment、重定向参数；如后台决定另一种合法路径或签名参数，请先双方更新此合同及校验测试，不能偷偷放开到任意 URL。
 - 后台需回填：真实 path/method、`qrUrl` DTO、使用的 token 参数、官方域名及页面部署规则；前端随后接入真接口并做双账号真机验收。本段不是后台已有接口或 Native 相册能力已验收的证明。
+
+
+## 2026-10-09｜后台已出现部分业务 API（非协议签署）
+
+后台同事本地仓库 `API/master@7e1f710` 新增 `GET /api/friends/index`、`POST /api/friends/add|agree|reject`，并补齐用户通知 `GET /api/notices/index|detail|unread-count`、`POST /api/notices/read-all`。
+
+- **可复用的片段**：好友列表从当前登录用户隔离，`friends/add` 可按完整手机号发起待处理申请，`friends/agree` 可由接收者根据通知里的 `extra_json.friends_id` 同意；`notices/index?type=60` 可查询好友申请。
+- **尚不符合本协议的部分**：仍缺稳定不可枚举的官方 HTTPS QR、扫码预览与“扫码者确认即绑定”的专用动作；手机搜索缺业务状态预览；后台 `reject` 不在一期产品范围；同意/拒绝目前会软删除申请通知，与“保留历史及完成态”不一致；CRUD 归属鉴权、反向去重需实证。
+- **本合同不自动变更**：以上接口只算“静态源码存在”，不能视为 #105 已完成签收、#104 已恢复或 H5 可按当前端点直接联调上线。
+
+逐项路径、DTO、差异、风险和后端待办见 [新增 API 核对文档](../../engineering/backend-api-delta-2026-10-09.md)。请后台 Owner 基于该事实记录继续回填本协议的正式 API、权限与部署/实测证据。
