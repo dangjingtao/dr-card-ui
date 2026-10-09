@@ -7,17 +7,17 @@
 - 构建：`npm run build:prod`，构建产物：`dist/`。
 - 发布来源：仅 `prod` 分支。晋级沿用 `preview → dev → test → prod`，不得跳级。
 - OSS 默认域名 `https://kbs-sdl.oss-cn-guangzhou.aliyuncs.com` **只能当存储 API / 文件入口，不能当正式 H5 页面入口**；阿里云默认域名访问 HTML 会触发强制下载。
-- 当前工作流只将构建产物上传到 `oss://kbs-sdl/h5/releases/<SHA>/`，不覆盖 Bucket 根目录、不删除文件、**不会切换 App 的线上入口**。
+- 当前工作流只将构建产物上传到 `oss://kbs-sdl/h5/releases/<SHA>/<run-id>.<run-attempt>/`，每次运行使用独立目录、不覆盖已有版本、不删除文件、**不会切换 App 的线上入口**。
 - `VITE_BUDDY_PUBLIC_ORIGIN` 用于二维码公开入口，不能填 OSS 默认域名；需要另有可正常打开 HTML 的 HTTPS 网站域名。
 
 ## GitHub CI 工作流
 
 `.github/workflows/oss-production.yml`：
 
-1. PR 到 `dev/test/prod` 时用 `example.invalid` **仅校验生产包生成**，不访问云端，也不读云端密钥。
+1. 所有针对 `dev/test/prod` 的 PR 均使用 `example.invalid` **仅校验生产包生成**，不访问云端，也不读云端密钥。
 2. `prod` 更新后，先验证生产包，再触发 `upload-oss`。
 3. `upload-oss` 需要 `oss-production` Environment 配置和授权，使用正式环境变量重新构建。
-4. 上传到带 SHA 的隔离目录后，用 `ossutil stat` 检查首页文件和构建元数据。
+4. 上传到按 SHA 和 CI Run Attempt 唯一标识的隔离目录后，用 `ossutil stat` 检查首页文件和构建元数据。
 5. 不自动执行 `ossutil rm`，也不变更 Bucket ACL、CDN、DNS 或 App 配置。
 
 此阶段的 CI 绿灯只代表构建和上传链路通过；**不是** App WebView、真实 API、JSBridge 或产品上线验收。
@@ -51,3 +51,10 @@
 - https://help.aliyun.com/zh/oss/developer-reference/ossutil-overview/
 - https://help.aliyun.com/zh/oss/developer-reference/upload-objects-6
 - https://help.aliyun.com/zh/oss/user-guide/regions-and-endpoints
+
+## 已知限制：广州 Bucket 的默认公网 Endpoint
+
+阿里云于 2025-03-20 生效的策略可能限制**新开通 OSS 服务的用户**通过内地 Bucket 默认公网域名执行数据类 API（含上传）；老 OSS 用户不受此限制。仅凭拥有 Bucket 和 AccessKey 无法确定账号是否受限。
+如果 CI 中上传返回 `PublicEndpointForbidden`，应由公司管理员按官方方案配置自定义 OSS API 域名或授权可用的企业部署接入方式；**不要**绕过政策或把临时测试地址当成正式域名。详见 https://www.alibabacloud.com/zh/notice/oss_update_notice_policy_change_in_calling_data_api_operations_via_the_default_public_domain_name_45a
+
+当前上传地址只是企业对象存储，不是用户可浏览的 H5 页面 URL；不能把默认 Bucket 域名填入 `OSS_PROD_PUBLIC_ORIGIN`。
