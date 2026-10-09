@@ -2,7 +2,6 @@ import { z } from 'zod'
 
 import { parseContract } from './contracts/parseContract'
 import { createBusinessError, httpClient } from './http'
-import { runtimePolicy } from '../app/config/runtime'
 
 /**
  * H014 reserved transport seam; not a confirmed backend endpoint while H008 is blocked.
@@ -20,11 +19,6 @@ const exchangeRedeemResponseSchema = z.discriminatedUnion('ok', [
 ])
 
 export async function redeemExchangeProduct(productId: string): Promise<void> {
-  // #74: The endpoint is an MSW-only seam, not a real backend contract.
-  // Block API/test/prod before any network request to prevent simulated settlement.
-  if (runtimePolicy.dataMode !== 'mock') {
-    throw createBusinessError(H014_EXCHANGE_REDEEM_UNAVAILABLE_COPY)
-  }
   const payload = await httpClient.request<unknown>({
     method: 'POST',
     url: H014_EXCHANGE_REDEEM_PATH,
