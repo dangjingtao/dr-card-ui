@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
-import { Download, Link2, Loader2 } from 'lucide-react'
+import { Download, Loader2 } from 'lucide-react'
 import PageContainer from '../components/mobile/PageContainer'
 import WecomQrPlaceholder from '../components/mobile/WecomQrPlaceholder'
 import { BUDDY_INVITE_COPY } from '../app/fixtures'
 import { useFixtureDebug, useFixtureNavigate } from '../app/fixtures/useFixture'
-import { copyInviteLink, saveInvitePoster } from '../app/adapters/buddyShare'
+import { saveInvitePoster } from '../app/adapters/buddyShare'
 import buddyAvatarSelf from '../assets/brand/buddy/buddy-avatar-self.webp'
 
 /**
@@ -12,7 +12,7 @@ import buddyAvatarSelf from '../assets/brand/buddy/buddy-avatar-self.webp'
  * -------------------------------------------------------------
  * 事实源：docs/prototype/03-partner-and-invite.md §3
  * 已确认内容：用户头像 + 邀请话术胶囊、邀请二维码、「请截图保存」、
- * 「更多分享方式」下的「保存到本地」「复制链接」两个入口。
+ * 原型曾含「保存到本地」「复制链接」；#102 已取消复制链接，只保留保存海报。
  *
  * ⚠️ 历史稿 T06 的 200×200 QR 卡片、金色高亮话术与北极熊剪影属二次视觉设计，未采用（见文档 §3 警示）。
  * ⚠️ 二维码为占位图形，不伪造可扫码内容（B-005 / BUDDY_RULE_STATUS.shareCapability）。
@@ -21,7 +21,7 @@ import buddyAvatarSelf from '../assets/brand/buddy/buddy-avatar-self.webp'
  *
  * 本路由在 routes.ts 未登记 states，因此不渲染 DebugPanel（D-064）。
  */
-type SharePending = 'poster' | 'link' | null
+type SharePending = 'poster' | null
 
 export default function BuddyInvite() {
   const fixtureNavigate = useFixtureNavigate()
@@ -37,10 +37,11 @@ export default function BuddyInvite() {
   }, [])
 
   /** 走适配层拿反馈，再落到对应结果节点；Mock 环境仍可生成确定性 URL。 */
-  const share = (kind: Exclude<SharePending, null>) => {
+  const sharePoster = () => {
     if (pending) return
-    setPending(kind)
-    const task = kind === 'poster' ? saveInvitePoster() : copyInviteLink()
+    setPending('poster')
+    // #105 尚未交付正式二维码/海报数据；缺 payload 时只会返回失败，不能假成功。
+    const task = saveInvitePoster()
     void task.then((feedback) => {
       if (!alive.current) return
       setPending(null)
@@ -73,16 +74,19 @@ export default function BuddyInvite() {
             cell={16}
           />
           <p className="mt-4 text-[13px] text-buddy-muted">{BUDDY_INVITE_COPY.qrHint}</p>
+          <p role="status" className="mt-2 text-center text-xs text-buddy-muted">
+            二维码正在接入后台，暂不可扫码
+          </p>
         </div>
       </section>
 
-      {/* #29 更多分享方式：两个入口都走适配层，成功后跳到 #34 / #35 */}
+      {/* #102 冻结：只有保存海报入口；取消复制链接，原型 #35 不再由正常 UI 可达。 */}
       <section className="mt-5 px-4" aria-label={BUDDY_INVITE_COPY.moreShare}>
         <p className="px-1 text-sm font-medium text-buddy-text">{BUDDY_INVITE_COPY.moreShare}</p>
-        <div className="mt-2 grid grid-cols-2 gap-3">
+        <div className="mt-2 grid grid-cols-1 gap-3">
           <button
             type="button"
-            onClick={() => share('poster')}
+            onClick={sharePoster}
             disabled={pending !== null}
             className="flex flex-col items-center gap-2 rounded-container bg-surface py-4 shadow-card active:bg-surface-subtle disabled:opacity-60"
           >
@@ -99,24 +103,6 @@ export default function BuddyInvite() {
             <span className="text-[13px] text-buddy-text">{BUDDY_INVITE_COPY.saveLocal}</span>
           </button>
 
-          <button
-            type="button"
-            onClick={() => share('link')}
-            disabled={pending !== null}
-            className="flex flex-col items-center gap-2 rounded-container bg-surface py-4 shadow-card active:bg-surface-subtle disabled:opacity-60"
-          >
-            <span
-              className="flex h-11 w-11 items-center justify-center rounded-full bg-buddy-surface text-buddy-accent"
-              aria-hidden
-            >
-              {pending === 'link' ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                <Link2 className="h-5 w-5" />
-              )}
-            </span>
-            <span className="text-[13px] text-buddy-text">{BUDDY_INVITE_COPY.copyLink}</span>
-          </button>
         </div>
         {pending !== null && (
           <p role="status" aria-live="polite" className="mt-3 text-center text-xs text-buddy-muted">
