@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom'
 import type { NotificationFixture } from '../app/fixtures/notifications'
 
@@ -10,10 +10,11 @@ const mocks = vi.hoisted(() => ({
     error: null as string | null,
   },
   scrollTo: vi.fn(),
+  mode: 'mock' as 'mock' | 'api',
   markRead: vi.fn().mockResolvedValue(undefined),
 }))
 
-vi.mock('../app/config/runtime', () => ({ runtimePolicy: { dataMode: 'mock' } }))
+vi.mock('../app/config/runtime', () => ({ runtimePolicy: { get dataMode() { return mocks.mode } } }))
 vi.mock('../app/fixtures/useFixture', () => ({
   useFixtureState: () => ({ state: undefined }),
   useOverlay: () => ({ overlay: null, close: vi.fn() }),
@@ -36,9 +37,10 @@ function Detail() {
   return <button type="button" onClick={() => navigate(-1)}>返回通知</button>
 }
 
+let entrySequence = 0
 function showPage() {
   return render(
-    <MemoryRouter initialEntries={['/notifications']}>
+    <MemoryRouter initialEntries={[{ pathname: '/notifications', key: `uxd-test-${++entrySequence}` }]}>
       <div data-page-scroll ref={(node) => { if (node) node.scrollTo = mocks.scrollTo }}>
         <Routes>
           <Route path="/notifications" element={<Notifications />} />
@@ -61,6 +63,7 @@ afterEach(() => {
     loaded: true, hasMore: false, error: null,
   }
   mocks.scrollTo.mockReset()
+  mocks.mode = 'mock'
   mocks.markRead.mockReset().mockResolvedValue(undefined)
 })
 
@@ -120,7 +123,8 @@ describe('UX-D notification tabs, scroll and empty states', () => {
     expect(screen.getByRole('tab', { name: /未读.*0/ })).toBeTruthy()
   })
 
-  it('retains the real API contract for loading, errors and partial pagination', () => {
+  it('retains the real API contract for loading and errors', () => {
+    mocks.mode = 'api'
     mocks.feed = { ...mocks.feed, items: [], loaded: false, loading: true }
     const { rerender } = showPage()
     expect(screen.getByRole('status').textContent).toContain('正在加载通知')
