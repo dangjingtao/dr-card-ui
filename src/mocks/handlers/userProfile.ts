@@ -21,7 +21,6 @@ export const userProfileHandlers = [
       data: {
         ...USER_PROFILE_DETAIL_MOCK.data,
         ...mockEdits,
-        grade: mockEdits.student_grade ?? USER_PROFILE_DETAIL_MOCK.data.grade,
       },
     }),
   ),
