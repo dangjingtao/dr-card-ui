@@ -7,6 +7,10 @@ import {
   Wrench,
   BadgeCheck,
   Sparkles,
+  Gift,
+  ArrowLeftRight,
+  Bell,
+  UserRoundPlus,
 } from 'lucide-react'
 import PageContainer from '../components/mobile/PageContainer'
 import BuddyInvitationInbox from '../components/mobile/BuddyInvitationInbox'
@@ -55,6 +59,26 @@ const CAT_VISUAL: Record<
     bg: 'linear-gradient(135deg, #FB923C 0%, #FDBA74 100%)',
     tag: 'bg-orange-50 text-orange-700',
   },
+  reward: {
+    Icon: Gift,
+    bg: 'linear-gradient(135deg, #FCD34D 0%, #F59E0B 100%)',
+    tag: 'bg-amber-50 text-amber-700',
+  },
+  transfer: {
+    Icon: ArrowLeftRight,
+    bg: 'linear-gradient(135deg, #C084FC 0%, #DDD6FE 100%)',
+    tag: 'bg-violet-50 text-violet-700',
+  },
+  other: {
+    Icon: Bell,
+    bg: 'linear-gradient(135deg, #94A3B8 0%, #CBD5E1 100%)',
+    tag: 'bg-slate-100 text-slate-700',
+  },
+  buddy: {
+    Icon: UserRoundPlus,
+    bg: 'linear-gradient(135deg, #FBBF24 0%, #FDE68A 100%)',
+    tag: 'bg-amber-50 text-amber-700',
+  },
 }
 
 /** 兼容老的 system/activity 通知 */
@@ -86,7 +110,7 @@ export default function Notifications() {
         if (tab === 'all') return true
         if (tab === 'unread') return item.unread
         if (tab === 'event') return item.cat === 'event' || item.cat === 'activity'
-        if (tab === 'system') return item.cat === 'system' || item.cat === 'balance' || item.cat === 'service'
+        if (tab === 'system') return item.cat !== 'activity' && item.cat !== 'event'
         return true
       }),
     [items, tab],
