@@ -11,6 +11,8 @@ const loading: IdentityState = { state: 'loading' }
 let currentToken: string | undefined
 let snapshot: IdentityState = loading
 let inFlight: Promise<void> | undefined
+// Invalidate older network responses after account changes or authoritative updates.
+let requestRevision = 0
 const listeners = new Set<() => void>()
 
 function tokenKey() {
@@ -38,22 +40,29 @@ export async function refreshUserIdentity(force = false): Promise<void> {
     currentToken = key
     snapshot = loading
     inFlight = undefined
+    requestRevision++
     emit()
   }
+  // Remount/re-enter must revalidate /detail, even if we already have a success
+  // snapshot. Deduplicate simultaneous route consumers to avoid a request storm.
   if (!force && inFlight) return inFlight
-  if (!force && snapshot.state === 'success') return
 
-  snapshot = loading
-  emit()
+  // Preserve a previously rendered identity during background revalidation.
+  // The new token above still resets to loading immediately for account isolation.
+  if (snapshot.state !== 'success') {
+    snapshot = loading
+    emit()
+  }
+  const revision = ++requestRevision
   const request = fetchUserProfileDetail().then(
     (data) => {
-      if (currentToken === key && tokenKey() === key) {
+      if (requestRevision === revision && currentToken === key && tokenKey() === key) {
         snapshot = { state: 'success', data }
         emit()
       }
     },
     (error: unknown) => {
-      if (currentToken === key && tokenKey() === key) {
+      if (requestRevision === revision && currentToken === key && tokenKey() === key) {
         snapshot = { state: 'error', message: error instanceof Error ? error.message : '用户资料加载失败' }
         emit()
       }
@@ -66,6 +75,9 @@ export async function refreshUserIdentity(force = false): Promise<void> {
 /** POST /update returns database-backed values, unlike the stale /profile login snapshot. */
 export function acceptUserIdentityUpdate(value: UserUpdateResult) {
   if (currentToken !== tokenKey()) return
+  // A pending GET may contain older data than this successful POST response.
+  requestRevision++
+  inFlight = undefined
   snapshot = {
     state: 'success',
     data: {
@@ -79,6 +91,7 @@ export function acceptUserIdentityUpdate(value: UserUpdateResult) {
 
 export function clearUserIdentity() {
   currentToken = undefined
+  requestRevision++
   snapshot = loading
   inFlight = undefined
   emit()
