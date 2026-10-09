@@ -139,7 +139,7 @@ export default function BuddyAccept() {
         {view.kind === 'ready' && relationship === 'available' && (
           <Button size="large" leadingIcon={UserRoundCheck} loading={sending}
             disabled={sending} className="mt-5 w-full rounded-full" onClick={() => void confirm()}>
-            {preview.demo ? '演示确认（不真实绑定）' : '确认成为搭子'}
+            {preview?.demo ? '演示确认（不真实绑定）' : '确认成为搭子'}
           </Button>
         )}
         {already && (
