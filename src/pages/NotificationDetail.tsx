@@ -4,7 +4,8 @@ import { ArrowRight, Info, MailQuestion } from 'lucide-react'
 import PageContainer from '../components/mobile/PageContainer'
 import { Button, EmptyState } from '../components/ui'
 import { notificationCategoryLabel } from '../app/fixtures'
-import { markNotificationRead, useNotification } from '../app/state/notifications'
+import { loadRemoteNoticeDetail, markNotificationRead, useApiNoticeStore, useNotification } from '../app/state/notifications'
+import { runtimePolicy } from '../app/config/runtime'
 
 /** 分类小标签（与列表页 .nt-tag 同规格，保证前后一致） */
 const TAG_CLASS: Record<string, string> = {
@@ -13,19 +14,33 @@ const TAG_CLASS: Record<string, string> = {
   balance: 'bg-red-50 text-red-700',
   event: 'bg-violet-50 text-violet-700',
   service: 'bg-orange-50 text-orange-700',
+  reward: 'bg-amber-50 text-amber-700',
+  transfer: 'bg-violet-50 text-violet-700',
+  other: 'bg-slate-100 text-slate-700',
+  buddy: 'bg-amber-50 text-amber-700',
 }
 
 export default function NotificationDetail() {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
   const item = useNotification(id)
+  const detailLoadingId = useApiNoticeStore(s => s.detailLoadingId)
+  const remoteError = useApiNoticeStore(s => s.detailError)
+  const detailErrorId = useApiNoticeStore(s => s.detailErrorId)
+  const detailError = detailErrorId === id ? remoteError : null
 
-  /** 进入即已读：列表未读数与红点随之变化（对应 reference 通知.html 的“进入即标记已读”） */
+  /** The authenticated GET detail marks read server-side; Mock still uses fixture state. */
   useEffect(() => {
-    if (id) markNotificationRead(id)
+    if (!id) return
+    if (runtimePolicy.dataMode === 'api') void loadRemoteNoticeDetail(id)
+    else markNotificationRead(id)
   }, [id])
 
-  if (!item) {
+  if (runtimePolicy.dataMode === 'api' && (detailLoadingId === id || (!item && !detailError))) {
+    return <PageContainer className="py-8 text-center text-sm text-text-secondary"><p role="status">正在加载通知…</p></PageContainer>
+  }
+
+  if (!item || (runtimePolicy.dataMode === 'api' && detailError)) {
     return (
       <PageContainer className="flex flex-col pb-8">
         <EmptyState
@@ -35,12 +50,13 @@ export default function NotificationDetail() {
               <MailQuestion className="h-12 w-12 text-reward" strokeWidth={1.6} />
             </span>
           }
-          title={<span className="text-[15px] leading-[22px] text-text-secondary">消息不存在或已过期</span>}
+          title={<span className="text-[15px] leading-[22px] text-text-secondary">{detailError ?? '消息不存在或已过期'}</span>}
           supportingText={<span className="text-xs leading-[18px]">该消息可能已被清理，返回列表查看其他通知</span>}
           primaryAction={
-            <Button variant="outline" onClick={() => navigate('/notifications')}>
-              返回通知列表
-            </Button>
+            <div className="flex gap-2">
+              {runtimePolicy.dataMode === 'api' && id && <Button variant="outline" disabled={detailLoadingId === id} onClick={() => void loadRemoteNoticeDetail(id)}>重试</Button>}
+              <Button variant="outline" onClick={() => navigate('/notifications')}>返回通知列表</Button>
+            </div>
           }
         />
       </PageContainer>

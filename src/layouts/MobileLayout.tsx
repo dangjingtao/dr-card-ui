@@ -109,7 +109,7 @@ export default function MobileLayout() {
   const navigate = useNavigate()
   const previousShellPathname = useRef(location.pathname)
   const scrollSourcePathname = previousShellPathname.current
-  const { unreadCount } = useNotifications()
+  const { unreadCount, countLoaded } = useNotifications()
   const { open: openOverlay } = useOverlay()
   const showLegacyNav = isLegacyTabPath(location.pathname)
   const showNav = showLegacyNav || isFormalH5TabPath(location.pathname)
@@ -145,7 +145,7 @@ export default function MobileLayout() {
             ? 'back'
             : 'none'
   const isNotificationsPage = location.pathname === '/notifications'
-  const allNotificationsRead = unreadCount === 0
+  const allNotificationsRead = countLoaded && unreadCount === 0
 
   useLayoutEffect(() => {
     previousShellPathname.current = location.pathname

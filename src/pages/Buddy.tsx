@@ -1,7 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { runtimePolicy } from '../app/config/runtime'
 import { useNavigate } from 'react-router-dom'
-import { CalendarCheck, Gift, QrCode, Smartphone, Sparkles } from 'lucide-react'
+import { CalendarCheck, Gift, Loader2, QrCode, RefreshCw, Smartphone, Sparkles, UserRoundPlus } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import PageContainer from '../components/mobile/PageContainer'
 import DebugPanel from '../components/mobile/DebugPanel'
@@ -10,6 +10,7 @@ import { findRouteByPathname } from '../app/router/routes'
 import { useFixtureDebug, useFixtureState, withFixtureQuery } from '../app/fixtures/useFixture'
 import { BUDDY_EMPTY_COPY, BUDDY_FEATURE_INTRO, BUDDY_INVITE_ENTRIES } from '../app/fixtures'
 import { applyBuddyPreset, ensureBuddyDefaultPreset, useBuddies, type BuddyListPreset } from '../app/state/buddies'
+import { loadBuddyRelations, type BuddyMember } from '../services/buddyRelations'
 import buddyEmptyHero from '../assets/brand/buddy/buddy-empty-hero-v2.webp'
 import buddyAvatarXiaomei from '../assets/brand/buddy/buddy-avatar-xiaomei.webp'
 
@@ -36,6 +37,11 @@ const FEATURE_ICONS: Record<string, LucideIcon> = {
   mutual: Sparkles,
 }
 
+type RemoteState =
+  | { status: 'loading' }
+  | { status: 'ready'; items: BuddyMember[] }
+  | { status: 'failed'; message: string }
+
 const ENTRY_ICONS: Record<string, LucideIcon> = {
   qrcode: QrCode,
   phone: Smartphone,
@@ -46,8 +52,10 @@ export default function Buddy() {
   const { raw } = useFixtureState(route)
   const debug = useFixtureDebug()
   const navigate = useNavigate()
-  const { items, count } = useBuddies()
+  const { items } = useBuddies()
   const fixtureMode = runtimePolicy.dataMode === 'mock'
+  const [remote, setRemote] = useState<RemoteState>({ status: 'loading' })
+  const [retry, setRetry] = useState(0)
 
   /** 显式 fixture 优先；无 fixture 时仅在本次会话第一次进入时抽一次 50/50 默认态。 */
   useEffect(() => {
@@ -61,13 +69,45 @@ export default function Buddy() {
     ensureBuddyDefaultPreset()
   }, [raw, fixtureMode])
 
+  useEffect(() => {
+    if (fixtureMode) return
+    let active = true
+    setRemote({ status: 'loading' })
+    void loadBuddyRelations().then(data => {
+      if (active) setRemote({ status: 'ready', items: data })
+    }).catch(error => {
+      if (active) setRemote({ status: 'failed', message: error instanceof Error ? error.message : '搭子列表加载失败' })
+    })
+    return () => { active = false }
+  }, [fixtureMode, retry])
+
+  const displayed = fixtureMode
+    ? items.map(item => ({ id: item.id, nickname: item.name, avatarUrl: buddyAvatarXiaomei }))
+    : remote.status === 'ready' ? remote.items : []
+
   return (
     <PageContainer inset={false} className="flex min-h-full flex-col pb-6">
-      {!fixtureMode ? (
+      {fixtureMode && (
+        <p className="mx-4 mt-3 text-center text-xs text-buddy-muted" role="status">
+          演示搭子资料，非真实账号关系
+        </p>
+      )}
+      {!fixtureMode && remote.status !== 'ready' ? (
         <section role="status" className="mx-4 mt-4 rounded-container bg-surface px-4 py-10 text-center shadow-card">
-          <p className="text-sm leading-6 text-buddy-text">搭子列表正在接入后台，暂不能查看真实关系</p>
+          {remote.status === 'loading' ? (
+            <p className="flex items-center justify-center gap-2 text-sm text-buddy-text">
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />正在加载搭子…
+            </p>
+          ) : (
+            <>
+              <p className="text-sm leading-6 text-buddy-text">{remote.message}</p>
+              <Button variant="outline" leadingIcon={RefreshCw} className="mt-4" onClick={() => setRetry(v => v + 1)}>
+                重试加载
+              </Button>
+            </>
+          )}
         </section>
-      ) : count === 0 ? (
+      ) : displayed.length === 0 ? (
         <EmptyState
           className="flex-1 pt-10"
           visual={
@@ -94,23 +134,34 @@ export default function Buddy() {
       ) : (
         <section className="px-4 pt-3" aria-label="我的洗头搭子">
           <ul className="space-y-2.5">
-            {items.map((buddy) => (
+            {displayed.map((buddy) => (
               <li key={buddy.id}>
                 <article className="flex items-center gap-3 rounded-container bg-surface px-3.5 py-3 shadow-card">
-                  <img
-                    src={buddyAvatarXiaomei}
-                    alt=""
-                    aria-hidden
-                    className="h-12 w-12 flex-none rounded-full object-cover"
-                  />
+                  {buddy.avatarUrl ? (
+                    <img src={buddy.avatarUrl} alt="" aria-hidden
+                      className="h-12 w-12 flex-none rounded-full object-cover" />
+                  ) : (
+                    <span aria-hidden className="flex h-12 w-12 flex-none items-center justify-center rounded-full bg-buddy-surface text-buddy-accent">
+                      <UserRoundPlus className="h-6 w-6" />
+                    </span>
+                  )}
                   <p className="min-w-0 flex-1 truncate text-[15px] font-medium text-buddy-text">
-                    {buddy.name}
+                    {buddy.nickname}
                   </p>
                 </article>
               </li>
             ))}
           </ul>
         </section>
+      )}
+
+      {!fixtureMode && remote.status === 'ready' && (
+        <div className="mt-3 px-4 text-right">
+          <Button variant="outline" size="regular" leadingIcon={RefreshCw}
+            onClick={() => setRetry(value => value + 1)}>
+            刷新搭子列表
+          </Button>
+        </div>
       )}
 
       <section className="mt-4 px-4" aria-label={BUDDY_FEATURE_INTRO.title}>

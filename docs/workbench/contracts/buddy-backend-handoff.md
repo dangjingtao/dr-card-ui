@@ -78,13 +78,50 @@ H5 已独立实现二维码绘制与可保存的 PNG 海报（`src/lib/buddyQrPo
 - H5 的初步 URL 校验要求 HTTPS、同一受信 Origin、`/buddy/invite/scan` 路径、不可空的识别信息，禁止凭证、fragment、重定向参数；如后台决定另一种合法路径或签名参数，请先双方更新此合同及校验测试，不能偷偷放开到任意 URL。
 - 后台需回填：真实 path/method、`qrUrl` DTO、使用的 token 参数、官方域名及页面部署规则；前端随后接入真接口并做双账号真机验收。本段不是后台已有接口或 Native 相册能力已验收的证明。
 
+## 2026-10-09｜#111 手机号 / 通知 H5 提前施工说明
 
-## 2026-10-09｜后台已出现部分业务 API（非协议签署）
+H5 已在 #111 分支补齐搜索结果状态、真实资料字段展示、反向待处理确认、通知中心的独立待处理状态及显式确认操作。所有新 /__h014/buddy-phone/* 路径都只是 MSW Mock seam，不是后台已交付 API。src/services/buddyPhoneGateway.ts 在 API/test/prod 模式封锁这些 seam，直到 #105/#95 鉴权权限合同和正式端点确认；H5 无法自动代替后台建立关系。
 
-后台同事本地仓库 `API/master@7e1f710` 新增 `GET /api/friends/index`、`POST /api/friends/add|agree|reject`，并补齐用户通知 `GET /api/notices/index|detail|unread-count`、`POST /api/notices/read-all`。
+后端请具体回填：
+- 仅按完整手机号精确搜索已注册账号：昵称、头像、本人/已是搭子/已发邀请/对方已发邀请/可邀请/未找到；反向待处理时一并提供仅当前登录用户可以确认的 invitationId。
+- 发送只产生一次持久 pending，重复发送返回稳定状态，不生成重复通知。
+- 当前登录人的搭子邀请通知箱 GET：真实 invitationId、发起人公开资料、pending 或 completed、创建时间、分页与登录态；普通“已读”不改变邀请处理状态。
+- 被邀请者 POST 确认：仅该用户可执行；幂等的 accepted 或 already-buddies；二维码/手机号关系唯一，另一入口产生的 pending 同步完成；返回双方真实关系数据的后续查询方式。
+- 对完整手机号检索做真实限频/反枚举措施，验证越权查询与越权接受；不复用未审查安全的通用通知 CRUD。
+- 方法/path/DTO/错误码、token 归属、dev/test 地址、真实双账号证据由 Backend Owner 签署。
 
-- **可复用的片段**：好友列表从当前登录用户隔离，`friends/add` 可按完整手机号发起待处理申请，`friends/agree` 可由接收者根据通知里的 `extra_json.friends_id` 同意；`notices/index?type=60` 可查询好友申请。
-- **尚不符合本协议的部分**：仍缺稳定不可枚举的官方 HTTPS QR、扫码预览与“扫码者确认即绑定”的专用动作；手机搜索缺业务状态预览；后台 `reject` 不在一期产品范围；同意/拒绝目前会软删除申请通知，与“保留历史及完成态”不一致；CRUD 归属鉴权、反向去重需实证。
-- **本合同不自动变更**：以上接口只算“静态源码存在”，不能视为 #105 已完成签收、#104 已恢复或 H5 可按当前端点直接联调上线。
+以上是草案语义，不代表现有后台接口；H5 仍缺真实联调与 Android/iOS WebView 验收。
 
-逐项路径、DTO、差异、风险和后端待办见 [新增 API 核对文档](../../engineering/backend-api-delta-2026-10-09.md)。请后台 Owner 基于该事实记录继续回填本协议的正式 API、权限与部署/实测证据。
+
+## 2026-10-09｜#107 H5 第三刀 · 扫码预览/关系列表接线
+
+- `src/services/buddyRelations.ts` 新增 **H5-only** `BuddyRelationsBackend` 合同：`trustedOrigin`、`previewQr(qrUrl)`、`acceptQr(qrUrl)`、`list()`，以服务端已登录用户为可信主体；DTO（示例）为 `{ inviter: {id,nickname,avatarUrl}, relationship:'available'|'self'|'already-buddies'|'unavailable' }`、`{result:'accepted'|'already-buddies'}`、`{items:[{id,nickname,avatarUrl}]}`。这些**仅是前端草案**，不是后台现有路径或返回字段。Owner 确认后统一在服务层适配最终字段；不能把原始 Friends CRUD 当业务确认。
+- `src/pages/BuddyAccept.tsx` 只消费未来 Native **专用的二维码纯识别**传参：App 内 React Router location state `{ buddyScan: { source: 'native-buddy-recognition', raw: '<official HTTPS QR>' } }`。此形状只是 H5 内部消费提案，**不是已落地 JSBridge 名称/回调**。禁止外部网页、公开 query 或 Android 设备事务回调直接注入。
+- 预览必须先从服务端读真实邀请人昵称头像及关系状态。**查询和取消均不写关系**；只有点击「确认成为搭子」才调用后端接受事务；成功路由至 `/buddy`，页面重新请求自己的真实搭子列表；已绑定直接提供「查看我的搭子」，自邀/不可用不允许确认。
+- `src/pages/Buddy.tsx`：正式模式从关系服务取得当前登录人的 `items`，支持 loading / 空态 / 请求失败重试 / 列表头像回退。**不得混用本地 fixture 写成真实列表**。
+- 目前后台 `#105` 与 Native `#110` 均未签署：`signedBackend` 默认未配置，API/test/prod 显示不可用和重试，但**不执行写操作、不假建关系**；preview/dev 的演示二维码和搭子列表明确标注模拟数据，点击演示确认只回显「不建立真实关系」。
+- 双方联调必须证明：App 底部共用扫码识别搭子码→H5 预览/确认→真实列表刷新，并且**设备/卡券二维码能继续原事务与最终结果回调**；微信/system 相机只进入静态提示页。未知码不得执行任何交易。至少两个真实账号验证无效/自己/重复/取消/幂等/刷新重进。
+
+## 2026-10-09｜对接已实现的真实后台接口（H5 #105 适配）
+
+已对照 `workspace/API` 的 `kbs/API master@b6d2821` 实际 controller、service、docs/api-buddy.md、Notices，前端仅在 `runtimePolicy.dataMode === 'api'` 时走下列真实接口（dev/preview Mock 保持独立）。
+
+| H5 能力 | 已有后台端点 | 前端口径 |
+| --- | --- | --- |
+| 我的搭子列表 | GET /api/friends/index?page&pageSize | 按登录用户分页读取 status=20，在 `data.data[].friend` 取对方 id/nick_name/avatar_img，翻页取全，不接受 user_id |
+| 手机号发送申请 | POST /api/friends/add {mobile, source:10} | 只有手动点击才写；响应 status=10 是 pending，**不是直接绑定**。后台尚无安全的只读手机号预览，正式模式改为“输入完整手机号直接发送申请”，绝不编造对方头像昵称 |
+| 我的好友申请通知 | GET /api/notices/index?type=60&page&pageSize | 按已登录用户读取，解析 extra_json.friends_id **关系记录 ID**（不是 notice.id），显示后端 content 文本；既有通知普通已读与确认分开 |
+| 明确接受申请 | POST /api/friends/agree {id: friends_id} | 必须点击确认；只接受 status=20 响应，后台同意后删除对应 type=60 通知，H5 重新拉取；不保留虚构的完成历史 |
+| 唯一识别码查公开资料 | GET /api/user/code?identify_code=UUID | 仅只读、强制 UUID 输入并只映射昵称/头像/ID；**H5 现可从当前登录用户的 `/api/user/profile.identify_code` 配合部署配置的官方 Origin 生成二维码 URL；本查询接口仍只用于扫码者读取公开资料** |
+
+以上使用现有统一 `parseApiEnvelope` 的 `code === 0` 判定、现有 HTTP session 授权，并在契约解析失败时如实报错。H5 对接的是已经存在的接口形状；**代码已接线≠后台测试/生产环境已部署，≠真人账号真机验收**。
+
+仍待后台同事：手机号精确只读搜索、关系状态查询/反向待处理、官方 HTTPS 二维码 URL、扫码预览+直接确认原子事务、完成通知持久化、识别码补齐持久化、安全/归属与权限问题。特别注意，/api/friends/agree 的 `id` 必须是朋友申请的业务记录编号，不能传用户 ID 或通知 ID；旧 /api/friends/update/delete 不得用于绕过确认。#110 Native 按码分流继续保留原设备和卡券核销事务。
+
+
+## 2026-10-09｜#139 小补丁：基于当前账号 identify_code 生成邀请二维码
+
+- H5 在 API 模式读取已鉴权 `GET /api/user/profile` 的 `identify_code`（UUID，可缺席），使用构建环境 `VITE_BUDDY_PUBLIC_ORIGIN` 生成 `<officialOrigin>/buddy/invite/scan?code=<identify_code>`，无需后台另行提供二维码图片或 `qrUrl` 接口。
+- 缺少识别码、官方域名未配置或配置不合法时，页面显式失败，不降级为 Mock。preview/dev Mock 仍使用明确标识的演示码。现有二维码 PNG 绘制与 Native 海报保存不变。
+- test/prod 部署负责人须分别配置官方 HTTPS Origin，保证该公开页面真正承接扫码引导。仅生成二维码**不代表** Native 已能识别分流、更不代表后端已实现二维码关系确认。
+- 先前“后台必须交付 `qrUrl`”属于旧方案；以本节覆盖该交接要求。后端仍须保证 `identify_code` 稳定、唯一、可用于扫码查询与后续确认授权，完成真实双账号验证。

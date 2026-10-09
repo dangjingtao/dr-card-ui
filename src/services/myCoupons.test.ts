@@ -126,6 +126,45 @@ describe('MyCoupons contract', () => {
     })
   })
 
+  it('accepts sparse third-party card records passed through by the H5 backend', async () => {
+    mocks.request.mockResolvedValue({
+      code: 0,
+      msg: 'success',
+      data: {
+        data: [
+          { id: '101', active_name: '精简优惠卡', enable_amount: '20.00' },
+          { active_name: '没有操作编号的卡券', enable_amount: null, valid_date_range: null },
+        ],
+        current_page: 1,
+        per_page: 100,
+        total: 2,
+        last_page: 1,
+      },
+    })
+
+    const result = await fetchMyCoupons({ type: 'unused' })
+
+    expect(result.data).toHaveLength(2)
+    expect(result.data[0]).toMatchObject({ id: '101', active_name: '精简优惠卡' })
+    expect(result.data[0].get_amount).toBeUndefined()
+    expect(result.data[1].id).toBeUndefined()
+    expect(result.data[1].enable_amount).toBeNull()
+    expect(result.total).toBe(2)
+  })
+
+  it('continues to reject invalid pagination instead of calling it an empty card pack', async () => {
+    mocks.request.mockResolvedValue({
+      code: 0,
+      msg: 'success',
+      data: { data: [], current_page: 1, per_page: '15', total: 0, last_page: 1 },
+    })
+
+    await expect(fetchMyCoupons({ type: 'unused' })).rejects.toMatchObject({
+      kind: 'contract',
+      code: 'CONTRACT_VALIDATION_FAILED',
+    })
+  })
+
   it('caps pageSize at the documented maximum', async () => {
     mocks.request.mockResolvedValue({
       code: 0,

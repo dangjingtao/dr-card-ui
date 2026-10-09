@@ -104,16 +104,11 @@
 > 后端 CRUD 自动生成的 `index/add/detail/update/delete/select` 六件套见 `docs/api/dearseed-api.md`；其中 `add/update/delete` 属后台管理，H5 原则上不直接调用。
 
 
-## 2. 2026-10-09 后台新接口（仅源码核对，未宣称部署或实测）
+## 2026-10-09 后台新增 API 的历史核对快照
 
-> 2026-09-16 的旧 OpenAPI 快照不覆盖 10-08/10-09 后台新提交。已对照后台 `master@7e1f710`，请看 **[2026-10-09 后台 API 新增清单、DTO 关键点与 H5 合同差异](./engineering/backend-api-delta-2026-10-09.md)**。此节与上面的“已实测可用”分开管理，不能据此升级 test/prod 验收状态。
+[后台新增接口、DTO 差异与产品合同审计（2026-10-09 静态快照）](./engineering/backend-api-delta-2026-10-09.md)
 
-| 模块 | 新业务入口 | 现状 / 接入门槛 |
-| --- | --- | --- |
-| 洗头搭子 | `GET friends/index`、`POST friends/add|agree|reject` | 申请/确认已有；缺 QR 专用合同、手机号状态查询，产品不使用拒绝；安全与通知历史待对齐 |
-| 系统通知 | `GET notices/index|detail|unread-count`、`POST notices/read-all` | 登录用户隔离代码已有，待双账号真实测试 |
-| AI / 人工客服 | `POST chatmessages/add|transfer`、`GET chatmessages/index`、Socket.IO `chat:message` | SSE/Socket 代码已有，模型配置与人工接通待验 |
-| 券分类 | `GET couponscategory/index|select|detail` | 只读可准备接入，筛选参数需 test 确认；`add|update|delete` 未鉴权，**禁止 H5 调用** |
-| 泡泡值兑换 | `POST coupons/exchange` | 扣减与补偿已写，第三方发券仍是占位，**不能真实兑换** |
+- **仅确认后端源码**：`API/master@7e1f710` 当时的 Friends、通知、客服 SSE/Socket、券分类与兑换接口形状；真实部署与授权负向测试另行验收。
+- **H5 晚间已合入 dev**：通知 #128、券分类 #132、搭子 #133/#134/#139、客服 #141/#147 等实现；不能沿用快照中的“未实施”作为现状。
+- **不可合并解释的阻塞**：第三方发券、好友关系安全/状态历史、扫码分流、真人坐席、App WebView 等必须根据对应 Issue 和真实环境证据判定，不因源代码存在就宣布可用。
 
-> 此表的路径省略统一 `/api/` 前缀。完整 Method、请求/响应字段、错误状态、源文件及产品差异以链接文档为准。

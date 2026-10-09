@@ -253,17 +253,20 @@ record(
   JSON.stringify(detailShell),
 )
 
-// ---------- 要点 7：泡泡值页任务占位卡 + 看明细 ----------
+// ---------- 要点 7：UX-B 取代 T024 静态任务口径；保留历史记录，见 docs/workbench/uxb-t024-supersession.md ----------
 await go('/points')
 const tasksText = await page.locator('section[aria-labelledby="points-tasks-title"]').innerText()
-const taskTitles = ['每日打卡', '连续签到', '观看视频', '邀请好友']
-const taskHit = taskTitles.filter((title) => tasksText.includes(title))
-const taskInteractive = await page.locator('section[aria-labelledby="points-tasks-title"] button, section[aria-labelledby="points-tasks-title"] a').count()
+const inventedTitles = ['观看视频', '邀请好友']
+const inventedHits = inventedTitles.filter((title) => tasksText.includes(title))
+const fakeRewardClaim = /\+\s*(?:5|50)\s*🫧/.test(tasksText)
+const retryActions = await page.locator('section[aria-labelledby="points-tasks-title"] button').count()
+const errorVisible = tasksText.includes('签到任务加载失败')
 record(
   'R7-07a',
-  '原泡泡值页面展示任务占位卡片',
-  taskHit.length === 4 && tasksText.includes('占位') && taskInteractive === 0,
-  `命中=${taskHit.length}/4 占位标记=${tasksText.includes('占位')} 交互控件=${taskInteractive}`,
+  '泡泡任务不再展示未兑现的静态奖励，保留真实活动或合法空/错误态',
+  tasksText.includes('泡泡任务') && inventedHits.length === 0 && !fakeRewardClaim &&
+    (retryActions === 0 || (errorVisible && retryActions === 1)),
+  `虚构任务=${inventedHits.join('/') || '无'} 虚构奖励=${fakeRewardClaim} 重试按钮=${retryActions} 错误态=${errorVisible}`,
 )
 await page.getByRole('button', { name: '看明细' }).click()
 await page.waitForURL(/\/points\/detail$/, { timeout: 5000 }).catch(() => {})

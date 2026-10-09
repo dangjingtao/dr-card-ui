@@ -149,7 +149,11 @@ const customPages: Record<string, ReactElement> = {
   '/brand-culture': <RichTextPlaceholder routePath="/brand-culture" settingKey="brand_culture_setting" />,
   '/service/welfare-officer': <WelfareOfficer />,
   /* T013：#58 智能客服承载 #71 弹层，#70 为转人工后的排队/接入两态 */
-  '/service/chat': <ServiceChat />,
+  '/service/chat': (
+    <HomeAuthGate>
+      <ServiceChat />
+    </HomeAuthGate>
+  ),
   '/service/chat/human': <ServiceHuman />,
   '/notifications': <Notifications />,
   '/notifications/:id': <NotificationDetail />,

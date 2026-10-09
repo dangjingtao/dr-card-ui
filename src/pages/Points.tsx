@@ -1,4 +1,3 @@
-import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   CalendarCheck,
@@ -9,19 +8,13 @@ import {
   Gift,
   ListTodo,
   Sparkles,
-  UserPlus,
-  Video,
   type LucideIcon,
 } from 'lucide-react'
 import DebugPanel from '../components/mobile/DebugPanel'
 import PageContainer from '../components/mobile/PageContainer'
-import { Button, ProgressIndicator } from '../components/ui'
+import { Button, EmptyState, ProgressIndicator } from '../components/ui'
 import { findRouteByPathname } from '../app/router/routes'
-import {
-  LUCK_PLACEHOLDER,
-  POINTS_TASK_PLACEHOLDERS,
-  type PointsTaskPlaceholder,
-} from '../app/fixtures'
+import { LUCK_PLACEHOLDER } from '../app/fixtures'
 import {
   SIGN_ACTIVITY_STATUS_ACTIVE,
   SIGN_ACTIVITY_STATUS_CLOSED,
@@ -47,23 +40,11 @@ import pointsBenefitVoucher from '../assets/brand/bubble/points-benefit-voucher.
  *    §4.3 澡运入口保持金色卡片风格，且入口与目标页均为占位（LUCK_PLACEHOLDER）；
  *    §4.4 底部主按钮文案改为「泡泡值兑换」，样式、位置与跳转逻辑保持不变。
  * 2026-08-28：澡运入口补独立金色图标物料，不再使用通用 Waves 线框图标。
- * 2026-09-28：接入 GET /api/userpoints/stat —— 顶部「可用 / 累计收入 / 累计消耗」三块数字
- *    改为读接口（可用严格取 points，禁止用 income - expense 反推）。泡泡任务区仍为占位，
- *    继续读 fixtures，不受本次接口接入影响。
- * 2026-09-28（续）：泡泡任务区接入 GET /api/signactivity/list —— 签到类任务（每日打卡 /
- *    连续签到）的标题与进度改读接口（title / signed_days / max_days）；「观看视频」「邀请好友」
- *    在该接口无对应数据，继续读 fixtures 占位。接口返回什么状态就展示什么，前端暂不过滤。
- * 2026-09-29：泡泡任务区移除「占位」标签与占位说明文案；「进行中」任务的状态色由金色
- *    改为品牌橙（浅橙底 + 主色图标/文字），避免与相邻任务并排时出现厚重金色块。
+ * 2026-09-28：顶部余额与统计数据改由 /api/userpoints/stat 提供；
+ *    签到类任务由 /api/signactivity/list 提供进度，不从前台推算奖励结算。
+ * 2026-10-09 UX-B：移除正式任务列表里的「观看视频」「邀请好友」
+ *    无后端履约能力的静态奖励卡。接口加载 / 失败 / 无配置时不回退虚假任务。
  */
-
-/** 占位任务与图标的对应关系；任务语义沿用流水夹具中的同名条目 */
-const TASK_ICONS: Record<string, LucideIcon> = {
-  'daily-checkin': CalendarCheck,
-  'streak-checkin': Flame,
-  'watch-video': Video,
-  'invite-buddy': UserPlus,
-}
 
 /**
  * 打卡类任务（每日打卡 / 连续签到）复用 Dashboard 语义的图标。
@@ -96,8 +77,7 @@ const TASK_STATE_STYLES = {
 } as const
 
 /**
- * 任务卡视图模型。占位卡与接口卡共用同一张卡皮肤，
- * 差异只在数据来源，避免两套卡片视觉漂移。
+ * 任务卡视图模型。只呈现真实签到活动，不插入未结算的奖励承诺。
  */
 interface TaskCardView {
   id: string
@@ -114,21 +94,6 @@ interface TaskCardView {
 function toPercent(current: number, target: number): number {
   if (target <= 0) return 0
   return Math.min(100, Math.round((current / target) * 100))
-}
-
-/** 占位卡 → 视图模型 */
-function toPlaceholderView(task: PointsTaskPlaceholder): TaskCardView {
-  return {
-    id: task.id,
-    title: task.title,
-    description: task.description,
-    current: task.current,
-    target: task.target,
-    state: task.state,
-    stateLabel: task.stateLabel,
-    rewardBubble: task.rewardBubble,
-    icon: TASK_ICONS[task.id] ?? ListTodo,
-  }
 }
 
 /**
@@ -158,9 +123,7 @@ export function toActivityView(activity: SignActivity): TaskCardView {
 }
 
 /**
- * 任务卡（占位 / 接口共用）。
- * 需求 §4.2 只要求「视觉完整的占位卡片」，因此这里刻意不做成可点击控件，
- * 避免把未定稿的任务体系表现成已经可用的功能入口。
+ * 真实签到任务进度展示，不伪造额外奖励领取动作。
  */
 function PointsTaskCard({ task }: { task: TaskCardView }) {
   const Icon = task.icon
@@ -231,21 +194,12 @@ export default function Points() {
 
   // GET /api/signactivity/list：签到类任务（每日打卡 / 连续签到）的数据源。
   // 接口返回什么状态就展示什么，前端暂不过滤（产品未定是否过滤 status=10/40）。
-  const { remote: activityRemote } = useSignActivityList()
+  const { remote: activityRemote, reload: reloadActivities } = useSignActivityList()
 
-  // 任务区最终列表 = 接口返回的签到活动（成功时）+ 无数据源的占位卡。
-  // 接口失败时回退为纯占位，不把失败伪装成空数据。
-  const taskCards = useMemo<TaskCardView[]>(() => {
-    const activityCards =
-      activityRemote.state === 'success' ? activityRemote.data.map(toActivityView) : []
-
-    // 「观看视频」「邀请好友」在 signactivity/list 中无对应数据，保持占位。
-    const placeholderOnly = POINTS_TASK_PLACEHOLDERS.filter(
-      (task) => task.id === 'watch-video' || task.id === 'invite-buddy',
-    ).map(toPlaceholderView)
-
-    return [...activityCards, ...placeholderOnly]
-  }, [activityRemote])
+  // 只展示接口返回的签到活动；异常/空列表不能回退无兑现能力的静态任务。
+  const taskCards = activityRemote.state === 'success'
+    ? activityRemote.data.map(toActivityView)
+    : []
 
   // 底部主操作沿用滚动列表页的 sticky bottom-0 约定；/points 现为「泡泡」一级 Tab，
   // TabBar 位于 MobileLayout 的滚动区之外，sticky 操作区会自然停在 TabBar 上方。
@@ -361,10 +315,24 @@ export default function Points() {
           <ListTodo className="h-4 w-4 text-reward-strong" aria-hidden />
           泡泡任务
         </h2>
-        <div className="overflow-hidden rounded-feature border border-border-subtle bg-surface shadow-bubble">
-          {taskCards.map((task) => (
-            <PointsTaskCard key={task.id} task={task} />
-          ))}
+        <div
+          className="overflow-hidden rounded-feature border border-border-subtle bg-surface shadow-bubble"
+          aria-busy={activityRemote.state === 'loading'}
+        >
+          {activityRemote.state === 'loading' ? (
+            <EmptyState variant="no-data" title="正在加载签到任务" />
+          ) : activityRemote.state === 'error' ? (
+            <EmptyState
+              variant="recoverable-error"
+              title="签到任务加载失败"
+              supportingText={activityRemote.message}
+              primaryAction={<Button variant="outline" onClick={reloadActivities}>重试</Button>}
+            />
+          ) : taskCards.length === 0 ? (
+            <EmptyState variant="no-data" title="暂无签到任务" />
+          ) : (
+            taskCards.map((task) => <PointsTaskCard key={task.id} task={task} />)
+          )}
         </div>
       </section>
 

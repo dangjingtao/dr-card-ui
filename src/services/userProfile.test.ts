@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   fetchUserProfile,
+  fetchUserProfileDetail,
   updateUserProfile,
   USER_GENDER_MALE,
 } from './userProfile'
@@ -31,7 +32,81 @@ const PROFILE_DATA = {
   real_name: '',
   points: 128,
   kbs_id: 'K016998956',
+  identify_code: '123e4567-e89b-42d3-a456-426614174000',
 }
+
+describe('live user detail contract', () => {
+  beforeEach(() => mocks.request.mockReset())
+
+  it('maps current DB identity and grade, without treating numeric avatar zero as a real photo', async () => {
+    mocks.request.mockResolvedValue({
+      code: 0, data: { nick_name: '新昵称', grade: '大二', avatar_img: 0 },
+    })
+    await expect(fetchUserProfileDetail()).resolves.toEqual({
+      nickname: '新昵称', grade: '大二', avatar: undefined,
+    })
+  })
+
+  it('prefers the persisted student_grade when membership grade differs', async () => {
+    mocks.request.mockResolvedValue({
+      code: 0,
+      data: {
+        nick_name: '已更新用户',
+        grade: '普通会员',
+        student_grade: '研二',
+        avatar_img: '',
+      },
+    })
+    await expect(fetchUserProfileDetail()).resolves.toEqual({
+      nickname: '已更新用户',
+      grade: '研二',
+      avatar: undefined,
+    })
+    expect(mocks.request).toHaveBeenCalledWith({
+      method: 'GET',
+      url: '/api/user/detail',
+      headers: undefined,
+    })
+  })
+
+  it('treats explicitly empty student_grade as unselected, never as membership grade', async () => {
+    mocks.request.mockResolvedValue({
+      code: 0,
+      data: { nick_name: '未设置年级', grade: '钻石会员', student_grade: '' },
+    })
+    await expect(fetchUserProfileDetail()).resolves.toMatchObject({ grade: '' })
+  })
+
+  it('treats nullable student_grade as unset, not a reason to select a membership tier', async () => {
+    mocks.request.mockResolvedValue({
+      code: 0,
+      data: { nick_name: '未填写', grade: '大一', student_grade: null },
+    })
+    await expect(fetchUserProfileDetail()).resolves.toMatchObject({ grade: '' })
+  })
+
+  it('uses legacy grade only when student_grade is absent', async () => {
+    mocks.request.mockResolvedValue({
+      code: 0,
+      data: { nick_name: '旧接口', grade: '大三' },
+    })
+    await expect(fetchUserProfileDetail()).resolves.toMatchObject({ grade: '大三' })
+  })
+
+  it('uses a real avatar URL from the detail response', async () => {
+    mocks.request.mockResolvedValue({
+      code: 0, data: { nick_name: '小明', grade: '研二', avatar_img: 'https://cdn.example.com/user.png' },
+    })
+    await expect(fetchUserProfileDetail()).resolves.toMatchObject({
+      nickname: '小明', avatar: 'https://cdn.example.com/user.png',
+    })
+  })
+
+  it('does not silently accept an API business failure', async () => {
+    mocks.request.mockResolvedValue({ code: 401, message: '请先登录', data: [] })
+    await expect(fetchUserProfileDetail()).rejects.toThrow('请先登录')
+  })
+})
 
 describe('user profile contract', () => {
   beforeEach(() => {
@@ -58,6 +133,7 @@ describe('user profile contract', () => {
       realName: undefined,
       points: 128,
       kbsId: 'K016998956',
+      identifyCode: '123e4567-e89b-42d3-a456-426614174000',
     })
   })
 
@@ -111,6 +187,18 @@ describe('user profile contract', () => {
     mocks.request.mockResolvedValue({ code: 401, message: '请先登录', data: [] })
 
     await expect(fetchUserProfile()).rejects.toMatchObject({ kind: 'business', message: '请先登录' })
+  })
+})
+
+describe('profile identify_code parsing', () => {
+  beforeEach(() => mocks.request.mockReset())
+
+  it('returns absent code as undefined and rejects a malformed UUID', async () => {
+    const { identify_code: _code, ...withoutCode } = PROFILE_DATA
+    mocks.request.mockResolvedValue({ code: 0, data: withoutCode })
+    await expect(fetchUserProfile()).resolves.toMatchObject({ identifyCode: undefined })
+    mocks.request.mockResolvedValue({ code: 0, data: { ...PROFILE_DATA, identify_code: 'invalid' } })
+    await expect(fetchUserProfile()).rejects.toThrow()
   })
 })
 

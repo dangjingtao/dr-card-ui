@@ -1,5 +1,8 @@
 import { act, renderHook } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+
+// This legacy T012 store test verifies the intentionally retained preview/mock fixture mode.
+vi.mock('../config/runtime', () => ({ runtimePolicy: { dataMode: 'mock' } }))
 
 import { NOTIFICATION_FIXTURES } from '../fixtures'
 import {

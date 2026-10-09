@@ -1,5 +1,12 @@
 # 2026-10-09 后台新增接口｜H5 接入核对与合同差异
 
+> **归档说明｜2026-10-09 22:00（Asia/Shanghai）**：本文是后台 **`API/master@7e1f710` 14:25 的源码审计快照**。下文“未实施”仅指**当时 H5 基线**，不代表晚间最新代码；源码存在也不代表 test/prod 已部署或真机验收完成。
+>
+> **H5 已合入 `dev`（仅代码交付）**：通知 [#128](https://github.com/dangjingtao/dr-card-ui/pull/128)、体验券分类 [#132](https://github.com/dangjingtao/dr-card-ui/pull/132)、搭子真实列表/手机号申请/通知确认 [#133](https://github.com/dangjingtao/dr-card-ui/pull/133) + [#134](https://github.com/dangjingtao/dr-card-ui/pull/134)、从登录用户 `profile.identify_code` 生成 QR [#139](https://github.com/dangjingtao/dr-card-ui/pull/139)、AI 客服 SSE/Socket [#141](https://github.com/dangjingtao/dr-card-ui/pull/141) + [#147](https://github.com/dangjingtao/dr-card-ui/pull/147)。上述合并**不等于后端真实部署、人工座席、二维码绑定、原生扫码及双账号 WebView 验收**。
+>
+> **后续权威跟踪**：API 总卡 [#92](https://github.com/dangjingtao/dr-card-ui/issues/92)、搭子交接 [#105](https://github.com/dangjingtao/dr-card-ui/issues/105) / [#107](https://github.com/dangjingtao/dr-card-ui/issues/107) / [#111](https://github.com/dangjingtao/dr-card-ui/issues/111)、通知 [#122](https://github.com/dangjingtao/dr-card-ui/issues/122)、分类 [#124](https://github.com/dangjingtao/dr-card-ui/issues/124)、客服 [#123](https://github.com/dangjingtao/dr-card-ui/issues/123)。二维码已采用前端识别码方案：**不再以独立 `qrUrl` 图片接口作为前置**；安全/鉴权/发券及真机验收仍需后端与 Native 证据。
+
+
 > **状态：后台源码静态核对 / H5 接入依据（待部署及双账号实测）**。这不是已部署、已联调、已通过产品验收的证明。
 >
 > 后台事实源：本地 `~/Desktop/workspace/API`（阿里云 Codeup `kbs/API`），`master@7e1f710`，2026-10-09 14:25（UTC+08）。所审本地工作区无未提交修改；未核查线上/测试环境实际部署版本。**未经授权不修改后台代码**。
@@ -90,7 +97,7 @@
 
 这些差异要交后台 Owner 回填，不允许“后端这样写了”就把 #102 的产品决策改掉。安全调查 #104 当前暂停，不得写成已完成。
 
-## 5. H5 消费者当前缺口（静态对照，未实施）
+## 5. 当时 H5 消费者缺口（14:25 历史快照，现已部分实施）
 
 | H5 页面 / service | 当前实际代码 | 下一步 |
 | --- | --- | --- |
@@ -112,7 +119,7 @@
 4. 分类写接口权限整改；券列表 `category_id` 实测筛选；卡博士第三方发券接通与异常补偿/对账方案。
 5. 百炼配置、SSE 和 Socket.IO 的 test 端到端样例，人工客服真实可接通的验收窗口。
 
-**H5 后续再做**：从最新 `dev` 单独开实施分支，遵守 `mock|api` / 统一 `httpClient` 及 `parseApiEnvelope`；分别做通知、搭子、客服、分类的正常/空态/鉴权/断网/重复提交测试。**在 test App WebView + 两个真实账号 + 后台已部署环境验证之前，不宣称接入验收。**
+**H5 现阶段执行与后续验收**：已入 `dev` 的功能参见文首交付链接；尚缺的安全与真实联调按现有 Issue 追踪。新缺口从最新 `dev` 单独开实施分支，遵守 `mock|api` / 统一 `httpClient` 及 `parseApiEnvelope`；分别做通知、搭子、客服、分类的正常/空态/鉴权/断网/重复提交测试。**在 test App WebView + 两个真实账号 + 后台已部署环境验证之前，不宣称接入验收。**
 
 关联：[#95 通知](https://github.com/dangjingtao/dr-card-ui/issues/95)、[#96 好友调查](https://github.com/dangjingtao/dr-card-ui/issues/96)、[#102 产品决策](https://github.com/dangjingtao/dr-card-ui/issues/102)、[#105 后台交接](https://github.com/dangjingtao/dr-card-ui/issues/105)、[#107 二维码](https://github.com/dangjingtao/dr-card-ui/issues/107)、[#111 手机号/通知实施](https://github.com/dangjingtao/dr-card-ui/issues/111)。
 

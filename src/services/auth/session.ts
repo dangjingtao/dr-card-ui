@@ -48,11 +48,13 @@ function readSession(): AuthSession | undefined {
 function writeSession(session: AuthSession) {
   volatileSession = session
   storage.write(STORAGE_KEYS.authSession, { accessToken: session.accessToken })
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event('dr-card-ui:auth-session-changed'))
 }
 
 export function clearAuthSession() {
   volatileSession = undefined
   storage.remove(STORAGE_KEYS.authSession)
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event('dr-card-ui:auth-session-cleared'))
 }
 
 export function getAuthSession() {
@@ -137,6 +139,12 @@ async function reauthenticateAfterUnauthorized() {
     if (typeof window !== 'undefined') window.dispatchEvent(new Event(AUTH_FAILURE_EVENT))
     throw error
   }
+}
+
+/** Refresh the shared Native/H5 auth session after a failed non-idempotent request.
+ * Caller must surface the original error; NEVER replay the chat POST automatically. */
+export async function refreshChatAuthAfterUnauthorized(): Promise<void> {
+  if (authFlowEnabled) await reauthenticateAfterUnauthorized()
 }
 
 setHttpAuthHeadersProvider(() => {

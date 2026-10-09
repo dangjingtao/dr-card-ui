@@ -1,38 +1,112 @@
-import { UserRoundCheck, X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { useLocation } from 'react-router-dom'
+import { Loader2, RefreshCw, UserRoundCheck, X } from 'lucide-react'
 import { runtimePolicy } from '../app/config/runtime'
 import PromptOverlay from '../components/mobile/PromptOverlay'
 import { Button } from '../components/ui'
-import { BUDDY_INVITE_COPY } from '../app/fixtures'
 import { useFixtureDebug, useFixtureNavigate, useFixtureQueryControls } from '../app/fixtures/useFixture'
-import { acceptBuddyInvite } from '../app/state/buddies'
-import buddyAvatarXiaomei from '../assets/brand/buddy/buddy-avatar-xiaomei.webp'
+import {
+  acceptBuddyQr,
+  MOCK_BUDDY_SCAN_URL,
+  previewBuddyQr,
+  readBuddyScanNavigation,
+  type BuddyPreview,
+} from '../services/buddyRelations'
 import DearseedColumn from './DearseedColumn'
 
+type ViewState =
+  | { kind: 'loading' }
+  | { kind: 'missing' }
+  | { kind: 'ready'; preview: BuddyPreview }
+  | { kind: 'failed'; message: string }
+  | { kind: 'demo-complete' }
+
 /**
- * 接受搭子邀请（摹客 #36）
- * -------------------------------------------------------------
- * 原型是「诗得丽专栏首页 + 遮罩 + 邀请弹窗」，故把专栏页作为背景层渲染，
- * 与 ClaimSuccess / ExchangeResult 同一套「背景页 + 弹窗」写法。
- * 本页不自挂 DebugPanel：背景层 DearseedColumn 已经挂了一个（bound 到 /dearseed），
- * 两个面板都是 fixed bottom-0，重复挂会完全重叠。dismissed 状态继续支持 fixture 复现，
- * 但 test/prod 外部 `?state=` 不再能直接注入。
+ * #107: consumes ONLY an in-App, route-state QR recognition result; never the public
+ * /buddy/invite/scan URL. #110 Native must preserve existing device/card redemption.
+ * API/test/prod have no signed #105 adapter yet and fail closed.
  */
 export default function BuddyAccept() {
+  const location = useLocation()
   const fixtureNavigate = useFixtureNavigate()
   const { get, patch } = useFixtureQueryControls()
   const debug = useFixtureDebug()
-  const state = get('state')
-  // 正式 API 尚无邀请预览/确认合同，禁止「小美」夹具模拟真实绑定成功。
+  const dismissed = get('state') === 'dismissed'
   const fixtureMode = runtimePolicy.dataMode === 'mock'
+  const recognizedRaw = readBuddyScanNavigation(location.state)
+  const raw = recognizedRaw ?? (fixtureMode ? MOCK_BUDDY_SCAN_URL : null)
+  const [view, setView] = useState<ViewState>({ kind: raw ? 'loading' : 'missing' })
+  const [retry, setRetry] = useState(0)
+  const [sending, setSending] = useState(false)
+  const [actionError, setActionError] = useState<string | null>(null)
+  const alive = useRef(true)
 
-  if (state === 'dismissed') return <DearseedColumn />
+  useEffect(() => {
+    alive.current = true
+    return () => { alive.current = false }
+  }, [])
 
-  const dismiss = () => patch({ state: 'dismissed' })
-  const accept = () => {
-    if (!fixtureMode) return
-    acceptBuddyInvite('小美')
-    fixtureNavigate('/buddy', { debug: debug ? '1' : null }, { replace: true })
+  useEffect(() => {
+    if (dismissed) return
+    setActionError(null)
+    setView(raw ? { kind: 'loading' } : { kind: 'missing' })
+    if (!raw) return
+    let active = true
+    void previewBuddyQr(raw).then(preview => {
+      if (active) setView({ kind: 'ready', preview })
+    }).catch(error => {
+      if (active) setView({ kind: 'failed', message: error instanceof Error ? error.message : '邀请查询失败' })
+    })
+    return () => { active = false }
+  }, [raw, retry, dismissed])
+
+  const dismiss = () => {
+    if (sending) return
+    patch({ state: 'dismissed' })
   }
+
+  const confirm = async () => {
+    if (view.kind !== 'ready' || view.preview.relationship !== 'available' || !raw || sending) return
+    setSending(true)
+    setActionError(null)
+    try {
+      const result = await acceptBuddyQr(raw)
+      if (!alive.current) return
+      if (result.demo) {
+        setView({ kind: 'demo-complete' })
+      } else {
+        // No local fixture mutation. Buddy list independently reloads from the backend.
+        fixtureNavigate('/buddy', { debug: debug ? '1' : null }, { replace: true })
+      }
+    } catch (error) {
+      if (alive.current) setActionError(error instanceof Error ? error.message : '确认失败，请稍后重试')
+    } finally {
+      if (alive.current) setSending(false)
+    }
+  }
+
+  if (dismissed) return <DearseedColumn />
+
+  const preview = view.kind === 'ready' ? view.preview : null
+  const relationship = preview?.relationship
+  const already = relationship === 'already-buddies'
+  const title = view.kind === 'missing' ? '等待诗得丽扫码结果'
+    : view.kind === 'loading' ? '正在查询邀请…'
+      : view.kind === 'failed' ? '邀请查询失败'
+        : view.kind === 'demo-complete' ? '演示确认已完成'
+          : already ? '你们已经是搭子啦'
+            : relationship === 'self' ? '不能邀请自己'
+              : relationship === 'unavailable' ? '这张邀请暂不可用'
+                : `${preview?.inviter.nickname ?? '对方'}邀请你成为洗头搭子`
+  const description = view.kind === 'missing'
+    ? '扫码识别协议尚未接通，请在卡博士 App 内使用诗得丽扫一扫'
+    : view.kind === 'failed' ? view.message
+      : view.kind === 'demo-complete' ? '这只是 H5 演示，不会创建或保存真实搭子关系'
+        : already ? '你们已建立搭子关系，无需重复绑定'
+          : relationship === 'self' ? '自己的二维码无法用于成为搭子'
+            : relationship === 'unavailable' ? '请确认二维码仍可使用'
+              : preview?.demo ? '演示用户，仅验证确认交互，不会绑定真实账号'
+                : '确认后你们将成为洗头搭子'
 
   return (
     <>
@@ -44,32 +118,42 @@ export default function BuddyAccept() {
         className="border border-border-subtle bg-surface px-6 pb-6 pt-6 text-center shadow-modal"
       >
         <button
-          type="button"
-          aria-label="关闭搭子邀请"
+          type="button" aria-label="关闭搭子邀请" disabled={sending}
           onClick={dismiss}
-          className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full text-text-tertiary active:bg-surface-subtle"
+          className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full text-text-tertiary active:bg-surface-subtle disabled:opacity-60"
         >
           <X className="h-5 w-5" aria-hidden />
         </button>
-        {fixtureMode ? (
-          <img src={buddyAvatarXiaomei} alt="" aria-hidden className="mx-auto h-20 w-20 rounded-full object-cover ring-4 ring-buddy-surface" />
+        {preview?.inviter.avatarUrl ? (
+          <img src={preview.inviter.avatarUrl} alt="" aria-hidden
+            className="mx-auto h-20 w-20 rounded-full object-cover ring-4 ring-buddy-surface" />
         ) : (
           <span aria-hidden className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-buddy-surface text-buddy-accent">
-            <UserRoundCheck className="h-9 w-9" />
+            {view.kind === 'loading' ? <Loader2 className="h-8 w-8 animate-spin" /> : <UserRoundCheck className="h-9 w-9" />}
           </span>
         )}
-        <h2 className="mt-4 text-lg font-semibold leading-7 text-text-primary">
-          {fixtureMode ? BUDDY_INVITE_COPY.acceptCapsule : '邀请暂不可用'}
-        </h2>
-        <p className="mt-2 text-sm leading-6 text-text-secondary">
-          {fixtureMode ? BUDDY_INVITE_COPY.acceptDesc : '邀请查询与绑定接口尚未接通，请稍后再试。'}
-        </p>
-        <p className="mt-2 text-xs leading-5 text-text-secondary">成为搭子后，当前版本暂不支持解除关系</p>
-        <Button size="large" leadingIcon={UserRoundCheck} disabled={!fixtureMode} className="mt-5 w-full rounded-full" onClick={accept}>
-          确认成为搭子
-        </Button>
-        <Button variant="ghost" className="mt-2 w-full rounded-full" onClick={dismiss}>
-          取消
+        <h2 className="mt-4 text-lg font-semibold leading-7 text-text-primary">{title}</h2>
+        <p role="status" className="mt-2 text-sm leading-6 text-text-secondary">{description}</p>
+        {preview && <p className="mt-2 text-xs text-text-secondary">成为搭子后，当前版本暂不支持解除关系</p>}
+        {actionError && <p role="alert" className="mt-2 text-sm text-danger-text">{actionError}</p>}
+        {view.kind === 'ready' && relationship === 'available' && (
+          <Button size="large" leadingIcon={UserRoundCheck} loading={sending}
+            disabled={sending} className="mt-5 w-full rounded-full" onClick={() => void confirm()}>
+            {preview?.demo ? '演示确认（不真实绑定）' : '确认成为搭子'}
+          </Button>
+        )}
+        {already && (
+          <Button size="large" className="mt-5 w-full rounded-full"
+            onClick={() => fixtureNavigate('/buddy', { debug: debug ? '1' : null })}>
+            查看我的搭子
+          </Button>
+        )}
+        {view.kind === 'failed' && (
+          <Button size="large" leadingIcon={RefreshCw} className="mt-5 w-full rounded-full"
+            onClick={() => setRetry(v => v + 1)}>重新查询</Button>
+        )}
+        <Button variant="ghost" disabled={sending} className="mt-2 w-full rounded-full" onClick={dismiss}>
+          {view.kind === 'demo-complete' ? '关闭演示' : '取消'}
         </Button>
       </PromptOverlay>
     </>

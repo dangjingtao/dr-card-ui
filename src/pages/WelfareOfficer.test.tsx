@@ -1,13 +1,15 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 
 const mocks = vi.hoisted(() => ({
   useRemoteData: vi.fn(),
   reload: vi.fn(),
+  download: vi.fn(),
 }))
 
 vi.mock('./profile/useProfileFeed', () => ({ useRemoteData: mocks.useRemoteData }))
+vi.mock('../services/welfareQrDownload', () => ({ requestWelfareQrDownload: mocks.download }))
 vi.mock('../components/mobile/PageContainer', () => ({
   default: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }))
@@ -18,6 +20,8 @@ afterEach(() => {
   cleanup()
   mocks.useRemoteData.mockReset()
   mocks.reload.mockReset()
+  mocks.download.mockReset()
+  vi.useRealTimers()
 })
 
 const config = {
@@ -37,6 +41,8 @@ describe('WelfareOfficer page remote states', () => {
     mocks.useRemoteData.mockReturnValue({ remote: { state: 'loading' }, reload: mocks.reload })
     render(<WelfareOfficer />)
     expect(screen.getByText('正在加载福利官信息…')).toBeTruthy()
+    expect(screen.getByRole('status').getAttribute('aria-busy')).toBe('true')
+    expect(document.querySelectorAll('.animate-pulse').length).toBeGreaterThanOrEqual(8)
     expect(screen.queryByText('吴哥')).toBeNull()
     expect(screen.queryByRole('img', { name: '福利官企业微信二维码' })).toBeNull()
   })
@@ -71,6 +77,64 @@ describe('WelfareOfficer page remote states', () => {
     expect(screen.getByText('福利抽奖')).toBeTruthy()
     expect(screen.getByRole('img', { name: '福利官企业微信二维码' }).getAttribute('src')).toBe(config.qrcodeUrl)
     expect(screen.getAllByRole('listitem')).toHaveLength(2)
+  })
+
+  it('opens a dismissible save sheet on tap and contextmenu without changing the QR URL', () => {
+    mocks.useRemoteData.mockReturnValue({ remote: { state: 'success', data: config }, reload: mocks.reload })
+    render(<WelfareOfficer />)
+    fireEvent.click(screen.getByRole('button', { name: '保存二维码' }))
+    expect(screen.getByRole('dialog', { name: '保存福利官二维码' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: '打开二维码原图' }).getAttribute('href')).toBe(config.qrcodeUrl)
+    fireEvent.click(screen.getByRole('button', { name: '取消' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    fireEvent.contextMenu(screen.getByRole('button', { name: '打开二维码保存菜单' }))
+    expect(screen.getByRole('dialog', { name: '保存福利官二维码' })).toBeTruthy()
+  })
+
+  it('opens the sheet on long press and ignores touch scrolling', () => {
+    vi.useFakeTimers()
+    mocks.useRemoteData.mockReturnValue({ remote: { state: 'success', data: config }, reload: mocks.reload })
+    render(<WelfareOfficer />)
+    const qrButton = screen.getByRole('button', { name: '打开二维码保存菜单' })
+    // jsdom lacks a native PointerEvent on some Node versions: preserve pointerType explicitly.
+    const touch = (type: string, x: number, y: number) => {
+      const event = new Event(type, { bubbles: true, cancelable: true })
+      Object.defineProperties(event, {
+        pointerType: { value: 'touch' },
+        clientX: { value: x },
+        clientY: { value: y },
+      })
+      fireEvent(qrButton, event)
+    }
+    touch('pointerdown', 10, 20)
+    touch('pointermove', 30, 40)
+    act(() => vi.advanceTimersByTime(600))
+    expect(screen.queryByRole('dialog')).toBeNull()
+
+    touch('pointerdown', 10, 20)
+    act(() => vi.advanceTimersByTime(560))
+    expect(screen.getByRole('dialog', { name: '保存福利官二维码' })).toBeTruthy()
+  })
+
+  it('says download requested, not album saved, even when H5 export succeeds', async () => {
+    mocks.download.mockResolvedValue(undefined)
+    mocks.useRemoteData.mockReturnValue({ remote: { state: 'success', data: config }, reload: mocks.reload })
+    render(<WelfareOfficer />)
+    fireEvent.click(screen.getByRole('button', { name: '保存二维码' }))
+    fireEvent.click(screen.getByRole('button', { name: '尝试下载图片' }))
+    await waitFor(() => expect(screen.getByText(/已向浏览器请求下载，但无法确认是否存入相册/)).toBeTruthy())
+    expect(mocks.download).toHaveBeenCalledWith(config.qrcodeUrl)
+    expect(screen.queryByText('保存成功')).toBeNull()
+  })
+
+  it('shows honest failure information when CORS or WebView blocks H5 download', async () => {
+    mocks.download.mockRejectedValue(new Error('CORS rejected'))
+    mocks.useRemoteData.mockReturnValue({ remote: { state: 'success', data: config }, reload: mocks.reload })
+    render(<WelfareOfficer />)
+    fireEvent.click(screen.getByRole('button', { name: '保存二维码' }))
+    fireEvent.click(screen.getByRole('button', { name: '尝试下载图片' }))
+    await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('H5 无法下载该图片'))
+    expect(screen.queryByText('保存成功')).toBeNull()
   })
 
   it('never presents the loopback QR URL as a usable image', () => {

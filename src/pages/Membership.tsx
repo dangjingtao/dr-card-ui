@@ -6,6 +6,7 @@ import PageContainer from '../components/mobile/PageContainer'
 import { Button, ProgressIndicator } from '../components/ui'
 import { findRouteByPathname } from '../app/router/routes'
 import { useProfileFeed } from './profile/useProfileFeed'
+import { useUserIdentity } from './profile/useUserIdentity'
 import { useUserPointsStat } from './points/usePointsFeed'
 import {
   CAMPAIGN_FIXTURE,
@@ -32,19 +33,20 @@ import campaignThumb from '../assets/brand/member/checkin-dearseed-kit.webp'
  * ⚠️ 等级命名与权益未决规则隔离在 MEMBER_RULE_STATUS（B-022 / B-023）。
  *
  * 视觉口径：
- * - 会员页优先消费既有 token / Tailwind 语义类与 CSS 变量（如 --gradient-bubble、
- *   --gradient-member），避免在页面内另起一套组件 Token。
+ * - 会员卡与四个尊享服务圆形入口共用 MemberCardTheme；
+ *   未配置等级走中性回退，不另起一套等级色值。
  * - hero 卡面按后台 grade_id 显示四款素材；未知等级显示中性卡，不冒充最高等级。
  * - 「前往领取」继续复用全局 Button primary 语义，不另起按钮颜色、按压态和圆角规则。
  */
 export default function Membership() {
   const navigate = useNavigate()
+  const { remote: identity } = useUserIdentity()
   const route = findRouteByPathname('/membership')
   const campaign = CAMPAIGN_FIXTURE
   const { remote: profileRemote, reload: reloadProfile } = useProfileFeed()
   const { remote: pointsRemote, reload: reloadPoints } = useUserPointsStat()
   const profile = profileRemote.state === 'success' ? profileRemote.data : null
-  const nickname = profile?.nickname?.trim() || '--'
+  const nickname = (identity.state === 'success' ? identity.data.nickname : profile?.nickname)?.trim() || '--'
   const gradeName = profile ? (profile.grade.trim() || '尚未配置') : '--'
   const pointsText = pointsRemote.state === 'success' ? pointsRemote.data.points.toLocaleString() : '--'
   const profileError = profileRemote.state === 'error' ? profileRemote.message : null
@@ -150,13 +152,14 @@ export default function Membership() {
               >
                 <span
                   className="flex h-[54px] w-[54px] items-center justify-center rounded-full p-[3px] shadow-member transition duration-150 group-active:scale-[0.96]"
-                  style={{ backgroundImage: 'var(--gradient-bubble)' }}
+                  style={{ backgroundColor: palette.badgeBackground }}
+                  data-member-entry-ring={entry.id}
                 >
                   <span
-                    className="flex h-full w-full items-center justify-center rounded-full bg-member-surface"
-                    style={{ backgroundImage: 'var(--gradient-member)' }}
+                    className="flex h-full w-full items-center justify-center rounded-full"
+                    style={{ backgroundColor: palette.surface }}
                   >
-                    <Icon className="h-6 w-6 text-member-accent" strokeWidth={1.8} aria-hidden />
+                    <Icon className="h-6 w-6" style={{ color: palette.accent }} strokeWidth={1.8} aria-hidden />
                   </span>
                 </span>
                 <span className="w-full truncate text-center text-[13px] font-semibold text-text-primary">

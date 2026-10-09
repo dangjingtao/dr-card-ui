@@ -320,7 +320,7 @@ test('@formal-h5 H023 shared SearchField stays consistent across formal H5 consu
   const phoneSearch = page.locator('[data-search-field="pill"]')
   const phoneField = phoneSearch.locator('input[type="tel"]')
   await expect(phoneField).toHaveCount(1)
-  await expect(phoneField).toHaveAttribute('aria-label', '输入手机号搜索搭子')
+  await expect(phoneField).toHaveAttribute('aria-label', '输入完整手机号搜索搭子')
   await expect(phoneSearch).toHaveCSS('padding-left', '16px')
   await expect(phoneSearch).toHaveCSS('padding-right', '16px')
 

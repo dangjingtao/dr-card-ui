@@ -186,6 +186,96 @@ describe('Card MyCoupons integration', () => {
     expect(screen.queryByText('核心洗发水体验券')).toBeNull()
   })
 
+  it('renders sparse backend records without inventing amount, dates or usable log IDs', async () => {
+    mocks.fetchMyCoupons.mockImplementation(({ type }: { type: 'unused' | 'used' | 'out_of_date' }) =>
+      Promise.resolve({
+        data: type === 'unused' ? [{ active_name: '精简体验券', enable_amount: null }] : [],
+        current_page: 1,
+        per_page: 100,
+        total: type === 'unused' ? 1 : 0,
+        last_page: 1,
+      }),
+    )
+
+    renderCard()
+
+    expect(await screen.findByText('精简体验券')).toBeTruthy()
+    expect(screen.getByRole('button', { name: '使用' }).hasAttribute('disabled')).toBe(true)
+    expect(screen.getByRole('button', { name: '转赠' }).hasAttribute('disabled')).toBe(true)
+    expect(screen.queryByText('null')).toBeNull()
+    expect(screen.getByRole('tab', { name: /可用/ }).textContent).toContain('1')
+  })
+
+  it('does not expose internal contract names in card pack error messages', async () => {
+    const { AppError } = await import('../lib/appError')
+    mocks.fetchMyCoupons.mockImplementation(({ type }: { type: 'unused' | 'used' | 'out_of_date' }) =>
+      type === 'unused'
+        ? Promise.reject(new AppError({ kind: 'contract', message: '外部数据不符合 coupons.myCoupons.data 契约' }))
+        : Promise.resolve({ data: [], current_page: 1, per_page: 100, total: 0, last_page: 1 }),
+    )
+
+    renderCard()
+
+    expect(await screen.findByText('体验券数据暂时无法展示，请稍后重试')).toBeTruthy()
+    expect(screen.queryByText(/coupons.myCoupons.data/)).toBeNull()
+  })
+
+  it('renders the shared empty-state structure for each coupon tab', async () => {
+    mocks.fetchMyCoupons.mockResolvedValue({
+      data: [],
+      current_page: 1,
+      per_page: 100,
+      total: 0,
+      last_page: 1,
+    })
+
+    renderCard()
+    expect(await screen.findByRole('heading', { name: '暂无可用的体验券' })).toBeTruthy()
+    expect(screen.getByText('领取到的体验券，会显示在这里')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('tab', { name: /已使用/ }))
+    expect(await screen.findByRole('heading', { name: '暂无已使用的体验券' })).toBeTruthy()
+    expect(screen.getByText('已核销或已完成使用的体验券，会显示在这里')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('tab', { name: /已过期/ }))
+    expect(await screen.findByRole('heading', { name: '暂无已过期的体验券' })).toBeTruthy()
+    expect(screen.getByText('超过有效期的体验券，会显示在这里')).toBeTruthy()
+  })
+
+  it('shows the common loading state while coupon requests are pending', () => {
+    mocks.fetchMyCoupons.mockImplementation(() => new Promise(() => {}))
+
+    renderCard()
+    expect(screen.getByRole('heading', { name: '正在加载体验券' })).toBeTruthy()
+    expect(screen.getByText('正在读取我的优惠卡')).toBeTruthy()
+  })
+
+  it('retries a failed coupon load without falling back to fixtures', async () => {
+    let initialFailure = true
+    mocks.fetchMyCoupons.mockImplementation(({ type }: { type: 'unused' | 'used' | 'out_of_date' }) => {
+      if (type === 'unused' && initialFailure) {
+        initialFailure = false
+        return Promise.reject(new Error('卡包服务暂不可用'))
+      }
+      return Promise.resolve({
+        data: [],
+        current_page: 1,
+        per_page: 100,
+        total: 0,
+        last_page: 1,
+      })
+    })
+
+    renderCard()
+    expect(await screen.findByRole('heading', { name: '体验券加载失败' })).toBeTruthy()
+    expect(screen.getByText('卡包服务暂不可用')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: '重试' }))
+    expect(await screen.findByRole('heading', { name: '暂无可用的体验券' })).toBeTruthy()
+    expect(mocks.fetchMyCoupons.mock.calls.filter(([args]) => args.type === 'unused')).toHaveLength(2)
+    expect(screen.queryByText('核心洗发水体验券')).toBeNull()
+  })
+
   it('does not use the fixture coupon for an unmatched API-mode deep link', async () => {
     mocks.overlay = 'use'
     mocks.fetchMyCoupons.mockResolvedValue({
