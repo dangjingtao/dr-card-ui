@@ -64,8 +64,10 @@
 本阶段用户明确只想验证 GitHub Actions 能否使用公司凭证访问广州 Bucket，不要求 OSS 默认域名直接渲染 H5。
 公开 Origin 暂时填写 `https://kbs-sdl.oss-cn-guangzhou.aliyuncs.com` 不影响**独立连通性探针**，但生产流水线保留默认域名的上线拦截。
 
-专用工作流 `.github/workflows/oss-connection-smoke.yml` 仅在文件发生变化且提交进入 `dev` 时触发，调用 `oss-production` Environment 中已配置的两项 Secret，把一小段证明文本写入 `h5/releases/_ci-smoke/<run-id>.<attempt>/proof.txt`，执行 stat 和读回字节比较。不会部署任何业务 H5 文件、修改域名、清空 Bucket、晋级 `prod`。
+专用工作流 `.github/workflows/oss-connection-smoke.yml` 仅在文件首次随正常晋级进入 `prod` 或之后被修改时触发，调用 `oss-production` Environment 中已配置的两项 Secret，把一小段证明文本写入 `h5/releases/_ci-smoke/<run-id>.<attempt>/proof.txt`，执行 stat 和读回字节比较。不会部署任何业务 H5 文件、修改域名、清空 Bucket、晋级 `prod`。
 
-如果 Environment 的部署分支规则已限制为 `prod`，这个 `dev` 连通性探针会被 GitHub 安全门禁拒绝；不要偷偷绕过限制。应由管理员明确授权临时 smoke 策略或单独建立具有最小权限的测试 Environment 后再执行。
+由于此次探针在 `prod` 分支运行，GitHub Environment 保持 **仅允许 `prod`** 即可，不需要临时开放 `dev`；已知之前一次从 `dev` 触发的探针在启动前失败。`test` 仍只做构建和真实 App 验收，不读取生产凭证。正常晋级依旧需要 `dev → test → prod`，不为了执行探针跳级。
 
 可能遇到的 `PublicEndpointForbidden` 是 OSS 内地公共 Endpoint 使用限制，应走公司云账号官方支持的接入方案，不能把错误归因于前端或擅自改到个人账户。
+
+本轮使用 OSS 默认域名作为临时 `OSS_PROD_PUBLIC_ORIGIN`，**正式生产上传**工作流仍会有意拒绝该域名；`OSS Connection Smoke` 成功表示凭证与 OSS 数据操作可用，不代表 H5 正式发版成功。若发行 CI 因域名被拒绝，须区分这是预期上线门禁，不应为使其变绿而篡改判定。
