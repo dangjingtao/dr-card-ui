@@ -1,0 +1,157 @@
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { getAuthSession } from '../../services/auth/session'
+import { connectChatSocket, transferChatToHuman, type ChatSocketHandle, type ChatSocketStatus } from '../../services/chatHuman'
+import type { BackendChatRecord } from '../../services/chatMessages'
+
+type State = {
+  key: string
+  status: ChatSocketStatus
+  active: boolean
+  transferring: boolean
+  error: string | null
+  syncing: boolean
+}
+
+const tokenKey = () => getAuthSession()?.accessToken ?? ''
+const initial = (key = tokenKey()): State => ({
+  key, status: 'disconnected', active: false, transferring: false, error: null, syncing: false,
+})
+
+/** Owns exactly one live socket per active auth session and component lifetime. */
+export function useHumanChat(
+  acceptPush: (message: BackendChatRecord) => void,
+  syncMissed: (sinceId: number) => Promise<boolean>,
+  latestHistoryId: number,
+  onTransferred: () => void,
+) {
+  const [snapshot, setSnapshot] = useState<State>(() => initial())
+  const currentToken = tokenKey()
+  const state = snapshot.key === currentToken ? snapshot : initial(currentToken)
+  const [session, setSession] = useState(currentToken)
+  const client = useRef<ChatSocketHandle | null>(null)
+  const request = useRef<AbortController | null>(null)
+  const locking = useRef(false)
+  const generation = useRef(0)
+  const handlers = useRef({ acceptPush, syncMissed })
+  handlers.current = { acceptPush, syncMissed }
+  const latest = useRef(latestHistoryId)
+  latest.current = Math.max(latest.current, latestHistoryId)
+
+  useEffect(() => {
+    const onChange = () => setSession(tokenKey())
+    window.addEventListener('dr-card-ui:auth-session-changed', onChange)
+    window.addEventListener('dr-card-ui:auth-session-cleared', onChange)
+    return () => {
+      window.removeEventListener('dr-card-ui:auth-session-changed', onChange)
+      window.removeEventListener('dr-card-ui:auth-session-cleared', onChange)
+    }
+  }, [])
+
+  useEffect(() => {
+    const epoch = ++generation.current
+    request.current?.abort()
+    request.current = null
+    locking.current = false
+    client.current?.disconnect()
+    client.current = null
+    latest.current = latestHistoryId
+    setSnapshot(initial(session))
+    if (!session) return
+    const alive = () => generation.current === epoch && tokenKey() === session
+    try {
+      const socket = connectChatSocket(session, {
+        onStatus: (status, detail) => {
+          if (!alive()) return
+          setSnapshot(old => ({
+            ...old, key: session, status,
+            error: status === 'connected' ? null : detail ?? null,
+            active: status === 'unauthorized' ? false : old.active,
+          }))
+        },
+        onMessage: message => {
+          if (!alive()) return
+          handlers.current.acceptPush(message)
+          latest.current = Math.max(latest.current, message.id)
+        },
+        onConnected: (_reconnected) => {
+          if (!alive()) return
+          const sinceId = latest.current
+          setSnapshot(old => ({ ...old, syncing: true }))
+          void handlers.current.syncMissed(sinceId).then(ok => {
+            if (!alive()) return
+            setSnapshot(old => ({
+              ...old, syncing: false,
+              error: ok ? null : '重连后历史同步未完成，请手动刷新历史确认是否有漏消息',
+            }))
+          })
+        },
+      })
+      client.current = socket
+    } catch {
+      setSnapshot(old => ({ ...old, status: 'disconnected', error: '人工客服连接无法建立' }))
+    }
+    return () => {
+      generation.current++
+      request.current?.abort()
+      client.current?.disconnect()
+      client.current = null
+      locking.current = false
+    }
+  }, [session])
+
+  const transfer = useCallback(async (): Promise<boolean> => {
+    const key = tokenKey()
+    if (locking.current || !key || snapshot.key !== key || snapshot.active ||
+        snapshot.status !== 'connected' || !client.current?.connected()) return false
+    locking.current = true
+    const epoch = generation.current
+    const controller = new AbortController()
+    request.current = controller
+    setSnapshot(old => ({ ...old, transferring: true, error: null }))
+    try {
+      await transferChatToHuman(controller.signal)
+      if (generation.current !== epoch || tokenKey() !== key) return false
+      // A backend mode switch is not proof that an agent is actually online.
+      setSnapshot(old => ({ ...old, active: true, transferring: false, error: null }))
+      onTransferred()
+      void syncMissed(latest.current)
+      return true
+    } catch (error) {
+      if (generation.current !== epoch || tokenKey() !== key) return false
+      setSnapshot(old => ({
+        ...old, transferring: false,
+        error: (error instanceof Error ? error.message : '转人工失败') +
+          '。如请求已经送达，请先检查历史，避免重复转接。',
+      }))
+      return false
+    } finally {
+      if (generation.current === epoch) {
+        locking.current = false
+        request.current = null
+      }
+    }
+  }, [snapshot, syncMissed, onTransferred])
+
+  const confirmAiMode = useCallback(() => {
+    setSnapshot(old => old.key === tokenKey() && old.active
+      ? { ...old, active: false } : old)
+  }, [])
+
+  const refresh = useCallback(() => {
+    const token = tokenKey()
+    // Explicit user retry after failed socket auth/connect; never retry unauthorized automatically.
+    client.current?.disconnect()
+    client.current = null
+    setSession('')
+    queueMicrotask(() => setSession(token))
+  }, [])
+
+  const markAi = useCallback(() => {
+    setSnapshot(previous => previous.key === tokenKey() ? { ...previous, active: false } : previous)
+  }, [])
+
+  return {
+    ...state, transfer, refresh, confirmAiMode, markAi,
+    canTransfer: state.status === 'connected' && !state.active && !state.transferring,
+  }
+}

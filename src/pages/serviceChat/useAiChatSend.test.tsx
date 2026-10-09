@@ -63,7 +63,7 @@ describe('#137 AI stream UI state machine', () => {
     hook.unmount()
   })
 
-  it('does not fabricate a seat or agent for human signal and blocks unhandled real-time chat', async () => {
+  it('does not fabricate a seat and still sends subsequent messages through SSE', async () => {
     mocks.send.mockImplementationOnce(async (_content, options) => {
       options.onMode?.('human')
       return { mode: 'human', text: '' }
@@ -73,7 +73,7 @@ describe('#137 AI stream UI state machine', () => {
     await act(async () => { await hook.result.current.send('转人工', [message(20)]) })
     expect(hook.result.current.humanAwait).toBe(true)
     expect(hook.result.current.phase).toBe('human')
-    expect(hook.result.current.blocked).toBe(true)
+    expect(hook.result.current.blocked).toBe(false)
     expect(hook.result.current.messages).toEqual([])
     hook.unmount()
   })

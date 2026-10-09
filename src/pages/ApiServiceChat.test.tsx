@@ -9,18 +9,24 @@ const mock = vi.hoisted(() => ({
     hasMore: boolean; loadingMore: boolean; moreError: string | null; message?: string;
   },
   reload: vi.fn(), loadMore: vi.fn(), syncLatest: vi.fn(),
-  send: vi.fn(), cancel: vi.fn(), clear: vi.fn(),
+  send: vi.fn(), cancel: vi.fn(), clear: vi.fn(), transfer: vi.fn(),
+  human: { status: 'disconnected', canTransfer: false, transferring: false, active: false, error: null } as {
+    status: string; canTransfer: boolean; transferring: boolean; active: boolean; error: string | null;
+  },
   chat: { phase: 'idle', busy: false, blocked: false, humanAwait: false, error: null, messages: [] } as {
     phase: string; busy: boolean; blocked: boolean; humanAwait: boolean; error: string | null;
     messages: Array<{ id: string; role: 'user' | 'bot'; text: string; status: 'sent' }>;
   },
 }))
 vi.mock('./serviceChat/useChatHistory', () => ({
-  useChatHistory: () => ({ ...mock.state, reload: mock.reload, loadMore: mock.loadMore, syncLatest: mock.syncLatest }),
+  useChatHistory: () => ({ ...mock.state, reload: mock.reload, loadMore: mock.loadMore, syncLatest: mock.syncLatest, acceptPush: vi.fn(), syncMissed: vi.fn() }),
 }))
 vi.mock('./serviceChat/useAiChatSend', () => ({
-  useAiChatSend: () => ({ ...mock.chat, send: mock.send, cancel: mock.cancel, clear: mock.clear }),
+  useAiChatSend: () => ({ ...mock.chat, send: mock.send, cancel: mock.cancel, clear: mock.clear, activateHuman: vi.fn() }),
   combineChatMessages: (history: unknown[], pending: unknown[]) => [...history, ...pending],
+}))
+vi.mock('./serviceChat/useHumanChat', () => ({
+  useHumanChat: () => ({ ...mock.human, transfer: mock.transfer }),
 }))
 vi.mock('../components/mobile/PageContainer', () => ({
   default: ({ children }: { children: ReactNode }) => <div>{children}</div>,
@@ -41,8 +47,9 @@ const mount = (path = '/service/chat') => render(
 afterEach(() => {
   mock.state = { status: 'ready', messages: [], hasMore: false, loadingMore: false, moreError: null }
   mock.reload.mockReset(); mock.loadMore.mockReset(); mock.syncLatest.mockReset()
-  mock.send.mockReset(); mock.cancel.mockReset(); mock.clear.mockReset()
+  mock.send.mockReset(); mock.cancel.mockReset(); mock.clear.mockReset(); mock.transfer.mockReset()
   mock.chat = { phase: 'idle', busy: false, blocked: false, humanAwait: false, error: null, messages: [] }
+  mock.human = { status: 'disconnected', canTransfer: false, transferring: false, active: false, error: null }
 })
 
 describe('#135 real API chat page', () => {
@@ -57,8 +64,8 @@ describe('#135 real API chat page', () => {
     expect(screen.queryByText('前面还有 2 位')).toBeNull()
     expect(screen.queryByText('已收到你的问题，我先为你查询。')).toBeNull()
     expect((screen.getByRole('button', { name: '发送' }) as HTMLButtonElement).disabled).toBe(true)
-    expect((screen.getByRole('button', { name: '人工转接待接入' }) as HTMLButtonElement).disabled).toBe(true)
-    expect(screen.getByText('AI 客服已可发送消息；人工转接功能尚未接入')).toBeTruthy()
+    expect((screen.getByRole('button', { name: '申请转人工客服' }) as HTMLButtonElement).disabled).toBe(true)
+    expect(screen.getByText('AI 可用；人工消息通道尚未连通')).toBeTruthy()
   })
 
   it('supports empty, loading, errors, explicit retry and older pagination', () => {
@@ -110,7 +117,7 @@ describe('#135 real API chat page', () => {
 
     mock.chat = { phase: 'human', busy: false, blocked: true, humanAwait: true, error: null, messages: [] }
     mount()
-    expect(screen.getByText('后台已进入人工模式；真人实时回复待接入')).toBeTruthy()
+    expect(screen.getByText('已进入人工模式，客服消息连接中断，请检查历史')).toBeTruthy()
     expect((screen.getByRole('textbox', { name: '输入你的问题' }) as HTMLInputElement).disabled).toBe(true)
     expect(screen.queryByText('前面还有 2 位')).toBeNull()
   })
@@ -123,6 +130,17 @@ describe('#135 real API chat page', () => {
     fireEvent.click(screen.getByRole('button', { name: '检查最新历史记录' }))
     expect(mock.clear).toHaveBeenCalledOnce()
     expect(mock.reload).toHaveBeenCalledOnce()
+  })
+
+  it('allows real manual transfer only after socket connect, without fake agent queue', () => {
+    mock.human = { status: 'connected', canTransfer: true, transferring: false, active: false, error: null }
+    mount()
+    const button = screen.getByRole('button', { name: '申请转人工客服' }) as HTMLButtonElement
+    expect(button.disabled).toBe(false)
+    fireEvent.click(button)
+    expect(mock.transfer).toHaveBeenCalledOnce()
+    expect(screen.getByText('AI 可用；可申请转人工，接入坐席状态未知')).toBeTruthy()
+    expect(screen.queryByText('前面还有 2 位')).toBeNull()
   })
 
   it('preserves the independent WeCom QR hash entry', () => {

@@ -58,7 +58,7 @@ export async function sendChatStream(content: string, options: ChatStreamOptions
     if (controller.signal.aborted) throw new AppError({ kind: 'cancelled', message: '客服发送已取消' })
     window.addEventListener('dr-card-ui:auth-session-changed', onSessionChange)
     window.addEventListener('dr-card-ui:auth-session-cleared', onSessionChange)
-    const response = await fetch(base.replace(/\/+$/, '') + CHAT_ADD_PATH, {
+    const response = await fetch(base.replace(/\/+$/, '').replace(/\/api$/, '') + CHAT_ADD_PATH, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${authToken}`,

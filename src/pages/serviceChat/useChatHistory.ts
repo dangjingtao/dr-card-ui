@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getAuthSession } from '../../services/auth/session'
-import { fetchChatHistoryPage, mapChatRecord, mergeChatHistory, type ChatHistoryMessage } from '../../services/chatMessages'
+import { fetchChatHistoryPage, mapChatRecord, mergeChatHistory, chatRecordSchema, type ChatHistoryMessage } from '../../services/chatMessages'
 
 export type ChatHistoryState =
   | { status: 'loading'; messages: ChatHistoryMessage[]; page: number; lastPage: number; loadingMore: false; moreError: null }
@@ -105,6 +105,53 @@ export function useChatHistory() {
     }
   }, [update])
 
+  /** Socket receives only server-authenticated messages; dedup by persisted ID. */
+  const acceptPush = useCallback((raw: unknown) => {
+    const record = chatRecordSchema.safeParse(raw)
+    if (!record.success) return
+    const user = getAuthSession()?.userInfo
+    if (user && typeof user === 'object' && 'id' in user && user.id != null && String(user.id) !== String(record.data.user_id)) return
+    const key = sessionToken()
+    const now = current.current
+    if (!key || now.token !== key || now.data.status !== 'ready') return
+    update({ token: key, data: {
+      ...now.data, messages: mergeChatHistory(now.data.messages, [mapChatRecord(record.data)]),
+    } })
+  }, [update])
+
+  /** Catch up on reconnect: Socket.IO does not replay events missed while disconnected.
+   * Walk pages until known latest ID appears, with an explicit bounded safety limit. */
+  const syncMissed = useCallback(async (sinceId: number): Promise<boolean> => {
+    if (sinceId <= 0) return (await syncLatest()) !== null
+    const initial = current.current
+    const key = sessionToken()
+    if (!key || initial.token !== key || initial.data.status !== 'ready') return false
+    pending.current?.abort()
+    const controller = new AbortController()
+    pending.current = controller
+    const requestRevision = ++revision.current
+    const newer: ChatHistoryMessage[] = []
+    try {
+      for (let pageNumber = 1; pageNumber <= 20; pageNumber++) {
+        const page = await fetchChatHistoryPage(pageNumber, 100, controller.signal)
+        if (controller.signal.aborted || requestRevision !== revision.current || sessionToken() !== key) return false
+        newer.push(...page.data.map(mapChatRecord))
+        if (page.data.some(item => item.id <= sinceId) || pageNumber >= page.last_page) {
+          const now = current.current
+          if (now.token !== key || now.data.status !== 'ready') return false
+          update({ token: key, data: {
+            ...now.data, messages: mergeChatHistory(now.data.messages, newer),
+            loadingMore: false, moreError: null,
+          } })
+          return true
+        }
+      }
+      return false
+    } catch {
+      return false
+    }
+  }, [syncLatest, update])
+
   useEffect(() => {
     reload()
     const onSessionChanged = () => reload()
@@ -118,5 +165,5 @@ export function useChatHistory() {
     }
   }, [reload])
 
-  return { ...data, hasMore: data.status === 'ready' && data.page < data.lastPage, reload, loadMore, syncLatest }
+  return { ...data, hasMore: data.status === 'ready' && data.page < data.lastPage, reload, loadMore, syncLatest, syncMissed, acceptPush }
 }

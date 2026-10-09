@@ -74,7 +74,7 @@ export function useAiChatSend(syncLatest: () => Promise<ChatHistoryMessage[] | n
     const text = input.trim()
     const key = tokenKey()
     if (!text || text.length > 5000 || !key || locked.current ||
-      snapshot.token !== key || snapshot.humanAwait || snapshot.phase === 'failed') return false
+      snapshot.token !== key || snapshot.phase === 'failed') return false
 
     locked.current = true
     const id = ++sequence.current
@@ -167,9 +167,14 @@ export function useAiChatSend(syncLatest: () => Promise<ChatHistoryMessage[] | n
     } : blank(key))
   }, [])
 
+  const activateHuman = useCallback(() => {
+    if (!locked.current && mounted.current) setSnapshot(previous => previous.token === tokenKey()
+      ? { ...previous, humanAwait: true, phase: 'human', error: null } : previous)
+  }, [])
+
   return {
-    ...state, busy: locked.current && state.phase !== 'failed',
-    blocked: state.phase === 'failed' || state.humanAwait,
+    ...state, activateHuman, busy: locked.current && state.phase !== 'failed',
+    blocked: state.phase === 'failed',
     send, cancel, clear,
   }
 }
