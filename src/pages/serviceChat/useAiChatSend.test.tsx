@@ -110,6 +110,22 @@ describe('#137 AI stream UI state machine', () => {
     hook.unmount()
   })
 
+  it('does not silently leave backend human mode when checking history after send failure', async () => {
+    const sync = vi.fn().mockResolvedValueOnce(null)
+    const hook = renderHook(() => useAiChatSend(sync))
+    act(() => hook.result.current.activateHuman())
+    mocks.send.mockRejectedValueOnce(new Error('人工模式发言网络中断'))
+    await act(async () => { await hook.result.current.send('转人工后的一条留言', []) })
+    expect(hook.result.current.phase).toBe('failed')
+    expect(hook.result.current.humanAwait).toBe(true)
+    act(() => hook.result.current.clear())
+    expect(hook.result.current.phase).toBe('human')
+    expect(hook.result.current.humanAwait).toBe(true)
+    expect(hook.result.current.messages).toEqual([])
+    expect(hook.result.current.error).toBeNull()
+    hook.unmount()
+  })
+
   it('cancels in-flight requests and never retries or shows a guessed success', async () => {
     let observedSignal!: AbortSignal
     mocks.send.mockImplementationOnce((_content, options) => {

@@ -31,13 +31,19 @@ export function useAiChatSend(syncLatest: () => Promise<ChatHistoryMessage[] | n
   const authInterrupted = useRef(false)
   const mounted = useRef(true)
 
-  const clear = useCallback(() => {
+  const clear = useCallback((preserveMode = true) => {
     generation.current++
     authInterrupted.current = false
     controller.current?.abort()
     controller.current = null
     locked.current = false
-    if (mounted.current) setSnapshot(blank())
+    if (mounted.current) setSnapshot(previous => {
+      const next = blank()
+      // Checking history must not silently switch a confirmed human session to AI.
+      // Auth/account changes always drop the previous account's human mode instead.
+      return preserveMode && previous.token === next.token && previous.humanAwait
+        ? { ...next, humanAwait: true, phase: 'human' } : next
+    })
   }, [])
 
   useEffect(() => {
@@ -47,7 +53,7 @@ export function useAiChatSend(syncLatest: () => Promise<ChatHistoryMessage[] | n
       // Keep ONLY a content-free warning across transient token loss/new token events,
       // or a 401-cleared session would hide the uncertain-delivery warning entirely.
       const interrupted = locked.current || authInterrupted.current
-      clear()
+      clear(false)
       if (interrupted) {
         authInterrupted.current = true
         setSnapshot({
