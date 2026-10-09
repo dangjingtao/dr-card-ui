@@ -78,9 +78,9 @@ describe('#122 notices business API', () => {
 
   it('maps backend notice categories without inventing new kinds', () => {
     expect(mapNotice({ ...backendNotice, type: 20 }).cat).toBe('activity')
-    expect(mapNotice({ ...backendNotice, type: 30 }).cat).toBe('balance')
-    expect(mapNotice({ ...backendNotice, type: 40 }).cat).toBe('event')
-    expect(mapNotice({ ...backendNotice, type: 50 }).cat).toBe('service')
-    expect(mapNotice({ ...backendNotice, type: 60 }).cat).toBe('system')
+    expect(mapNotice({ ...backendNotice, type: 30 }).cat).toBe('reward')
+    expect(mapNotice({ ...backendNotice, type: 40 }).cat).toBe('transfer')
+    expect(mapNotice({ ...backendNotice, type: 50 }).cat).toBe('other')
+    expect(mapNotice({ ...backendNotice, type: 60 }).cat).toBe('buddy')
   })
 })
