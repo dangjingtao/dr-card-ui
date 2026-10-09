@@ -76,6 +76,17 @@ describe('#135 real API chat page', () => {
     expect(mock.loadMore).toHaveBeenCalledOnce()
   })
 
+  it('reloads changed pagination instead of retrying a guaranteed stale older page', () => {
+    mock.state = {
+      status: 'ready', messages: [{ id: '2', role: 'bot', text: '已有消息', status: 'sent' }],
+      hasMore: true, loadingMore: false, moreError: '客服历史分页已变化，请重新加载',
+    }
+    mount()
+    fireEvent.click(screen.getByRole('button', { name: '重新加载历史' }))
+    expect(mock.reload).toHaveBeenCalledOnce()
+    expect(mock.loadMore).not.toHaveBeenCalled()
+  })
+
   it('enables the AI input in API mode and delegates to the real streaming handler', () => {
     mock.state.messages = [{ id: '3', role: 'bot', text: '真实历史', status: 'sent' }]
     mount()
