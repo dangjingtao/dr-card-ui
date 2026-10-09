@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { runtimePolicy } from '../app/config/runtime'
 import { useNavigate } from 'react-router-dom'
 import { CalendarCheck, Gift, QrCode, Smartphone, Sparkles } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -46,20 +47,27 @@ export default function Buddy() {
   const debug = useFixtureDebug()
   const navigate = useNavigate()
   const { items, count } = useBuddies()
+  const fixtureMode = runtimePolicy.dataMode === 'mock'
 
   /** 显式 fixture 优先；无 fixture 时仅在本次会话第一次进入时抽一次 50/50 默认态。 */
   useEffect(() => {
+    // API/test/prod 未接后台关系列表，绝不能显示随机“小美”当真实搭子。
+    if (!fixtureMode) return
     const preset = raw == null ? undefined : STATE_PRESETS[raw]
     if (preset) {
       applyBuddyPreset(preset)
       return
     }
     ensureBuddyDefaultPreset()
-  }, [raw])
+  }, [raw, fixtureMode])
 
   return (
     <PageContainer inset={false} className="flex min-h-full flex-col pb-6">
-      {count === 0 ? (
+      {!fixtureMode ? (
+        <section role="status" className="mx-4 mt-4 rounded-container bg-surface px-4 py-10 text-center shadow-card">
+          <p className="text-sm leading-6 text-buddy-text">搭子列表正在接入后台，暂不能查看真实关系</p>
+        </section>
+      ) : count === 0 ? (
         <EmptyState
           className="flex-1 pt-10"
           visual={
