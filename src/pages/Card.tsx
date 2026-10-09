@@ -4,6 +4,7 @@ import { CalendarDays, Check, Clock, Info, KeyRound, QrCode, ReceiptText, Ticket
 import DebugPanel from '../components/mobile/DebugPanel'
 import PageContainer from '../components/mobile/PageContainer'
 import { Button, EmptyState } from '../components/ui'
+import { isAppError } from '../lib/appError'
 import { useFixtureState, useOverlay } from '../app/fixtures/useFixture'
 import { findRouteByPathname } from '../app/router/routes'
 import { runtimePolicy } from '../app/config/runtime'
@@ -39,7 +40,7 @@ import {
  * 原始金额与完整有效期仍保留在 service/domain 数据中；这里仅做展示映射。
  */
 interface CouponTicketView {
-  id: string
+  id: string | null
   name: string
   amountLabel?: string
   validityLabel?: string
@@ -56,7 +57,8 @@ interface MovieTicketProps {
   onShare: () => void
 }
 
-function toAmountLabel(value: string | number): string | undefined {
+function toAmountLabel(value: string | number | null | undefined): string | undefined {
+  if (value == null) return undefined
   const text = String(value).trim()
   return text || undefined
 }
@@ -64,11 +66,11 @@ function toAmountLabel(value: string | number): string | undefined {
 /** 用户持券记录 → 卡包票券视图；不混入券模板字段。 */
 function toCouponTicketView(coupon: MyCouponRecord): CouponTicketView {
   return {
-    id: String(coupon.id),
-    name: coupon.active_name,
+    id: coupon.id == null ? null : String(coupon.id).trim() || null,
+    name: coupon.active_name?.trim() || '体验券',
     amountLabel: toAmountLabel(coupon.enable_amount),
-    validityLabel: coupon.valid_date_range.trim() || undefined,
-    limitNote: coupon.dc_type_format.trim() || undefined,
+    validityLabel: coupon.valid_date_range?.trim() || undefined,
+    limitNote: coupon.dc_type_format?.trim() || undefined,
   }
 }
 
@@ -100,7 +102,8 @@ function MovieTicket({ coupon, expired, used, onUse, onShare }: MovieTicketProps
     ? 'linear-gradient(135deg, #bdbdbd 0%, #9e9e9e 100%)'
     : 'linear-gradient(135deg, var(--color-reward) 0%, var(--color-reward-strong) 100%)'
   /** 操作按钮可用性 */
-  const canAction = !isInactive
+  // A third-party record without a log ID must never trigger use/transfer.
+  const canAction = !isInactive && coupon.id !== null
   return (
     <article
       className="relative"
@@ -192,7 +195,8 @@ function MovieTicket({ coupon, expired, used, onUse, onShare }: MovieTicketProps
                 <button
                   type="button"
                   onClick={onUse}
-                  className="h-8 flex-1 rounded-full bg-primary text-[12px] font-semibold text-text-inverse shadow-primary-button active:bg-primary-pressed"
+                  disabled={!canAction}
+                  className="h-8 flex-1 rounded-full bg-primary text-[12px] font-semibold text-text-inverse shadow-primary-button active:bg-primary-pressed disabled:opacity-50"
                 >
                   使用
                 </button>
@@ -282,7 +286,9 @@ export default function Card() {
           ...current,
           [status]: {
             state: 'error',
-            message: error instanceof Error ? error.message : '网络请求失败',
+            message: isAppError(error) && error.kind === 'contract'
+              ? '体验券数据暂时无法展示，请稍后重试'
+              : error instanceof Error ? error.message : '网络请求失败',
           },
         }))
       }
@@ -316,7 +322,7 @@ export default function Card() {
    */
   const activeCoupon: CouponTicketView | null = useMemo(() => {
     const couponId = searchParams.get('coupon')
-    const fromApi = availableCoupons.find((item) => item.id === couponId)
+    const fromApi = couponId ? availableCoupons.find((item) => item.id === couponId) : undefined
     if (fromApi) return fromApi
     if (!runtimePolicy.fixtureQueriesEnabled) return null
 
@@ -380,10 +386,12 @@ export default function Card() {
   }
 
   const openUseSheet = (coupon: CouponTicketView) => {
+    const couponId = coupon.id
+    if (!couponId) return
     setSearchParams(
       (prev) => {
         const next = new URLSearchParams(prev)
-        next.set('coupon', coupon.id)
+        next.set('coupon', couponId)
         next.set('overlay', 'use')
         return next
       },
@@ -438,14 +446,16 @@ export default function Card() {
 
       <div className="mt-4 space-y-4" aria-live="polite">
         {currentRemote.state === 'success' &&
-          list.map((coupon) => (
+          list.map((coupon, index) => (
             <MovieTicket
-              key={coupon.id}
+              key={coupon.id ?? ('missing-id-' + index)}
               coupon={coupon}
               used={tab === 'used'}
               expired={tab === 'expired'}
               onUse={() => openUseSheet(coupon)}
-              onShare={() => navigate(`/card/share?coupon=${coupon.id}`)}
+              onShare={() => {
+                if (coupon.id) navigate('/card/share?coupon=' + encodeURIComponent(coupon.id))
+              }}
             />
           ))}
 

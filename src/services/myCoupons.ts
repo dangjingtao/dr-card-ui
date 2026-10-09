@@ -10,16 +10,18 @@ export const MY_COUPONS_PAGE_SIZE_MAX = 100
 export type MyCouponType = 'unused' | 'used' | 'out_of_date'
 
 const amountSchema = z.union([z.string(), z.number()])
+// The H5 backend passes third-party discountcardlogs_list records through unchanged.
+// Unlike the normalized pagination fields, individual card display fields may be absent.
 const couponRecordSchema = z
   .object({
-    id: z.number(),
-    active_name: z.string(),
-    get_amount: amountSchema,
-    used_amount: amountSchema,
-    enable_amount: amountSchema,
-    valid_date_range: z.string(),
-    dc_type: z.union([z.number(), z.string()]),
-    dc_type_format: z.string(),
+    id: z.union([z.number(), z.string()]).nullish(),
+    active_name: z.string().nullish(),
+    get_amount: amountSchema.nullish(),
+    used_amount: amountSchema.nullish(),
+    enable_amount: amountSchema.nullish(),
+    valid_date_range: z.string().nullish(),
+    dc_type: z.union([z.number(), z.string()]).nullish(),
+    dc_type_format: z.string().nullish(),
   })
   .passthrough()
 
