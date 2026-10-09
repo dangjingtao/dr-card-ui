@@ -87,6 +87,21 @@ describe('#136 non-idempotent AI stream transport', () => {
     expect(mocks.fetch).toHaveBeenCalledTimes(1)
   })
 
+  it('preserves 401 when auth refresh itself clears the old session', async () => {
+    mocks.fetch.mockResolvedValueOnce(new Response(
+      JSON.stringify({ code: 401, message: '请登录' }),
+      { status: 401, headers: { 'Content-Type': 'application/json' } },
+    ))
+    mocks.refresh.mockImplementationOnce(async () => {
+      mocks.getSession.mockReturnValue({ accessToken: 'new-token', userInfo: null })
+      window.dispatchEvent(new Event('dr-card-ui:auth-session-cleared'))
+    })
+    await expect(sendChatStream('hello')).rejects.toMatchObject({
+      kind: 'http', status: 401, code: '401',
+    })
+    expect(mocks.fetch).toHaveBeenCalledTimes(1)
+  })
+
   it('rejects HTTP 200 JSON business failures and wrong content-type without false success', async () => {
     mocks.fetch.mockResolvedValueOnce(new Response(
       JSON.stringify({ code: 500, message: '内容参数缺失', data: [] }),
