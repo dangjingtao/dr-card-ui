@@ -99,10 +99,11 @@ export function noticeText(content: string | null): string {
 
 function noticeCategory(type: number): NotificationCategory {
   if (type === 20) return 'activity'
-  if (type === 30) return 'balance'
-  if (type === 40) return 'event'
-  if (type === 50) return 'service'
-  return 'system' // 10 system; 60 friend application (read-only; #111 handles confirmation)
+  if (type === 30) return 'reward'
+  if (type === 40) return 'transfer'
+  if (type === 50) return 'other'
+  if (type === 60) return 'buddy' // read-only; #111 owns invitation confirmation
+  return 'system' // 10 system
 }
 
 function noticeTime(notice: BackendNotice): string {
