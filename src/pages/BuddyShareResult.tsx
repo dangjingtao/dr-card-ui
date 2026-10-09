@@ -1,8 +1,7 @@
 import { AlertCircle, CheckCircle2 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import DebugPanel from '../components/mobile/DebugPanel'
 import PromptOverlay from '../components/mobile/PromptOverlay'
-import WecomQrPlaceholder from '../components/mobile/WecomQrPlaceholder'
 import { Button } from '../components/ui'
 import {
   BUDDY_INVITE_COPY,
@@ -25,11 +24,13 @@ const STATE_OUTCOME: Record<string, BuddyShareOutcome> = {
 
 /**
  * 搭子分享结果（摹客 #34 / #35）
- * 保存海报用居中反馈卡，复制链接用页内轻提示；
- * 失败态只由受控 fixture state 驱动，不伪造端能力成功/失败。
+ * 保存成功后展示刚生成并保存的真实海报（仅内存路由 state），
+ * 没有海报数据的历史 fixture 状态保留图标，不伪造成功保存的图片。
+ * 复制链接是已退役的历史原型状态，正式用户流程不可达。
  */
 export default function BuddyShareResult() {
   const navigate = useNavigate()
+  const location = useLocation()
   const route = findRouteByPathname('/buddy/invite/qrcode')
   const { get } = useFixtureQueryControls()
   const debug = useFixtureDebug()
@@ -38,6 +39,10 @@ export default function BuddyShareResult() {
     (runtimePolicy.dataMode === 'mock' ? 'poster-saved' : 'poster-failed')
   const feedback = BUDDY_SHARE_FEEDBACK[outcome]
   const isLink = outcome.startsWith('link-')
+  // In-app navigation carries the exact saved PNG. This stays out of query strings, fixtures and URLs.
+  const value = (location.state as { buddyPosterPreview?: unknown } | null)?.buddyPosterPreview
+  const savedPosterSrc = outcome === 'poster-saved' && typeof value === 'string' &&
+    /^data:image\/png;base64,[A-Za-z0-9+/]+={0,2}$/.test(value) ? value : null
   const back = () => navigate(withFixtureQuery('/buddy/invite', { debug: debug ? '1' : null }), { replace: true })
 
   return (
@@ -69,13 +74,21 @@ export default function BuddyShareResult() {
         >
           {feedback.ok ? (
             <>
-              <WecomQrPlaceholder
-                className="mx-auto w-fit"
-                label="已生成的搭子邀请二维码占位"
-                caption={BUDDY_INVITE_COPY.qrScanHint}
-                cell={12}
-              />
+              {savedPosterSrc ? (
+                <img
+                  src={savedPosterSrc}
+                  alt="刚保存的洗头搭子邀请海报"
+                  className="mx-auto max-h-[min(50dvh,400px)] w-auto max-w-full rounded-lg object-contain shadow-card"
+                />
+              ) : (
+                <span aria-hidden className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-success-bg text-success-text">
+                  <CheckCircle2 className="h-10 w-10" />
+                </span>
+              )}
               <p className="mt-4 text-sm leading-6 text-text-secondary">{feedback.text}</p>
+              {savedPosterSrc && (
+                <p className="mt-1 text-xs text-text-tertiary">{BUDDY_INVITE_COPY.qrScanHint}</p>
+              )}
             </>
           ) : (
             <>

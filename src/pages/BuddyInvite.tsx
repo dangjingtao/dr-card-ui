@@ -1,61 +1,77 @@
 import { useEffect, useRef, useState } from 'react'
-import { Download, Loader2 } from 'lucide-react'
+import { Download, Loader2, RefreshCw } from 'lucide-react'
 import PageContainer from '../components/mobile/PageContainer'
-import WecomQrPlaceholder from '../components/mobile/WecomQrPlaceholder'
 import { BUDDY_INVITE_COPY } from '../app/fixtures'
 import { useFixtureDebug, useFixtureNavigate } from '../app/fixtures/useFixture'
 import { saveInvitePoster } from '../app/adapters/buddyShare'
+import { loadOwnBuddyQr } from '../services/buddyQr'
+import { createBuddyPoster, renderBuddyQrPng } from '../lib/buddyQrPoster'
 import buddyAvatarSelf from '../assets/brand/buddy/buddy-avatar-self.webp'
 
-/**
- * 邀请搭子（摹客 #29）
- * -------------------------------------------------------------
- * 事实源：docs/prototype/03-partner-and-invite.md §3
- * 已确认内容：用户头像 + 邀请话术胶囊、邀请二维码、「请截图保存」、
- * 原型曾含「保存到本地」「复制链接」；#102 已取消复制链接，只保留保存海报。
- *
- * ⚠️ 历史稿 T06 的 200×200 QR 卡片、金色高亮话术与北极熊剪影属二次视觉设计，未采用（见文档 §3 警示）。
- * ⚠️ 二维码为占位图形，不伪造可扫码内容（B-005 / BUDDY_RULE_STATUS.shareCapability）。
- * 分享结果统一由 app/adapters/buddyShare 返回，本页不直接触碰相册与剪贴板；
- * H032 起真实 Native 成败会进入既有 #34 / #35 成功/失败结果态，不再恒定模拟成功。
- *
- * 本路由在 routes.ts 未登记 states，因此不渲染 DebugPanel（D-064）。
- */
-type SharePending = 'poster' | null
+type QrState =
+  | { status: 'loading' }
+  | { status: 'ready'; dataUrl: string; demo: boolean }
+  | { status: 'failed'; message: string }
 
 export default function BuddyInvite() {
   const fixtureNavigate = useFixtureNavigate()
   const debug = useFixtureDebug()
-  const [pending, setPending] = useState<SharePending>(null)
+  const [qr, setQr] = useState<QrState>({ status: 'loading' })
+  const [retryKey, setRetryKey] = useState(0)
+  const [pending, setPending] = useState(false)
   const alive = useRef(true)
 
   useEffect(() => {
     alive.current = true
-    return () => {
-      alive.current = false
+    let active = true
+    const load = async () => {
+      setQr({ status: 'loading' })
+      try {
+        const source = await loadOwnBuddyQr()
+        const dataUrl = await renderBuddyQrPng(source.url)
+        if (active) setQr({ status: 'ready', dataUrl, demo: source.demo })
+      } catch (error) {
+        if (active) {
+          setQr({
+            status: 'failed',
+            message: error instanceof Error ? error.message : '获取二维码失败，请稍后重试',
+          })
+        }
+      }
     }
-  }, [])
+    void load()
+    return () => { active = false; alive.current = false }
+  }, [retryKey])
 
-  /** 走适配层拿反馈，再落到对应结果节点；Mock 环境仍可生成确定性 URL。 */
-  const sharePoster = () => {
-    if (pending) return
-    setPending('poster')
-    // #105 尚未交付正式二维码/海报数据；缺 payload 时只会返回失败，不能假成功。
-    const task = saveInvitePoster()
-    void task.then((feedback) => {
-      if (!alive.current) return
-      setPending(null)
-      const state = feedback.outcome === 'poster-saved' ? 'saved' : feedback.outcome
-      fixtureNavigate('/buddy/invite/qrcode', {
-        state,
-        debug: debug ? '1' : null,
-      })
-    })
+  const sharePoster = async () => {
+    if (pending || qr.status !== 'ready') return
+    setPending(true)
+    let outcome: 'saved' | 'poster-failed' = 'poster-failed'
+    let posterPreview: string | undefined
+    try {
+      // 先从已展示的同一 PNG QR 生成可导出海报，再交给现有 Native 保存接口。
+      const payload = await createBuddyPoster(qr.dataUrl, { demo: qr.demo })
+      const result = await saveInvitePoster(payload)
+      if (result.outcome === 'poster-saved' && result.ok) {
+        outcome = 'saved'
+        // Only the actual saved bytes are displayed in the result; never a fixture placeholder.
+        posterPreview = `data:image/png;base64,${payload.imageData}`
+      }
+    } catch {
+      // canvas / 图片读取 / 相册权限失败都不能伪装保存成功。
+    } finally {
+      if (alive.current) {
+        setPending(false)
+        fixtureNavigate('/buddy/invite/qrcode', {
+          state: outcome,
+          debug: debug ? '1' : null,
+        }, { state: posterPreview ? { buddyPosterPreview: posterPreview } : undefined })
+      }
+    }
   }
 
   return (
     <PageContainer inset={false} className="flex min-h-full flex-col pb-8">
-      {/* #29 邀请卡：头像 + 话术胶囊 + 二维码 + 截图提示 */}
       <section className="px-4 pt-4" aria-label="邀请二维码">
         <div className="flex flex-col items-center rounded-container bg-surface px-5 pb-6 pt-6 shadow-card">
           <img
@@ -67,46 +83,65 @@ export default function BuddyInvite() {
           <p className="mt-3 rounded-pill bg-buddy-surface px-4 py-1.5 text-sm font-medium text-buddy-accent">
             {BUDDY_INVITE_COPY.capsule}
           </p>
-          <WecomQrPlaceholder
-            className="mt-5"
-            label="搭子邀请二维码占位"
-            caption={null}
-            cell={16}
-          />
+
+          {qr.status === 'ready' ? (
+            <img
+              className="mt-5 h-[220px] w-[220px] bg-white p-1"
+              src={qr.dataUrl}
+              alt={qr.demo ? '洗头搭子演示二维码，不可建立真实关系' : '我的洗头搭子专属邀请二维码'}
+              width={220}
+              height={220}
+            />
+          ) : (
+            <div
+              className="mt-5 flex h-[220px] w-[220px] items-center justify-center rounded-container bg-surface-subtle px-5 text-center"
+              role="status"
+            >
+              {qr.status === 'loading' ? (
+                <Loader2 className="h-7 w-7 animate-spin text-buddy-accent" aria-label="正在生成二维码" />
+              ) : (
+                <span className="text-sm leading-6 text-buddy-muted">{qr.message}</span>
+              )}
+            </div>
+          )}
+
           <p className="mt-4 text-[13px] text-buddy-muted">{BUDDY_INVITE_COPY.qrHint}</p>
-          <p role="status" className="mt-2 text-center text-xs text-buddy-muted">
-            二维码正在接入后台，暂不可扫码
-          </p>
+          {qr.status === 'ready' && qr.demo && (
+            <p role="status" className="mt-2 text-center text-xs text-buddy-muted">
+              演示二维码，仅用于预览，不能建立真实关系
+            </p>
+          )}
+          {qr.status === 'failed' && (
+            <button
+              type="button"
+              className="mt-3 inline-flex items-center gap-1 text-sm text-buddy-accent"
+              onClick={() => setRetryKey((key) => key + 1)}
+            >
+              <RefreshCw className="h-4 w-4" aria-hidden />重试获取
+            </button>
+          )}
         </div>
       </section>
 
-      {/* #102 冻结：只有保存海报入口；取消复制链接，原型 #35 不再由正常 UI 可达。 */}
       <section className="mt-5 px-4" aria-label={BUDDY_INVITE_COPY.moreShare}>
         <p className="px-1 text-sm font-medium text-buddy-text">{BUDDY_INVITE_COPY.moreShare}</p>
-        <div className="mt-2 grid grid-cols-1 gap-3">
-          <button
-            type="button"
-            onClick={sharePoster}
-            disabled={pending !== null}
-            className="flex flex-col items-center gap-2 rounded-container bg-surface py-4 shadow-card active:bg-surface-subtle disabled:opacity-60"
+        <button
+          type="button"
+          onClick={() => void sharePoster()}
+          disabled={pending || qr.status !== 'ready'}
+          className="mt-2 flex w-full flex-col items-center gap-2 rounded-container bg-surface py-4 shadow-card active:bg-surface-subtle disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <span
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-buddy-surface text-buddy-accent"
+            aria-hidden
           >
-            <span
-              className="flex h-11 w-11 items-center justify-center rounded-full bg-buddy-surface text-buddy-accent"
-              aria-hidden
-            >
-              {pending === 'poster' ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                <Download className="h-5 w-5" />
-              )}
-            </span>
-            <span className="text-[13px] text-buddy-text">{BUDDY_INVITE_COPY.saveLocal}</span>
-          </button>
-
-        </div>
-        {pending !== null && (
+            {pending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Download className="h-5 w-5" />}
+          </span>
+          <span className="text-[13px] text-buddy-text">{BUDDY_INVITE_COPY.saveLocal}</span>
+        </button>
+        {pending && (
           <p role="status" aria-live="polite" className="mt-3 text-center text-xs text-buddy-muted">
-            处理中…
+            正在生成并保存海报…
           </p>
         )}
       </section>

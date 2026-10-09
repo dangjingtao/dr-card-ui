@@ -67,3 +67,13 @@
 - 手机号 A→B 一次邀请，B 通知中心可见、关闭仍 pending；B 搜索 A 走直接确认；任一入口完成后旧通知标完成且不可重复操作。
 - 重复并发提交、伪造身份、跨账户查询、无效/过期登录、枚举/限频都有真实后台负向测试。
 - **所有结果用真实双账号后台 test 环境回证**，前端 Mock、截图和 CI 绿灯不是绑定已经可用的证明。
+
+## 2026-10-09｜#107 H5 第二刀二维码接线说明
+
+H5 已独立实现二维码绘制与可保存的 PNG 海报（`src/lib/buddyQrPoster.ts`），调用既有 `saveImageToAlbum({imageType:'base64',imageData,fileName})` Bridge。屏幕与海报使用**同一二维码 PNG**，不重新编码不同内容。
+
+- `src/services/buddyQr.ts` 是与后台的唯一接线点：`loadOwnBuddyQr({ readMyQr, trustedOrigin })`。未来由后台 Owner 确认的 HTTP 客户端方法注入 `readMyQr`，约定响应包含 `qrUrl`；`trustedOrigin` 应是部署确认的官方 HTTPS Origin，绝不由 H5 自报身份。
+- 该协议**目前尚未签署**。因此未注入后台查询时，正式 API/test/prod 环境会明确提示“二维码接口尚未接通”，不渲染可误认的真实 QR，也不能保存一张假海报。
+- 仅 preview/dev Mock 环境可以生成含 `demo` 参数的**演示二维码**，明确标注不可建立真实关系；此码不依赖任何真实账号或固定的 `user_id`。
+- H5 的初步 URL 校验要求 HTTPS、同一受信 Origin、`/buddy/invite/scan` 路径、不可空的识别信息，禁止凭证、fragment、重定向参数；如后台决定另一种合法路径或签名参数，请先双方更新此合同及校验测试，不能偷偷放开到任意 URL。
+- 后台需回填：真实 path/method、`qrUrl` DTO、使用的 token 参数、官方域名及页面部署规则；前端随后接入真接口并做双账号真机验收。本段不是后台已有接口或 Native 相册能力已验收的证明。
