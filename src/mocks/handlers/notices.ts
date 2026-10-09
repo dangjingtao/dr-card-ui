@@ -5,7 +5,7 @@ import {
 } from '../../services/notices'
 
 /** Preview/dev HTTP contract exercise only. Production never loads MSW/fixture notices. */
-const typeByCategory = { system: 10, activity: 20, balance: 30, event: 40, service: 50 } as const
+const typeByCategory = { system: 10, activity: 20, balance: 30, event: 40, service: 50, reward: 30, transfer: 40, other: 50, buddy: 60 } as const
 const source = NOTIFICATION_FIXTURES.map((item, index) => ({
   id: index + 1,
   title: item.title,
