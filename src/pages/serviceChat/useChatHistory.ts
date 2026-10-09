@@ -20,11 +20,25 @@ export function useChatHistory() {
   const data = snapshot.token === token ? snapshot.data : loading
   const current = useRef(snapshot)
   const revision = useRef(0)
-  const pending = useRef<AbortController | null>(null)
+  // Distinct request scopes: pagination must not abort send reconciliation,
+  // and a reconnect backfill must not strand the older-page loader.
+  const pending = useRef<AbortController | null>(null) // initial reload
+  const pagePending = useRef<AbortController | null>(null)
+  const latestPending = useRef<AbortController | null>(null)
+  const missedPending = useRef<AbortController | null>(null)
+  const pageRevision = useRef(0)
+  const latestRevision = useRef(0)
+  const missedRevision = useRef(0)
   const update = useCallback((next: Snapshot) => { current.current = next; setSnapshot(next) }, [])
 
   const reload = useCallback(() => {
     pending.current?.abort()
+    pagePending.current?.abort()
+    latestPending.current?.abort()
+    missedPending.current?.abort()
+    pageRevision.current++
+    latestRevision.current++
+    missedRevision.current++
     const controller = new AbortController()
     pending.current = controller
     const key = sessionToken()
@@ -55,27 +69,31 @@ export function useChatHistory() {
     if (!key || state.token !== key || state.data.status !== 'ready'
       || state.data.loadingMore || state.data.page >= state.data.lastPage) return
     const ready = state.data
-    pending.current?.abort()
+    pagePending.current?.abort()
     const controller = new AbortController()
-    pending.current = controller
-    const requestRevision = ++revision.current
+    pagePending.current = controller
+    const requestRevision = ++pageRevision.current
     const requestedPage = ready.page + 1
     update({ token: key, data: { ...ready, loadingMore: true, moreError: null } })
     void fetchChatHistoryPage(requestedPage, undefined, controller.signal).then(
       page => {
-        if (controller.signal.aborted || revision.current !== requestRevision || sessionToken() !== key) return
+        if (controller.signal.aborted || pageRevision.current !== requestRevision || sessionToken() !== key) return
+        const now = current.current
+        if (now.token !== key || now.data.status !== 'ready') return
         if (page.current_page !== requestedPage || page.last_page !== ready.lastPage) {
-          update({ token: key, data: { ...ready, loadingMore: false, moreError: '客服历史分页已变化，请重新加载' } })
+          update({ token: key, data: { ...now.data, loadingMore: false, moreError: '客服历史分页已变化，请重新加载' } })
           return
         }
         update({ token: key, data: {
-          ...ready, messages: mergeChatHistory(ready.messages, page.data.map(mapChatRecord)),
+          ...now.data, messages: mergeChatHistory(now.data.messages, page.data.map(mapChatRecord)),
           page: page.current_page, lastPage: page.last_page, loadingMore: false, moreError: null,
         } })
       },
       error => {
-        if (controller.signal.aborted || revision.current !== requestRevision || sessionToken() !== key) return
-        update({ token: key, data: { ...ready, loadingMore: false, moreError: errorText(error) } })
+        if (controller.signal.aborted || pageRevision.current !== requestRevision || sessionToken() !== key) return
+        const now = current.current
+        if (now.token !== key || now.data.status !== 'ready') return
+        update({ token: key, data: { ...now.data, loadingMore: false, moreError: errorText(error) } })
       },
     )
   }, [update])
@@ -85,21 +103,18 @@ export function useChatHistory() {
     const state = current.current
     const key = sessionToken()
     if (state.token !== key || state.data.status !== 'ready') return null
-    pending.current?.abort()
+    latestPending.current?.abort()
     const controller = new AbortController()
-    pending.current = controller
-    const requestRevision = ++revision.current
+    latestPending.current = controller
+    const requestRevision = ++latestRevision.current
     try {
       const page = await fetchChatHistoryPage(1, undefined, controller.signal)
-      if (controller.signal.aborted || revision.current !== requestRevision || sessionToken() !== key) return null
+      if (controller.signal.aborted || latestRevision.current !== requestRevision || sessionToken() !== key) return null
       const now = current.current
       if (now.token !== key || now.data.status !== 'ready') return null
       const latest = page.data.map(mapChatRecord)
       update({ token: key, data: {
         ...now.data, messages: mergeChatHistory(now.data.messages, latest),
-        // Reconnect uses pageSize=100, while regular pagination uses pageSize=30.
-            // Keep the original page/lastPage metadata rather than mixing sizes.
-            loadingMore: false, moreError: null,
       } })
       return latest
     } catch {
@@ -128,22 +143,21 @@ export function useChatHistory() {
     const initial = current.current
     const key = sessionToken()
     if (!key || initial.token !== key || initial.data.status !== 'ready') return false
-    pending.current?.abort()
+    missedPending.current?.abort()
     const controller = new AbortController()
-    pending.current = controller
-    const requestRevision = ++revision.current
+    missedPending.current = controller
+    const requestRevision = ++missedRevision.current
     const newer: ChatHistoryMessage[] = []
     try {
       for (let pageNumber = 1; pageNumber <= 20; pageNumber++) {
         const page = await fetchChatHistoryPage(pageNumber, 100, controller.signal)
-        if (controller.signal.aborted || requestRevision !== revision.current || sessionToken() !== key) return false
+        if (controller.signal.aborted || requestRevision !== missedRevision.current || sessionToken() !== key) return false
         newer.push(...page.data.map(mapChatRecord))
         if (page.data.some(item => item.id <= sinceId) || pageNumber >= page.last_page) {
           const now = current.current
           if (now.token !== key || now.data.status !== 'ready') return false
           update({ token: key, data: {
             ...now.data, messages: mergeChatHistory(now.data.messages, newer),
-            loadingMore: false, moreError: null,
           } })
           return true
         }
@@ -163,7 +177,13 @@ export function useChatHistory() {
       window.removeEventListener('dr-card-ui:auth-session-changed', onSessionChanged)
       window.removeEventListener('dr-card-ui:auth-session-cleared', onSessionChanged)
       revision.current++
+      pageRevision.current++
+      latestRevision.current++
+      missedRevision.current++
       pending.current?.abort()
+      pagePending.current?.abort()
+      latestPending.current?.abort()
+      missedPending.current?.abort()
     }
   }, [reload])
 

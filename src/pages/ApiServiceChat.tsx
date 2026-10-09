@@ -69,7 +69,7 @@ export default function ApiServiceChat() {
           <>
             {history.hasMore && (
               <div className="mb-4 text-center">
-                <Button variant="outline" disabled={history.loadingMore} onClick={history.loadMore}>
+                <Button variant="outline" disabled={history.loadingMore || chat.busy || chat.phase === 'syncing'} onClick={history.loadMore}>
                   {history.loadingMore ? '正在加载…' : '加载更早消息'}
                 </Button>
               </div>

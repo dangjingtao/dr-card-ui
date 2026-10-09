@@ -82,6 +82,49 @@ describe('#135 chat history lifecycle and account isolation', () => {
     hook.unmount()
   })
 
+  it('keeps page loading and post-send reconciliation independent and merges both results', async () => {
+    let resolveOlder!: (data: ReturnType<typeof page>) => void
+    let resolveLatest!: (data: ReturnType<typeof page>) => void
+    mocks.fetch.mockResolvedValueOnce(page([record(3)], 1, 5, 2))
+      .mockImplementationOnce(() => new Promise(resolve => { resolveOlder = resolve }))
+      .mockImplementationOnce(() => new Promise(resolve => { resolveLatest = resolve }))
+    const hook = renderHook(() => useChatHistory())
+    await waitFor(() => expect(hook.result.current.status).toBe('ready'))
+    act(() => hook.result.current.loadMore())
+    expect(hook.result.current.loadingMore).toBe(true)
+    const olderSignal = mocks.fetch.mock.calls[1][2] as AbortSignal
+    let reconcile!: Promise<unknown>
+    await act(async () => { reconcile = hook.result.current.syncLatest() })
+    const latestSignal = mocks.fetch.mock.calls[2][2] as AbortSignal
+    expect(olderSignal.aborted).toBe(false)
+    expect(latestSignal.aborted).toBe(false)
+    await act(async () => { resolveLatest(page([record(5), record(4)], 1, 5, 2)); await reconcile })
+    expect(hook.result.current.loadingMore).toBe(true)
+    expect(hook.result.current.messages.map(m => m.id)).toEqual(['3', '4', '5'])
+    await act(async () => resolveOlder(page([record(2), record(1)], 2, 5, 2)))
+    expect(hook.result.current.loadingMore).toBe(false)
+    expect(hook.result.current.messages.map(m => m.id)).toEqual(['1', '2', '3', '4', '5'])
+    hook.unmount()
+  })
+
+  it('does not strand pagination if a socket backfill overlaps and fails', async () => {
+    let resolveOlder!: (data: ReturnType<typeof page>) => void
+    mocks.fetch.mockResolvedValueOnce(page([record(4)], 1, 4, 2))
+      .mockImplementationOnce(() => new Promise(resolve => { resolveOlder = resolve }))
+      .mockRejectedValueOnce(new Error('temporary network failure'))
+    const hook = renderHook(() => useChatHistory())
+    await waitFor(() => expect(hook.result.current.status).toBe('ready'))
+    act(() => hook.result.current.loadMore())
+    let recovered!: boolean
+    await act(async () => { recovered = await hook.result.current.syncMissed(3) })
+    expect(recovered).toBe(false)
+    expect(hook.result.current.loadingMore).toBe(true)
+    expect((mocks.fetch.mock.calls[1][2] as AbortSignal).aborted).toBe(false)
+    await act(async () => resolveOlder(page([record(2), record(1)], 2, 4, 2)))
+    expect(hook.result.current.loadingMore).toBe(false)
+    hook.unmount()
+  })
+
   it('re-entering page fetches again and an empty page is a real empty state', async () => {
     mocks.fetch.mockResolvedValue(page([]))
     const first = renderHook(() => useChatHistory())
