@@ -112,6 +112,20 @@ describe('#138 Socket.IO client contract', () => {
     expect(mocks.refresh).toHaveBeenCalledTimes(1)
   })
 
+  it('refreshes authorization on an empty 401 response without repeating transfer', async () => {
+    mocks.refresh.mockResolvedValueOnce(undefined)
+    mocks.fetch.mockResolvedValueOnce(new Response('', { status: 401 }))
+    await expect(transferChatToHuman()).rejects.toMatchObject({ kind: 'http', status: 401 })
+    expect(mocks.fetch).toHaveBeenCalledTimes(1)
+    expect(mocks.refresh).toHaveBeenCalledTimes(1)
+  })
+
+  it('preserves HTTP error classification for HTML gateway failures', async () => {
+    mocks.fetch.mockResolvedValueOnce(new Response('<html>bad gateway</html>', { status: 502 }))
+    await expect(transferChatToHuman()).rejects.toMatchObject({ kind: 'http', status: 502 })
+    expect(mocks.fetch).toHaveBeenCalledTimes(1)
+  })
+
   it('respects already-cancelled transfer without opening the network', async () => {
     const controller = new AbortController(); controller.abort()
     await expect(transferChatToHuman(controller.signal)).rejects.toMatchObject({ kind: 'cancelled' })

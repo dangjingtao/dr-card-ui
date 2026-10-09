@@ -73,7 +73,7 @@ export function useHumanChat(
           handlers.current.acceptPush(message)
           latest.current = Math.max(latest.current, message.id)
         },
-        onConnected: (_reconnected) => {
+        onConnected: (reconnected) => {
           if (!alive()) return
           const sinceId = latest.current
           setSnapshot(old => ({ ...old, syncing: true }))
@@ -81,7 +81,7 @@ export function useHumanChat(
             if (!alive()) return
             setSnapshot(old => ({
               ...old, syncing: false,
-              error: ok ? null : '重连后历史同步未完成，请手动刷新历史确认是否有漏消息',
+              error: ok ? null : reconnected ? '重连后历史同步未完成，请手动刷新历史确认是否有漏消息' : old.error,
             }))
           })
         },

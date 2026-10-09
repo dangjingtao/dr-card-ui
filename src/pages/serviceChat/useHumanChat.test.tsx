@@ -43,6 +43,20 @@ describe('#138 human chat connection, transfer, and lifecycle', () => {
     expect(mocks.disconnect).toHaveBeenCalled()
   })
 
+  it('does not report initial-history-loading as a failed reconnect', async () => {
+    const sync = vi.fn().mockResolvedValue(false)
+    const hook = renderHook(() => useHumanChat(vi.fn(), sync, 0, vi.fn()))
+    await act(async () => {
+      mocks.events?.onStatus('connected')
+      mocks.events?.onConnected(false)
+    })
+    expect(sync).toHaveBeenCalled()
+    expect(hook.result.current.error).toBeNull()
+    await act(async () => { mocks.events?.onConnected(true) })
+    expect(hook.result.current.error).toContain('重连后历史同步未完成')
+    hook.unmount()
+  })
+
   it('only sends HTTP transfer when socket is connected, backend confirms it and blocks duplicates', async () => {
     const onTransferred = vi.fn()
     const hook = renderHook(() => useHumanChat(vi.fn(), vi.fn().mockResolvedValue(true), 10, onTransferred))

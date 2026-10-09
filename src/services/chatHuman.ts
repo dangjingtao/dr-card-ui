@@ -107,18 +107,23 @@ export async function transferChatToHuman(signal?: AbortSignal): Promise<void> {
     throw new AppError({ kind: 'network', message: '人工转接请求失败，请检查历史后决定是否重试',
       cause: error })
   }
-  let payload: unknown
-  try { payload = await response.json() } catch {
-    throw createContractError('人工转接接口返回格式错误')
-  }
-  if (!payload || typeof payload !== 'object') throw createContractError('人工转接响应无效')
-  const value = payload as { code?: unknown; msg?: unknown; message?: unknown; data?: unknown }
-  if (response.status === 401 || value.code === 401 || value.code === '401') {
+  // A gateway may send a bare 401, HTML or an empty body; do not let JSON parsing
+  // suppress authentication recovery. A non-idempotent transfer is never replayed.
+  let payload: unknown = null
+  try { payload = await response.json() } catch { /* non-JSON gateway error */ }
+  const value = payload && typeof payload === 'object'
+    ? payload as { code?: unknown; msg?: unknown; message?: unknown; data?: unknown } : null
+  if (response.status === 401 || value?.code === 401 || value?.code === '401') {
     await refreshChatAuthAfterUnauthorized().catch(() => undefined)
     throw new AppError({ kind: 'http', status: 401,
       message: '登录已过期，人工转接结果待确认，请检查聊天历史' })
   }
-  if (!response.ok || (value.code !== 0 && value.code !== '0')) {
+  if (!response.ok) {
+    throw new AppError({ kind: 'http', status: response.status,
+      message: typeof value?.message === 'string' ? value.message : '人工转接服务暂不可用' })
+  }
+  if (!value) throw createContractError('人工转接响应无效')
+  if (value.code !== 0 && value.code !== '0') {
     throw createBusinessError(typeof value.message === 'string' ? value.message
       : typeof value.msg === 'string' ? value.msg : '人工转接未完成')
   }
