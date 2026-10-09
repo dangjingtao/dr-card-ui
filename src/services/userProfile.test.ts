@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   fetchUserProfile,
+  fetchUserProfileDetail,
   updateUserProfile,
   USER_GENDER_MALE,
 } from './userProfile'
@@ -32,6 +33,33 @@ const PROFILE_DATA = {
   points: 128,
   kbs_id: 'K016998956',
 }
+
+describe('live user detail contract', () => {
+  beforeEach(() => mocks.request.mockReset())
+
+  it('maps current DB identity and grade, without treating numeric avatar zero as a real photo', async () => {
+    mocks.request.mockResolvedValue({
+      code: 0, data: { nick_name: '新昵称', grade: '大二', avatar_img: 0 },
+    })
+    await expect(fetchUserProfileDetail()).resolves.toEqual({
+      nickname: '新昵称', grade: '大二', avatar: undefined,
+    })
+  })
+
+  it('uses a real avatar URL from the detail response', async () => {
+    mocks.request.mockResolvedValue({
+      code: 0, data: { nick_name: '小明', grade: '研二', avatar_img: 'https://cdn.example.com/user.png' },
+    })
+    await expect(fetchUserProfileDetail()).resolves.toMatchObject({
+      nickname: '小明', avatar: 'https://cdn.example.com/user.png',
+    })
+  })
+
+  it('does not silently accept an API business failure', async () => {
+    mocks.request.mockResolvedValue({ code: 401, message: '请先登录', data: [] })
+    await expect(fetchUserProfileDetail()).rejects.toThrow('请先登录')
+  })
+})
 
 describe('user profile contract', () => {
   beforeEach(() => {

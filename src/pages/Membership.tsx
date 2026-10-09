@@ -6,6 +6,7 @@ import PageContainer from '../components/mobile/PageContainer'
 import { Button, ProgressIndicator } from '../components/ui'
 import { findRouteByPathname } from '../app/router/routes'
 import { useProfileFeed } from './profile/useProfileFeed'
+import { useUserIdentity } from './profile/useUserIdentity'
 import { useUserPointsStat } from './points/usePointsFeed'
 import {
   CAMPAIGN_FIXTURE,
@@ -39,12 +40,13 @@ import campaignThumb from '../assets/brand/member/checkin-dearseed-kit.webp'
  */
 export default function Membership() {
   const navigate = useNavigate()
+  const { remote: identity } = useUserIdentity()
   const route = findRouteByPathname('/membership')
   const campaign = CAMPAIGN_FIXTURE
   const { remote: profileRemote, reload: reloadProfile } = useProfileFeed()
   const { remote: pointsRemote, reload: reloadPoints } = useUserPointsStat()
   const profile = profileRemote.state === 'success' ? profileRemote.data : null
-  const nickname = profile?.nickname?.trim() || '--'
+  const nickname = (identity.state === 'success' ? identity.data.nickname : profile?.nickname)?.trim() || '--'
   const gradeName = profile ? (profile.grade.trim() || '尚未配置') : '--'
   const pointsText = pointsRemote.state === 'success' ? pointsRemote.data.points.toLocaleString() : '--'
   const profileError = profileRemote.state === 'error' ? profileRemote.message : null

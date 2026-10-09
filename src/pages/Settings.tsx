@@ -5,34 +5,26 @@ import {
   Camera,
   CheckCircle2,
   ChevronRight,
-  Eye,
-  EyeOff,
   Image,
-  Lock,
   X,
 } from 'lucide-react'
 import PageContainer from '../components/mobile/PageContainer'
 import PromptOverlay from '../components/mobile/PromptOverlay'
 import { Button, IconButton } from '../components/ui'
 import { useOverlay } from '../app/fixtures/useFixture'
-import { memberProfileActions, useMemberProfile } from '../app/state/memberProfile'
+import UserAvatar from '../components/mobile/UserAvatar'
+import { useUserIdentity, acceptUserIdentityUpdate } from './profile/useUserIdentity'
+import { updateUserProfile, type UserUpdatePayload } from '../services/userProfile'
+import { uploadUserAvatar } from '../services/userAvatarUpload'
 import {
   chooseImage,
   NativeBridgeError,
   takePhoto,
 } from '../services/nativeBridge'
-import { fetchUserProfileDetail } from '../services/userProfile'
-import avatar from '../assets/brand/home/home-avatar.webp'
-import { canEditBirthday, formatNextEditableDate } from '../utils/birthdayGate'
 
-type SheetKey = 'avatar' | 'nickname' | 'birthday' | 'password' | null
+type SheetKey = 'avatar' | 'nickname' | null
 
-/* 接口未返回前的展示默认值；接口回填后仍以此作为缺省兜底。 */
-const initialProfile = {
-  nickname: '会员小福',
-  year: '',
-  passwordSet: false,
-}
+const initialProfile = { nickname: '', year: '' }
 
 const yearGroups: Array<{ group: string; items: string[] }> = [
   { group: '本科', items: ['大一', '大二', '大三', '大四', '大五'] },
@@ -49,68 +41,34 @@ function matchYearOption(grade: string) {
 export default function Settings() {
   const navigate = useNavigate()
   const { overlay, close: closeOverlay } = useOverlay()
-  /* H003｜正式 H5 的生日 UI 状态不再借用 Native reference userInfoStore。 */
-  const memberProfile = useMemberProfile()
-  const birthdayGate = canEditBirthday(memberProfile.birthdayLastModifiedAt)
+  const { remote: identity, reload: reloadIdentity } = useUserIdentity()
   const [sheet, setSheet] = useState<SheetKey>(null)
   const [nickname, setNickname] = useState(initialProfile.nickname)
-  const [birthdayDraft, setBirthdayDraft] = useState(memberProfile.birthday)
   const [year, setYear] = useState(initialProfile.year)
-  const [passwordSet, setPasswordSet] = useState(initialProfile.passwordSet)
-  const [pw1, setPw1] = useState('')
-  const [pw2, setPw2] = useState('')
-  const [pwStep, setPwStep] = useState(1)
-  const [showPw, setShowPw] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
-  const [avatarSrc, setAvatarSrc] = useState(avatar)
+  const [avatarSrc, setAvatarSrc] = useState<string | undefined>()
+  const [pendingImage, setPendingImage] = useState<{ mimeType: string; imageBase64: string } | null>(null)
+  const [savePending, setSavePending] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [avatarPending, setAvatarPending] = useState<'photo' | 'album' | null>(null)
   const [avatarError, setAvatarError] = useState<string | null>(null)
   const bypassGuard = useRef(false)
-  /* 接口回填基线：脏数据以接口快照为准，不把服务端值误判成用户改动。 */
-  const [baseline, setBaseline] = useState({
-    nickname: initialProfile.nickname,
-    year: initialProfile.year,
-  })
-  const [profileLoad, setProfileLoad] = useState<'loading' | 'ready' | 'error'>('loading')
-  const [profileReloadKey, setProfileReloadKey] = useState(0)
-
-  const dirty =
-    nickname !== baseline.nickname ||
-    birthdayDraft !== memberProfile.birthday ||
-    year !== baseline.year ||
-    passwordSet !== initialProfile.passwordSet ||
-    avatarSrc !== avatar
-
-  /* 回填是异步的：用户已开始编辑时不覆盖其输入，只更新加载态。 */
-  const dirtyRef = useRef(dirty)
-  dirtyRef.current = dirty
+  const [baseline, setBaseline] = useState(initialProfile)
+  const profileLoad = identity.state === 'success' ? 'ready' : identity.state
+  const dirty = nickname !== baseline.nickname || year !== baseline.year || pendingImage !== null
+  // Track which individual fields the user has touched, not just a global dirty
+  // boolean: a late /detail response must fill the untouched nickname even when
+  // the user picked a grade/avatar before the first request completed.
+  const touchedRef = useRef({ nickname: false, year: false, avatar: false })
 
   useEffect(() => {
-    let active = true
-    setProfileLoad('loading')
-    void fetchUserProfileDetail().then(
-      (detail) => {
-        if (!active) return
-        if (!dirtyRef.current) {
-          const next = {
-            nickname: detail.nickname || initialProfile.nickname,
-            year: matchYearOption(detail.grade),
-          }
-          setNickname(next.nickname)
-          setYear(next.year)
-          setBaseline(next)
-        }
-        setProfileLoad('ready')
-      },
-      () => {
-        if (active) setProfileLoad('error')
-      },
-    )
-
-    return () => {
-      active = false
-    }
-  }, [profileReloadKey])
+    if (identity.state !== 'success') return
+    const next = { nickname: identity.data.nickname, year: matchYearOption(identity.data.grade) }
+    setNickname((current) => touchedRef.current.nickname ? current : next.nickname)
+    setYear((current) => touchedRef.current.year ? current : next.year)
+    setAvatarSrc((current) => touchedRef.current.avatar ? current : identity.data.avatar)
+    setBaseline(next)
+  }, [identity])
 
   const blocker = useBlocker(
     ({ historyAction }) => !bypassGuard.current && dirty && historyAction !== 'REPLACE',
@@ -120,9 +78,6 @@ export default function Settings() {
 
   const close = () => {
     setSheet(null)
-    setPwStep(1)
-    setPw1('')
-    setPw2('')
   }
 
   const flashToast = (message = '保存成功') => {
@@ -130,10 +85,8 @@ export default function Settings() {
     window.setTimeout(() => setToast(null), 2200)
   }
 
-  const save = () => {
-    flashToast()
-    close()
-  }
+  // Sheet changes are staged until the footer confirms a server write.
+  const save = () => close()
 
   const updateAvatar = async (source: 'photo' | 'album') => {
     if (avatarPending) return
@@ -146,8 +99,10 @@ export default function Settings() {
           ? await takePhoto()
           : await chooseImage()
 
+      touchedRef.current.avatar = true
+      setPendingImage(result)
       setAvatarSrc(`data:${result.mimeType};base64,${result.imageBase64}`)
-      flashToast('已选择头像')
+      setSaveError(null)
       close()
     } catch (error) {
       if (error instanceof NativeBridgeError) {
@@ -168,11 +123,48 @@ export default function Settings() {
     }
   }
 
-  const confirmAll = () => {
-    bypassGuard.current = true
-    flashToast()
-    close()
-    window.setTimeout(() => navigate('/profile'), 600)
+  const confirmAll = async () => {
+    if (savePending) return
+    setSaveError(null)
+    if (identity.state !== 'success') {
+      setSaveError('用户资料尚未加载成功，请先重试')
+      return
+    }
+    const trimmed = nickname.trim()
+    if (!trimmed || trimmed.length > 50) {
+      setSaveError('昵称不能为空，且不能超过 50 个字符')
+      return
+    }
+    const payload: UserUpdatePayload = {}
+    if (trimmed !== baseline.nickname) payload.nick_name = trimmed
+    if (year !== baseline.year) payload.student_grade = year
+    if (!Object.keys(payload).length && !pendingImage) {
+      bypassGuard.current = true
+      navigate('/profile')
+      return
+    }
+
+    setSavePending(true)
+    try {
+      if (pendingImage) payload.avatar_img = await uploadUserAvatar(pendingImage)
+      const updated = await updateUserProfile(payload)
+      acceptUserIdentityUpdate(updated)
+      setPendingImage(null)
+      setAvatarSrc(updated.avatar_img || undefined)
+      const next = { nickname: updated.nick_name.trim(), year: matchYearOption(updated.student_grade ?? '') }
+      setNickname(next.nickname)
+      setYear(next.year)
+      setBaseline(next)
+      touchedRef.current = { nickname: false, year: false, avatar: false }
+      bypassGuard.current = true
+      flashToast()
+      close()
+      window.setTimeout(() => navigate('/profile'), 600)
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : '保存失败，请重试')
+    } finally {
+      setSavePending(false)
+    }
   }
 
   const keepEditing = () => {
@@ -198,10 +190,10 @@ export default function Settings() {
           className="relative z-10 mt-2 flex items-center gap-2 rounded-control bg-surface-subtle px-4 py-2.5 text-xs text-text-secondary"
         >
           <AlertCircle className="h-4 w-4 shrink-0 text-danger-text" aria-hidden />
-          <span className="min-w-0 flex-1">会员资料加载失败，当前展示本地默认值</span>
+          <span className="min-w-0 flex-1">会员资料加载失败，无法修改资料</span>
           <button
             type="button"
-            onClick={() => setProfileReloadKey((key) => key + 1)}
+            onClick={() => void reloadIdentity()}
             className="shrink-0 font-medium text-text-brand"
           >
             重试
@@ -209,12 +201,15 @@ export default function Settings() {
         </div>
       )}
 
+      {saveError && (
+        <p role="alert" className="relative z-10 mx-4 mt-2 rounded-control bg-warning-bg px-3 py-2 text-sm text-warning-text">{saveError}</p>
+      )}
       <section className="relative z-10 mt-2 rounded-2xl bg-surface shadow-sm">
         <div className="flex items-center gap-3 border-b border-border-subtle px-4 py-3">
-          <span className="w-12 shrink-0 text-sm text-text-tertiary">头像</span>
+          <span className="w-20 shrink-0 whitespace-nowrap text-sm text-text-tertiary">头像</span>
           <span className="flex min-w-0 flex-1 justify-end">
             <button type="button" onClick={() => setSheet('avatar')} className="h-11 w-11 overflow-hidden rounded-full" aria-label="修改头像">
-              <img src={avatarSrc} alt="会员头像" className="h-full w-full object-cover" />
+              <UserAvatar src={avatarSrc} />
             </button>
           </span>
           <button type="button" onClick={() => setSheet('avatar')} aria-label="修改头像" className="shrink-0 text-text-tertiary">
@@ -222,7 +217,7 @@ export default function Settings() {
           </button>
         </div>
         <div className="flex items-center gap-3 border-b border-border-subtle px-4 py-3">
-          <span className="w-12 shrink-0 text-sm text-text-tertiary">昵称</span>
+          <span className="w-20 shrink-0 whitespace-nowrap text-sm text-text-tertiary">昵称</span>
           <span className="min-w-0 flex-1 truncate text-right text-sm text-text-primary">
             {profileLoad === 'loading' ? <span className="text-text-tertiary">加载中…</span> : nickname}
           </span>
@@ -231,31 +226,12 @@ export default function Settings() {
           </button>
         </div>
         <div className="flex items-center gap-3 border-b border-border-subtle px-4 py-3">
-          <span className="w-12 shrink-0 text-sm text-text-tertiary">生日</span>
-          <span className="min-w-0 flex-1 text-right text-sm text-text-primary">{memberProfile.birthday || '未设置'}</span>
-          {/* T050｜锁定态显示锁图标 + 灰色（不可点击）；非锁定态维持原 ChevronRight */}
-          {birthdayGate.allowed ? (
-            <button type="button" onClick={() => setSheet('birthday')} aria-label="修改生日" className="shrink-0 text-text-tertiary">
-              <ChevronRight className="h-5 w-5" />
-            </button>
-          ) : (
-            <span
-              aria-label={`生日 ${formatNextEditableDate(birthdayGate.nextEditableAt)}`}
-              title={formatNextEditableDate(birthdayGate.nextEditableAt)}
-              className="shrink-0 text-text-disabled"
-            >
-              <Lock className="h-4 w-4" />
-            </span>
-          )}
+          <span className="w-20 shrink-0 whitespace-nowrap text-sm text-text-tertiary">生日</span>
+          <span className="min-w-0 flex-1 text-right text-sm text-text-tertiary">暂不支持修改（等待后台接口）</span>
         </div>
         <div className="flex items-center gap-3 px-4 py-3">
-          <span className="w-12 shrink-0 text-sm text-text-tertiary">消费密码</span>
-          <span className="min-w-0 flex-1 text-right">
-            <span className="rounded-full bg-surface-subtle px-2.5 py-0.5 text-xs text-text-tertiary">{passwordSet ? '已设置' : '未设置'}</span>
-          </span>
-          <button type="button" onClick={() => setSheet('password')} aria-label="去设置消费密码" className="shrink-0 text-text-tertiary">
-            <ChevronRight className="h-5 w-5" />
-          </button>
+          <span className="w-20 shrink-0 whitespace-nowrap text-sm text-text-tertiary">消费密码</span>
+          <span className="min-w-0 flex-1 text-right text-sm text-text-tertiary">暂不支持设置（等待后台接口）</span>
         </div>
       </section>
 
@@ -271,7 +247,7 @@ export default function Settings() {
                   <button
                     key={item}
                     type="button"
-                    onClick={() => setYear(item)}
+                    onClick={() => { touchedRef.current.year = true; setYear(item) }}
                     aria-pressed={year === item}
                     className={`h-9 rounded-lg border text-sm ${
                       year === item ? 'border-primary bg-surface-selected text-text-brand' : 'border-border bg-surface text-text-primary'
@@ -288,10 +264,11 @@ export default function Settings() {
 
       <button
         type="button"
-        onClick={confirmAll}
+        onClick={() => void confirmAll()}
+        disabled={savePending || profileLoad !== 'ready'}
         className="relative z-10 mx-auto mt-8 flex h-12 w-full max-w-[343px] items-center justify-center rounded-2xl bg-primary text-sm font-medium text-white active:bg-primary-pressed"
       >
-        确认修改
+        {savePending ? '正在保存…' : '确认修改'}
       </button>
 
       {sheet && (
@@ -299,7 +276,7 @@ export default function Settings() {
           <div
             role="dialog"
             aria-modal="true"
-            aria-label={sheet === 'password' ? '消费密码' : `修改${sheet === 'nickname' ? '昵称' : sheet === 'birthday' ? '生日' : '头像'}`}
+            aria-label={sheet === 'nickname' ? '修改昵称' : '修改头像'}
             className="w-full max-w-[448px] rounded-t-overlay bg-surface px-4 pb-[env(safe-area-inset-bottom)]"
             onClick={(e) => e.stopPropagation()}
           >
@@ -308,8 +285,6 @@ export default function Settings() {
               <h2 className="text-lg font-semibold text-text-primary">
                 {sheet === 'avatar' && '修改头像'}
                 {sheet === 'nickname' && '修改昵称'}
-                {sheet === 'birthday' && '修改生日'}
-                {sheet === 'password' && (pwStep === 1 ? '设置消费密码' : '确认密码')}
               </h2>
               <button type="button" aria-label="关闭" onClick={close} className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-subtle text-text-secondary">
                 <X className="h-5 w-5" />
@@ -363,7 +338,7 @@ export default function Settings() {
                     <input
                       value={nickname}
                       maxLength={12}
-                      onChange={(e) => setNickname(e.target.value)}
+                      onChange={(e) => { touchedRef.current.nickname = true; setNickname(e.target.value) }}
                       placeholder="请输入昵称"
                       className="mt-1.5 block h-11 w-full rounded-control border border-border bg-surface px-3 text-base outline-none focus:border-primary"
                     />
@@ -374,109 +349,7 @@ export default function Settings() {
                 </>
               )}
 
-              {sheet === 'birthday' && (
-                <>
-                  <p className="text-sm text-text-tertiary">生日将用于会员权益与生日礼遇，三个月内仅可修改一次</p>
-                  {/* T050｜锁定态：禁用日期选择 + 显示下一次可编辑时间；非锁定态保持原 date input */}
-                  {birthdayGate.allowed ? (
-                    <>
-                      <input
-                        type="date"
-                        value={birthdayDraft}
-                        onChange={(e) => setBirthdayDraft(e.target.value)}
-                        className="mt-4 block h-11 w-full rounded-control border border-border bg-surface px-3 text-base outline-none focus:border-primary"
-                        aria-label="选择生日"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          /* H003｜当前只维护正式 H5 的确定性 UI 状态；真实资料持久化待 API contract。 */
-                          memberProfileActions.update({
-                            birthday: birthdayDraft,
-                            birthdayLastModifiedAt: Date.now(),
-                          })
-                          save()
-                        }}
-                        className="mt-5 h-11 w-full rounded-control bg-primary text-sm font-medium text-text-inverse active:bg-primary-pressed"
-                      >
-                        保存
-                      </button>
-                    </>
-                  ) : (
-                    <div className="mt-4 flex flex-col items-center gap-2 rounded-control border border-border-subtle bg-surface-subtle px-4 py-6">
-                      <Lock className="h-5 w-5 text-text-tertiary" aria-hidden />
-                      <p className="text-sm font-medium text-text-secondary">
-                        {formatNextEditableDate(birthdayGate.nextEditableAt)}
-                      </p>
-                      <p className="text-xs text-text-tertiary">
-                        生日每 3 个月仅可修改一次，修改后即时锁定
-                      </p>
-                      <button
-                        type="button"
-                        onClick={close}
-                        className="mt-2 h-10 w-full rounded-control border border-border bg-surface text-sm font-medium text-text-primary active:bg-surface-pressed"
-                      >
-                        我知道了
-                      </button>
-                    </div>
-                  )}
-                </>
-              )}
 
-              {sheet === 'password' && (
-                <>
-                  <p className="text-sm text-text-tertiary">消费密码用于扫码支付与余额变动保护，共 6 位数字</p>
-                  {pwStep === 1 ? (
-                    <>
-                      <label className="mt-4 block text-sm text-text-primary">
-                        设置密码
-                        <input
-                          type={showPw ? 'text' : 'password'}
-                          inputMode="numeric"
-                          maxLength={6}
-                          value={pw1}
-                          onChange={(e) => setPw1(e.target.value.replace(/\D/g, ''))}
-                          placeholder="请输入 6 位数字密码"
-                          className="mt-1.5 block h-11 w-full rounded-control border border-border bg-surface px-3 pr-11 text-base outline-none focus:border-primary"
-                        />
-                      </label>
-                      <button type="button" onClick={() => setShowPw(!showPw)} className="mt-2 inline-flex items-center gap-1 text-xs text-text-tertiary">
-                        {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        {showPw ? '隐藏' : '显示'}密码
-                      </button>
-                      <button type="button" disabled={pw1.length < 6} onClick={() => setPwStep(2)} className="mt-5 h-11 w-full rounded-control bg-primary text-sm font-medium text-text-inverse active:bg-primary-pressed disabled:bg-disabled disabled:text-text-disabled">
-                        下一步
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <label className="mt-4 block text-sm text-text-primary">
-                        确认密码
-                        <input
-                          type={showPw ? 'text' : 'password'}
-                          inputMode="numeric"
-                          maxLength={6}
-                          value={pw2}
-                          onChange={(e) => setPw2(e.target.value.replace(/\D/g, ''))}
-                          placeholder="再次输入 6 位数字密码"
-                          className="mt-1.5 block h-11 w-full rounded-control border border-border bg-surface px-3 pr-11 text-base outline-none focus:border-primary"
-                        />
-                      </label>
-                      <button
-                        type="button"
-                        disabled={pw2.length < 6 || pw1 !== pw2}
-                        onClick={() => {
-                          setPasswordSet(true)
-                          save()
-                        }}
-                        className="mt-5 h-11 w-full rounded-control bg-primary text-sm font-medium text-text-inverse active:bg-primary-pressed disabled:bg-disabled disabled:text-text-disabled"
-                      >
-                        完成
-                      </button>
-                    </>
-                  )}
-                </>
-              )}
             </div>
           </div>
         </div>

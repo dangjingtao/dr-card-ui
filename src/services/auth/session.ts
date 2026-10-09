@@ -48,11 +48,13 @@ function readSession(): AuthSession | undefined {
 function writeSession(session: AuthSession) {
   volatileSession = session
   storage.write(STORAGE_KEYS.authSession, { accessToken: session.accessToken })
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event('dr-card-ui:auth-session-changed'))
 }
 
 export function clearAuthSession() {
   volatileSession = undefined
   storage.remove(STORAGE_KEYS.authSession)
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event('dr-card-ui:auth-session-cleared'))
 }
 
 export function getAuthSession() {

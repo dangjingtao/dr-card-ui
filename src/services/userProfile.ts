@@ -40,6 +40,7 @@ const userDetailSchema = z
   .object({
     nick_name: z.string().nullish(),
     grade: z.string().nullish(),
+    avatar_img: z.union([z.string(), z.number()]).nullish(),
   })
   .passthrough()
 
@@ -48,6 +49,7 @@ export interface UserProfileDetail {
   nickname: string
   /** `grade` 名称；与资料设置年级芯片同名时可直接回填，接口未给时为空串。 */
   grade: string
+  avatar?: string
 }
 
 /** 纯解析：把统一信封的 `data` 收成页面可用字段；非 0 code 取 `message` 抛业务错误。 */
@@ -60,6 +62,7 @@ export function parseUserProfileDetail(payload: unknown): UserProfileDetail {
   return {
     nickname: detail.nick_name?.trim() ?? '',
     grade: detail.grade?.trim() ?? '',
+    avatar: typeof detail.avatar_img === 'string' ? trimOrUndefined(detail.avatar_img) : undefined,
   }
 }
 
@@ -229,7 +232,8 @@ export interface UserUpdatePayload {
  *
  * 只声明页面可能消费的字段并整体放行其余字段：后端返回的是完整用户实体
  * （含 `balance` / `last_login_ip` / `platform` / `status` 等），
- * 前端**不持久化该响应**（无本地用户实体缓存边界），页面需要最新资料时重新拉 `profile`。
+ * 前端仅同步必要的非敏感头像/昵称/年级状态，不持久化实体；
+ * `/profile` 读取登录时缓存，更新后不能立即依赖它校验新值。
  */
 const userUpdateSchema = z
   .object({
@@ -244,7 +248,7 @@ const userUpdateSchema = z
     points: z.number(),
     mobile: z.string().nullish(),
     real_name: z.string().nullish(),
-    grade_id: z.number(),
+    grade_id: z.number().nullish(),
     student_grade: z.string().nullish(),
   })
   .passthrough()

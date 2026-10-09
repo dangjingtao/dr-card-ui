@@ -13,7 +13,8 @@ import { resolveBannerLink, type BannerItem } from '../services/banners'
 import { useHomeBanners, useSignStatus } from './home/useHomeFeed'
 import { useSignRecords } from './checkin/useCheckinFeed'
 import { SIGN_RECORDS_RANGE_WEEK } from '../services/signrecords'
-import avatar from '../assets/brand/home/home-avatar.webp'
+import UserAvatar from '../components/mobile/UserAvatar'
+import { useUserIdentity } from './profile/useUserIdentity'
 
 const sectionIcons = {
   cause: Heart,
@@ -31,6 +32,7 @@ const sectionIcons = {
  */
 export default function Home() {
   const navigate = useNavigate()
+  const { remote: identity } = useUserIdentity()
   const [searchParams] = useSearchParams()
   const route = findRouteByPathname('/')
   /* 保持夹具注册与 DebugPanel 工作；首页正式状态暂不直接驱动新人券弹窗。 */
@@ -96,7 +98,7 @@ export default function Home() {
           onClick={() => navigate('/dearseed/membership')}
           className="h-10 w-10 flex-none overflow-hidden rounded-full border border-border-subtle bg-surface shadow-sm"
         >
-          <img src={avatar} alt="会员头像" className="h-full w-full object-cover" />
+          <UserAvatar src={identity.state === 'success' ? identity.data.avatar : undefined} />
         </button>
       </section>
 
