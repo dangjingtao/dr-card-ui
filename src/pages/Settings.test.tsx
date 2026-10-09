@@ -181,6 +181,26 @@ describe('Settings profile backfill', () => {
     expect(screen.queryByRole('alert')).toBeNull()
   })
 
+  it('selects the saved academic year again after returning to Settings', async () => {
+    // These are normalized values from GET /api/user/detail. The service tests
+    // separately lock student_grade precedence over membership grade.
+    mocks.fetchUserProfileDetail
+      .mockResolvedValueOnce({ nickname: '真实昵称', grade: '大二' })
+      .mockResolvedValueOnce({ nickname: '真实昵称', grade: '研二' })
+
+    const first = render(<Settings />)
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '大二' }).getAttribute('aria-pressed')).toBe('true')
+    })
+    first.unmount()
+    render(<Settings />)
+    await waitFor(() => expect(mocks.fetchUserProfileDetail).toHaveBeenCalledTimes(2))
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '研二' }).getAttribute('aria-pressed')).toBe('true')
+    })
+    expect(screen.getByRole('button', { name: '大二' }).getAttribute('aria-pressed')).toBe('false')
+  })
+
   it('does not show fake user defaults and retries when the profile request fails', async () => {
     mocks.fetchUserProfileDetail
       .mockRejectedValueOnce(new Error('profile failed'))
