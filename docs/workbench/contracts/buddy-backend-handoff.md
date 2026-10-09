@@ -112,8 +112,16 @@ H5 已在 #111 分支补齐搜索结果状态、真实资料字段展示、反�
 | 手机号发送申请 | POST /api/friends/add {mobile, source:10} | 只有手动点击才写；响应 status=10 是 pending，**不是直接绑定**。后台尚无安全的只读手机号预览，正式模式改为“输入完整手机号直接发送申请”，绝不编造对方头像昵称 |
 | 我的好友申请通知 | GET /api/notices/index?type=60&page&pageSize | 按已登录用户读取，解析 extra_json.friends_id **关系记录 ID**（不是 notice.id），显示后端 content 文本；既有通知普通已读与确认分开 |
 | 明确接受申请 | POST /api/friends/agree {id: friends_id} | 必须点击确认；只接受 status=20 响应，后台同意后删除对应 type=60 通知，H5 重新拉取；不保留虚构的完成历史 |
-| 唯一识别码查公开资料 | GET /api/user/code?identify_code=UUID | 仅只读、强制 UUID 输入并只映射昵称/头像/ID；**不能据此生成官方二维码 URL** |
+| 唯一识别码查公开资料 | GET /api/user/code?identify_code=UUID | 仅只读、强制 UUID 输入并只映射昵称/头像/ID；**H5 现可从当前登录用户的 `/api/user/profile.identify_code` 配合部署配置的官方 Origin 生成二维码 URL；本查询接口仍只用于扫码者读取公开资料** |
 
 以上使用现有统一 `parseApiEnvelope` 的 `code === 0` 判定、现有 HTTP session 授权，并在契约解析失败时如实报错。H5 对接的是已经存在的接口形状；**代码已接线≠后台测试/生产环境已部署，≠真人账号真机验收**。
 
 仍待后台同事：手机号精确只读搜索、关系状态查询/反向待处理、官方 HTTPS 二维码 URL、扫码预览+直接确认原子事务、完成通知持久化、识别码补齐持久化、安全/归属与权限问题。特别注意，/api/friends/agree 的 `id` 必须是朋友申请的业务记录编号，不能传用户 ID 或通知 ID；旧 /api/friends/update/delete 不得用于绕过确认。#110 Native 按码分流继续保留原设备和卡券核销事务。
+
+
+## 2026-10-09｜#139 小补丁：基于当前账号 identify_code 生成邀请二维码
+
+- H5 在 API 模式读取已鉴权 `GET /api/user/profile` 的 `identify_code`（UUID，可缺席），使用构建环境 `VITE_BUDDY_PUBLIC_ORIGIN` 生成 `<officialOrigin>/buddy/invite/scan?code=<identify_code>`，无需后台另行提供二维码图片或 `qrUrl` 接口。
+- 缺少识别码、官方域名未配置或配置不合法时，页面显式失败，不降级为 Mock。preview/dev Mock 仍使用明确标识的演示码。现有二维码 PNG 绘制与 Native 海报保存不变。
+- test/prod 部署负责人须分别配置官方 HTTPS Origin，保证该公开页面真正承接扫码引导。仅生成二维码**不代表** Native 已能识别分流、更不代表后端已实现二维码关系确认。
+- 先前“后台必须交付 `qrUrl`”属于旧方案；以本节覆盖该交接要求。后端仍须保证 `identify_code` 稳定、唯一、可用于扫码查询与后续确认授权，完成真实双账号验证。
