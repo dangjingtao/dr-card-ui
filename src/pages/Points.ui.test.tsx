@@ -47,7 +47,7 @@ describe('Points task truthfulness (UX-03)', () => {
       status: 20, sort_number: 1, max_days: 31, signed_days: 1,
     }] }
     showPoints()
-    expect(screen.getByText('每日签到')).toBeTruthy()
+    expect(screen.getAllByText('每日签到').length).toBeGreaterThanOrEqual(2)
     expect(screen.getByText('1/31')).toBeTruthy()
     expect(screen.queryByText('观看视频')).toBeNull()
     expect(screen.queryByText('邀请好友')).toBeNull()
