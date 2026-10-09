@@ -3,9 +3,6 @@ name: OSS Production Package
 on:
   pull_request:
     branches: [dev, test, prod]
-    paths:
-      - '.github/workflows/oss-production.yml'
-      - 'docs/deploy/oss-production.md'
   push:
     branches: [prod]
 
@@ -107,8 +104,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          target="oss://kbs-sdl/h5/releases/${GITHUB_SHA}/"
-          ossutil cp -r dist/ "$target" -f
+          # Every run attempt has a distinct path; retrying never overwrites prior evidence.
+          target="oss://kbs-sdl/h5/releases/${GITHUB_SHA}/${GITHUB_RUN_ID}.${GITHUB_RUN_ATTEMPT}/"
+          ossutil cp -r dist/ "$target"
           ossutil stat "${target}index.html"
           ossutil stat "${target}build-meta.json"
           echo "Uploaded OSS release: $target" >> "$GITHUB_STEP_SUMMARY"
