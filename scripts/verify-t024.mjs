@@ -258,7 +258,7 @@ await go('/points')
 const tasksText = await page.locator('section[aria-labelledby="points-tasks-title"]').innerText()
 const inventedTitles = ['观看视频', '邀请好友']
 const inventedHits = inventedTitles.filter((title) => tasksText.includes(title))
-const fakeRewardClaim = /\\+\\s*(?:5|50)\\s*🫧/.test(tasksText)
+const fakeRewardClaim = /\+\s*(?:5|50)\s*🫧/.test(tasksText)
 const retryActions = await page.locator('section[aria-labelledby="points-tasks-title"] button').count()
 const errorVisible = tasksText.includes('签到任务加载失败')
 record(
