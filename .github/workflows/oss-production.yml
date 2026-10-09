@@ -115,3 +115,51 @@ jobs:
           echo "Uploaded OSS release: $target" >> "$GITHUB_STEP_SUMMARY"
           echo "This is an immutable artifact for human OSS verification, NOT a launched H5 website." >> "$GITHUB_STEP_SUMMARY"
           echo "Default-Bucket URL (may download HTML or return 403): https://kbs-sdl.oss-cn-guangzhou.aliyuncs.com/h5/releases/${GITHUB_SHA}/${GITHUB_RUN_ID}.${GITHUB_RUN_ATTEMPT}/index.html" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Package and verify private OSS download for human inspection
+        shell: bash
+        run: |
+          set -euo pipefail
+          target="oss://kbs-sdl/h5/releases/${GITHUB_SHA}/${GITHUB_RUN_ID}.${GITHUB_RUN_ATTEMPT}/"
+          # Upload one ZIP so a human can download all assets with one signed URL.
+          (cd dist && zip -q -r "$RUNNER_TEMP/h5-release.zip" .)
+          ossutil cp "$RUNNER_TEMP/h5-release.zip" "${target}h5-release.zip"
+          ossutil stat "${target}h5-release.zip"
+
+          # OSS is private; anonymous bare URLs return AccessDenied.
+          # A time-limited signed GET must work without changing Bucket ACLs.
+          signed_output="$(ossutil presign "${target}h5-release.zip" --expires-duration 24h)"
+          signed_url="$(printf '%s\n' "$signed_output" | grep -Eo 'https://kbs-sdl[.]oss-cn-guangzhou[.]aliyuncs[.]com/[^[:space:]]+' | head -n 1)"
+          test -n "$signed_url"
+          curl --fail --silent --show-error --location --retry 2 "$signed_url" -o "$RUNNER_TEMP/oss-readback.zip"
+          cmp "$RUNNER_TEMP/h5-release.zip" "$RUNNER_TEMP/oss-readback.zip"
+          unzip -tqq "$RUNNER_TEMP/oss-readback.zip"
+
+          mkdir -p "$RUNNER_TEMP/oss-human-verification"
+          cp "$RUNNER_TEMP/oss-readback.zip" "$RUNNER_TEMP/oss-human-verification/h5-oss-verified.zip"
+          printf '%s\n' "$signed_url" > "$RUNNER_TEMP/oss-human-verification/oss-signed-url.txt"
+          printf 'Verified OSS path: %s\nSource SHA: %s\nRead-back SHA256: ' "$target" "$GITHUB_SHA" > "$RUNNER_TEMP/oss-human-verification/verification.txt"
+          sha256sum "$RUNNER_TEMP/oss-readback.zip" >> "$RUNNER_TEMP/oss-human-verification/verification.txt"
+          {
+            echo "### Human verification from private OSS"
+            echo "A ZIP was uploaded to OSS and downloaded back through a 24-hour signed HTTPS URL."
+            echo "Full-byte comparison and ZIP integrity verification passed."
+            echo ""
+            echo "Download: [OSS H5 ZIP (24-hour signed link)]($signed_url)"
+            echo ""
+            echo "If the signed link expires, download the `oss-human-verified-*` GitHub Actions artifact below; its ZIP contains bytes **read back from OSS**."
+            echo "Bucket ACL remains unchanged. This is not an activated H5 website."
+          } >> "$GITHUB_STEP_SUMMARY"
+          cp "$RUNNER_TEMP/oss-human-verification/"* "$GITHUB_WORKSPACE/" 
+
+      - name: Attach OSS read-back proof for manual download
+        uses: actions/upload-artifact@v4
+        with:
+          name: oss-human-verified-${{ github.sha }}
+          path: |
+            h5-oss-verified.zip
+            oss-signed-url.txt
+            verification.txt
+          retention-days: 7
+          if-no-files-found: error
+
