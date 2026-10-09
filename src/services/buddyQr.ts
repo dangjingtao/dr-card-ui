@@ -1,4 +1,5 @@
 import { runtimePolicy } from '../app/config/runtime'
+import { fetchUserProfile } from './userProfile'
 
 /**
  * #105 尚未由后台签署 method/path/DTO。这里只定义 H5 消费的最小服务合同；
@@ -17,9 +18,13 @@ export interface BuddyQrBackendContract {
 }
 
 export class BuddyQrError extends Error {
-  constructor(readonly reason: 'not-configured' | 'invalid-qr' | 'fetch-failed') {
-    super(reason === 'not-configured'
-      ? '二维码接口尚未接通，请稍后再试'
+  constructor(readonly reason: 'not-configured' | 'invalid-qr' | 'fetch-failed' | 'missing-code' | 'missing-origin') {
+    super(reason === 'missing-code'
+      ? '当前账号暂未生成邀请识别码，请稍后重试'
+      : reason === 'missing-origin'
+        ? '邀请二维码域名未配置，请联系开发同学'
+        : reason === 'not-configured'
+          ? '二维码接口尚未接通，请稍后再试'
       : reason === 'invalid-qr'
         ? '邀请二维码数据无效，请稍后再试'
         : '获取邀请二维码失败，请稍后重试')
@@ -65,7 +70,21 @@ export function validateBuddyQrUrl(raw: unknown, trustedOrigin: string): string 
   }
 }
 
-/** 为 H5 页面提供单一异步读取入口；正式合同未交付时坚决不发明 API。 */
+/** 仅使用部署配置的官方 HTTPS Origin 和当前登录账号识别码。 */
+export function buildBuddyInviteUrl(code: string, configuredOrigin: string | undefined): string {
+  if (!configuredOrigin?.trim()) throw new BuddyQrError('missing-origin')
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(code)) {
+    throw new BuddyQrError('invalid-qr')
+  }
+  let origin: string
+  try { origin = validOrigin(configuredOrigin) }
+  catch { throw new BuddyQrError('missing-origin') }
+  const url = new URL('/buddy/invite/scan', origin)
+  url.searchParams.set('code', code)
+  return validateBuddyQrUrl(url.href, origin)
+}
+
+/** mock 保持独立；API 使用当前登录账号的 profile。 */
 export async function loadOwnBuddyQr(backend?: BuddyQrBackendContract): Promise<OwnBuddyQr> {
   if (!backend && runtimePolicy.dataMode === 'mock') {
     return {
@@ -73,7 +92,13 @@ export async function loadOwnBuddyQr(backend?: BuddyQrBackendContract): Promise<
       demo: true,
     }
   }
-  if (!backend) throw new BuddyQrError('not-configured')
+  if (!backend) {
+    let profile: Awaited<ReturnType<typeof fetchUserProfile>>
+    try { profile = await fetchUserProfile() }
+    catch { throw new BuddyQrError('fetch-failed') }
+    if (!profile.identifyCode) throw new BuddyQrError('missing-code')
+    return { url: buildBuddyInviteUrl(profile.identifyCode, import.meta.env.VITE_BUDDY_PUBLIC_ORIGIN), demo: false }
+  }
   let response: unknown
   try {
     response = await backend.readMyQr()
