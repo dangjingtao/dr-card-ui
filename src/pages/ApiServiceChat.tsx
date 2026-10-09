@@ -7,13 +7,24 @@ import WecomQrPlaceholder from '../components/mobile/WecomQrPlaceholder'
 import { BottomSheet, Button } from '../components/ui'
 import { CHAT_BOT, CHAT_HUMAN_PROMPT, WELFARE_OFFICER } from '../app/fixtures'
 import { useChatHistory } from './serviceChat/useChatHistory'
+import { combineChatMessages, useAiChatSend } from './serviceChat/useAiChatSend'
 
 /**
- * #123-A API mode: real history only. Sending / human handoff is implemented in #123-C/D.
- * Never mount timer-driven demo replies or fake agent queue in api/test/prod.
+ * #123-C: true backend SSE AI response; temporary bubbles reconcile with stored history.
+ * Human transfer and Socket.IO remain owned by #138. No timer-driven bot/agent fixtures.
  */
 export default function ApiServiceChat() {
   const history = useChatHistory()
+  const chat = useAiChatSend(history.syncLatest)
+  const [draft, setDraft] = useState('')
+  const send = () => {
+    const message = draft.trim()
+    if (!message || chat.busy || chat.blocked || history.status !== 'ready') return
+    setDraft('')
+    void chat.send(message, history.messages)
+  }
+  const inputDisabled = history.status !== 'ready' || chat.busy || chat.blocked
+  const messages = combineChatMessages(history.messages, chat.messages)
   const location = useLocation()
   const navigate = useNavigate()
   const [wecomOpen, setWecomOpen] = useState(false)
@@ -34,7 +45,7 @@ export default function ApiServiceChat() {
       <div className="px-4 pt-3">
         <p className="text-center text-xs text-text-tertiary">AI 客服 {CHAT_BOT.name} 为您服务</p>
       </div>
-      <section className="flex-1 px-4 pb-4 pt-4" aria-label="客服聊天历史" data-human-stage="unavailable">
+      <section className="flex-1 px-4 pb-4 pt-4" aria-label="客服聊天历史" data-human-stage={chat.humanAwait ? 'pending' : 'idle'}>
         {history.status === 'loading' ? (
           <p role="status" className="py-8 text-center text-sm text-text-secondary">正在加载客服历史…</p>
         ) : history.status === 'error' ? (
@@ -57,30 +68,55 @@ export default function ApiServiceChat() {
                 <Button variant="outline" onClick={history.loadMore}>重试加载更早消息</Button>
               </div>
             )}
-            {history.messages.length === 0
-              ? <p className="py-8 text-center text-sm text-text-secondary">暂无客服聊天记录</p>
-              : <ChatMessageList messages={history.messages} />}
+            {messages.length === 0
+              ? <p className="py-8 text-center text-sm text-text-secondary">暂无客服聊天记录，可以发送第一条消息</p>
+              : <ChatMessageList messages={messages} />}
           </>
         )}
       </section>
 
       <div className="sticky bottom-0 border-t border-border-subtle bg-background px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3">
-        <p className="mb-2 text-center text-xs text-text-secondary" role="status">
-          历史消息可查看，AI 发送与转人工服务正在接入
-        </p>
+        {chat.error ? (
+          <div role="alert" className="mb-3 rounded-container bg-surface px-3 py-2 text-xs text-danger-text">
+            <p>{chat.error}</p>
+            <Button variant="outline" onClick={() => { chat.clear(); history.reload() }}>检查最新历史记录</Button>
+          </div>
+        ) : (
+          <div role="status" className="mb-2 text-center text-xs text-text-secondary">
+            {chat.phase === 'sending' ? '正在发送消息…'
+              : chat.phase === 'streaming' ? 'AI 正在流式回复…'
+              : chat.phase === 'syncing' ? '正在核对服务端消息记录…'
+              : chat.humanAwait ? '后台已进入人工模式；真人实时回复待接入'
+              : 'AI 客服已可发送消息；人工转接功能尚未接入'}
+          </div>
+        )}
         <div className="flex items-end gap-2">
-          <button type="button" data-chat-human-entry disabled aria-label="人工客服待接入"
+          <button type="button" data-chat-human-entry disabled aria-label="人工转接待接入"
             className="flex h-11 w-11 flex-none flex-col items-center justify-center rounded-container bg-surface text-[10px] font-medium text-text-brand shadow-sm disabled:opacity-50">
             <Headset className="h-4 w-4" aria-hidden />人工
           </button>
-          <div className="flex min-h-11 flex-1 items-center rounded-container border-2 border-transparent bg-surface px-3">
-            <input type="text" disabled aria-label="输入你的问题" placeholder="AI 客服消息发送待接入"
+          <div className="flex min-h-11 flex-1 items-center rounded-container border-2 border-transparent bg-surface px-3 focus-within:border-border-focused">
+            <input type="text" value={draft} maxLength={5000} autoComplete="off"
+              onChange={event => setDraft(event.target.value)}
+              onKeyDown={event => {
+                if (event.key === 'Enter') { event.preventDefault(); send() }
+              }}
+              disabled={inputDisabled} aria-label="输入你的问题"
+              placeholder={chat.humanAwait ? '人工客服实时通信待接入' : '请输入你的问题'}
               className="h-11 w-full bg-transparent text-sm text-text-primary outline-none placeholder:text-text-placeholder disabled:cursor-not-allowed" />
           </div>
-          <button type="button" data-chat-send disabled aria-label="发送待接入"
-            className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-disabled text-text-disabled">
-            <Send className="h-5 w-5" aria-hidden />
-          </button>
+          {chat.busy ? (
+            <button type="button" data-chat-cancel onClick={chat.cancel} aria-label="中止等待回复"
+              className="flex h-11 items-center justify-center rounded-full bg-surface px-3 text-xs text-text-brand">
+              停止
+            </button>
+          ) : (
+            <button type="button" data-chat-send onClick={send}
+              disabled={inputDisabled || !draft.trim()} aria-label="发送"
+              className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-primary text-text-inverse active:bg-primary-pressed disabled:bg-disabled disabled:text-text-disabled">
+              <Send className="h-5 w-5" aria-hidden />
+            </button>
+          )}
         </div>
       </div>
       {/* TitleBar's #wecom QR is a separate action, never a fake transfer to a human agent. */}
