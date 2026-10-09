@@ -76,6 +76,14 @@ describe('live user detail contract', () => {
     await expect(fetchUserProfileDetail()).resolves.toMatchObject({ grade: '' })
   })
 
+  it('treats nullable student_grade as unset, not a reason to select a membership tier', async () => {
+    mocks.request.mockResolvedValue({
+      code: 0,
+      data: { nick_name: '未填写', grade: '大一', student_grade: null },
+    })
+    await expect(fetchUserProfileDetail()).resolves.toMatchObject({ grade: '' })
+  })
+
   it('uses legacy grade only when student_grade is absent', async () => {
     mocks.request.mockResolvedValue({
       code: 0,
