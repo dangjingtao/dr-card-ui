@@ -46,6 +46,44 @@ describe('live user detail contract', () => {
     })
   })
 
+  it('prefers the persisted student_grade when membership grade differs', async () => {
+    mocks.request.mockResolvedValue({
+      code: 0,
+      data: {
+        nick_name: '已更新用户',
+        grade: '普通会员',
+        student_grade: '研二',
+        avatar_img: '',
+      },
+    })
+    await expect(fetchUserProfileDetail()).resolves.toEqual({
+      nickname: '已更新用户',
+      grade: '研二',
+      avatar: undefined,
+    })
+    expect(mocks.request).toHaveBeenCalledWith({
+      method: 'GET',
+      url: '/api/user/detail',
+      headers: undefined,
+    })
+  })
+
+  it('treats explicitly empty student_grade as unselected, never as membership grade', async () => {
+    mocks.request.mockResolvedValue({
+      code: 0,
+      data: { nick_name: '未设置年级', grade: '钻石会员', student_grade: '' },
+    })
+    await expect(fetchUserProfileDetail()).resolves.toMatchObject({ grade: '' })
+  })
+
+  it('uses legacy grade only when student_grade is absent', async () => {
+    mocks.request.mockResolvedValue({
+      code: 0,
+      data: { nick_name: '旧接口', grade: '大三' },
+    })
+    await expect(fetchUserProfileDetail()).resolves.toMatchObject({ grade: '大三' })
+  })
+
   it('uses a real avatar URL from the detail response', async () => {
     mocks.request.mockResolvedValue({
       code: 0, data: { nick_name: '小明', grade: '研二', avatar_img: 'https://cdn.example.com/user.png' },
