@@ -1,5 +1,5 @@
 /** 消息分类（T012；reference/通知2.html 的 cat 字段） */
-export type NotificationCategory = 'system' | 'activity' | 'balance' | 'event' | 'service'
+export type NotificationCategory = 'system' | 'activity' | 'balance' | 'event' | 'service' | 'reward' | 'transfer' | 'other' | 'buddy'
 
 /**
  * 通知消息夹具（T012）
@@ -140,6 +140,10 @@ export function notificationCategoryLabel(cat: NotificationCategory | string): s
   if (cat === 'balance') return '余额'
   if (cat === 'event') return '活动'
   if (cat === 'service') return '服务'
+  if (cat === 'reward') return '奖励'
+  if (cat === 'transfer') return '转赠'
+  if (cat === 'other') return '其它'
+  if (cat === 'buddy') return '搭子'
   return '通用'
 }
 
