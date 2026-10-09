@@ -173,6 +173,15 @@ export function useFixtureDebug(): boolean {
 }
 
 /**
+ * `?debug=1` 的非 hook 判定，供 bootstrap 级代码（如 main.tsx 的移动端调试面板）复用，
+ * 保证受控 query 只在 H004 控制层读取；production-like 构建恒为 false。
+ */
+export function isFixtureDebugRequested(): boolean {
+  if (!runtimePolicy.fixtureQueriesEnabled) return false
+  return new URLSearchParams(window.location.search).get('debug') === '1'
+}
+
+/**
  * 给跨路由验收链接附加受控 fixture 参数。非 fixture 环境只返回原业务 URL，
  * 因此 production 点击不会主动把 `state/overlay/debug` 写进地址栏。
  */

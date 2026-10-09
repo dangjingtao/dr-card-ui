@@ -119,19 +119,28 @@ const extraTitles = await page
 console.log(`  §2.2 打卡末块 bottom=${picks.y + picks.height} 附加区 top=${extra.y} 顺序=${extraTitles.join(' / ')}`)
 expect(extra.y >= picks.y + picks.height, '公益板块应排在打卡内容下方')
 expect(
-  extraTitles[0] === '公益板块' && extraTitles[1] === '卡博士品牌故事',
-  `附加区顺序应为「公益板块 → 卡博士品牌故事」，实际=${extraTitles.join(' / ')}`,
+  extraTitles[0] === '公益板块' && extraTitles[1] === '极地种子品牌故事',
+  `附加区顺序应为「公益板块 → 极地种子品牌故事」，实际=${extraTitles.join(' / ')}`,
 )
 
-// 公益板块暂不实现跳转（用户 2026-08-27 定案）：只保留品牌故事一个可点击入口
+// 公益与品牌故事均为可点击入口，分别进入空富文本承载页。
 const extraButtons = await page
   .locator('section[aria-label="公益板块与品牌故事"] > button')
   .evaluateAll((nodes) => nodes.map((node) => node.querySelector('span > span')?.textContent ?? ''))
 console.log(`  §2.2 附加区可点击入口=${extraButtons.join(' / ') || '无'}`)
 expect(
-  extraButtons.length === 1 && extraButtons[0] === '卡博士品牌故事',
-  `公益板块应无跳转，可点击入口应只有「卡博士品牌故事」，实际=${extraButtons.join(' / ')}`,
+  extraButtons.length === 2 && extraButtons[0] === '公益板块' && extraButtons[1] === '极地种子品牌故事',
+  `附加区两项都应为可点击入口，实际=${extraButtons.join(' / ')}`,
 )
+
+for (const [title, pathname] of [['公益板块', '/cause'], ['极地种子品牌故事', '/brand-culture']]) {
+  await page.getByRole('button', { name: new RegExp(title) }).click()
+  await page.waitForURL(`**${pathname}`)
+  expect(await page.locator(`[data-rich-text-placeholder="${pathname}"]`).count() === 1, `${pathname} 应呈现空富文本承载区`)
+  expect(await page.locator('[data-rich-text-content]').textContent() === '', `${pathname} 当前不应伪造富文本内容`)
+  await page.locator('[data-title-bar="back"] button[aria-label="返回"]').click()
+  await page.waitForURL('**/')
+}
 
 // —— §2.3 §4 长页可完整浏览，公益板块与品牌故事随页面滚动、不吸底 ——
 const metrics = await page.locator(SCROLL).evaluate((el) => ({

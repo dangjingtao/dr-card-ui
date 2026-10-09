@@ -18,6 +18,8 @@ export type IOSMessageHandler = {
 export type NativeTransportWindow = Window & {
   androidBridge?: Record<string, unknown>
   iosBridge?: Record<string, unknown>
+  nativeBridgeCallback?: (callbackId: string, payload: unknown) => void
+  androidBridgeCallback?: (callbackId: string, payload: unknown) => void
   webkit?: {
     messageHandlers?: Record<string, IOSMessageHandler | undefined>
   }
@@ -51,6 +53,9 @@ export class NativeTransportError extends Error {
 export type NativeTransportInvocationOptions = {
   timeoutMs?: number
 }
+
+/** Shared timeout for the unified Android/iOS injected-object callbackId protocol. */
+export const INJECTED_CALLBACK_TIMEOUT_MS = 120_000
 
 export type NativeArgumentSerializer<TInput> = (input: TInput) => readonly unknown[]
 export type NativeResultParser<TResult> = (payload: unknown) => TResult
@@ -196,6 +201,244 @@ export function createInjectedObjectTransport<TInput, TResult>(
           }
 
           return parseResult(rawResult)
+        },
+      }
+    },
+  }
+}
+
+export type InjectedCallbackName =
+  | 'nativeBridgeCallback'
+  | 'androidBridgeCallback'
+
+export interface CallbackInjectedObjectTransportConfig<TInput, TResult>
+  extends Omit<InjectedObjectTransportConfig<TInput, TResult>, 'serializeArgs'> {
+  serializeArgs: (input: TInput, callbackId: string) => readonly unknown[]
+  /**
+   * Unified protocol target is window.nativeBridgeCallback.
+   * callbackAliases exists only for confirmed host compatibility (currently Android).
+   */
+  callbackName?: InjectedCallbackName
+  callbackAliases?: readonly InjectedCallbackName[]
+  timeoutMs?: number
+  /**
+   * Optional capability-specific multi-stage callback gate.
+   *
+   * The default remains one callback = one settled invocation. Capabilities with a confirmed
+   * intermediate callback may return false here to keep the callbackId pending until a later
+   * terminal payload arrives.
+   */
+  isTerminalPayload?: (payload: unknown, callbackCount: number) => boolean
+}
+
+type InjectedCallbackPending = {
+  handle: (payload: unknown) => void
+}
+
+type InjectedCallbackDispatcher = (callbackId: string, payload: unknown) => void
+
+type InjectedCallbackChannel = {
+  pending: Map<string, InjectedCallbackPending>
+  dispatchers: Map<InjectedCallbackName, InjectedCallbackDispatcher>
+  fallbacks: Map<InjectedCallbackName, InjectedCallbackDispatcher>
+}
+
+const injectedCallbackChannels = new WeakMap<
+  NativeTransportWindow,
+  Map<InjectedCallbackName, InjectedCallbackChannel>
+>()
+let injectedCallbackSequence = 0
+
+function nextInjectedCallbackId(methodName: string): string {
+  injectedCallbackSequence += 1
+  return `${methodName}-${Date.now().toString(36)}-${injectedCallbackSequence.toString(36)}`
+}
+
+function installInjectedCallbackEndpoint(
+  hostWindow: NativeTransportWindow,
+  channels: Map<InjectedCallbackName, InjectedCallbackChannel>,
+  channel: InjectedCallbackChannel,
+  callbackName: InjectedCallbackName,
+) {
+  let dispatcher = channel.dispatchers.get(callbackName)
+  if (!dispatcher) {
+    dispatcher = (callbackId, payload) => {
+      const request = channel.pending.get(callbackId)
+      if (request) {
+        request.handle(payload)
+        return
+      }
+      channel.fallbacks.get(callbackName)?.call(hostWindow, callbackId, payload)
+    }
+    channel.dispatchers.set(callbackName, dispatcher)
+  }
+
+  const current = hostWindow[callbackName]
+  if (typeof current === 'function' && current !== dispatcher) {
+    channel.fallbacks.set(callbackName, current)
+  }
+
+  hostWindow[callbackName] = dispatcher
+  channels.set(callbackName, channel)
+}
+
+function getInjectedCallbackChannel(
+  hostWindow: NativeTransportWindow,
+  callbackName: InjectedCallbackName,
+  callbackAliases: readonly InjectedCallbackName[] = [],
+): InjectedCallbackChannel {
+  let channels = injectedCallbackChannels.get(hostWindow)
+  if (!channels) {
+    channels = new Map()
+    injectedCallbackChannels.set(hostWindow, channels)
+  }
+
+  const names = [...new Set([callbackName, ...callbackAliases])]
+  let channel = names.map((name) => channels?.get(name)).find(Boolean)
+  if (!channel) {
+    channel = {
+      pending: new Map(),
+      dispatchers: new Map(),
+      fallbacks: new Map(),
+    }
+  }
+
+  for (const name of names) {
+    installInjectedCallbackEndpoint(hostWindow, channels, channel, name)
+  }
+
+  return channel
+}
+
+export function createCallbackInjectedObjectTransport<TInput, TResult>(
+  config: CallbackInjectedObjectTransportConfig<TInput, TResult>,
+) {
+  const parseResult = config.parseResult ?? identityResultParser<TResult>
+
+  return {
+    resolve(
+      hostWindow: NativeTransportWindow | undefined,
+      input: TInput,
+    ): NativeTransportResolution<TResult> {
+      const bridge = resolveHostObject(hostWindow, config.objectName)
+      if (!bridge) {
+        return {
+          supported: false,
+          code: 'bridge-unsupported',
+          message: 'window.' + config.objectName + ' is not available in the current host.',
+        }
+      }
+      const method = bridge[config.methodName]
+      if (typeof method !== 'function') {
+        return {
+          supported: false,
+          code: 'capability-unsupported',
+          message: config.objectName + '.' + config.methodName + ' is not available in the current host.',
+        }
+      }
+
+      return {
+        supported: true,
+        invoke: () => {
+          if (!hostWindow) {
+            throw new NativeTransportError(
+              'callback-channel-unsafe',
+              'Native callback channel is unavailable.',
+            )
+          }
+
+          const callbackName = config.callbackName ?? 'nativeBridgeCallback'
+          const channel = getInjectedCallbackChannel(
+            hostWindow,
+            callbackName,
+            config.callbackAliases,
+          )
+          const callbackId = nextInjectedCallbackId(config.methodName)
+          const timeoutMs = config.timeoutMs ?? INJECTED_CALLBACK_TIMEOUT_MS
+
+          if (channel.pending.has(callbackId)) {
+            throw new NativeTransportError(
+              'callback-correlation-conflict',
+              `Native callback id "${callbackId}" is already pending.`,
+            )
+          }
+
+          return new Promise<TResult>((resolve, reject) => {
+            let settled = false
+            let callbackCount = 0
+
+            const cleanup = () => {
+              channel.pending.delete(callbackId)
+              window.clearTimeout(timer)
+            }
+            const finish = (work: () => void) => {
+              if (settled) return
+              settled = true
+              cleanup()
+              work()
+            }
+            const handlePayload = (payload: unknown) => {
+              callbackCount += 1
+
+              let isTerminal = true
+              try {
+                isTerminal = config.isTerminalPayload?.(payload, callbackCount) ?? true
+              } catch (error) {
+                finish(() =>
+                  reject(
+                    error instanceof NativeTransportError
+                      ? error
+                      : new NativeTransportError(
+                          'payload-invalid',
+                          `Native ${config.methodName} callback stage classifier failed.`,
+                          error,
+                        ),
+                  ),
+                )
+                return
+              }
+
+              if (!isTerminal) return
+
+              finish(() => {
+                try {
+                  resolve(parseResult(payload))
+                } catch (error) {
+                  reject(error)
+                }
+              })
+            }
+
+            channel.pending.set(callbackId, { handle: handlePayload })
+            const timer = window.setTimeout(() => {
+              finish(() =>
+                reject(
+                  new NativeTransportError(
+                    'callback-timeout',
+                    `Native ${config.methodName} callback timed out.`,
+                  ),
+                ),
+              )
+            }, timeoutMs)
+
+            try {
+              const args = config.serializeArgs(input, callbackId)
+              const rawResult = method.call(bridge, ...args)
+              if (rawResult !== undefined) handlePayload(rawResult)
+            } catch (error) {
+              finish(() =>
+                reject(
+                  error instanceof NativeTransportError
+                    ? error
+                    : new NativeTransportError(
+                        'serialization-failed',
+                        'Injected-object transport could not invoke the native method.',
+                        error,
+                      ),
+                ),
+              )
+            }
+          })
         },
       }
     },

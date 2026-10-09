@@ -3,13 +3,15 @@
 > 数据源：`http://192.168.1.81:7002/swagger-ui/index.json`（FastAdmin 自动生成）
 > 原始快照：`docs/api/dearseed-openapi.json`
 > 抓取时间：2026-09-16
+> **客服 API 更新（2026-10-09）**：现行 `/api/chatmessages/add`、`/transfer`、`/index` 和 Socket.IO `chat:message` 以 [后台源码校验合同](./chat-service-contract-20261009.md) 为准；本页和原始 Swagger 中的旧 `ChatMessagesSave` CRUD schema 不再适用用户端客服。
+> 更新记录：2026-09-28 后端统一响应协议 —— 成功码由 `200` 改为 `0`（兼容原生，含 `GET /api/user/detail`），失败结构字段名为 `message`；来源为后台首页联调文档与后端确认，§3 及相关示例已同步。
 
 ## 1. 总体说明
 
 - **接口前缀**：所有接口均在 `/api` 下，基础 URL 由 `VITE_API_BASE_URL` 提供。
 - **接口规模**：20 个 tag / 108 个接口 / 82 个 schema。
 - **重要甄别**：绝大多数接口是 FastAdmin 基于数据表自动生成的 **原始数据模型 CRUD**（每个实体 `index/add/detail/update/delete/select` 六件套），属管理后台性质，**不是产品最终定稿的业务接口**。
-- **响应 envelope**：通用 CRUD 接口已由后端包装器契约确认（见「3. 通用 CRUD 接口契约」）：`{ code, msg, data }`，成功 `code: 200`，失败 `code: 500`。本 OpenAPI 本身未定义响应结构（仅 `description: OK`）。
+- **响应 envelope**：2026-09-28 后端已统一信封（见「3. 通用 CRUD 接口契约」）：成功 `code: 0`（`{ code, msg, data, status }`），失败为非 0 code 且字段名是 `message`（不是 `msg`）。本 OpenAPI 本身未定义响应结构（仅 `description: OK`）。
 - **字段级契约**：CRUD 入参/出参由「3. 通用 CRUD 接口契约」+ 各实体的 Save/Index schema 组成；`oauth/login` 等业务接口的请求参数 schema 在 OpenAPI 中为空 `{"type":"object"}`，字段仍需后端确认或实测。
 - **认证**：文档声明 `security: [{authorization: []}]`，具体鉴权方式未在文档中描述（cookie / header / token 均未知）。
 
@@ -41,17 +43,20 @@
 
 ### 3.2 通用响应体
 
-所有六个方法都走同一层信封，**成功和失败的结构完全相同**：
+所有六个方法共用同一层信封；**2026-09-28 起成功码统一为 `0`**（兼容原生），成功与失败走两套结构（失败见 3.5）。
+
+成功：
 
 ```json
-{ "code": 200, "msg": "success", "data": [] }
+{ "code": 0, "msg": "success", "data": [], "status": "succ" }
 ```
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| `code` | `number` | 业务码，**同时写入 HTTP 状态码** |
-| `msg` | `string` | 提示语，成功恒为 `"success"`，失败为原因 |
+| `code` | `number` | 恒为 `0` |
+| `msg` | `string` | 恒为 `"success"` |
 | `data` | `any` | 业务数据，默认 `[]`，**不是 `null`** |
+| `status` | `string` | 恒为 `"succ"` |
 
 ### 3.3 通用入参字段
 
@@ -70,8 +75,9 @@
 
 ```json
 {
-  "code": 200,
+  "code": 0,
   "msg": "success",
+  "status": "succ",
   "data": {
     "data": [ { "id": 1, "title": "首页banner", "status": 10 } ],
     "current_page": 1,
@@ -90,7 +96,7 @@
 #### add — 新增
 
 ```json
-{ "code": 200, "msg": "success", "data": { "id": 3, "title": "新banner", "create_time": "2026-09-16 10:00:00" } }
+{ "code": 0, "msg": "success", "status": "succ", "data": { "id": 3, "title": "新banner", "create_time": "2026-09-16 10:00:00" } }
 ```
 
 返回**保存后的实体**，含自增 `id`。多对多关联字段传 `[1,2]` 会被转成 `[{id:1},{id:2}]` 写入中间表。整个过程在 `READ COMMITTED` 事务内。
@@ -98,17 +104,17 @@
 #### update — 修改
 
 ```json
-{ "code": 200, "msg": "success", "data": { "id": 3, "title": "改过的标题" } }
+{ "code": 0, "msg": "success", "status": "succ", "data": { "id": 3, "title": "改过的标题" } }
 ```
 
-- **`id` 不存在时返回 `null`**，不是报错 —— 即 `code: 200` + `data: null`，前端需自行判空。
+- **`id` 不存在时返回 `null`**，不是报错 —— 即 `code: 0` + `data: null`，前端需自行判空。
 - 只更新传入的字段（`Object.assign`），未传的保持原值。
 - 入参为空对象会抛错 → 走失败分支。
 
 #### detail — 详情
 
 ```json
-{ "code": 200, "msg": "success", "data": { "id": 3, "title": "首页banner" } }
+{ "code": 0, "msg": "success", "status": "succ", "data": { "id": 3, "title": "首页banner" } }
 ```
 
 **记录不存在时 `data` 为 `null`**（`getOne()` 无结果），同样不是报错。
@@ -116,15 +122,16 @@
 #### delete — 删除
 
 ```json
-{ "code": 200, "msg": "success", "data": { "id": { "_type": "in", "_value": [3] }, "is_delete": { "_type": "equal", "_value": 0 } } }
+{ "code": 0, "msg": "success", "status": "succ", "data": { "id": { "_type": "in", "_value": [3] }, "is_delete": { "_type": "equal", "_value": 0 } } }
 ```
 
 #### select — 下拉选项
 
 ```json
 {
-  "code": 200,
+  "code": 0,
   "msg": "success",
+  "status": "succ",
   "data": {
     "data": [ { "value": 3, "label": "首页banner" } ],
     "current_page": 1,
@@ -137,11 +144,15 @@
 
 ### 3.5 失败输出
 
-失败时结构不变，`code` / HTTP 变为 `500`，`data` 为 `[]`：
+失败结构与成功不同：字段名是 `message`（不是 `msg`），且**没有 `status` 字段**：
 
 ```json
-{ "code": 500, "msg": "轮播图标题 is required", "data": [] }
+{ "code": 500, "message": "\"配置标题\" is required", "data": [] }
 ```
+
+- 未登录 / token 过期：HTTP 401 + `{"code":401,"message":"请先登录","data":[]}`；
+- 业务校验失败（如重复签到）：HTTP 400 + `{"code":400,"message":"今日已签到","data":[]}`；
+- 参数缺失 / 格式错误：HTTP 200 + `{"code":500,"message":"…","data":[]}` —— HTTP 状态码不参与成败判断，必须判 `code`。
 
 ---
 

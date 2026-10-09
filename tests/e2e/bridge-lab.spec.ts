@@ -21,8 +21,53 @@ test.describe('H027 Bridge Lab', () => {
     )
   })
 
+  test('registered async capability uses callbackId and the unified nativeBridgeCallback target', async ({ page }) => {
+    await page.addInitScript(() => {
+      const host = window as unknown as {
+        androidBridge?: {
+          copyText(payload: unknown): void
+        }
+        nativeBridgeCallback?: (callbackId: string, payload: unknown) => void
+      }
+      host.androidBridge = {
+        copyText(payload) {
+          const request = JSON.parse(payload as string) as {
+            text: string
+            callbackId: string
+          }
+          setTimeout(() => {
+            host.nativeBridgeCallback?.(request.callbackId, {
+              code: 0,
+              message: 'ok',
+              data: {},
+            })
+          }, 0)
+        },
+      }
+    })
+
+    await page.goto('/__debug/bridge-lab?osType=android', { waitUntil: 'domcontentloaded' })
+    await expect(page.locator('[data-callback-endpoint="nativeBridgeCallback"]')).toBeVisible()
+    await expect(page.locator('[data-callback-endpoint="androidBridgeCallback"]')).toBeVisible()
+
+    await page.locator('[data-capability-name="copyText"]').click()
+    await page.getByLabel('input JSON').fill('{"text":"bridge-e2e"}')
+    await page.getByRole('button', { name: '调用 copyText' }).click()
+
+    const logs = page.locator('[data-bridge-lab-logs]')
+    await expect(logs).toContainText('capability · copyText')
+    await expect(logs).toContainText('"success": true')
+  })
+
   test('Native can still call the legacy window.testFunc endpoint', async ({ page }) => {
     await page.goto('/__debug/bridge-lab?osType=android', { waitUntil: 'domcontentloaded' })
+
+    await expect(page.locator('[data-h5-callback-endpoints]')).toBeVisible()
+    await expect(page.locator('[data-callback-endpoint="nativeBridgeCallback"]')).toBeVisible()
+    await page.waitForFunction(() => {
+      const host = window as unknown as { testFunc?: unknown }
+      return typeof host.testFunc === 'function'
+    })
 
     const result = await page.evaluate(() => {
       const host = window as unknown as {
@@ -32,7 +77,6 @@ test.describe('H027 Bridge Lab', () => {
     })
 
     expect(result).toBe('h5 处理完成')
-    await expect(page.locator('[data-h5-callback-endpoints]')).toBeVisible()
     await expect(page.locator('[data-bridge-lab-logs]')).toContainText('window.testFunc(params)')
     await expect(page.locator('[data-bridge-lab-logs]')).toContainText('android-native')
   })

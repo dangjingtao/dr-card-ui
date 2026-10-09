@@ -1,5 +1,5 @@
 import { runtimePolicy } from '../../app/config/runtime'
-import type { NativeTransportWindow } from '../nativeBridgeTransport'
+import { INJECTED_CALLBACK_TIMEOUT_MS, type NativeTransportWindow } from '../nativeBridgeTransport'
 import type { NativeCapabilityDescriptor } from './core'
 import { NativeBridgeError, toInvocationBridgeError } from './errors'
 import {
@@ -30,6 +30,18 @@ function detectHost(hostWindow = getHostWindow()): NativeHost {
   if (hostWindow?.androidBridge) return 'android'
   if (hostWindow?.iosBridge || hostWindow?.webkit?.messageHandlers) return 'ios'
   return 'browser'
+}
+
+/**
+ * H036 host identity query.
+ *
+ * Answers "which host is currently running this H5" using injected-object presence only: no UA
+ * sniffing, no version inference, no caching, and deliberately independent of runtimePolicy
+ * .bridgeMode (bridgeMode gates whether capability calls are allowed; this only reports the host).
+ * Re-reading window on every call keeps late injection working, matching the capability runtime.
+ */
+export function getNativeHost(): NativeHost {
+  return detectHost()
 }
 
 function ensureNativeMode(capability: string): void {
@@ -189,7 +201,10 @@ export function invokeRegisteredNativeCapabilityForDebug(
     unknown,
     unknown
   >
-  return invokeNativeCapability(descriptor, input, options, true)
+  return invokeNativeCapability(descriptor, input, {
+    timeoutMs: INJECTED_CALLBACK_TIMEOUT_MS,
+    ...options,
+  }, true)
 }
 
 /**

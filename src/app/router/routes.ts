@@ -15,7 +15,7 @@ import { CircleDot, Headset, Home, QrCode, UserRound } from 'lucide-react'
  * - H5 商城（#17/#48/#49）承载为 WebView 边界页。
  * - 2026-08-28 用户确认：底部 Tab `/mall` 文案由「服务」改为「商城」；会员中心重新作为
  *   「我的 → 快捷服务」入口开放，`/membership` 恢复挂载既有会员中心页面，不新建页面。
- * - T021（2026-08-27 需求变更 §2）：根路由 `/` 由「卡博士 APP 首页」改为「诗得丽品牌专栏」
+ * - T021（2026-08-27 需求变更 §2）：根路由 `/` 由「卡博士 APP 首页」改为「极地种子品牌专栏」
  *   首页，删除金刚区并迁入 `/checkin` 打卡内容；`/dearseed` 仍保留为已验收的独立专栏页，
  *   不修改 T005 历史结论。`/` 新增的新人体验券状态与弹层是需求新增内容，摹客原型无对应
  *   artboard，故 node 占位 0（未决口径见 fixtures 的 NEWCOMER_COUPON_RULE_STATUS）。
@@ -103,19 +103,18 @@ export const ROUTES: RouteMeta[] = [
     tabOrder: 1,
     label: '首页',
     icon: Home,
-    /* T021：需求 §2.1–§2.2 要求根首页改为「诗得丽品牌专栏」并删除金刚区 */
-    title: '诗得丽品牌专栏',
+    /* T021：需求 §2.1–§2.2 要求根首页改为「极地种子品牌专栏」并删除金刚区 */
+    title: '极地种子品牌专栏',
     titleBar: 'plain',
-    titleBarTitle: '诗得丽品牌专栏',
+    titleBarTitle: '极地种子品牌专栏',
     /* T021 为需求变更新增内容，摹客原型无对应 artboard，故节点留空、下列状态/弹层 node 占位 0 */
     nodes: [],
     task: 'T021',
     entry: 'APP 主入口',
     returnTo: '—（根首页）',
     /*
-     * 用户 2026-08-27 定案「默认全是新用户」：无参数进入 `/` 即自动弹出新人体验券。
-     * `?newcomer=off` 是取证/回归专用的抑制参数，只让脚本确定性地拿到首页无遮挡形态，
-     * 不属于 fixture 状态也不属于弹层，故不进 states/overlays；产品访问不带此参数。
+     * 首页新人券演示弹窗已关闭。正式券数需等待 APP 用户信息与跨后台用户识别接口，
+     * `?newcomer=off` 仅保留为历史取证兼容参数，不代表线上业务开关。
      */
     states: [
       { key: 'coupon-1', node: 0, label: '新人券-1 张' },
@@ -127,7 +126,7 @@ export const ROUTES: RouteMeta[] = [
       /* 打卡内容随 CheckinBoard 迁入后，补签这个主要操作也在首页自持反馈（需求 §2.3），节点沿用 /checkin 的 #22 */
       { key: 'make-up-success', node: 22, label: '补打卡成功弹窗', type: 'dialog' },
     ],
-    owner: '诗得丽品牌专栏首页（T021 改造；打卡内容与 /checkin 共用 CheckinBoard；默认弹出新人体验券，`?newcomer=off` 抑制）',
+    owner: '极地种子品牌专栏首页（T021 改造；打卡内容与 /checkin 共用 CheckinBoard；新人券演示弹窗暂时关闭）',
   },
   {
     path: '/legacy-home',
@@ -704,13 +703,22 @@ export const ROUTES: RouteMeta[] = [
     owner: '活动卡券领取反馈（T005 施工）',
   },
   {
+    path: '/cause',
+    title: '公益板块',
+    nodes: [],
+    task: 'T021',
+    entry: '首页-公益板块',
+    returnTo: '首页',
+    owner: '公益富文本承载页（当前空内容；未来由统一数据层请求富文本）',
+  },
+  {
     path: '/brand-culture',
-    title: '品牌文化',
+    title: '极地种子品牌故事',
     nodes: [16],
     task: 'T005',
-    entry: '诗得丽专栏-「品牌文化」',
-    returnTo: '诗得丽专栏首页',
-    owner: '品牌文化长页（T005 施工；用户定案只铺原型长图、无浮动 CTA，B-001 关闭）',
+    entry: '首页-极地种子品牌故事；诗得丽专栏-「品牌文化」',
+    returnTo: '来源页（首页或诗得丽专栏）',
+    owner: '品牌故事富文本承载页（当前空内容；未来由统一数据层请求富文本）',
   },
 
   /* ────────────────────────── T006 会员、泡泡值、打卡与澡运 ────────────────────────── */
@@ -840,14 +848,14 @@ export const ROUTES: RouteMeta[] = [
     task: 'T007',
     entry: '搭子-二维码邀请',
     returnTo: '搭子',
-    owner: '二维码邀请卡与更多分享方式（T007 施工）',
+    owner: '二维码邀请卡与保存海报（#102 一期删除复制链接）',
   },
   {
     path: '/buddy/invite/qrcode',
     title: '邀请搭子',
     nodes: [34, 35],
     task: 'T007',
-    entry: '邀请搭子-保存到本地 / 复制链接',
+    entry: '邀请搭子-保存海报（历史复制链接状态仅作原型回溯）',
     returnTo: '邀请搭子',
     /* ⚠️ 原型只画了保存成功（#34）与复制成功（#35）；两个 *-failed 是任务卡要求的
      * 可复现失败态，按 D-056 只能由 `?state=` 驱动，页面内真实操作恒定成功（B-005）。 */
@@ -857,7 +865,7 @@ export const ROUTES: RouteMeta[] = [
       { key: 'link-copied', node: 35, label: '生成分享链接（复制成功）' },
       { key: 'link-failed', node: 35, label: '链接复制失败（仅 ?state= 复现）' },
     ],
-    owner: '分享海报/链接（T007 施工；统一走分享适配层）',
+    owner: '分享海报结果（一期移除复制链接入口；历史 link-* 仅用于原型追溯）',
   },
   {
     path: '/buddy/invite/phone',
@@ -880,14 +888,14 @@ export const ROUTES: RouteMeta[] = [
   },
   {
     path: '/buddy/invite/scan',
-    title: '邀请搭子（没 APP）',
+    title: '请在卡博士 App 内扫码',
     nodes: [30],
     task: 'H034',
-    /* H034：安装态只来自 Native openApp({ action: 'detect' })，
-     * 不再用 ?state=no-app/has-app 夹具模拟真实安装状态。 */
+    /* #102 最终版：该路由只是微信/系统相机的公开引导页，无 Native 安装检测、
+     * 不走外部邀请预览、深链打开 App 或安装后恢复绑定。 */
     entry: '微信扫描搭子邀请二维码',
     returnTo: '（外部承接，无应用内返回）',
-    owner: '被邀请人扫码承接（H034；Native detect/open/store，H5 不探测 scheme）',
+    owner: '公开扫码提示页面（#102；外部不绑定；下载链接待官方提供）',
   },
   {
     path: '/buddy/accept',
@@ -897,10 +905,10 @@ export const ROUTES: RouteMeta[] = [
     titleBarTitle: 'DearSeed',
     nodes: [36],
     task: 'T007',
-    entry: '被邀请人链路（深链 / 扫码后已装 APP）',
+    entry: 'App 内诗得丽扫一扫解析成功后/通知中心接受邀请',
     returnTo: '搭子（已绑定）',
-    /* #36 只有一个「接受邀请」按钮 + 右上角关闭图标，没有取消按钮；
-     * dismissed 即点关闭图标后停留在专栏首页背景上的取消路径。 */
+    /* #102 一期修订：确认成为搭子 + 取消（与右上角关闭/返回同义）；
+     * 未拿到后台邀请预览/确认 API 前，API 模式禁用假绑定。 */
     states: [
       { key: 'dismissed', node: 36, label: '取消（关闭弹窗）' },
     ],

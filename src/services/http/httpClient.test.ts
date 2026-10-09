@@ -111,4 +111,122 @@ describe('HTTP foundation', () => {
       code: 'HTTP_BASE_URL_MISSING',
     } satisfies Partial<AppError>)
   })
+
+  it('reauthenticates once and replays HTTP 401 requests with the updated auth header', async () => {
+    let attempts = 0
+    let token = 'expired'
+    const client = createHttpClient({
+      baseURL: 'https://api.example.test',
+      authHeadersProvider: () => ({ Authorization: `Bearer ${token}` }),
+      onUnauthorized: () => {
+        token = 'renewed'
+      },
+      adapter: async (config) => {
+        attempts += 1
+        if (attempts === 1) {
+          throw axiosLikeError(config, {
+            code: 'ERR_BAD_REQUEST',
+            response: {
+              data: { message: 'expired' },
+              status: 401,
+              statusText: 'Unauthorized',
+              headers: {},
+              config,
+            },
+          })
+        }
+        return {
+          data: { authorization: config.headers.get('Authorization') },
+          status: 200,
+          statusText: 'OK',
+          headers: {},
+          config,
+        }
+      },
+    })
+
+    await expect(client.request({ url: '/private' })).resolves.toEqual({
+      authorization: 'Bearer renewed',
+    })
+    expect(attempts).toBe(2)
+  })
+
+  it('recognizes a top-level business code 401 and never retries the replay again', async () => {
+    let attempts = 0
+    let renewals = 0
+    const client = createHttpClient({
+      baseURL: 'https://api.example.test',
+      onUnauthorized: () => {
+        renewals += 1
+      },
+      adapter: async (config) => {
+        attempts += 1
+        return {
+          data: { code: 401 },
+          status: 200,
+          statusText: 'OK',
+          headers: {},
+          config,
+        }
+      },
+    })
+
+    await expect(client.request({ url: '/private' })).rejects.toMatchObject({
+      kind: 'business',
+      status: 401,
+    })
+    expect(attempts).toBe(2)
+    expect(renewals).toBe(1)
+  })
+
+  it('reports a second unauthorized response without starting another login loop', async () => {
+    let attempts = 0
+    let renewals = 0
+    let failures = 0
+    const client = createHttpClient({
+      baseURL: 'https://api.example.test',
+      onUnauthorized: () => {
+        renewals += 1
+      },
+      onAuthFailure: () => {
+        failures += 1
+      },
+      adapter: async (config) => {
+        attempts += 1
+        throw axiosLikeError(config, {
+          code: 'ERR_BAD_REQUEST',
+          response: {
+            data: { message: 'expired' },
+            status: 401,
+            statusText: 'Unauthorized',
+            headers: {},
+            config,
+          },
+        })
+      },
+    })
+
+    await expect(client.request({ url: '/private' })).rejects.toMatchObject({ status: 401 })
+    expect(attempts).toBe(2)
+    expect(renewals).toBe(1)
+    expect(failures).toBe(1)
+  })
+
+  it('does not attach auth headers to absolute requests outside the configured API origin', async () => {
+    const client = createHttpClient({
+      baseURL: 'https://api.example.test',
+      authHeadersProvider: () => ({ Authorization: 'Bearer private' }),
+      adapter: async (config) => ({
+        data: { authorization: config.headers.get('Authorization') },
+        status: 200,
+        statusText: 'OK',
+        headers: {},
+        config,
+      }),
+    })
+
+    await expect(client.request({ url: 'https://other.example.test/resource' })).resolves.toEqual({
+      authorization: undefined,
+    })
+  })
 })

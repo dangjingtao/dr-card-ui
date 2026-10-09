@@ -9,7 +9,13 @@
 - `legacy-home*`、`legacy-service*`、`legacy-profile*` 以及按归属属于 Native reference 的 `/device/*`、`/vending/*`、`/signin*` 默认不施工、不重构、不纳入 H5 业务验收。
 - 商城当前暂不纳入本轮编码任务。
 - 历史 UI 卡、旧节点编号、旧 `PASS` 只作为证据，不作为当前产品事实源。
-- H019/H020 之后进入“功能页评估前收口 → 按功能页面/业务闭环施工”阶段，不再继续无边界横向铺基础设施卡。
+- H019/H020 之后进入“功能页评估前收口 → 按功能页面/业务闭环施工”阶段；截至 2026-09-22，当前施工重点已进入页面级精修与原生 H5 联调。
+
+## 当前 H 系列阶段（2026-09-22）
+
+- **页面级精修：进行中**。以已确认的 UI 真相、原型依据和正式 H5 路由为准，逐页收敛视觉、状态与交互细节。
+- **原生 H5 联调：进行中**。联调范围以已确认的 Native / JSBridge 契约和真实 WebView 证据为准，不把浏览器 Mock 结果写成宿主能力已支持。
+- **后端：有限接入**。H035 按用户提供的 OAuth 登录契约接入首页鉴权；其它业务 API base URL/契约仍待确认，H008 不因本次鉴权实现而解除。
 
 ## 卡片纪律
 
@@ -107,7 +113,27 @@ H021–H024 完成后，后续工作原则上按功能页面或可独立验收�
 
 H029 是 H030–H034 的公共协议前置；H029 合入后，H030–H034 可独立并行。H029–H034 以对应仓库任务卡为施工契约真相源，不另开 GitHub Issue。
 
+### G. 登录鉴权
+
+| ID | 任务 | 状态 |
+|---|---|---|
+| H035 | [正式首页 Native OAuth 鉴权](./H035-home-authentication.md) | User Review |
+
+### H. 环境边界
+
+> H036 按 2026-09-28 用户指令继续使用仓库任务卡，不创建 GitHub Issue。
+
+| ID | 任务 | 状态 |
+|---|---|---|
+| H036 | [test / prod 宿主门禁与"仅限 App WebView"提示](./H036-host-gated-prodlike-runtime.md) | Agent Review |
+
+### I. 卡包 API 接入
+
+| ID | 任务 | 状态 |
+|---|---|---|
+| H038 | [MyCoupons 用户卡包列表接入](./H038-card-mycoupons-integration.md) | In Progress |
+
 ## 主要阻塞
 
-- H008：真实 backend base URL、认证方式、核心接口契约尚未确认；禁止为完成任务自行发明协议。
+- H008：除 H035 已确认的 OAuth 登录契约外，其它真实业务 API 与核心接口契约尚未确认；禁止自行发明协议。
 - H015：Native 已回填双端 Bridge v2 目标协议；当前仅登录能力标记为已注入，其余 close / scan / media / clipboard / reward-ad / open-app 方法仍待 Native 实现与真机联调。

@@ -3,8 +3,12 @@ import { z } from 'zod'
 import { parseContract } from './contracts/parseContract'
 import { createBusinessError, httpClient } from './http'
 
-/** H014 reserved transport seam; not a confirmed backend endpoint while H008 is blocked. */
+/**
+ * H014 reserved transport seam; not a confirmed backend endpoint while H008 is blocked.
+ * Backend minimal-action proposal: docs/engineering/exchange-redeem-api-proposal.md.
+ */
 export const H014_EXCHANGE_REDEEM_PATH = '/__h014/exchange/redeem'
+export const H014_EXCHANGE_REDEEM_UNAVAILABLE_COPY = '兑换服务尚未接通，请稍后再试'
 
 const exchangeRedeemResponseSchema = z.discriminatedUnion('ok', [
   z.object({ ok: z.literal(true) }),

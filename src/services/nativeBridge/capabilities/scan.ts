@@ -1,5 +1,6 @@
 import {
-  createInjectedObjectTransport,
+  createCallbackInjectedObjectTransport,
+  parseJsonPayload,
   NativeTransportError,
   serializeJsonValue,
   type NativeTransportWindow,
@@ -27,38 +28,82 @@ function validateInput(input: NativeScanCodeInput): NativeScanCodeInput {
 }
 
 function parseResult(payload: unknown): NativeScanCodeResult {
-  const parsed = parseConfirmedNativeResult(payload)
-  if (
-    parsed === null ||
-    typeof parsed !== 'object' ||
-    typeof (parsed as { code?: unknown }).code !== 'string'
-  ) {
+  let parsed: unknown
+  try {
+    parsed = parseConfirmedNativeResult(payload)
+  } catch (error) {
+    if (error instanceof NativeTransportError && error.code !== 'payload-invalid') throw error
+    parsed = parseJsonPayload(payload)
+  }
+  const data = parsed !== null && typeof parsed === 'object'
+    ? (parsed as { data?: unknown }).data
+    : undefined
+  const code = typeof (parsed as { code?: unknown })?.code === 'string'
+    ? (parsed as { code: string }).code
+    : data !== null && typeof data === 'object'
+      ? (data as { text?: unknown }).text
+      : undefined
+  const nativeCode = (parsed as { code?: unknown })?.code
+  if (typeof nativeCode === 'number' && nativeCode !== 0) {
+    const errorCode = nativeCode === 1 ? 'native-cancelled' : nativeCode === 2 || nativeCode === 3 ? 'native-permission-denied' : 'native-failed'
+    throw new NativeTransportError(errorCode, 'Native scanCode reported ' + (parsed as { message?: string }).message)
+  }
+  if (typeof code !== 'string' || !code) {
     throw new NativeTransportError(
       'payload-invalid',
       'Native scanCode() result must be a JSON string with a string code field.',
     )
   }
 
-  return { code: (parsed as { code: string }).code }
+  return { code }
 }
 
-const androidTransport = createInjectedObjectTransport<
+function isAndroidScanTerminalPayload(payload: unknown, callbackCount: number): boolean {
+  // Current Android H5 voucher verification is a two-stage Native-owned transaction:
+  // 1) scanner recognized a code, 2) device start/dispense finished. Only the second success
+  // callback is terminal. A first-stage failure/cancel/permission result still settles immediately.
+  if (callbackCount > 1) return true
+
+  try {
+    const parsed = parseJsonPayload<unknown>(payload)
+    if (parsed === null || typeof parsed !== 'object') return true
+    if ('error' in parsed) return true
+
+    const nativeCode = (parsed as { code?: unknown }).code
+    const data = (parsed as { data?: unknown }).data
+    const text =
+      data !== null && typeof data === 'object'
+        ? (data as { text?: unknown }).text
+        : undefined
+
+    return !(nativeCode === 0 && typeof text === 'string' && text.length > 0)
+  } catch {
+    // Malformed payloads should settle and fail parsing instead of leaving the transaction pending.
+    return true
+  }
+}
+
+const androidTransport = createCallbackInjectedObjectTransport<
   NativeScanCodeInput,
   NativeScanCodeResult
 >({
   objectName: 'androidBridge',
   methodName: 'scanCode',
-  serializeArgs: (input) => [serializeJsonValue(validateInput(input))],
+  callbackName: 'nativeBridgeCallback',
+  callbackAliases: ['androidBridgeCallback'],
+  serializeArgs: (input, callbackId) => [serializeJsonValue({ ...validateInput(input), callbackId })],
+  isTerminalPayload: isAndroidScanTerminalPayload,
   parseResult,
 })
 
-const iosTransport = createInjectedObjectTransport<
+const iosTransport = createCallbackInjectedObjectTransport<
   NativeScanCodeInput,
   NativeScanCodeResult
 >({
   objectName: 'iosBridge',
   methodName: 'scanCode',
-  serializeArgs: (input) => [serializeJsonValue(validateInput(input))],
+  callbackName: 'nativeBridgeCallback',
+  serializeArgs: (input, callbackId) => [serializeJsonValue({ ...validateInput(input), callbackId })],
   parseResult,
 })
 

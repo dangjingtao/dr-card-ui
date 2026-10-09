@@ -65,15 +65,37 @@ CI 固定：
 ```text
 VITE_APP_ENV=test
 VITE_DATA_MODE=api
+VITE_BRIDGE_MODE=native
 ```
 
 并验证：
 
 - test bundle 能成功构建；
-- `build-meta.json` 为 `test + api`；
+- `build-meta.json` 为 `test + api + native`；
 - `dist/` 不存在 `mockServiceWorker.js`；
-- CI 启动 production-like test bundle，Playwright 通过 `PLAYWRIGHT_BASE_URL` 接入该产物；
-- `/`、`/profile`、`/settings` 三个关键正式 H5 路由可运行且无浏览器 runtime failure、坏图和明显横向溢出。
+- CI 启动 production-like test bundle，Playwright 通过 `PLAYWRIGHT_BASE_URL` 接入该产物。
+
+`VITE_BRIDGE_MODE=native` 为 H036 要求：`test` 的合法容器是原生宿主，Bridge 若停留在 `disabled`，每个真实宿主能力（含登录取凭证）都会以 `bridge-disabled` 失败。构建脚本会对 `test/prod` 拒绝显式 `disabled`。
+
+### 2.4 浏览器容器在 `test` 的定位（H036）
+
+`test` gate 里的浏览器容器只用于**验证产物自身可加载、可被自动化接管**，它不是 `test` 的业务验收容器。
+
+H036 引入宿主门禁后，`test` 产物的浏览器行为是：
+
+```text
+原生宿主      → 进入应用，走真实 API + Native Bridge
+非原生宿主    → 不进入应用，展示"请在卡博士 App 内打开"提示
+```
+
+因此 `test-gate.spec.ts` 的用例断言已从"`/`、`/profile`、`/settings` 渲染正常"调整为：
+
+- `build-meta.json` 仍为 `test + api`（不变）；
+- 非原生宿主下展示宿主受限提示，且不出现业务路由帧、不发 `/api/*` 业务请求；
+- 注入最简宿主对象后提示消失、应用路由启动；
+- `dist/` 不存在 `mockServiceWorker.js`（不变，由构建门禁保证）。
+
+真实业务验收仍必须在 App WebView + 真实 API + Native Bridge 下完成，浏览器用例不替代它。
 
 H008 仍因真实 backend base URL / auth / 核心接口契约未知而 Blocked，因此本门禁不把“真实 API 业务成功”伪装成已完成能力。
 

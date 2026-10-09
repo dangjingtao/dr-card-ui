@@ -1,7 +1,7 @@
 # Native Bridge v2 契约基线
 
 > 来源：2026-09-21 Native 团队对 H028 能力征集清单的回填。  
-> H029 负责把该回填转为 H5 正式 Bridge 契约基线；未实现的 Native 方法仍保持 unsupported。
+> H029 负责把该回填转为 H5 正式 Bridge 契约基线；2026-09-28 H5 × Native 联调协议补充了 callbackId 与统一 callback 目标。未实现的 Native 方法仍保持 unsupported。
 
 ## 1. 双端统一约定
 
@@ -15,7 +15,11 @@ Native 团队确认：
 - Android / iOS 使用相同方法名；
 - JSON 字段保持一致；
 - 有参方法的入参统一为 **JSON 字符串**；
-- 当前回填的方法返回均定义为同步 JSON 字符串；
+- 2026-09-21 原始回填中的“有参方法同步 return”已被后续真机实现与 2026-09-29 对齐结论覆盖：**调用形态按能力语义划分，不按平台划分**；
+- 同步能力不带 `callbackId`：`getLoginToken()` 同步 return JSON；`closeWebView()` 为无结果 fire-and-forget；
+- 异步能力必须带由 H5 transport 生成的 `callbackId`：`scanCode / takePhoto / chooseImage / saveImageToAlbum / copyText / showRewardAd / openApp`；
+- Android / iOS 的异步方法名、业务字段、返回 envelope 与 callbackId 语义保持一致；**统一目标 callback** 为 `window.nativeBridgeCallback(callbackId, payload)`；
+- 当前 Android 真机源码已验证 `window.androidBridgeCallback(callbackId, payload)`，H5 将其作为兼容入口挂到与统一目标相同的 pending channel；iOS 不新增平台专用 callback 名，真实宿主是否已实现统一目标仍须真机确认；
 - 回填中统一写明最低 App 版本目标为 **2.13**；
 - “最低版本 2.13”不等于方法已经实现，能力是否可用仍以“是否已有”和真机注入结果为准。
 
@@ -73,10 +77,10 @@ window.androidBridge.getLoginToken()
 window.iosBridge.getLoginToken()
 ```
 
-无参数，同步返回 JSON 字符串：
+无参数，同步返回 JSON 字符串。当前 Android 宿主额外返回 salt；H5 对旧版只返回 token 的宿主保持兼容：
 
 ```json
-{"token":"8a59966dc70c13b2b87b0ab2ca383ebb"}
+{"token":"8a59966dc70c13b2b87b0ab2ca383ebb","salt":"..."}
 ```
 
 H5 正式契约：
@@ -84,6 +88,7 @@ H5 正式契约：
 ```ts
 type NativeLoginToken = {
   token: string
+  salt?: string
 }
 ```
 
@@ -92,24 +97,25 @@ H5 必须：
 - 每次调用重新解析当前 injected object；
 - 保留 Native object receiver；
 - 只接受 JSON string；
+- salt 存在时必须是 string；旧宿主缺少 salt 时保留 token-only 兼容结果；
 - JSON 非法、返回非 JSON string、`token` 非 string 均按 payload invalid 失败；
 - 同步 Native return 统一 Promise 化给业务层；
 - token 结果按敏感信息处理。
 
-## 3. 已约定但 Native 尚未实现
+## 3. Native capability 当前实现状态
 
 | 能力 | 双端方法 | Native 当前状态 | 后续卡 |
 |---|---|---|---|
 | 关闭 WebView | `closeWebView()` | Android / iOS：否 | H030 |
-| 扫码 | `scanCode(json)` | Android / iOS：否 | H031 |
+| 扫码 | `scanCode(json)` | Android：已实现两阶段核销事务（H037 实证）；iOS：待真机确认 | H031 / H037 |
 | 拍照 | `takePhoto(json)` | Android / iOS：否 | H032 |
 | 相册选图 | `chooseImage(json)` | Android / iOS：否 | H032 |
 | 保存图片到相册 | `saveImageToAlbum(json)` | Android / iOS：否 | H032 |
 | 复制文本 | `copyText(json)` | Android / iOS：否 | H032 |
-| 激励广告 | `showRewardAd(json)` | Android / iOS：否 | H033 |
+| 激励广告 | `showRewardAd(json)` | Android：已实现（H037 实证）；iOS：待真机确认 | H033 / H037 |
 | APP 唤起 / 商店 | `openApp(json)` | Android / iOS：否 | H034 |
 
-这些方法名、参数字段与返回形态已经由 Native 回填，可以作为后续 H5 target contract；但在 Native 真正注入方法之前，production capability 必须保持 unsupported / fail-closed。
+表内状态随真实宿主实现与联调证据更新。未被当前 App build 注入的方法，production capability 仍必须保持 unsupported / fail-closed；某个平台已有源码实证也不自动代表另一平台已经完成。
 
 ## 4. 历史 iOS 协议
 
@@ -131,10 +137,35 @@ H029 起该协议降级为 **历史联调证据 / Bridge Lab Raw Probe preset**�
 
 - 业务页面不得直接访问 `window.androidBridge` / `window.iosBridge`；
 - 正式调用统一经过 `src/services/nativeBridge.ts`；
-- injected-object 底层统一使用 `createInjectedObjectTransport`；
+- injected-object 底层按**调用形态**选择 transport：同步能力使用 `createInjectedObjectTransport`；所有异步能力在 Android / iOS 均使用 `createCallbackInjectedObjectTransport`；
+- `callbackId` 由 H5 transport 生成、登记 pending、超时清理并按 id 关联 Promise；业务页面不得传入或感知 callbackId；Android / iOS 正式 injected-object 异步能力共用同一套 **120 秒** callback timeout；旧 `window.webkit.messageHandlers` transport 的 5 秒默认值仅属于历史兼容链，不适用于当前正式能力；
+- injected-object callback transport 默认仍是“一次 callback = 一次终态 settle”；只有已有宿主实证的 capability 才允许显式声明多阶段 callback。当前唯一例外是 H037 的 Android `scanCode`：第一次扫码成功为中间态，第二次设备结果才是终态；
+- 为兼容迁移期旧宿主，callback transport 若收到同步 return 会立即解析；**目标协议仍以异步 callback 为准**，不得据此把异步能力重新定义成同步；
 - Bridge Lab 可枚举 registered capabilities，并保留 Raw Probe；
 - 浏览器、旧 App 或方法未注入时必须明确 unsupported；
 - 真机 WebView smoke 才能把“契约已实现”升级为“当前 App build 已可用”。
+
+## 5.0 宿主身份查询（H036）
+
+`src/services/nativeBridge.ts` 除 capability 调用外，还对外提供一个一等公民的**宿主身份查询**：
+
+```ts
+export type NativeHostKind = 'android' | 'ios' | 'browser'
+
+export function getNativeHost(): NativeHostKind
+```
+
+语义约束：
+
+- 判定依据只有注入对象是否存在（`window.androidBridge` → `android`；`window.iosBridge` / `window.webkit.messageHandlers` → `ios`；否则 `browser`），**不看 UA，不做版本推断**；
+- 每次调用重新读取当前 `window`，**不缓存**注入对象，允许注入晚于 H5 初始化；
+- 结果与 `runtimePolicy.bridgeMode` **无关**：`bridgeMode` 决定"是否允许调用能力"，`getNativeHost()` 只回答"当前是什么宿主"；
+- 它是宿主探测结果，因此**不得**由环境变量表达或用构建期配置替代；
+- 与 capability 调用相同，页面、入口与提示组件只能经该 façade 查询，不得自行检测宿主对象。
+
+`getNativeBridgeDiagnostics()` 继续用于能力就绪诊断；宿主门禁（`test/prod` 仅限原生宿主）消费的是 `getNativeHost()`，因为门禁不应受 `bridgeMode` 影响。
+
+实现位置：`src/services/nativeBridge/runtime.ts` 的 `getNativeHost()`，经 `src/services/nativeBridge.ts` 重新导出。
 
 
 ## 5.1 Bridge 代码分层
@@ -188,29 +219,33 @@ H5 已把双端 `closeWebView()` target contract 注册进 Capability Runtime：
 Native 回填仍标记 Android / iOS 当前均“否”，所以这里仅表示 **H5 contract 已就绪**，不表示当前 APK / IPA 已支持。
 
 
-## 7. H031 H5 扫码接线状态
+## 7. H031 / H037 H5 扫码核销接线状态
 
-H5 已把双端 `scanCode(json)` target contract 注册进 Capability Runtime：
+H5 已把双端 `scanCode(json)` 注册进 Capability Runtime；Android 当前由 H037 按真实宿主行为覆盖 H031 的早期“一次回调即完成”假设。
 
-- Android：`window.androidBridge.scanCode(json)`
-- iOS：`window.iosBridge.scanCode(json)`
-- 入参统一 JSON string；
-- `scanType` 保留 Native 原字段和值：`qr | bar | all`；
-- 返回严格解析为 JSON string `{"code":"..."}`；
-- 扫码原始内容按敏感结果处理，Bridge Lab 默认脱敏；
-- `/card/verify` 已去掉“点击即模拟成功”，成功结果通过 route state 进入确认核销页；
+- Android：`window.androidBridge.scanCode(json)`；H5 自动加入 `callbackId`，Native 经 `window.androidBridgeCallback(callbackId, payload)` 回传；
+- Android 当前体验券核销是两阶段事务：
+  1. 第一次 `code=0 + data.text` 仅表示扫码识别成功，callbackId 保持 pending；
+  2. Native 继续设备查询 / 调货或启动流程；
+  3. 设备最终成功或失败后，以同一 callbackId 再次回调，H5 此时才 settle；
+- Android 扫码前取消、权限拒绝或失败仍可以在第一阶段直接终止；
+- iOS：`window.iosBridge.scanCode(json)` + `window.nativeBridgeCallback(callbackId, payload)` 的 callbackId transport 保留；在没有独立实证前，不套用 Android 两阶段语义；
+- `scanType` 保留 `qr | bar | all` 字段，不由 H5 推断 Native 内部码制策略；
+- H5 成功接回控制权后直接进入已有“已核销”结果反馈，不重复执行旧“即将核销 → 确认核销”前置链；
+- 真实 Native 成功使用正式 router state（`nativeVerifyResult: 'done'`）承载，不借 `?state=` fixture/debug query 表达业务结果；
+- 扫码正文按敏感结果处理，Bridge Lab 默认脱敏；
 - method 缺失时保持 unsupported，不启用 Web camera fallback。
 
-Native 回填仍标记 Android / iOS 当前均“否”，因此这里仍只表示 **H5 contract 与业务接线已就绪**。
-
+Android 静态源码实证基线为 `sanchuang-dev/dr-card-android upstream/gitee/master@a8ac8469`；最终 Accepted 仍需要当前 APK 的 WebView 真机 smoke。iOS 继续独立验明。
 
 ## 8. H032 H5 图片与剪贴板接线状态
 
 H5 已注册 `takePhoto / chooseImage / saveImageToAlbum / copyText` 的 Android / iOS target contract：
 
-- 有参方法统一传 JSON string；
-- 图片返回严格解析 `mimeType + imageBase64`，并按敏感结果处理；
-- 保存图片 / 复制文本严格解析 `success:boolean`；
+- 四项均为异步能力，Android / iOS 的 JSON 入参都由 transport 自动补 `callbackId`；
+- Native 通过对应平台 callback 入口回传统一 `code/message/data` envelope；H5 同时兼容迁移期旧同步结果；
+- 图片结果从 callback data 解析 `mimeType + imageBase64`，并按敏感结果处理；
+- 保存图片 / 复制文本在 `code === 0` 时统一归一为 `success:true`；
 - Settings 头像入口已接 `takePhoto / chooseImage`；
 - buddyShare adapter 已接 `saveImageToAlbum / copyText`，不再恒定成功；
 - 当前邀请海报 bytes / 正式 invite URL 尚未有业务来源，因此页面不会伪造 poster/link payload。
@@ -218,30 +253,35 @@ H5 已注册 `takePhoto / chooseImage / saveImageToAlbum / copyText` 的 Android
 Native 回填仍标记四项当前均“否”，所以这里只表示 H5 contract 与调用链已就绪。
 
 
-## 9. H033 H5 激励广告接线状态
+## 9. H033 / H037 H5 激励广告接线状态
 
-H5 已注册双端 `showRewardAd(json)` target contract：
+H5 已注册双端 `showRewardAd(json)`；Android 当前由 H037 按真实宿主结果 envelope 覆盖 H033 的早期 `data.status` target contract。
 
-- Android：`window.androidBridge.showRewardAd(json)`
-- iOS：`window.iosBridge.showRewardAd(json)`
+- Android：`window.androidBridge.showRewardAd(json)`，H5 自动加入 `callbackId`，结果经 `window.androidBridgeCallback(callbackId, payload)` 分发；
 - 当前仅开放 scene `h5CheckinResign`；
-- 返回 status 仅接受 `completed | closed | failed | no_fill`；
-- `/checkin` 只有 `completed` 能进入 `make-up-success`；
-- H5 的 5 秒 `DemoAdPlayer` 已退出正式补签完成链路；
-- `closed / failed / no_fill` 均保持补签未完成。
+- Android 当前返回 `code/message/data`，`data` 含 `scene / adLoadState / finishPlayState`；
+- Native 负责广告完整观看判定，H5 不重算观看时长，也不根据“用户最后是否点击关闭”自行推翻 Native 结果；
+- H5 adapter 当前归一规则：
+  - `code=0` → `completed`
+  - `code=1` → `closed`
+  - `code=5 | 6` → `failed`
+  - `code=7` → `no_fill`
+- 当前契约只要存在 numeric `code`，就以 Native code 作为最终结果事实；仅在 numeric code 缺失时读取迁移期 legacy `status=completed|closed|failed|no_fill`，此时未知 status 才按非法 legacy payload 拒绝；
+- `/checkin` 仍只有 H5 归一后的 `completed` 才继续补签；
+- iOS 保留同名 injected-object callback contract，但当前具体结果 envelope 仍待独立实证，不因 Android 已实现而自动宣称完成。
 
-Native 回填仍标记 Android / iOS 当前均“否”，因此这里只表示 H5 contract 与业务判定已就绪。
-
+Android 静态源码实证基线为 `sanchuang-dev/dr-card-android upstream/gitee/master@a8ac8469`；最终 Accepted 仍依赖真机广告 smoke。
 
 ## 10. H034 H5 APP 唤起与商店承接状态
 
 H5 已注册双端 `openApp(json)` target contract：
 
-- Android：`window.androidBridge.openApp(json)`
-- iOS：`window.iosBridge.openApp(json)`
+- Android：`window.androidBridge.openApp(json)` → `window.androidBridgeCallback(callbackId, payload)`
+- iOS：`window.iosBridge.openApp(json)` → `window.nativeBridgeCallback(callbackId, payload)`
+- 两端均为异步能力，H5 transport 自动在 JSON 中加入 `callbackId`；
 - action 仅允许 `open | store | detect`；
 - `inviteCode` / `fallbackUrl` 保留 Native 原字段；
-- 返回严格解析 `success:boolean + installed:boolean`；
+- 成功返回统一使用 `code/message/data` envelope：`detect` 的 `data.installed` 必须为 boolean；`open/store` 的 `data.action` 必须为 `open | store`（与当前 Android 实现一致）；迁移期旧同步宿主的 `success:boolean + installed:boolean` 仅保留兼容解析，不是双端目标协议；
 - `/buddy/invite/scan` 的 installed 状态不再来自 `?state=` fixture，只信 Native detect；
 - 打开 APP 不再以内跳 `/buddy/accept` 冒充唤起；
 - 现有 APP 引导弹窗的“下载链接”改为 Native store action；

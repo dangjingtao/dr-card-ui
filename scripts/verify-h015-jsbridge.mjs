@@ -62,7 +62,7 @@ try {
     marker: 'first',
     getLoginToken() {
       assert.equal(this, firstBridge, 'Android injected method must keep its receiver binding')
-      return 'token-first'
+      return '{"token":"token-first"}'
     },
   }
   globalThis.window = { androidBridge: firstBridge }
@@ -71,9 +71,19 @@ try {
     mode: 'native',
     host: 'android',
     hostVersion: null,
-    capabilities: { getLoginToken: true, closeWebView: false },
+    capabilities: {
+      getLoginToken: true,
+      closeWebView: false,
+      scanCode: false,
+      takePhoto: false,
+      chooseImage: false,
+      saveImageToAlbum: false,
+      copyText: false,
+      showRewardAd: false,
+      openApp: false,
+    },
   })
-  assert.equal(await getLoginToken(), 'token-first')
+  assert.deepEqual(await getLoginToken(), { token: 'token-first' })
   await assert.rejects(
     closeWebView(),
     (error) =>
@@ -87,13 +97,13 @@ try {
     marker: 'second',
     getLoginToken() {
       assert.equal(this, secondBridge, 'late-injected Android bridge must keep its receiver binding')
-      return 'token-second'
+      return '{"token":"token-second"}'
     },
   }
   globalThis.window.androidBridge = secondBridge
-  assert.equal(
+  assert.deepEqual(
     await getLoginToken(),
-    'token-second',
+    { token: 'token-second' },
     'adapter must resolve window.androidBridge on every invocation instead of caching it',
   )
 
@@ -144,7 +154,17 @@ try {
     mode: 'native',
     host: 'ios',
     hostVersion: null,
-    capabilities: { getLoginToken: false, closeWebView: false },
+    capabilities: {
+      getLoginToken: false,
+      closeWebView: false,
+      scanCode: false,
+      takePhoto: false,
+      chooseImage: false,
+      saveImageToAlbum: false,
+      copyText: false,
+      showRewardAd: false,
+      openApp: false,
+    },
   })
 
   for (const file of collectFormalH5PageFiles('src/pages')) {
@@ -156,15 +176,20 @@ try {
     )
   }
 
-  const adapterSource = fs.readFileSync('src/services/nativeBridge.ts', 'utf8')
+  const facadeSource = fs.readFileSync('src/services/nativeBridge.ts', 'utf8')
+  const authSource = fs.readFileSync('src/services/nativeBridge/capabilities/auth.ts', 'utf8')
+  const runtimeSource = fs.readFileSync('src/services/nativeBridge/runtime.ts', 'utf8')
   const transportSource = fs.readFileSync('src/services/nativeBridgeTransport.ts', 'utf8')
-  assert.match(adapterSource, /createAndroidInjectedObjectTransport/)
+  assert.match(authSource, /createInjectedObjectTransport/)
   assert.match(transportSource, /method\.call\(bridge,\s*\.\.\.args\)/)
-  assert.match(adapterSource, /runtimePolicy\.bridgeMode === 'native'/)
-  assert.doesNotMatch(adapterSource + transportSource, /mockToken|fakeToken|fallbackToken/)
+  assert.match(runtimeSource, /runtimePolicy\.bridgeMode === 'native'/)
+  assert.doesNotMatch(
+    facadeSource + authSource + runtimeSource + transportSource,
+    /mockToken|fakeToken|fallbackToken/,
+  )
 
   console.log(
-    'H015 PASS: Android getLoginToken remains centralized through the capability runtime and injected-object transport, closeWebView remains explicitly unsupported without inventing a host protocol, late injection and receiver binding are preserved, Promise/timeout/error semantics are deterministic, iOS is not falsely unified, and formal H5 pages do not access host globals directly.',
+    'H015 PASS: getLoginToken remains centralized through the capability runtime and injected-object transport, the registry-backed diagnostics match the current capability surface, late injection and receiver binding are preserved, Promise/timeout/error semantics are deterministic, and formal H5 pages do not access host globals directly.',
   )
 } finally {
   if (originalWindow === undefined) delete globalThis.window

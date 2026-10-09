@@ -4,14 +4,35 @@ H006 将 `preview → dev → test → prod` 的产品分支语义和 Vite mode�
 
 ## 环境矩阵
 
-| App env | Vite mode | 默认 data mode | fixture/debug | Bridge 默认 |
-|---|---|---|---|---|
-| `dev` | `development` | `mock` | 允许 | `disabled` |
-| `preview` | `preview` | `mock` | 允许 | `disabled` |
-| `test` | `test` | `api` | 禁止 | `disabled` |
-| `prod` | `production` | `api` | 禁止 | `disabled` |
+| App env | Vite mode | 默认 data mode | fixture / 业务 DebugPanel | Bridge 默认 | 运行宿主要求 |
+|---|---|---|---|---|---|
+| `dev` | `development` | `mock` | 允许 | `disabled` | 不限（浏览器可独立预览） |
+| `preview` | `preview` | `mock` | 允许 | `disabled` | 不限（浏览器可独立预览） |
+| `test` | `test` | `api` | 禁止 | `native` | 仅原生宿主 |
+| `prod` | `production` | `api` | 禁止 | `native` | 仅原生宿主 |
 
-`test/prod` 明确禁止 `VITE_DATA_MODE=mock` 与 `VITE_BRIDGE_MODE=mock`。`scripts/build-h5.mjs` 在 Vite 启动前 hard fail，`src/app/config/runtime.ts` 在浏览器运行时再校验一次，避免通过错误环境变量静默回退。
+`test/prod` 明确固定为真实 API + Native Bridge：禁止 `VITE_DATA_MODE=mock`，并要求 `VITE_BRIDGE_MODE=native`。`scripts/build-h5.mjs` 在 Vite 启动前 hard fail，`src/app/config/runtime.ts` 在浏览器运行时再校验一次，避免通过错误环境变量静默回退。
+
+## 运行宿主要求（H036）
+
+`test/prod` 只承载真实 API + Native Bridge 集成，因此**不允许浏览器直接打开**。`test/prod` 构建在非原生宿主下不进入应用，而是展示"请在卡博士 App 内打开"提示。
+
+- 判据：`runtimePolicy.requiresNativeHost`（由 `isProdLike` 派生）叠加 `getNativeHost()` 的注入对象探测结果；
+- 该判定发生在应用挂载前（`src/main.tsx`），非原生宿主下不启动路由、不发业务请求；
+- 它是**运行时探测**，不是构建期配置：同一份 `test` 产物会被浏览器与 App WebView 两种方式打开，构建期无法预知，因此不为它引入任何环境变量；
+- `preview` / `dev` 不受影响，继续作为浏览器独立预览与 Mock 载体。
+
+实现位置：
+
+- `src/app/config/runtime.ts`：`requiresNativeHost`；
+- `src/pages/UnsupportedHostNotice.tsx`：`isUnsupportedHost()` 判定与提示页；
+- `src/main.tsx`：挂载前分流。
+
+## 调试能力口径
+
+- `dev` / `preview` / `test`：2026-09-29 Maintainer 明确定案，Eruda 默认初始化，无需 `?debug=1`。其中 `test` 仍保持真实 API + Native Bridge，仅保留 Eruda 作为 App WebView 联调诊断能力。
+- 页面业务状态调试 `DebugPanel` 仍严格由 `?debug=1` 显式开启，两者互不替代；上表的 fixture / 业务 DebugPanel 口径不包含 Eruda。
+- `prod`：不初始化 Eruda。
 
 ## 环境变量
 
@@ -19,8 +40,8 @@ H006 将 `preview → dev → test → prod` 的产品分支语义和 Vite mode�
 
 - `VITE_APP_ENV`：`preview | dev | test | prod`。正常由构建脚本注入，并必须与 Vite mode 一致。
 - `VITE_DATA_MODE`：`mock | api`。不填写时按上表取默认值。
-- `VITE_API_BASE_URL`：真实后端根地址。H008 仍 blocked，因此 H006 允许为空；一旦填写必须为绝对 `http(s)` URL。空值表示“后端尚未配置”，绝不表示回退 Mock。
-- `VITE_BRIDGE_MODE`：`disabled | mock | native`。H015 真实协议未提供，默认 `disabled`；这里只建立环境开关，不发明任何 Native 方法。
+- `VITE_API_BASE_URL`：真实后端根地址。`test` 构建必须提供该值，且必须为绝对 `http(s)` URL；缺失时 `build:test` 直接失败。`preview/dev` 仍可为空；空值绝不表示回退 Mock。`prod` 的正式后端地址由生产发布环境单独配置，不复用 test 地址。
+- `VITE_BRIDGE_MODE`：`disabled | mock | native`。默认值按环境确定：`preview/dev = disabled`，`test/prod = native`。`test/prod` 显式覆盖为任何非 `native` 值都会在构建期与运行期失败；这里只表达是否允许调用已确认的 Native 能力，不据此发明宿主协议。
 - `VITE_BUILD_SHA` / `VITE_BUILD_ID` / `VITE_SOURCE_BRANCH`：构建身份，通常由构建脚本从 GitHub / Cloudflare / git 上下文注入。
 
 ## 构建命令
@@ -34,6 +55,8 @@ H006 将 `preview → dev → test → prod` 的产品分支语义和 Vite mode�
 
 每次成功构建都会生成 `dist/build-meta.json`，只包含非敏感诊断信息：App env、Vite mode、data/bridge mode、是否配置 API base，以及 build SHA / ID / source branch；不会把 API URL复制进该诊断文件。
 
+GitHub Actions 的 `test` gate 从仓库 Actions Variable `VITE_API_BASE_URL` 注入测试后端地址，并要求 `build-meta.json.apiBaseConfigured=true`。该 URL 属于非敏感运行配置；token / salt 等凭证不得以 `VITE_*` 变量保存。Cloudflare Pages 不继承 GitHub Actions Variables，Pages 的 Preview 环境需单独配置同名变量。由于 Pages 的 preview 配置会覆盖所有非 production 分支，`scripts/build-h5.mjs` 只允许 Cloudflare `test` 目标消费这项 API base；Cloudflare `dev` / `preview` / feature 目标会忽略它并继续保持 Mock + current-origin 边界。
+
 ## Cloudflare Pages
 
 仓库当前没有 `wrangler.toml` 或可声明 Pages Dashboard build command 的仓库配置，因此仅凭 GitHub 仓库 API不能证明或修改现有 Dashboard 设置。
@@ -42,11 +65,11 @@ H006 将 `preview → dev → test → prod` 的产品分支语义和 Vite mode�
 
 - Pages build command：`npm run build:cf`
 - 正式 production branch：`prod`
-- `prod` → production/prod/API
-- `test` → test/test/API
-- `dev` → development/dev/Mock
-- `preview` → preview/preview/Mock
-- 其它 feature / PR branch → preview/preview/Mock
+- `prod` → production/prod/API/native
+- `test` → test/test/API/native
+- `dev` → development/dev/Mock/disabled
+- `preview` → preview/preview/Mock/disabled
+- 其它 feature / PR branch → preview/preview/Mock/disabled
 - `main` → hard fail；它是 legacy 保留分支，不允许被误发布为正式 H5 production
 
 在 Dashboard 完成切换前，`npm run build` 的 auto 模式提供迁移保护，但它不是最终推荐的 Pages 配置。

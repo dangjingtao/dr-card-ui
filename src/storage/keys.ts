@@ -1,4 +1,5 @@
 import type { ZodType } from 'zod'
+import { z } from 'zod'
 
 export type StorageArea = 'local' | 'session'
 
@@ -28,7 +29,13 @@ export function defineStorageKey<T>(
 }
 
 /**
- * Add confirmed, non-sensitive persistence keys to this registry.
- * Do not add passwords, consumption/payment PINs, long-lived secrets, or ad-hoc auth tokens.
+ * Add only explicitly confirmed persistence keys to this registry.
+ * Do not add passwords, consumption/payment PINs, or long-lived secrets.
  */
-export const STORAGE_KEYS = {} as const
+export const STORAGE_KEYS = {
+  authSession: defineStorageKey(
+    'auth-session',
+    'session',
+    z.object({ accessToken: z.string().min(1) }),
+  ),
+} as const

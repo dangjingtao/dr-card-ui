@@ -4,6 +4,7 @@ import {
 } from './nativeBridge/capabilities/media'
 import { capabilityRegistry } from './nativeBridge/registry'
 import { invokeNativeCapability } from './nativeBridge/runtime'
+import { INJECTED_CALLBACK_TIMEOUT_MS } from './nativeBridgeTransport'
 import type {
   NativeChooseImageInput,
   NativeCopyTextInput,
@@ -25,6 +26,7 @@ export { NativeBridgeError } from './nativeBridge/errors'
 export {
   getNativeBridgeCapabilityCatalog,
   getNativeBridgeDiagnostics,
+  getNativeHost,
   invokeRegisteredNativeCapabilityForDebug,
 } from './nativeBridge/runtime'
 export type { NativeBridgeDiagnostics } from './nativeBridge/runtime'
@@ -91,32 +93,39 @@ export function closeWebView(
   )
 }
 
+function withInjectedCallbackTimeout(options: NativeInvocationOptions): NativeInvocationOptions {
+  return {
+    timeoutMs: INJECTED_CALLBACK_TIMEOUT_MS,
+    ...options,
+  }
+}
+
 /**
  * H031 confirmed Native scanner boundary.
  *
- * Android uses window.androidBridge.scanCode(json); iOS uses
- * window.iosBridge.scanCode(json). The input is serialized as a JSON string with
- * scanType: qr | bar | all; Native synchronously returns a JSON string with code.
+ * scanCode is asynchronous on both hosts. H5 generates callbackId internally and targets
+ * window.nativeBridgeCallback(callbackId, payload). Current Android hosts are also supported through
+ * the confirmed window.androidBridgeCallback compatibility alias. Business callers only consume the Promise.
  */
 export function scanCode(
   input: NativeScanCodeInput,
   options: NativeInvocationOptions = {},
 ): Promise<NativeScanCodeResult> {
-  return invokeNativeCapability(capabilityRegistry.scanCode, input, options)
+  return invokeNativeCapability(capabilityRegistry.scanCode, input, withInjectedCallbackTimeout(options))
 }
 
 export function takePhoto(
   input: NativeTakePhotoInput = DEFAULT_IMAGE_INPUT,
   options: NativeInvocationOptions = {},
 ): Promise<NativeImageResult> {
-  return invokeNativeCapability(capabilityRegistry.takePhoto, input, options)
+  return invokeNativeCapability(capabilityRegistry.takePhoto, input, withInjectedCallbackTimeout(options))
 }
 
 export function chooseImage(
   input: NativeChooseImageInput = DEFAULT_CHOOSE_IMAGE_INPUT,
   options: NativeInvocationOptions = {},
 ): Promise<NativeImageResult> {
-  return invokeNativeCapability(capabilityRegistry.chooseImage, input, options)
+  return invokeNativeCapability(capabilityRegistry.chooseImage, input, withInjectedCallbackTimeout(options))
 }
 
 export function saveImageToAlbum(
@@ -126,7 +135,7 @@ export function saveImageToAlbum(
   return invokeNativeCapability(
     capabilityRegistry.saveImageToAlbum,
     input,
-    options,
+    withInjectedCallbackTimeout(options),
   )
 }
 
@@ -134,20 +143,23 @@ export function copyText(
   input: NativeCopyTextInput,
   options: NativeInvocationOptions = {},
 ): Promise<NativeSuccessResult> {
-  return invokeNativeCapability(capabilityRegistry.copyText, input, options)
+  return invokeNativeCapability(capabilityRegistry.copyText, input, withInjectedCallbackTimeout(options))
 }
 
 /**
  * H033 rewarded-ad boundary for check-in resign.
  *
- * Only the confirmed scene h5CheckinResign is exposed. Native owns the ad UI and returns one
- * of completed / closed / failed / no_fill; H5 must only reward on completed.
+ * Only the confirmed scene h5CheckinResign is exposed. Both hosts use the asynchronous
+ * callbackId contract targeting nativeBridgeCallback; current Android hosts may return through
+ * androidBridgeCallback. H5 normalizes the result and only rewards on completed.
+ *
+ * options 放在后面，调用方仍可用自定义 timeoutMs 覆盖默认的广告时长。
  */
 export function showRewardAd(
   input: NativeRewardAdInput = { scene: 'h5CheckinResign' },
   options: NativeInvocationOptions = {},
 ): Promise<NativeRewardAdResult> {
-  return invokeNativeCapability(capabilityRegistry.showRewardAd, input, options)
+  return invokeNativeCapability(capabilityRegistry.showRewardAd, input, withInjectedCallbackTimeout(options))
 }
 
 /**
@@ -160,5 +172,5 @@ export function openApp(
   input: NativeOpenAppInput,
   options: NativeInvocationOptions = {},
 ): Promise<NativeOpenAppResult> {
-  return invokeNativeCapability(capabilityRegistry.openApp, input, options)
+  return invokeNativeCapability(capabilityRegistry.openApp, input, withInjectedCallbackTimeout(options))
 }

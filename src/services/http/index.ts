@@ -11,8 +11,13 @@ export {
   DEFAULT_HTTP_TIMEOUT_MS,
   createHttpClient,
   httpClient,
+  setHttpAuthFailureHandler,
   setHttpAuthHeadersProvider,
+  setHttpUnauthorizedHandler,
+  type HttpAuthFailureHandler,
   type HttpAuthHeadersProvider,
   type HttpClient,
   type HttpClientOptions,
+  type HttpRequestConfig,
+  type HttpUnauthorizedHandler,
 } from './httpClient'

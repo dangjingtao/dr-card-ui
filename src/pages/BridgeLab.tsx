@@ -30,6 +30,8 @@ import {
 
 type LabPlatform = 'iOS' | 'android' | 'web'
 type BridgeLabCallbackWindow = Window & {
+  nativeBridgeCallback?: (callbackId: string, payload: unknown) => void
+  androidBridgeCallback?: (callbackId: string, payload: unknown) => void
   testFunc?: (params: unknown) => string
 }
 type LogLevel = 'call' | 'result' | 'callback' | 'error'
@@ -81,6 +83,16 @@ const IOS_RAW_PRESETS = [
   },
 ]
 
+const CAPABILITY_INPUT_PRESETS: Partial<Record<NativeCapabilityName, string>> = {
+  scanCode: '{"scanType":"all"}',
+  takePhoto: '{"crop":true,"maxWidth":1080,"maxHeight":1080,"quality":0.8}',
+  chooseImage:
+    '{"crop":true,"maxWidth":1080,"maxHeight":1080,"quality":0.8,"count":1}',
+  copyText: '{"text":"Bridge Lab copy test"}',
+  showRewardAd: '{"scene":"h5CheckinResign"}',
+  openApp: '{"action":"detect","inviteCode":"","fallbackUrl":""}',
+}
+
 function getLabPlatform(): LabPlatform {
   if (typeof window === 'undefined') return 'web'
   const osType = new URLSearchParams(window.location.search).get('osType')?.trim().toLowerCase()
@@ -101,10 +113,14 @@ function formatValue(value: unknown): string {
 
 function errorValue(error: unknown): unknown {
   if (error instanceof Error) {
+    const cause = 'cause' in error ? (error as { cause?: unknown }).cause : undefined
     return {
       name: error.name,
       message: error.message,
       ...('code' in error ? { code: (error as { code?: unknown }).code } : {}),
+      ...(cause instanceof Error
+        ? { cause: { name: cause.name, message: cause.message, ...('code' in cause ? { code: (cause as { code?: unknown }).code } : {}) } }
+        : cause !== undefined ? { cause } : {}),
     }
   }
   return error
@@ -433,7 +449,10 @@ export default function BridgeLab() {
                   <button
                     key={item.name}
                     type="button"
-                    onClick={() => setSelectedCapability(item.name)}
+                    onClick={() => {
+                      setSelectedCapability(item.name)
+                      setCapabilityInput(CAPABILITY_INPUT_PRESETS[item.name] ?? '')
+                    }}
                     data-capability-name={item.name}
                     className={[
                       'rounded-control border p-3 text-left transition',
@@ -464,6 +483,9 @@ export default function BridgeLab() {
                 <label className="text-xs font-medium text-text-secondary" htmlFor="capability-input">
                   input JSON
                 </label>
+                <p className="mb-2 mt-1 text-[11px] leading-4 text-text-tertiary">
+                  异步 capability 的 callbackId 由 H5 Runtime 自动生成并注入，无需手填。
+                </p>
                 <textarea
                   id="capability-input"
                   value={capabilityInput}
@@ -713,20 +735,29 @@ export default function BridgeLab() {
             className="mt-4 rounded-container border border-border bg-surface p-4"
             data-h5-callback-endpoints
           >
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h2 className="text-sm font-semibold">Native → H5 callback endpoints</h2>
-                <p className="mt-1 text-xs leading-5 text-text-tertiary">
-                  沿用旧 bridge 联调入口，供 Native 直接 evaluateJavascript 调用。
-                </p>
-              </div>
-              <span className="rounded-pill bg-success-bg px-2.5 py-1 text-[10px] font-medium text-success-text">
-                mounted
-              </span>
+            <div>
+              <h2 className="text-sm font-semibold">Native → H5 callback endpoints</h2>
+              <p className="mt-1 text-xs leading-5 text-text-tertiary">
+                异步能力统一目标为 nativeBridgeCallback；Android 当前已验证的 androidBridgeCallback
+                作为兼容入口接入同一个 callbackId pending channel。
+              </p>
             </div>
-            <pre className="mt-3 whitespace-pre-wrap rounded-control bg-surface-subtle p-3 font-mono text-xs leading-5 text-text-secondary">
-              window.testFunc(params) → "h5 处理完成"
-            </pre>
+            <div className="mt-3 space-y-2 rounded-control bg-surface-subtle p-3 text-xs leading-5 text-text-secondary">
+              <div data-callback-endpoint="nativeBridgeCallback" className="flex flex-wrap items-center justify-between gap-2">
+                <code>window.nativeBridgeCallback(callbackId, payload)</code>
+                <span className="text-[10px] font-medium text-text-tertiary">统一目标 · 首次异步调用时挂载</span>
+              </div>
+              {labPlatform === 'android' && (
+                <div data-callback-endpoint="androidBridgeCallback" className="flex flex-wrap items-center justify-between gap-2">
+                  <code>window.androidBridgeCallback(callbackId, payload)</code>
+                  <span className="text-[10px] font-medium text-text-tertiary">Android 当前兼容入口</span>
+                </div>
+              )}
+              <div data-callback-endpoint="testFunc" className="flex flex-wrap items-center justify-between gap-2">
+                <code>window.testFunc(params)</code>
+                <span className="text-[10px] font-medium text-text-tertiary">历史联调探针 → "h5 处理完成"</span>
+              </div>
+            </div>
           </section>
         )}
 

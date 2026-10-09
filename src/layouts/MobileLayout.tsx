@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 import {
   Navigate,
   Outlet,
@@ -16,6 +16,7 @@ import { navigateWithH5ViewTransition } from '../app/router/h5Transition'
 import { useNotifications } from '../app/state/notifications'
 import { protectedFixtureRedirect, useOverlay } from '../app/fixtures/useFixture'
 import H5ScrollRestoration from '../components/mobile/H5ScrollRestoration'
+import { AUTH_FAILURE_EVENT, setAuthFlowEnabled } from '../services/auth/session'
 
 type H5RouteTransitionKind = 'none' | 'tab' | 'forward' | 'back'
 
@@ -108,7 +109,7 @@ export default function MobileLayout() {
   const navigate = useNavigate()
   const previousShellPathname = useRef(location.pathname)
   const scrollSourcePathname = previousShellPathname.current
-  const { unreadCount } = useNotifications()
+  const { unreadCount, countLoaded } = useNotifications()
   const { open: openOverlay } = useOverlay()
   const showLegacyNav = isLegacyTabPath(location.pathname)
   const showNav = showLegacyNav || isFormalH5TabPath(location.pathname)
@@ -116,6 +117,18 @@ export default function MobileLayout() {
   const routeScope = route ? getRouteScope(route) : undefined
   const activeFormalH5 =
     routeScope?.ownership === 'formal-h5' && routeScope.engineeringScope === 'active'
+  useEffect(() => {
+    setAuthFlowEnabled(activeFormalH5)
+    if (!activeFormalH5) return
+
+    const handleAuthFailure = () => navigate('/error?reason=auth', { replace: true })
+    window.addEventListener(AUTH_FAILURE_EVENT, handleAuthFailure)
+    return () => {
+      window.removeEventListener(AUTH_FAILURE_EVENT, handleAuthFailure)
+      setAuthFlowEnabled(false)
+    }
+  }, [activeFormalH5, navigate])
+
   const fixtureRedirect = activeFormalH5 ? protectedFixtureRedirect(location) : null
   const titleBarMode = route?.titleBar ?? 'back'
   const fallbackTitle = location.pathname === '/tokens' ? '品牌 Token 展示' : '页面不存在'
@@ -132,7 +145,7 @@ export default function MobileLayout() {
             ? 'back'
             : 'none'
   const isNotificationsPage = location.pathname === '/notifications'
-  const allNotificationsRead = unreadCount === 0
+  const allNotificationsRead = countLoaded && unreadCount === 0
 
   useLayoutEffect(() => {
     previousShellPathname.current = location.pathname

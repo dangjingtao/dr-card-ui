@@ -23,7 +23,7 @@ T014 范围关闭节点使用范围结论：`Exclude / Preserve Evidence / Futur
 
 | Tab | 路由 | 页面文件 | 当前语义 / 承载节点 | 实现等级 | 375×812 新截图 |
 | --- | --- | --- | --- | --- | --- |
-| 首页 | `/` | [Home.tsx](../../src/pages/Home.tsx) | 诗得丽品牌专栏首页（T021 改造）：搜索栏 + 头像 + Banner + 迁入的打卡内容 + 公益板块（静态、无跳转）+ 卡博士品牌故事；默认弹出新人体验券，承载领取成功态 | `Implemented`：金刚区已移除、打卡内容经 `CheckinBoard` 完整迁入且无重复页面壳；默认全是新用户（D-077），1/2 张券概率 1:1 且由夹具 `?state=` 确定性复现；取证用 `?newcomer=off` 抑制弹窗（D-078） | [t021-01-home-first-screen.png](./evidence/screenshots/t021-01-home-first-screen.png)、[t021-02-home-bottom.png](./evidence/screenshots/t021-02-home-bottom.png)、[t021-05-home-auto-newcomer.png](./evidence/screenshots/t021-05-home-auto-newcomer.png) |
+| 首页 | `/` | [Home.tsx](../../src/pages/Home.tsx) | 诗得丽品牌专栏首页（T021 改造）：搜索栏 + 头像 + Banner + 迁入的打卡内容 + 公益板块 + 品牌故事；分别进入 `/cause` 与 `/brand-culture` 空富文本承载页 | `Implemented`：公益与品牌故事均可达二级路由；详情页暂不请求数据，仅保留未来富文本内容宿主。首页新人体验券弹窗当前关闭，正式识别等待 APP 用户信息与统一业务服务 | [t021-01-home-first-screen.png](./evidence/screenshots/t021-01-home-first-screen.png)、[t021-02-home-bottom.png](./evidence/screenshots/t021-02-home-bottom.png) |
 | 泡泡 | `/points` | [Points.tsx](../../src/pages/Points.tsx) | 泡泡值任务页（T022 改造）：泡泡值余额 + 任务占位区 + 三项福利入口（每日签到 / 澡运 / 体验券兑换）+ 吸底兑换按钮，承接 #5；流水明细已拆到二级页 [`/points/detail`](../../src/pages/PointsDetail.tsx)（收入/消耗筛选与空态四态） | `Implemented`：Tab 语义为任务页，`/points/detail` 为二级页（无底部导航、有返回栏）；打卡页 `/checkin` 保留为二级页面 | 截图由 `scripts/capture-t001.mjs` 生成 `t001-seed-points.png`；本轮见 [t024-06-points-detail-expense.png](./evidence/screenshots/t024-06-points-detail-expense.png)、[t024-07-points-detail-empty.png](./evidence/screenshots/t024-07-points-detail-empty.png)、[t024-08-points-benefits-tasks.png](./evidence/screenshots/t024-08-points-benefits-tasks.png) |
 | 扫码 | `/card/verify` | [ScanVerify.tsx](../../src/pages/ScanVerify.tsx) | 扫码核销 #67；可继续进入确认核销 | `Implemented`：reference 标准扫码页，核销确认链路由 T009 继续验收 | [t001-seed-scan.png](./evidence/screenshots/t001-seed-scan.png) |
 | 服务 | `/membership` | [Membership.tsx](../../src/pages/Membership.tsx) | 会员中心 #6 | `Implemented`：会员 hero、功能入口、连续打卡福利与权益区已落地 | [t001-seed-membership.png](./evidence/screenshots/t001-seed-membership.png) |
@@ -91,7 +91,7 @@ T014 范围关闭节点使用范围结论：`Exclude / Preserve Evidence / Futur
 | 13 | 引导弹窗 | 01 | T005 | `/dearseed?overlay=app-guide`（专栏承载） | Verified | 复用 `AppPromptDialog`；H034 已将「下载链接」接到 Native store target contract；H5 不再自造或等待硬编码商店 URL。**2026-08-24 按摹客真值修正**：原实现误套 #20 强制版双按钮形态，现拆为 `variant='guide'`（单按钮「下载链接」＋ 右上角关闭图标，对应摹客「引导弹窗」artboard），与 #20 的 `variant='force'`（双按钮「我知道了／下载链接」）分离；正文回摹客原话术「积分彩蛋存放处已开启！双倍泡泡积分存放在APP里，超多养护福利等你挖掘」 | owner 通过；承载路由按 D-054 更新 |
 | 14 | 完善信息 | 01 | T005 | `/onboarding` | Verified | 按 T01-A 分步 onboarding 落地：昵称/生日/身份/性别/消费密码；校验＋提交中＋成功闭环。**owner 已确认：不复用 T011 的 #61 放弃修改弹窗，返回直接回诗得丽专栏；年级/生日/性别保持非必填。**密码强度、重复提交规则仍未确认 | owner 通过（2026-08-22） |
 | 15 | 领取成功 | 01 | T005 | `/claim/success`（专栏「前往领取」进入） | Verified | 专栏背景 + 遮罩 + 居中成功弹窗；关闭回 `/dearseed?state=claimed` | owner 通过；返回目标按 D-054 更新 |
-| 16 | 品牌文化 | 01 | T005 | `/brand-culture`（专栏「品牌文化」进入） | Verified | 只铺原型长图、无浮动 CTA；返回诗得丽专栏 | owner 通过（2026-08-24；B-001 已关闭） |
+| 16 | 品牌故事 | 01 | T005 | `/brand-culture`（首页品牌故事或专栏「品牌文化」进入） | Placeholder | 当前为空富文本承载页；未来仅请求富文本，保留标题栏并返回来源页；原型长图不再作为当前页面内容 | 用户 2026-09-23 新决策 D-081；此前长图验收仅作历史证据 |
 | 23 | 领取完专栏状态 | 01 | T005 | `/dearseed?state=claimed` | Verified | 「本期活动」主按钮由 前往领取 → 已领取（disabled），由 #15/#25 关闭后自动跳转复现 | owner 通过；承载路由按 D-054 更新 |
 | 24 | 完善信息（学生） | 01 | T005 | `/onboarding?state=student` 或表单内选「学生」 | Verified | 身份选「学生」后展开年级 2 列网格（大一–大五、研一–研三，共 8 项）；切换教职工自动清空年级；年级非必填（owner 确认） | owner 通过（2026-08-22） |
 | 25 | 填写完成后领取成功 | 01 | T005 | `/onboarding/success`（表单提交后自动进入） | Verified | 与 #15 同构的专栏背景弹窗，`from=onboarding` 文案分支；关闭回 `/dearseed?state=claimed` | owner 通过；返回目标按 D-054 更新 |
@@ -160,7 +160,7 @@ T006 本轮证据（2026-08-22）：`BASE_URL=http://127.0.0.1:5174 node scripts
 
 | # | 节点名 | 模块 | 卡 | 可达 | 等级 | 决策/风险 | 验收 |
 | ---: | --- | --- | --- | --- | --- | --- | --- |
-| 17 | 卡博士商城（H5嵌入） | 04 | T008 | `/mall`、`?state=loading`、`?state=error` | Implemented | WebView 边界页（D-031，关闭 B-007）：浏览器外壳占位 + 伪 URL + 加载/已加载/失败三态，不做原生还原、不接真实 H5 | 未验收 |
+| 17 | 卡博士商城（H5嵌入） | 04 | T008 | `/mall` | Implemented / App validation pending | D-082：`MallWebView` 在现有 H5 壳层内 iframe 承载 Maintainer 指定的 `http://www.3-wins.cn/`；HTTP scheme 不自动替换。真实 App WebView 的 cleartext/mixed-content、iframe policy 与鉴权仍待联调 | 未验收 |
 | 18 | 洗护兑换专区 | 04 | T008 | `/exchange` | Implemented | 本地原生页（D-032，关闭 B-008）：余额条 + 搜索 + 三维度排序 + 商品卡；只用已注册语义 Token，未引入 T11 深绿金 KV；`/exchange` 语义已纠正为兑换专区（兑换码页在 `/redeem`）；SKU 清单未定挂 B-025 | 未验收 |
 | 37 | 兑换量排行 | 04 | T008 | `/exchange?state=sort-exchange` | Implemented | 同一列表的排序状态而非独立页（D-033，原型 §2）；实测顺序与综合态不同 | 未验收 |
 | 38 | 泡泡值排行 | 04 | T008 | `/exchange?state=sort-points` | Implemented | 同 D-033；排序方向取「由低到高」，原型未标升降序，挂 B-024 | 未验收 |
@@ -270,3 +270,73 @@ T011 本轮证据（2026-08-22）：`BASE_URL=http://127.0.0.1:5175 node scripts
 - 决策索引：`docs/workbench/decisions/README.md`。
 - 任务卡：`docs/workbench/tasks/T001…T015`。
 - 工程证据：`npm run typecheck`、`npm run build`、`scripts/verify-t001.mjs` 均通过（见 T001 卡）。
+
+
+## 8. H040｜会员业务数据与历史四级展示分离（2026-10-08，实施待验收）
+
+> **增量变更记录，不回写历史验收结论。** 原有 T006 / D-028 / D-029 保留为 2026-08 产品视觉历史证据，不能误认为后台已配置这四级。H040 追踪 [#93](https://github.com/dangjingtao/dr-card-ui/issues/93) 和 [PR #97](https://github.com/dangjingtao/dr-card-ui/pull/97)，未通过真实 App test 验收前状态仍为 **Implemented / Pending acceptance**。
+
+| 维度 | T006 旧展示 | H040 当前施工目标 / 事实 | 验收边界 |
+| --- | --- | --- | --- |
+| `/membership` 当前会员 | `MEMBER_PROFILE` 历史视觉夹具：昵称、固定 LV.4 / 溱蜜传说、展示编号 | 会员昵称与等级从 `GET /api/user/profile` 读取；余额从 `GET /api/userpoints/stat` 读取；未配置则清楚标示，不伪造四级身份 | 需真实登录用户与真实响应对照 |
+| `/membership/levels` 等级名单 | T006 固定 LV.1–LV.4，B-022 数量、名称、卡面未定 | `GET /api/usergrade/index` 仅渲染已启用等级；0 条显示未配置，失败显示失败/重试；`grade_id` 与后端等级 `id` 对齐 | 后台列表是唯一业务等级事实源；不因设计有四张图擅自增等级 |
+| 卡面画廊 | 四张历史限定卡面艺术稿 | **保留四张静态视觉参考**，在 UI 明确不代表后台等级、实际生效卡面或权益。品牌素材与视觉结构不丢失 | 不得把四张卡面拿来推算启用会员等级数 |
+| 等级未配置 | 原型没有这个数据态 | 后端 `User.profile` 无默认等级时可能省略 `grade/grade_id`；H5 应仍保留可用个人资料，等级标「尚未配置」，不得宣称「已是最高等级」 | service 契约测试 + 无数据/未配置页面态 |
+
+### 开发后端现场证据与差异
+
+- 本地只读后端 `API/master@4f91aa2` 的 `src/app/api/controller/UserGrade.ts`、`src/app/api/service/User.ts`、`docs/api-membership—levels.md`；未修改后台仓库。
+- 2026-10-08 对 `https://tunnel-dev.3cgroup.cn/api/usergrade/index?status=10&page=1&pageSize=15` 的只读探测得到 HTTP 200、`code=0`、**2 条启用等级**：`id=1 泡泡新生 min_exp_number=1000`（默认）、`id=2 泡泡萌芽 min_exp_number=10000`。此为**开发环境瞬时状态**，不是 test/prod 的配置承诺。
+- 历史设计四级：海泡泡新生、春氧达人、头皮管理员、溱蜜传说；当前并不与后台两级一一对应。B-022/B-023 仍待产品决定是否扩充后台等级、如何映射卡面、升级门槛与权益。**前端不新造等级、不代替后台配置。**
+- 前端实现进度和后端是否已经部署、是否可在真机使用是三件不同的事；CI 全绿不能代替 App WebView 验收。
+
+### 本卡验收余项
+
+- [ ] PR #97 代码审查与 CI：会员等级数量动态变化（0 / 1 / 2 / 4 / 8+）、对比度正确、空态和错误态可恢复。
+- [ ] test WebView：用登录用户核对 `profile.grade_id` / `usergrade.index.id`、实时 `userpoints.stat.points`；用户等级不在启用表内时记录后端数据异常。
+- [ ] 产品/后台确认 B-022/B-023，决定是否把历史四级作为真实业务等级（不能由 H5 自动填充）。
+
+
+## H041｜福利官配置真 API 接入增量证据（2026-10-08，待真机验收）
+
+> 保留 T013/D-038 原有设计验收结论；此处记录业务数据由 Mockplus 静态展示迁为真实后端配置。施工卡 [#94](https://github.com/dangjingtao/dr-card-ui/issues/94)，接口文档 [#90](https://github.com/dangjingtao/dr-card-ui/issues/90)。**实现、构建与真实 WebView 验收是不同状态；不得因本记录提前将真机验收改为通过。**
+
+| 链路 | 历史状态 | H041 对齐后的状态与验收边界 |
+| --- | --- | --- |
+| `/service/welfare-officer` 文案 | 固定 `WELFARE_OFFICER`（吴哥、诗得丽等） | `GET /api/settings/detail?key=brand_welfare_setting` 的 `title/subtitle`，未配置则为空态，不在 API 模式回退固定姓名 |
+| 福利官二维码 | `WecomQrPlaceholder`，明确非真二维码 | 只有后端给出安全、可被 HTTPS WebView 加载的二维码 URL 才显示真图；无 URL / 非法 URL / 图片加载失败不能伪装可扫码 |
+| 福利项列表 | 固定三项 D-038 视觉说明 | 后端 `benefits[].image/title/description` 动态驱动，无配置隐藏列表，无跳转动作，保留列表的视觉结构 |
+| `settings/detail` 的 key | 既有 `welfare` 仍是品牌文化富文本别名 | 福利官严格传 `brand_welfare_setting`，不可把两种业务混用；Mock handler 必须按 key 精确过滤 |
+| 例外状态 | 只展示 fixture | loading / error-retry / empty / unsafe image URL / image error 有显式行为；API 模式不使用静态业务模拟 |
+
+### 后台资源地址待修（真实联调前置）
+
+2026-10-08 对开发后端 URL `https://tunnel-dev.3cgroup.cn/api/settings/detail?key=brand_welfare_setting` **只读**请求：HTTP 200 / `code=0`；title 与 subtitle 配置存在，benefits 实际三项为「人工客服、活动咨询、福利抽奖」。但配置中的 **qrcode 和三个 benefit.image 均为 `http://127.0.0.1:7002/storage/...`**；这是后端服务器环回地址，手机 WebView 指向自身，且会形成 HTTPS 混合内容风险。
+
+- H5 按安全规则隐藏不可加载的二维码/图片，明确提示；**不能猜测公网 CDN 或自行替换 hostname**。
+- 后端/运营需提供浏览器可直接访问的公网 HTTPS 图片 URL，再进入 test App WebView 扫码实测。
+- 这个后端资源配置问题不应与「H5 已接入 API」混为一谈。可不阻塞代码 PR → dev，但不能宣布真正扫码功能已验收。
+
+### H041 验收待办
+- [ ] GitHub CI：typecheck、服务/页面测试、lint、build、浏览器基础回归
+- [ ] test App WebView：响应与 UI 字段一一对应；二维码变为公网 HTTPS 后扫码，真实设备可识别
+- [ ] 不修改同事 `workspace/API`、不更改 `ServiceChat` 的人工客服二维码占位语义
+
+
+## #89｜首页与签到页记录查询范围修复（2026-10-08，待 CI / test 验收）
+
+- **问题证据：** 正式 H5 `/` 首页仅展示 7 日签到入口，`/checkin` 详情页使用完整月历，但改造前共用 `useSignRecords()` 默认按 `range=month` 查询，首页请求了不必要的本月记录。
+- **后端依据：** 只读 `API/master@4f91aa2` 的 `src/app/api/service/SignRecords.ts`、`docs/api-index.md` 和 `docs/api-checkin.md`：`GET /api/signrecords/index` 已提供 `range=week|month`，周起始以周一计；不需要修改后端。
+- **修复：** `Home` 显式 `useSignRecords('week')`、`Checkin` 显式 `useSignRecords('month')`（代码通过同名常量）；共享 hook 使用依赖范围的稳定回调，保持历史默认 `month`，避免无意破坏其他调用者。
+- **回归边界：** 页面请求参数、Hook 默认 / 切换范围 / 不重复请求由 Vitest 锁定；签到/补签记录的 `year/month/day` 业务日归属及 UI/Native 交互保持不变。
+- **验收：** GitHub CI/PR 审查通过后可合入 `dev`；真机 test 登录态确认首页的实际网络请求为 `range=week`、签到页为 `range=month`；不得把 dev 构建成功当作 App WebView 业务验收。
+- 关联：[Issue #89](https://github.com/dangjingtao/dr-card-ui/issues/89)、总卡 [#92](https://github.com/dangjingtao/dr-card-ui/issues/92)。
+
+
+## H044｜用户真实资料统一与保存（#103，2026-10-08，实施中）
+
+- **事实源**：`dev` 现有 `src/services/userProfile.ts`；本地后端 `workspace/API/docs/api-profile.md`、`src/app/api/controller/{User,Upload}.ts`、`src/app/api/service/User.ts` 的只读核对。源码存在不等于 test 环境部署可用。
+- **身份读取**：正式 H5 的头像/昵称统一取当前用户 `GET /api/user/detail`，避免 `GET /api/user/profile` 登录 Redis 快照盖回已写入资料；现有 `profile` 仍负责等级、优惠券等快照字段。采用非持久化、按认证会话隔离的共享状态。
+- **提交**：昵称/年级/头像在「确认修改」后才调用 `POST /api/user/update`；以写入结果更新页面状态，失败保留编辑稿并提示，不再假成功。头像先由 Native 选择，经 multipart `POST /api/upload/image` 得 URL 后再更新；拒绝非公网 HTTPS URL。
+- **未确认合同**：生日和消费密码没有本期已证实的写入合同，UI 明确不可保存而不伪造完成；后端图片域名、上传字段、App 相机/相册调用仍需 test WebView 实测。
+- **验证状态**：工程改动与聚焦单测已提交至 `feat/103-h044-user-profile`，GitHub CI 与 PR Review 待核；**真账号图片上传、资料修改后重载、Android/iOS WebView 尚未验收，Issue 不应因此关闭**。

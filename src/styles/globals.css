@@ -148,6 +148,21 @@ button {
   }
 }
 
+/* 骨架占位脉冲：只做 opacity 变化，不改变盒子尺寸，避免初始化时布局抖动。 */
+@keyframes h5-soft-pulse {
+  0%,
+  100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+/*
+ * 首页「每日任务」骨架屏：首屏请求返回前先占住与真实卡片一致的盒高，
+ * 数据到达后仅替换内容，容器高度不变（用户 2026-09-29 要求）。
+ */
+.h5-soft-pulse {
+  animation: h5-soft-pulse 1.4s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .h5-route-frame[data-h5-route-transition] {
     animation: none !important;
@@ -155,6 +170,10 @@ button {
 
   ::view-transition-old(h5-route-content),
   ::view-transition-new(h5-route-content) {
+    animation: none !important;
+  }
+
+  .h5-soft-pulse {
     animation: none !important;
   }
 }

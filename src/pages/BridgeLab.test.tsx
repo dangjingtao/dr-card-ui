@@ -5,6 +5,8 @@ import BridgeLab from './BridgeLab'
 type AndroidLabWindow = Window & {
   androidBridge?: Record<string, unknown>
   iosBridge?: Record<string, unknown>
+  nativeBridgeCallback?: (callbackId: string, payload: unknown) => void
+  androidBridgeCallback?: (callbackId: string, payload: unknown) => void
   webkit?: {
     messageHandlers?: Record<string, { postMessage(payload: unknown): void } | undefined>
   }
@@ -22,6 +24,8 @@ function usePlatform(osType?: 'android' | 'iOS' | 'ios') {
 afterEach(() => {
   delete labWindow.androidBridge
   delete labWindow.iosBridge
+  delete labWindow.nativeBridgeCallback
+  delete labWindow.androidBridgeCallback
   delete labWindow.webkit
   delete labWindow.onToken
   delete labWindow.testFunc
@@ -116,12 +120,31 @@ describe('Bridge Lab page', () => {
     expect(screen.queryByText('ios-preview-token')).toBeNull()
   })
 
-  it('can run registered scanCode with editable JSON input on Android', async () => {
+  it('preloads scanCode input and invokes Android with a callback id', async () => {
     usePlatform('android')
     labWindow.androidBridge = {
       scanCode(payload: unknown) {
-        expect(payload).toBe('{"scanType":"all"}')
-        return '{"code":"bridge-lab-scan"}'
+        expect(typeof payload).toBe('string')
+        const request = JSON.parse(payload as string) as {
+          scanType: string
+          callbackId: string
+        }
+        expect(request).toMatchObject({
+          scanType: 'all',
+          callbackId: expect.any(String),
+        })
+        queueMicrotask(() => {
+          labWindow.androidBridgeCallback?.(request.callbackId, {
+            code: 0,
+            message: 'ok',
+            data: { text: 'bridge-lab-scan', scanType: 'qr' },
+          })
+          labWindow.androidBridgeCallback?.(request.callbackId, {
+            code: 0,
+            message: 'ok',
+            data: { text: 'bridge-lab-scan', scanType: 'qr' },
+          })
+        })
       },
     }
 
@@ -130,9 +153,9 @@ describe('Bridge Lab page', () => {
     fireEvent.click(
       document.querySelector('[data-capability-name="scanCode"]') as HTMLButtonElement,
     )
-    fireEvent.change(screen.getByLabelText('input JSON'), {
-      target: { value: '{"scanType":"all"}' },
-    })
+    expect((screen.getByLabelText('input JSON') as HTMLTextAreaElement).value).toBe(
+      '{"scanType":"all"}',
+    )
     fireEvent.click(screen.getByRole('button', { name: '调用 scanCode' }))
 
     await waitFor(() => {
@@ -145,8 +168,21 @@ describe('Bridge Lab page', () => {
     usePlatform('android')
     labWindow.androidBridge = {
       copyText(payload: unknown) {
-        expect(payload).toBe('{"text":"hello"}')
-        return '{"success":true}'
+        const request = JSON.parse(payload as string) as {
+          text: string
+          callbackId: string
+        }
+        expect(request).toMatchObject({
+          text: 'hello',
+          callbackId: expect.any(String),
+        })
+        queueMicrotask(() => {
+          labWindow.nativeBridgeCallback?.(request.callbackId, {
+            code: 0,
+            message: 'ok',
+            data: {},
+          })
+        })
       },
     }
 
@@ -165,12 +201,26 @@ describe('Bridge Lab page', () => {
     })
   })
 
-  it('can invoke registered showRewardAd with the confirmed check-in scene', async () => {
+  it('preloads showRewardAd input and invokes Android with a callback id', async () => {
     usePlatform('android')
     labWindow.androidBridge = {
       showRewardAd(payload: unknown) {
-        expect(payload).toBe('{"scene":"h5CheckinResign"}')
-        return '{"status":"completed"}'
+        expect(typeof payload).toBe('string')
+        const request = JSON.parse(payload as string) as {
+          scene: string
+          callbackId: string
+        }
+        expect(request).toMatchObject({
+          scene: 'h5CheckinResign',
+          callbackId: expect.any(String),
+        })
+        queueMicrotask(() => {
+          labWindow.androidBridgeCallback?.(request.callbackId, {
+            code: 0,
+            message: 'ok',
+            data: { scene: 'h5CheckinResign', status: 'completed' },
+          })
+        })
       },
     }
 
@@ -179,9 +229,9 @@ describe('Bridge Lab page', () => {
     fireEvent.click(
       document.querySelector('[data-capability-name="showRewardAd"]') as HTMLButtonElement,
     )
-    fireEvent.change(screen.getByLabelText('input JSON'), {
-      target: { value: '{"scene":"h5CheckinResign"}' },
-    })
+    expect((screen.getByLabelText('input JSON') as HTMLTextAreaElement).value).toBe(
+      '{"scene":"h5CheckinResign"}',
+    )
     fireEvent.click(screen.getByRole('button', { name: '调用 showRewardAd' }))
 
     await waitFor(() => {
@@ -193,8 +243,25 @@ describe('Bridge Lab page', () => {
     usePlatform('android')
     labWindow.androidBridge = {
       openApp(payload: unknown) {
-        expect(payload).toBe('{"action":"detect","inviteCode":"","fallbackUrl":""}')
-        return '{"success":true,"installed":false}'
+        const request = JSON.parse(payload as string) as {
+          action: string
+          inviteCode: string
+          fallbackUrl: string
+          callbackId: string
+        }
+        expect(request).toMatchObject({
+          action: 'detect',
+          inviteCode: '',
+          fallbackUrl: '',
+          callbackId: expect.any(String),
+        })
+        queueMicrotask(() => {
+          labWindow.nativeBridgeCallback?.(request.callbackId, {
+            code: 0,
+            message: 'ok',
+            data: { installed: false },
+          })
+        })
       },
     }
 
@@ -229,12 +296,16 @@ describe('Bridge Lab page', () => {
     render(<BridgeLab />)
 
     expect(document.querySelector('[data-h5-callback-endpoints]')).not.toBeNull()
+    expect(document.querySelector('[data-callback-endpoint="nativeBridgeCallback"]')).not.toBeNull()
+    expect(document.querySelector('[data-callback-endpoint="androidBridgeCallback"]')).not.toBeNull()
+    expect(screen.queryByText(/iosBridgeCallback/)).toBeNull()
     expect(typeof labWindow.testFunc).toBe('function')
     expect(labWindow.testFunc?.({ from: 'native', value: 1 })).toBe('h5 处理完成')
 
     await waitFor(() => {
-      expect(screen.getByText('window.testFunc(params)')).toBeTruthy()
-      expect(screen.getByText(/"from": "native"/)).toBeTruthy()
+      const logs = document.querySelector('[data-bridge-lab-logs]')
+      expect(logs?.textContent).toContain('window.testFunc(params)')
+      expect(logs?.textContent).toContain('"from": "native"')
     })
   })
 

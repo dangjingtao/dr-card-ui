@@ -6,10 +6,10 @@ import { resolve } from 'node:path'
 import { loadEnv } from 'vite'
 
 const TARGETS = {
-  dev: { mode: 'development', appEnvironment: 'dev', defaultDataMode: 'mock' },
-  preview: { mode: 'preview', appEnvironment: 'preview', defaultDataMode: 'mock' },
-  test: { mode: 'test', appEnvironment: 'test', defaultDataMode: 'api' },
-  prod: { mode: 'production', appEnvironment: 'prod', defaultDataMode: 'api' },
+  dev: { mode: 'development', appEnvironment: 'dev', defaultDataMode: 'mock', defaultBridgeMode: 'disabled' },
+  preview: { mode: 'preview', appEnvironment: 'preview', defaultDataMode: 'mock', defaultBridgeMode: 'disabled' },
+  test: { mode: 'test', appEnvironment: 'test', defaultDataMode: 'api', defaultBridgeMode: 'native' },
+  prod: { mode: 'production', appEnvironment: 'prod', defaultDataMode: 'api', defaultBridgeMode: 'native' },
 }
 
 const DATA_MODES = new Set(['mock', 'api'])
@@ -78,7 +78,7 @@ const dataMode = rawDataMode || target.defaultDataMode
 if (!DATA_MODES.has(dataMode)) errors.push(`Unknown VITE_DATA_MODE=${dataMode}. Expected mock or api.`)
 
 const rawBridgeMode = readEnv('VITE_BRIDGE_MODE')?.trim()
-const bridgeMode = rawBridgeMode || 'disabled'
+const bridgeMode = rawBridgeMode || target.defaultBridgeMode
 if (!BRIDGE_MODES.has(bridgeMode)) {
   errors.push(`Unknown VITE_BRIDGE_MODE=${bridgeMode}. Expected disabled, mock, or native.`)
 }
@@ -87,8 +87,8 @@ const prodLike = target.appEnvironment === 'test' || target.appEnvironment === '
 if (prodLike && dataMode === 'mock') {
   errors.push(`${target.appEnvironment} builds forbid VITE_DATA_MODE=mock; Mock fallback is not allowed.`)
 }
-if (prodLike && bridgeMode === 'mock') {
-  errors.push(`${target.appEnvironment} builds forbid VITE_BRIDGE_MODE=mock; Bridge Mock is dev/preview only.`)
+if (prodLike && bridgeMode !== 'native') {
+  errors.push(`${target.appEnvironment} builds require VITE_BRIDGE_MODE=native.`)
 }
 if (
   cloudflareBuildContext &&
@@ -98,7 +98,14 @@ if (
   errors.push(`Cloudflare ${target.appEnvironment} builds are fixed to VITE_DATA_MODE=mock.`)
 }
 
-const apiBaseUrl = readEnv('VITE_API_BASE_URL')?.trim() ?? ''
+const configuredApiBaseUrl = readEnv('VITE_API_BASE_URL')?.trim() ?? ''
+const apiBaseUrl =
+  cloudflareBuildContext && (target.appEnvironment === 'dev' || target.appEnvironment === 'preview')
+    ? ''
+    : configuredApiBaseUrl
+if (target.appEnvironment === 'test' && !apiBaseUrl) {
+  errors.push('test builds require VITE_API_BASE_URL; a production-like test bundle must target a real backend.')
+}
 if (apiBaseUrl) {
   try {
     const parsed = new URL(apiBaseUrl)
@@ -107,6 +114,22 @@ if (apiBaseUrl) {
     }
   } catch {
     errors.push('VITE_API_BASE_URL must be an absolute http(s) URL when provided.')
+  }
+}
+
+const publicOrigin = readEnv('VITE_BUDDY_PUBLIC_ORIGIN')?.trim() ?? ''
+if (dataMode === 'api' && prodLike && !publicOrigin) {
+  errors.push(`${target.appEnvironment} API builds require VITE_BUDDY_PUBLIC_ORIGIN.`)
+}
+if (publicOrigin) {
+  try {
+    const url = new URL(publicOrigin)
+    if (url.protocol !== 'https:' || url.username || url.password || url.port ||
+      url.pathname !== '/' || url.search || url.hash || url.origin !== publicOrigin) {
+      errors.push('VITE_BUDDY_PUBLIC_ORIGIN must be an exact HTTPS origin without path, credentials, port, query or fragment.')
+    }
+  } catch {
+    errors.push('VITE_BUDDY_PUBLIC_ORIGIN must be a valid HTTPS origin.')
   }
 }
 
@@ -140,6 +163,7 @@ const runtimeEnv = {
   VITE_APP_ENV: target.appEnvironment,
   VITE_DATA_MODE: dataMode,
   VITE_API_BASE_URL: apiBaseUrl,
+  VITE_BUDDY_PUBLIC_ORIGIN: publicOrigin,
   VITE_BRIDGE_MODE: bridgeMode,
   VITE_BUILD_SHA: buildSha,
   VITE_BUILD_ID: buildId,
@@ -153,6 +177,7 @@ const metadata = {
   dataMode,
   bridgeMode,
   apiBaseConfigured: Boolean(apiBaseUrl),
+  buddyPublicOriginConfigured: Boolean(publicOrigin),
   build: {
     sha: buildSha,
     id: buildId,
