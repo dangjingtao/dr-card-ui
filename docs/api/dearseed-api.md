@@ -3,6 +3,7 @@
 > 数据源：`http://192.168.1.81:7002/swagger-ui/index.json`（FastAdmin 自动生成）
 > 原始快照：`docs/api/dearseed-openapi.json`
 > 抓取时间：2026-09-16
+> **客服 API 更新（2026-10-09）**：现行 `/api/chatmessages/add`、`/transfer`、`/index` 和 Socket.IO `chat:message` 以 [后台源码校验合同](./chat-service-contract-20261009.md) 为准；本页和原始 Swagger 中的旧 `ChatMessagesSave` CRUD schema 不再适用用户端客服。
 > 更新记录：2026-09-28 后端统一响应协议 —— 成功码由 `200` 改为 `0`（兼容原生，含 `GET /api/user/detail`），失败结构字段名为 `message`；来源为后台首页联调文档与后端确认，§3 及相关示例已同步。
 
 ## 1. 总体说明

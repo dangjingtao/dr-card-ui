@@ -117,6 +117,22 @@ if (apiBaseUrl) {
   }
 }
 
+const publicOrigin = readEnv('VITE_BUDDY_PUBLIC_ORIGIN')?.trim() ?? ''
+if (dataMode === 'api' && prodLike && !publicOrigin) {
+  errors.push(`${target.appEnvironment} API builds require VITE_BUDDY_PUBLIC_ORIGIN.`)
+}
+if (publicOrigin) {
+  try {
+    const url = new URL(publicOrigin)
+    if (url.protocol !== 'https:' || url.username || url.password || url.port ||
+      url.pathname !== '/' || url.search || url.hash || url.origin !== publicOrigin) {
+      errors.push('VITE_BUDDY_PUBLIC_ORIGIN must be an exact HTTPS origin without path, credentials, port, query or fragment.')
+    }
+  } catch {
+    errors.push('VITE_BUDDY_PUBLIC_ORIGIN must be a valid HTTPS origin.')
+  }
+}
+
 if (errors.length > 0) {
   errors.forEach((error) => console.error(`[build-h5] config error: ${error}`))
   process.exit(1)
@@ -147,6 +163,7 @@ const runtimeEnv = {
   VITE_APP_ENV: target.appEnvironment,
   VITE_DATA_MODE: dataMode,
   VITE_API_BASE_URL: apiBaseUrl,
+  VITE_BUDDY_PUBLIC_ORIGIN: publicOrigin,
   VITE_BRIDGE_MODE: bridgeMode,
   VITE_BUILD_SHA: buildSha,
   VITE_BUILD_ID: buildId,
@@ -160,6 +177,7 @@ const metadata = {
   dataMode,
   bridgeMode,
   apiBaseConfigured: Boolean(apiBaseUrl),
+  buddyPublicOriginConfigured: Boolean(publicOrigin),
   build: {
     sha: buildSha,
     id: buildId,

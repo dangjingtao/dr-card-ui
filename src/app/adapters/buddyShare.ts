@@ -4,9 +4,9 @@
  * H032 起，相册写入与剪贴板不再恒定模拟成功；正式 H5 只通过 Native Bridge 调用。
  * 页面仍只消费 BuddyShareFeedback，不直接接触 window.androidBridge / window.iosBridge。
  *
- * 注意：当前邀请二维码仍是明确的 placeholder，仓库没有真实邀请海报 bytes / URL。
- * 因此 saveInvitePoster() 只有在上游提供真实 poster payload 时才调用 Native，
- * 否则返回既有 poster-failed 反馈，避免拿伪造图片冒充真实海报。
+ * #107 第二刀已在页面侧将服务端或 Mock 的受控邀请 URL 绘制成 QR PNG，
+ * 再合成真实海报 bytes，调用本 adapter 后才交给 Native 写相册。
+ * 后台正式 qrUrl 接口和 Native 真机保存尚未交付；没有 payload 时失败，不伪造成功。
  */
 import { BUDDY_INVITE_LINK, BUDDY_SHARE_FEEDBACK, type BuddyShareFeedback } from '../fixtures'
 import {

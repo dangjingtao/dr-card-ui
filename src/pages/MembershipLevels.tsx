@@ -3,7 +3,9 @@ import type { LucideIcon } from 'lucide-react'
 import DebugPanel from '../components/mobile/DebugPanel'
 import PageContainer from '../components/mobile/PageContainer'
 import { findRouteByPathname } from '../app/router/routes'
-import { MEMBER_CARD_FACES, MEMBER_LEVELS, MEMBER_LEVELS_REMARK, MEMBER_RULE_STATUS } from '../app/fixtures'
+import { useProfileFeed } from './profile/useProfileFeed'
+import { useMemberGrades } from './membership/useMembershipFeed'
+import { MEMBER_CARD_FACES, MEMBER_RULE_STATUS } from '../app/fixtures'
 import membershipHero from '../assets/brand/member/membership-levels-reference-hero.webp'
 import roseCard from '../assets/brand/member/member-card-rose.webp'
 import lavenderCard from '../assets/brand/member/member-card-lavender.webp'
@@ -14,7 +16,8 @@ import emeraldCard from '../assets/brand/member/member-card-emerald.webp'
  * 会员等级（#26）
  * 产品事实源：docs/prototype/02-membership-and-checkin.md §2。
  * 视觉方向：Penpot《卡博士补充UI》/「会员中心 / 01-会员等级」；仅继承构图、层级与卡面物料。
- * ⚠️ 等级数量 / 命名 / 卡面清单仍沿用历史夹具，未经产品确认（B-022）。
+ * H040: 等级业务数据取后台；会员中心按 2026-10-08 已配置的等级 ID 1–4 展示相应卡面。
+ * 卡面是视觉素材，不代表后台已开通额外权益或独立发卡能力。
  * ⚠️ 权益、升级门槛与解锁判断未在原型中确认（B-023），本页不补写。
  */
 const levelVisuals: Array<{
@@ -38,6 +41,10 @@ const cardFaceVisuals = [
 
 export default function MembershipLevels() {
   const route = findRouteByPathname('/membership/levels')
+  const { remote: gradesRemote, reload: reloadGrades } = useMemberGrades()
+  const { remote: profileRemote, reload: reloadProfile } = useProfileFeed()
+  const grades = gradesRemote.state === 'success' ? gradesRemote.data : []
+  const gradeId = profileRemote.state === 'success' ? profileRemote.data.gradeId : null
 
   return (
     <PageContainer inset={false} className="pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
@@ -47,11 +54,11 @@ export default function MembershipLevels() {
         <div className="relative flex h-full max-w-[62%] flex-col px-6 py-8">
           <p className="text-[11px] font-semibold tracking-[0.12em] text-[#5B5EF7]">DEARSEED MEMBERSHIP</p>
           <h2 id="membership-hero-title" className="mt-2 text-[24px] font-bold leading-8 tracking-[-0.02em] text-[#252B3D]">
-            会员等级参考
+            会员等级
           </h2>
-          <p className="mt-1.5 text-[13px] leading-5 text-[#535D72]">会员等级与专属卡面视觉</p>
+          <p className="mt-1.5 text-[13px] leading-5 text-[#535D72]">已启用等级按后台配置展示</p>
           <p className="mt-auto w-fit rounded-full bg-white/70 px-2.5 py-1 text-[10px] leading-4 text-[#687288] backdrop-blur-sm">
-            {MEMBER_LEVELS_REMARK}
+            会员卡面为设计展示，不代表已开通权益
           </p>
         </div>
       </section>
@@ -59,40 +66,61 @@ export default function MembershipLevels() {
       <section className="relative z-10 mx-2 -mt-6 rounded-[22px] bg-surface px-2 pb-5 pt-5 shadow-[0_10px_30px_rgba(37,43,61,0.07)]" aria-labelledby="membership-level-title">
         <div className="px-2">
           <h2 id="membership-level-title" className="text-base font-bold text-text-primary">会员等级</h2>
-          <p className="mt-1 text-xs leading-5 text-text-secondary">四级会员视觉分层，当前等级以高亮标识</p>
+          <p className="mt-1 text-xs leading-5 text-text-secondary">等级按后台配置展示，当前等级以高亮标识</p>
         </div>
 
-        <div className="mt-3 grid grid-cols-4 gap-2" aria-label={`${MEMBER_LEVELS.length} 个会员等级`}>
-          {MEMBER_LEVELS.map((level, index) => {
-            const visual = levelVisuals[index] ?? levelVisuals[0]
+        {gradesRemote.state === 'loading' ? (
+          <p className="mt-3 text-xs text-text-secondary" role="status">正在加载会员等级…</p>
+        ) : null}
+        {gradesRemote.state === 'error' ? (
+          <div className="mt-3 flex items-center justify-between gap-2 text-xs text-text-secondary" role="alert">
+            <span>会员等级暂不可用</span>
+            <button type="button" className="font-semibold text-reward-text" onClick={reloadGrades}>重试</button>
+          </div>
+        ) : null}
+        {profileRemote.state === 'error' ? (
+          <div className="mt-2 flex items-center justify-between gap-2 text-xs text-text-secondary" role="status">
+            <span>当前会员等级暂不可用</span>
+            <button type="button" className="font-semibold text-reward-text" onClick={reloadProfile}>重试</button>
+          </div>
+        ) : null}
+        {gradesRemote.state === 'success' && grades.length === 0 ? (
+          <p className="mt-3 text-xs text-text-secondary" role="status">会员等级尚未配置</p>
+        ) : null}
+        {gradesRemote.state === 'success' && grades.length > 0 ? (
+        <div className={`mt-3 grid gap-2 ${grades.length <= 2 ? 'grid-cols-2' : 'grid-cols-4'}`} aria-label={`${grades.length} 个会员等级`}>
+          {grades.map((level, index) => {
+            const visual = levelVisuals[index % levelVisuals.length]
             const Icon = visual.icon
-            const inverse = index === levelVisuals.length - 1
+            const inverse = index % levelVisuals.length === levelVisuals.length - 1
             return (
               <div
-                key={level.label}
+                key={level.id}
                 className="flex min-h-[112px] min-w-0 flex-col items-center rounded-xl border px-1 pb-2 pt-3 text-center"
                 style={{ backgroundColor: visual.surface, borderColor: visual.border }}
-                data-level={level.label}
-                data-level-current={level.current ? 'true' : undefined}
-                aria-current={level.current ? 'true' : undefined}
+                data-level={level.name}
+                data-level-current={gradeId === level.id ? 'true' : undefined}
+                aria-current={gradeId === level.id ? 'true' : undefined}
               >
                 <Icon className="h-7 w-7 stroke-[1.8]" style={{ color: visual.accent }} aria-hidden />
-                <span className={`mt-2 text-xs font-semibold ${inverse ? 'text-white' : 'text-text-primary'}`}>{level.label}</span>
+                <span className={`mt-2 text-xs font-semibold ${inverse ? 'text-white' : 'text-text-primary'}`}>{`LV.${index + 1}`}</span>
                 <span className={`mt-1 whitespace-nowrap text-[10px] leading-4 ${inverse ? 'text-white/90' : 'text-text-secondary'}`}>
                   {level.name}
                 </span>
-                {level.current ? (
+                {gradeId === level.id ? (
                   <span className="mt-auto rounded-full bg-white/10 px-2 py-0.5 text-[9px] leading-4 text-[#F6C65B]">当前</span>
                 ) : null}
               </div>
             )
           })}
         </div>
+        ) : null}
       </section>
 
       <section className="px-3 pt-5" aria-labelledby="member-card-face-title">
         <div className="px-1">
-          <h2 id="member-card-face-title" className="text-base font-bold text-text-primary">会员卡面</h2>
+          <h2 id="member-card-face-title" className="text-base font-bold text-text-primary">会员卡面设计参考</h2>
+          <p className="mt-1 text-xs leading-5 text-text-secondary">以下四款为会员中心当前四级卡面参考，仅展示视觉设计，不代表额外会员权益或独立发卡。</p>
           <p className="mt-0.5 text-[10px] font-medium tracking-[0.08em] text-text-tertiary">MEMBERSHIP CARD COLLECTION</p>
         </div>
 

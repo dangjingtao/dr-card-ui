@@ -5,6 +5,8 @@ import {
   fetchSignActivities,
   fetchSignRecords,
   fetchSignStatus,
+  SIGN_RECORDS_RANGE_MONTH,
+  type SignRecordsRange,
   submitMakeup as submitMakeupRequest,
   submitSignIn as submitSignInRequest,
   type SignActivity,
@@ -58,9 +60,14 @@ export function useSignStatus(): CheckinRemoteResult<SignStatus> {
   return useRemoteData(fetchSignStatus)
 }
 
-/** GET /api/signrecords/index：本月签到记录（打卡日历的已签/补签依据）。 */
-export function useSignRecords(): CheckinRemoteResult<SignRecord[]> {
-  return useRemoteData(fetchSignRecords)
+/**
+ * GET /api/signrecords/index：页面显式声明时间范围。
+ * 首页传 week（7 日入口），签到详情页传 month（月历及补签依据）。
+ * 默认 month 保持历史调用兼容，稳定的 callback 避免渲染时反复请求。
+ */
+export function useSignRecords(range: SignRecordsRange = SIGN_RECORDS_RANGE_MONTH): CheckinRemoteResult<SignRecord[]> {
+  const load = useCallback(() => fetchSignRecords({ range }), [range])
+  return useRemoteData(load)
 }
 
 /** GET /api/signactivity/list：签到活动（最大天数 / 已签到天数 / 是否允许补签）。 */

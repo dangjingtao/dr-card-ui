@@ -11,7 +11,8 @@ import {
   Ticket,
   UserRoundPlus,
 } from 'lucide-react'
-import avatarFallback from '../assets/brand/home/home-avatar.webp'
+import UserAvatar from '../components/mobile/UserAvatar'
+import { useUserIdentity } from './profile/useUserIdentity'
 import hotBerry from '../assets/brand/exchange/profile-hot-berry.webp'
 import PageContainer from '../components/mobile/PageContainer'
 import AppPromptDialog from '../components/mobile/AppPromptDialog'
@@ -48,6 +49,7 @@ const COUPON_COVER_FALLBACK = hotBerry
 
 export default function Profile() {
   const navigate = useNavigate()
+  const { remote: identity } = useUserIdentity()
   const { overlay, open, close } = useOverlay()
   const [downloadHint, setDownloadHint] = useState<string | undefined>(undefined)
   const [downloadPending, setDownloadPending] = useState(false)
@@ -73,8 +75,8 @@ export default function Profile() {
     [couponsRemote],
   )
 
-  const avatarSrc = profile?.avatar ?? avatarFallback
-  const nickname = profile?.nickname || PROFILE_VALUE_PLACEHOLDER
+  const avatarSrc = identity.state === 'success' ? identity.data.avatar : profile?.avatar
+  const nickname = (identity.state === 'success' ? identity.data.nickname : profile?.nickname) || PROFILE_VALUE_PLACEHOLDER
   const gradeName = profile?.grade || PROFILE_VALUE_PLACEHOLDER
   const kbsId = profile?.kbsId
   const nextGrade = profile?.nextGrade
@@ -135,7 +137,7 @@ export default function Profile() {
             onClick={() => navigate('/settings')}
             className="h-16 w-16 flex-none overflow-hidden rounded-full border-2 border-white/90 shadow-[0_0_0_4px_rgba(165,122,29,0.25)]"
           >
-            <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
+            <UserAvatar src={avatarSrc} />
           </button>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
@@ -161,7 +163,11 @@ export default function Profile() {
           <div className="mb-2 flex items-baseline justify-between text-xs text-[#4A3206]/85">
             <span>当前等级 {gradeName}</span>
             {/* nextGrade 为空字符串时后端表示「已是最高等级」，此时不展示升级文案。 */}
-            {nextGrade ? (
+            {!profile ? (
+              <span className="font-semibold text-[#4A3206]">--</span>
+            ) : profile.gradeId === undefined ? (
+              <span className="font-semibold text-[#4A3206]">会员等级尚未配置</span>
+            ) : nextGrade ? (
               <span className="font-semibold text-[#4A3206]">
                 距 {nextGrade.name} 还差 {nextGrade.min_exp_number} 经验值
               </span>

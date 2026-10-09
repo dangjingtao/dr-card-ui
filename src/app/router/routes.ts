@@ -848,14 +848,14 @@ export const ROUTES: RouteMeta[] = [
     task: 'T007',
     entry: '搭子-二维码邀请',
     returnTo: '搭子',
-    owner: '二维码邀请卡与更多分享方式（T007 施工）',
+    owner: '二维码邀请卡与保存海报（#102 一期删除复制链接）',
   },
   {
     path: '/buddy/invite/qrcode',
     title: '邀请搭子',
     nodes: [34, 35],
     task: 'T007',
-    entry: '邀请搭子-保存到本地 / 复制链接',
+    entry: '邀请搭子-保存海报（历史复制链接状态仅作原型回溯）',
     returnTo: '邀请搭子',
     /* ⚠️ 原型只画了保存成功（#34）与复制成功（#35）；两个 *-failed 是任务卡要求的
      * 可复现失败态，按 D-056 只能由 `?state=` 驱动，页面内真实操作恒定成功（B-005）。 */
@@ -865,7 +865,7 @@ export const ROUTES: RouteMeta[] = [
       { key: 'link-copied', node: 35, label: '生成分享链接（复制成功）' },
       { key: 'link-failed', node: 35, label: '链接复制失败（仅 ?state= 复现）' },
     ],
-    owner: '分享海报/链接（T007 施工；统一走分享适配层）',
+    owner: '分享海报结果（一期移除复制链接入口；历史 link-* 仅用于原型追溯）',
   },
   {
     path: '/buddy/invite/phone',
@@ -888,14 +888,14 @@ export const ROUTES: RouteMeta[] = [
   },
   {
     path: '/buddy/invite/scan',
-    title: '邀请搭子（没 APP）',
+    title: '请在卡博士 App 内扫码',
     nodes: [30],
     task: 'H034',
-    /* H034：安装态只来自 Native openApp({ action: 'detect' })，
-     * 不再用 ?state=no-app/has-app 夹具模拟真实安装状态。 */
+    /* #102 最终版：该路由只是微信/系统相机的公开引导页，无 Native 安装检测、
+     * 不走外部邀请预览、深链打开 App 或安装后恢复绑定。 */
     entry: '微信扫描搭子邀请二维码',
     returnTo: '（外部承接，无应用内返回）',
-    owner: '被邀请人扫码承接（H034；Native detect/open/store，H5 不探测 scheme）',
+    owner: '公开扫码提示页面（#102；外部不绑定；下载链接待官方提供）',
   },
   {
     path: '/buddy/accept',
@@ -905,10 +905,10 @@ export const ROUTES: RouteMeta[] = [
     titleBarTitle: 'DearSeed',
     nodes: [36],
     task: 'T007',
-    entry: '被邀请人链路（深链 / 扫码后已装 APP）',
+    entry: 'App 内诗得丽扫一扫解析成功后/通知中心接受邀请',
     returnTo: '搭子（已绑定）',
-    /* #36 只有一个「接受邀请」按钮 + 右上角关闭图标，没有取消按钮；
-     * dismissed 即点关闭图标后停留在专栏首页背景上的取消路径。 */
+    /* #102 一期修订：确认成为搭子 + 取消（与右上角关闭/返回同义）；
+     * 未拿到后台邀请预览/确认 API 前，API 模式禁用假绑定。 */
     states: [
       { key: 'dismissed', node: 36, label: '取消（关闭弹窗）' },
     ],

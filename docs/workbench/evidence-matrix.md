@@ -270,3 +270,73 @@ T011 本轮证据（2026-08-22）：`BASE_URL=http://127.0.0.1:5175 node scripts
 - 决策索引：`docs/workbench/decisions/README.md`。
 - 任务卡：`docs/workbench/tasks/T001…T015`。
 - 工程证据：`npm run typecheck`、`npm run build`、`scripts/verify-t001.mjs` 均通过（见 T001 卡）。
+
+
+## 8. H040｜会员业务数据与历史四级展示分离（2026-10-08，实施待验收）
+
+> **增量变更记录，不回写历史验收结论。** 原有 T006 / D-028 / D-029 保留为 2026-08 产品视觉历史证据，不能误认为后台已配置这四级。H040 追踪 [#93](https://github.com/dangjingtao/dr-card-ui/issues/93) 和 [PR #97](https://github.com/dangjingtao/dr-card-ui/pull/97)，未通过真实 App test 验收前状态仍为 **Implemented / Pending acceptance**。
+
+| 维度 | T006 旧展示 | H040 当前施工目标 / 事实 | 验收边界 |
+| --- | --- | --- | --- |
+| `/membership` 当前会员 | `MEMBER_PROFILE` 历史视觉夹具：昵称、固定 LV.4 / 溱蜜传说、展示编号 | 会员昵称与等级从 `GET /api/user/profile` 读取；余额从 `GET /api/userpoints/stat` 读取；未配置则清楚标示，不伪造四级身份 | 需真实登录用户与真实响应对照 |
+| `/membership/levels` 等级名单 | T006 固定 LV.1–LV.4，B-022 数量、名称、卡面未定 | `GET /api/usergrade/index` 仅渲染已启用等级；0 条显示未配置，失败显示失败/重试；`grade_id` 与后端等级 `id` 对齐 | 后台列表是唯一业务等级事实源；不因设计有四张图擅自增等级 |
+| 卡面画廊 | 四张历史限定卡面艺术稿 | **保留四张静态视觉参考**，在 UI 明确不代表后台等级、实际生效卡面或权益。品牌素材与视觉结构不丢失 | 不得把四张卡面拿来推算启用会员等级数 |
+| 等级未配置 | 原型没有这个数据态 | 后端 `User.profile` 无默认等级时可能省略 `grade/grade_id`；H5 应仍保留可用个人资料，等级标「尚未配置」，不得宣称「已是最高等级」 | service 契约测试 + 无数据/未配置页面态 |
+
+### 开发后端现场证据与差异
+
+- 本地只读后端 `API/master@4f91aa2` 的 `src/app/api/controller/UserGrade.ts`、`src/app/api/service/User.ts`、`docs/api-membership—levels.md`；未修改后台仓库。
+- 2026-10-08 对 `https://tunnel-dev.3cgroup.cn/api/usergrade/index?status=10&page=1&pageSize=15` 的只读探测得到 HTTP 200、`code=0`、**2 条启用等级**：`id=1 泡泡新生 min_exp_number=1000`（默认）、`id=2 泡泡萌芽 min_exp_number=10000`。此为**开发环境瞬时状态**，不是 test/prod 的配置承诺。
+- 历史设计四级：海泡泡新生、春氧达人、头皮管理员、溱蜜传说；当前并不与后台两级一一对应。B-022/B-023 仍待产品决定是否扩充后台等级、如何映射卡面、升级门槛与权益。**前端不新造等级、不代替后台配置。**
+- 前端实现进度和后端是否已经部署、是否可在真机使用是三件不同的事；CI 全绿不能代替 App WebView 验收。
+
+### 本卡验收余项
+
+- [ ] PR #97 代码审查与 CI：会员等级数量动态变化（0 / 1 / 2 / 4 / 8+）、对比度正确、空态和错误态可恢复。
+- [ ] test WebView：用登录用户核对 `profile.grade_id` / `usergrade.index.id`、实时 `userpoints.stat.points`；用户等级不在启用表内时记录后端数据异常。
+- [ ] 产品/后台确认 B-022/B-023，决定是否把历史四级作为真实业务等级（不能由 H5 自动填充）。
+
+
+## H041｜福利官配置真 API 接入增量证据（2026-10-08，待真机验收）
+
+> 保留 T013/D-038 原有设计验收结论；此处记录业务数据由 Mockplus 静态展示迁为真实后端配置。施工卡 [#94](https://github.com/dangjingtao/dr-card-ui/issues/94)，接口文档 [#90](https://github.com/dangjingtao/dr-card-ui/issues/90)。**实现、构建与真实 WebView 验收是不同状态；不得因本记录提前将真机验收改为通过。**
+
+| 链路 | 历史状态 | H041 对齐后的状态与验收边界 |
+| --- | --- | --- |
+| `/service/welfare-officer` 文案 | 固定 `WELFARE_OFFICER`（吴哥、诗得丽等） | `GET /api/settings/detail?key=brand_welfare_setting` 的 `title/subtitle`，未配置则为空态，不在 API 模式回退固定姓名 |
+| 福利官二维码 | `WecomQrPlaceholder`，明确非真二维码 | 只有后端给出安全、可被 HTTPS WebView 加载的二维码 URL 才显示真图；无 URL / 非法 URL / 图片加载失败不能伪装可扫码 |
+| 福利项列表 | 固定三项 D-038 视觉说明 | 后端 `benefits[].image/title/description` 动态驱动，无配置隐藏列表，无跳转动作，保留列表的视觉结构 |
+| `settings/detail` 的 key | 既有 `welfare` 仍是品牌文化富文本别名 | 福利官严格传 `brand_welfare_setting`，不可把两种业务混用；Mock handler 必须按 key 精确过滤 |
+| 例外状态 | 只展示 fixture | loading / error-retry / empty / unsafe image URL / image error 有显式行为；API 模式不使用静态业务模拟 |
+
+### 后台资源地址待修（真实联调前置）
+
+2026-10-08 对开发后端 URL `https://tunnel-dev.3cgroup.cn/api/settings/detail?key=brand_welfare_setting` **只读**请求：HTTP 200 / `code=0`；title 与 subtitle 配置存在，benefits 实际三项为「人工客服、活动咨询、福利抽奖」。但配置中的 **qrcode 和三个 benefit.image 均为 `http://127.0.0.1:7002/storage/...`**；这是后端服务器环回地址，手机 WebView 指向自身，且会形成 HTTPS 混合内容风险。
+
+- H5 按安全规则隐藏不可加载的二维码/图片，明确提示；**不能猜测公网 CDN 或自行替换 hostname**。
+- 后端/运营需提供浏览器可直接访问的公网 HTTPS 图片 URL，再进入 test App WebView 扫码实测。
+- 这个后端资源配置问题不应与「H5 已接入 API」混为一谈。可不阻塞代码 PR → dev，但不能宣布真正扫码功能已验收。
+
+### H041 验收待办
+- [ ] GitHub CI：typecheck、服务/页面测试、lint、build、浏览器基础回归
+- [ ] test App WebView：响应与 UI 字段一一对应；二维码变为公网 HTTPS 后扫码，真实设备可识别
+- [ ] 不修改同事 `workspace/API`、不更改 `ServiceChat` 的人工客服二维码占位语义
+
+
+## #89｜首页与签到页记录查询范围修复（2026-10-08，待 CI / test 验收）
+
+- **问题证据：** 正式 H5 `/` 首页仅展示 7 日签到入口，`/checkin` 详情页使用完整月历，但改造前共用 `useSignRecords()` 默认按 `range=month` 查询，首页请求了不必要的本月记录。
+- **后端依据：** 只读 `API/master@4f91aa2` 的 `src/app/api/service/SignRecords.ts`、`docs/api-index.md` 和 `docs/api-checkin.md`：`GET /api/signrecords/index` 已提供 `range=week|month`，周起始以周一计；不需要修改后端。
+- **修复：** `Home` 显式 `useSignRecords('week')`、`Checkin` 显式 `useSignRecords('month')`（代码通过同名常量）；共享 hook 使用依赖范围的稳定回调，保持历史默认 `month`，避免无意破坏其他调用者。
+- **回归边界：** 页面请求参数、Hook 默认 / 切换范围 / 不重复请求由 Vitest 锁定；签到/补签记录的 `year/month/day` 业务日归属及 UI/Native 交互保持不变。
+- **验收：** GitHub CI/PR 审查通过后可合入 `dev`；真机 test 登录态确认首页的实际网络请求为 `range=week`、签到页为 `range=month`；不得把 dev 构建成功当作 App WebView 业务验收。
+- 关联：[Issue #89](https://github.com/dangjingtao/dr-card-ui/issues/89)、总卡 [#92](https://github.com/dangjingtao/dr-card-ui/issues/92)。
+
+
+## H044｜用户真实资料统一与保存（#103，2026-10-08，实施中）
+
+- **事实源**：`dev` 现有 `src/services/userProfile.ts`；本地后端 `workspace/API/docs/api-profile.md`、`src/app/api/controller/{User,Upload}.ts`、`src/app/api/service/User.ts` 的只读核对。源码存在不等于 test 环境部署可用。
+- **身份读取**：正式 H5 的头像/昵称统一取当前用户 `GET /api/user/detail`，避免 `GET /api/user/profile` 登录 Redis 快照盖回已写入资料；现有 `profile` 仍负责等级、优惠券等快照字段。采用非持久化、按认证会话隔离的共享状态。
+- **提交**：昵称/年级/头像在「确认修改」后才调用 `POST /api/user/update`；以写入结果更新页面状态，失败保留编辑稿并提示，不再假成功。头像先由 Native 选择，经 multipart `POST /api/upload/image` 得 URL 后再更新；拒绝非公网 HTTPS URL。
+- **未确认合同**：生日和消费密码没有本期已证实的写入合同，UI 明确不可保存而不伪造完成；后端图片域名、上传字段、App 相机/相册调用仍需 test WebView 实测。
+- **验证状态**：工程改动与聚焦单测已提交至 `feat/103-h044-user-profile`，GitHub CI 与 PR Review 待核；**真账号图片上传、资料修改后重载、Android/iOS WebView 尚未验收，Issue 不应因此关闭**。

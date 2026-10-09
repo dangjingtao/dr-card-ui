@@ -5,14 +5,16 @@ import DebugPanel from '../components/mobile/DebugPanel'
 import PageContainer from '../components/mobile/PageContainer'
 import { Button, ProgressIndicator } from '../components/ui'
 import { findRouteByPathname } from '../app/router/routes'
+import { useProfileFeed } from './profile/useProfileFeed'
+import { useUserIdentity } from './profile/useUserIdentity'
+import { useUserPointsStat } from './points/usePointsFeed'
 import {
-  BUBBLE_BALANCE,
   CAMPAIGN_FIXTURE,
   MEMBER_ENTRIES,
   MEMBER_PROFILE,
   MEMBER_SECTION_LABELS,
 } from '../app/fixtures'
-import lv4Hero from '../assets/brand/member/member-lv4-hero.webp'
+import { getMemberCardTheme, UNASSIGNED_MEMBER_CARD_THEME } from './membership/memberCardTheme'
 import campaignThumb from '../assets/brand/member/checkin-dearseed-kit.webp'
 
 /**
@@ -31,15 +33,26 @@ import campaignThumb from '../assets/brand/member/checkin-dearseed-kit.webp'
  * ⚠️ 等级命名与权益未决规则隔离在 MEMBER_RULE_STATUS（B-022 / B-023）。
  *
  * 视觉口径：
- * - 会员页优先消费既有 token / Tailwind 语义类与 CSS 变量（如 --gradient-bubble、
- *   --gradient-member），避免在页面内另起一套组件 Token。
- * - hero 卡面满幅呈现既有绿金素材。
+ * - 会员卡与四个尊享服务圆形入口共用 MemberCardTheme；
+ *   未配置等级走中性回退，不另起一套等级色值。
+ * - hero 卡面按后台 grade_id 显示四款素材；未知等级显示中性卡，不冒充最高等级。
  * - 「前往领取」继续复用全局 Button primary 语义，不另起按钮颜色、按压态和圆角规则。
  */
 export default function Membership() {
   const navigate = useNavigate()
+  const { remote: identity } = useUserIdentity()
   const route = findRouteByPathname('/membership')
   const campaign = CAMPAIGN_FIXTURE
+  const { remote: profileRemote, reload: reloadProfile } = useProfileFeed()
+  const { remote: pointsRemote, reload: reloadPoints } = useUserPointsStat()
+  const profile = profileRemote.state === 'success' ? profileRemote.data : null
+  const nickname = (identity.state === 'success' ? identity.data.nickname : profile?.nickname)?.trim() || '--'
+  const gradeName = profile ? (profile.grade.trim() || '尚未配置') : '--'
+  const pointsText = pointsRemote.state === 'success' ? pointsRemote.data.points.toLocaleString() : '--'
+  const profileError = profileRemote.state === 'error' ? profileRemote.message : null
+  const pointsError = pointsRemote.state === 'error' ? pointsRemote.message : null
+  const cardTheme = getMemberCardTheme(profile?.gradeId)
+  const palette = cardTheme ?? UNASSIGNED_MEMBER_CARD_THEME
 
   const entryIcons: Record<string, LucideIcon> = {
     luck: Clover,
@@ -51,43 +64,55 @@ export default function Membership() {
   return (
     <PageContainer inset={false} className="space-y-4 pb-24 pt-2">
       <section
-        className="relative mx-4 overflow-hidden rounded-feature bg-member-surface shadow-member"
+        className="relative mx-4 overflow-hidden rounded-feature shadow-member"
+        style={{ backgroundColor: palette.surface }}
+        data-member-card-grade={profile?.gradeId ?? 'unknown'}
         aria-label="会员等级与泡泡值"
       >
-        <img src={lv4Hero} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover" />
+        {cardTheme?.image ? (
+          <img src={cardTheme.image} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover" />
+        ) : null}
+        <div className="pointer-events-none absolute inset-0" style={{ backgroundImage: palette.wash }} aria-hidden />
         <div className="relative px-5 pb-4 pt-5">
-          <p className="text-[11px] tracking-[0.2em] text-member-accent">{MEMBER_PROFILE.brandLine}</p>
+          <p className="text-[11px] tracking-[0.2em]" style={{ color: palette.accent }}>
+            DEARSEED · {gradeName === '--' ? '会员' : gradeName}
+          </p>
           <div className="mt-4 flex items-end justify-between gap-3">
             <div className="min-w-0">
-              <p className="truncate text-[22px] font-medium leading-tight text-member-text">{MEMBER_PROFILE.nickname}</p>
+              <p className="truncate text-[22px] font-medium leading-tight" style={{ color: palette.foreground }}>
+                {nickname}
+              </p>
               <span
-                className="mt-2.5 inline-flex items-center rounded-pill px-3 py-1 text-xs font-semibold text-bubble-on-gold"
-                style={{ backgroundImage: 'var(--gradient-bubble)' }}
+                className="mt-2.5 inline-flex items-center rounded-pill px-3 py-1 text-xs font-semibold"
+                style={{ backgroundColor: palette.badgeBackground, color: palette.badgeForeground }}
               >
-                {MEMBER_PROFILE.levelLabel} {MEMBER_PROFILE.levelName}
+                会员 · {gradeName}
               </span>
             </div>
             <button
               type="button"
               onClick={() => navigate('/points')}
-              aria-label={`泡泡值余额 ${BUBBLE_BALANCE}，查看明细`}
+              aria-label={`泡泡值余额 ${pointsText}，查看明细`}
               className="flex-none rounded-container text-right"
             >
-              <span className="block text-[28px] font-semibold leading-none text-member-accent">
-                {BUBBLE_BALANCE.toLocaleString()}
+              <span className="block text-[28px] font-semibold leading-none" style={{ color: palette.accent }}>
+                {pointsText}
               </span>
-              <span className="mt-1.5 block text-[11px] tracking-[0.02em] text-member-muted">
+              <span className="mt-1.5 block text-[11px] tracking-[0.02em]" style={{ color: palette.muted }}>
                 {MEMBER_PROFILE.bubbleUnit}
               </span>
             </button>
           </div>
-          <div className="mt-4 h-px bg-member-muted/45" aria-hidden />
+          <div className="mt-4 h-px" style={{ backgroundColor: palette.divider }} aria-hidden />
           <div className="mt-3 flex items-center justify-between">
-            <span className="text-[11px] tracking-[0.14em] text-member-muted">{MEMBER_PROFILE.cardNo}</span>
+            <span className="text-[11px] tracking-[0.14em]" style={{ color: palette.muted }}>
+              {profile?.kbsId ? `会员 ID ${profile.kbsId}` : '会员 ID --'}
+            </span>
             <button
               type="button"
               onClick={() => navigate('/membership/levels')}
-              className="flex items-center gap-0.5 text-xs text-member-accent"
+              className="flex items-center gap-0.5 text-xs"
+              style={{ color: palette.accent }}
             >
               {MEMBER_PROFILE.levelEntryLabel}
               <ChevronRight className="h-3.5 w-3.5" aria-hidden />
@@ -95,6 +120,20 @@ export default function Membership() {
           </div>
         </div>
       </section>
+
+      {(profileError || pointsError) ? (
+        <div className="mx-4 flex items-center justify-between gap-2 rounded-container bg-surface px-3 py-2 text-xs text-text-secondary" role="status">
+          <span>{profileError ? '会员资料暂不可用' : '泡泡值暂不可用'}</span>
+          <button
+            type="button"
+            className="font-semibold text-reward-text"
+            onClick={() => {
+              if (profileError) reloadProfile()
+              if (pointsError) reloadPoints()
+            }}
+          >重试</button>
+        </div>
+      ) : null}
 
       <section
         className="mx-4 rounded-feature border border-border-subtle bg-claim-surface p-4 shadow-[0_10px_28px_rgba(51,37,20,0.06)]"
@@ -113,13 +152,14 @@ export default function Membership() {
               >
                 <span
                   className="flex h-[54px] w-[54px] items-center justify-center rounded-full p-[3px] shadow-member transition duration-150 group-active:scale-[0.96]"
-                  style={{ backgroundImage: 'var(--gradient-bubble)' }}
+                  style={{ backgroundColor: palette.badgeBackground }}
+                  data-member-entry-ring={entry.id}
                 >
                   <span
-                    className="flex h-full w-full items-center justify-center rounded-full bg-member-surface"
-                    style={{ backgroundImage: 'var(--gradient-member)' }}
+                    className="flex h-full w-full items-center justify-center rounded-full"
+                    style={{ backgroundColor: palette.surface }}
                   >
-                    <Icon className="h-6 w-6 text-member-accent" strokeWidth={1.8} aria-hidden />
+                    <Icon className="h-6 w-6" style={{ color: palette.accent }} strokeWidth={1.8} aria-hidden />
                   </span>
                 </span>
                 <span className="w-full truncate text-center text-[13px] font-semibold text-text-primary">

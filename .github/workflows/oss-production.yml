@@ -1,0 +1,113 @@
+name: OSS Production Package
+
+on:
+  pull_request:
+    branches: [dev, test, prod]
+  push:
+    branches: [prod]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: oss-production-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  package-check:
+    name: Verify production package (no cloud credentials)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # CI-only values. These must never be used for an actual OSS upload.
+      VITE_API_BASE_URL: https://api.example.invalid
+      VITE_BUDDY_PUBLIC_ORIGIN: https://h5.example.invalid
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build:prod
+      - name: Verify distributable identity and artifacts
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs')
+          const m = JSON.parse(fs.readFileSync('dist/build-meta.json', 'utf8'))
+          if (m.appEnvironment !== 'prod' || m.dataMode !== 'api' || m.bridgeMode !== 'native' ||
+              !m.apiBaseConfigured || !m.buddyPublicOriginConfigured) process.exit(1)
+          NODE
+          test -f dist/index.html
+          test ! -f dist/mockServiceWorker.js
+
+  upload-oss:
+    name: Upload immutable release to OSS
+    if: github.event_name == 'push' && github.ref == 'refs/heads/prod'
+    needs: package-check
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Set protection and scoped secrets in GitHub Settings -> Environments.
+    environment: oss-production
+    env:
+      OSS_REGION: cn-guangzhou
+      OSS_ENDPOINT: https://oss-cn-guangzhou.aliyuncs.com
+      OSS_ACCESS_KEY_ID: ${{ secrets.OSS_ACCESS_KEY_ID }}
+      OSS_ACCESS_KEY_SECRET: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
+      VITE_API_BASE_URL: ${{ vars.OSS_PROD_API_BASE_URL }}
+      VITE_BUDDY_PUBLIC_ORIGIN: ${{ vars.OSS_PROD_PUBLIC_ORIGIN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Reject missing or unsuitable production settings
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$OSS_ACCESS_KEY_ID"
+          test -n "$OSS_ACCESS_KEY_SECRET"
+          [[ "$VITE_API_BASE_URL" == https://* ]]
+          [[ "$VITE_BUDDY_PUBLIC_ORIGIN" == https://* ]]
+          if [[ "$VITE_BUDDY_PUBLIC_ORIGIN" == *.aliyuncs.com ]]; then
+            echo "OSS default Bucket domains cannot serve an H5 page; configure a real public origin."
+            exit 1
+          fi
+      - run: npm ci --no-audit --no-fund
+      - name: Build production H5 with real production configuration
+        run: npm run build:prod
+      - name: Validate production package
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs')
+          const m = JSON.parse(fs.readFileSync('dist/build-meta.json', 'utf8'))
+          if (m.appEnvironment !== 'prod' || m.dataMode !== 'api' || m.bridgeMode !== 'native' ||
+              !m.apiBaseConfigured || !m.buddyPublicOriginConfigured ||
+              m.build.sha !== process.env.GITHUB_SHA) process.exit(1)
+          NODE
+          test -f dist/index.html
+          test ! -f dist/mockServiceWorker.js
+      - name: Install official ossutil 2.4.0 (checksum verified)
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fL --retry 3 --output /tmp/ossutil.zip \
+            https://gosspublic.alicdn.com/ossutil/v2/2.4.0/ossutil-2.4.0-linux-amd64.zip
+          echo "85edf66b2fb7238f5c7e25cab820cf29312319fe4935b7c86a6b8485eb434f3c  /tmp/ossutil.zip" | sha256sum -c -
+          unzip -q /tmp/ossutil.zip -d /tmp/ossutil-install
+          sudo install -m 755 /tmp/ossutil-install/ossutil-2.4.0-linux-amd64/ossutil /usr/local/bin/ossutil
+          ossutil version
+      - name: Upload versioned package (non-destructive)
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Every run attempt has a distinct path; retrying never overwrites prior evidence.
+          target="oss://kbs-sdl/h5/releases/${GITHUB_SHA}/${GITHUB_RUN_ID}.${GITHUB_RUN_ATTEMPT}/"
+          ossutil cp -r dist/ "$target"
+          ossutil stat "${target}index.html"
+          ossutil stat "${target}build-meta.json"
+          echo "Uploaded OSS release: $target" >> "$GITHUB_STEP_SUMMARY"
+          echo "This is an immutable deployment artifact, NOT a publicly usable H5 URL." >> "$GITHUB_STEP_SUMMARY"
