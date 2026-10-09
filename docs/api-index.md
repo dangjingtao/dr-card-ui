@@ -102,3 +102,13 @@
 > `POST /api/signrecords/makeup` 已纳入最新《签到页面接口文档》；补签前仍必须先通过 Native 激励广告闸门，详见 `engineering/checkin-api-integration.md` §3、§5.1、§6。
 
 > 后端 CRUD 自动生成的 `index/add/detail/update/delete/select` 六件套见 `docs/api/dearseed-api.md`；其中 `add/update/delete` 属后台管理，H5 原则上不直接调用。
+
+
+## 2026-10-09 后台新增 API 的历史核对快照
+
+[后台新增接口、DTO 差异与产品合同审计（2026-10-09 静态快照）](./engineering/backend-api-delta-2026-10-09.md)
+
+- **仅确认后端源码**：`API/master@7e1f710` 当时的 Friends、通知、客服 SSE/Socket、券分类与兑换接口形状；真实部署与授权负向测试另行验收。
+- **H5 晚间已合入 dev**：通知 #128、券分类 #132、搭子 #133/#134/#139、客服 #141/#147 等实现；不能沿用快照中的“未实施”作为现状。
+- **不可合并解释的阻塞**：第三方发券、好友关系安全/状态历史、扫码分流、真人坐席、App WebView 等必须根据对应 Issue 和真实环境证据判定，不因源代码存在就宣布可用。
+
