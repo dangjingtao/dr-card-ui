@@ -41,6 +41,7 @@ const invitationSchema = z.object({
   inviter: buddyUserSchema,
   status: z.enum(['pending', 'completed']),
   createdAt: z.string().min(1),
+  detail: z.string().optional(),
 })
 export type BuddyPhoneInvitation = z.infer<typeof invitationSchema>
 const inboxSchema = z.discriminatedUnion('ok', [

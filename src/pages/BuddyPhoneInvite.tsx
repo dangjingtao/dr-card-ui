@@ -11,6 +11,7 @@ import { isCompleteBuddyPhone, type BuddyPhoneSearchOutcome, type BuddyPhoneUser
 import {
   acceptBuddyPhoneInvitation,
   buddyPhoneContractReady,
+  buddyPhoneDirectSendReady,
   searchBuddyByPhone,
   sendBuddyPhoneInvite,
 } from '../services/buddyPhoneGateway'
@@ -116,6 +117,27 @@ export default function BuddyPhoneInvite() {
     }
   }
 
+  // Backend currently has POST /api/friends/add {mobile}, but no safe pre-send lookup.
+  // Make this a clearly explicit user action; a successful POST is ONLY a pending application.
+  const sendDirect = async () => {
+    if (!buddyPhoneDirectSendReady || pending || !isCompleteBuddyPhone(phone)) return
+    const seq = searchSeq.current
+    setPending(true)
+    setError(null)
+    setStatusText(null)
+    try {
+      await sendBuddyPhoneInvite(phone.trim())
+      if (!mounted.current || seq !== searchSeq.current) return
+      setStatusText('申请已发送，等待对方在通知中心确认；目前尚未成为搭子')
+    } catch (error) {
+      if (mounted.current && seq === searchSeq.current) {
+        setError(error instanceof Error ? error.message : '申请发送失败，请稍后重试')
+      }
+    } finally {
+      if (mounted.current) setPending(false)
+    }
+  }
+
   const confirm = async () => {
     if (!invitationId || pending || outcome !== 'incoming-pending') return
     const seq = searchSeq.current
@@ -141,27 +163,38 @@ export default function BuddyPhoneInvite() {
     <>
       <PageContainer inset={false} className="pb-8">
         <section className="px-4 pt-4" aria-label={BUDDY_INVITE_COPY.phoneTitle}>
-          <form onSubmit={(event) => { event.preventDefault(); void search() }} className="flex items-center gap-2">
+          <form onSubmit={(event) => { event.preventDefault(); if (buddyPhoneDirectSendReady) void sendDirect(); else void search() }} className="flex items-center gap-2">
             <SearchField
-              type="tel" inputMode="tel" aria-label="输入完整手机号搜索搭子"
+              type="tel" inputMode="tel" aria-label={buddyPhoneDirectSendReady ? "输入完整手机号发送好友申请" : "输入完整手机号搜索搭子"}
               placeholder="请输入完整手机号" value={phone} variant="pill"
               inputClassName="placeholder:text-text-tertiary" loading={outcome === 'searching'}
               onChange={(event) => resetSearch(event.target.value)}
               onClear={() => resetSearch('')}
               className="min-w-0 flex-1 px-4"
             />
-            <Button type="submit" disabled={!canSearch} className="h-11 flex-none rounded-pill px-5">搜索</Button>
+            {buddyPhoneContractReady && (
+              <Button type="submit" disabled={!canSearch} className="h-11 flex-none rounded-pill px-5">搜索</Button>
+            )}
+            {buddyPhoneDirectSendReady && (
+              <Button type="button" loading={pending} disabled={pending || !isCompleteBuddyPhone(phone)}
+                className="h-11 flex-none rounded-pill px-3" onClick={() => void sendDirect()}>
+                发送申请
+              </Button>
+            )}
           </form>
-          {!buddyPhoneContractReady && (
-            <p role="status" className="mt-3 rounded-container bg-surface px-3 py-3 text-center text-sm text-text-secondary">
-              搭子搜索与邀请接口待后台接入，目前不可使用
+          {buddyPhoneDirectSendReady && (
+            <p role="status" className="mt-3 rounded-container bg-surface px-3 py-3 text-sm leading-6 text-text-secondary">
+              后台暂未提供手机号只读搜索。输入完整手机号后可直接发送好友申请，
+              对方确认后才能成为搭子；发送前不会显示对方昵称头像。
             </p>
           )}
           {buddyPhoneContractReady && (
             <p className="mt-2 text-xs text-buddy-muted">演示数据，仅用于交互验收，不会向真实账号发送邀请</p>
           )}
-          <h2 className="mt-6 px-1 text-sm font-medium text-buddy-text">{BUDDY_INVITE_COPY.phoneResult}</h2>
-          {outcome === 'idle' && !error && (
+          {buddyPhoneContractReady && (
+            <h2 className="mt-6 px-1 text-sm font-medium text-buddy-text">{BUDDY_INVITE_COPY.phoneResult}</h2>
+          )}
+          {outcome === 'idle' && !error && buddyPhoneContractReady && (
             <div className="mt-3 rounded-container bg-surface px-4 py-8 text-center shadow-card">
               <UserRoundPlus className="mx-auto h-8 w-8 text-text-tertiary" aria-hidden />
               <p className="mt-2 text-sm text-text-tertiary">输入完整手机号查找洗头搭子</p>

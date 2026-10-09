@@ -101,3 +101,19 @@ H5 已在 #111 分支补齐搜索结果状态、真实资料字段展示、反�
 - `src/pages/Buddy.tsx`：正式模式从关系服务取得当前登录人的 `items`，支持 loading / 空态 / 请求失败重试 / 列表头像回退。**不得混用本地 fixture 写成真实列表**。
 - 目前后台 `#105` 与 Native `#110` 均未签署：`signedBackend` 默认未配置，API/test/prod 显示不可用和重试，但**不执行写操作、不假建关系**；preview/dev 的演示二维码和搭子列表明确标注模拟数据，点击演示确认只回显「不建立真实关系」。
 - 双方联调必须证明：App 底部共用扫码识别搭子码→H5 预览/确认→真实列表刷新，并且**设备/卡券二维码能继续原事务与最终结果回调**；微信/system 相机只进入静态提示页。未知码不得执行任何交易。至少两个真实账号验证无效/自己/重复/取消/幂等/刷新重进。
+
+## 2026-10-09｜对接已实现的真实后台接口（H5 #105 适配）
+
+已对照 `workspace/API` 的 `kbs/API master@b6d2821` 实际 controller、service、docs/api-buddy.md、Notices，前端仅在 `runtimePolicy.dataMode === 'api'` 时走下列真实接口（dev/preview Mock 保持独立）。
+
+| H5 能力 | 已有后台端点 | 前端口径 |
+| --- | --- | --- |
+| 我的搭子列表 | GET /api/friends/index?page&pageSize | 按登录用户分页读取 status=20，在 `data.data[].friend` 取对方 id/nick_name/avatar_img，翻页取全，不接受 user_id |
+| 手机号发送申请 | POST /api/friends/add {mobile, source:10} | 只有手动点击才写；响应 status=10 是 pending，**不是直接绑定**。后台尚无安全的只读手机号预览，正式模式改为“输入完整手机号直接发送申请”，绝不编造对方头像昵称 |
+| 我的好友申请通知 | GET /api/notices/index?type=60&page&pageSize | 按已登录用户读取，解析 extra_json.friends_id **关系记录 ID**（不是 notice.id），显示后端 content 文本；既有通知普通已读与确认分开 |
+| 明确接受申请 | POST /api/friends/agree {id: friends_id} | 必须点击确认；只接受 status=20 响应，后台同意后删除对应 type=60 通知，H5 重新拉取；不保留虚构的完成历史 |
+| 唯一识别码查公开资料 | GET /api/user/code?identify_code=UUID | 仅只读、强制 UUID 输入并只映射昵称/头像/ID；**不能据此生成官方二维码 URL** |
+
+以上使用现有统一 `parseApiEnvelope` 的 `code === 0` 判定、现有 HTTP session 授权，并在契约解析失败时如实报错。H5 对接的是已经存在的接口形状；**代码已接线≠后台测试/生产环境已部署，≠真人账号真机验收**。
+
+仍待后台同事：手机号精确只读搜索、关系状态查询/反向待处理、官方 HTTPS 二维码 URL、扫码预览+直接确认原子事务、完成通知持久化、识别码补齐持久化、安全/归属与权限问题。特别注意，/api/friends/agree 的 `id` 必须是朋友申请的业务记录编号，不能传用户 ID 或通知 ID；旧 /api/friends/update/delete 不得用于绕过确认。#110 Native 按码分流继续保留原设备和卡券核销事务。

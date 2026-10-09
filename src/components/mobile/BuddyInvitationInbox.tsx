@@ -2,18 +2,23 @@ import { useEffect, useState } from 'react'
 import { CheckCircle2, Loader2, UserRoundPlus } from 'lucide-react'
 import { Button, Dialog } from '../ui'
 import type { BuddyPhoneInvitation } from '../../services/buddyPhone'
-import { buddyPhoneContractReady, getBuddyPhoneInvitations, acceptBuddyPhoneInvitation } from '../../services/buddyPhoneGateway'
+import { buddyPhoneInboxReady, buddyPhoneContractReady, getBuddyPhoneInvitations, acceptBuddyPhoneInvitation } from '../../services/buddyPhoneGateway'
 
-/** Invitation processing is not notification read/unread. Production remains fail-closed until #105/#95. */
+/**
+ * Pending buddy invitations from actual type=60 notices, or explicit dev Mock data.
+ * Confirming an invitation is a real backend business action, NOT notification read.
+ * Backend soft-deletes the notice after approval; history support remains outstanding.
+ */
 export default function BuddyInvitationInbox() {
   const [items, setItems] = useState<BuddyPhoneInvitation[]>([])
-  const [loading, setLoading] = useState(buddyPhoneContractReady)
+  const [loading, setLoading] = useState(buddyPhoneInboxReady)
   const [error, setError] = useState<string | null>(null)
   const [selected, setSelected] = useState<BuddyPhoneInvitation | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [completedMessage, setCompletedMessage] = useState<string | null>(null)
 
   const refresh = async () => {
-    if (!buddyPhoneContractReady) return
+    if (!buddyPhoneInboxReady) return
     setLoading(true)
     setError(null)
     try { setItems(await getBuddyPhoneInvitations()) }
@@ -22,7 +27,7 @@ export default function BuddyInvitationInbox() {
   }
 
   useEffect(() => {
-    if (!buddyPhoneContractReady) return
+    if (!buddyPhoneInboxReady) return
     let active = true
     void getBuddyPhoneInvitations()
       .then(value => { if (active) setItems(value) })
@@ -39,6 +44,7 @@ export default function BuddyInvitationInbox() {
       await acceptBuddyPhoneInvitation(selected.id)
       setSelected(null)
       await refresh() // server/mock transport is the only invitation status truth
+      if (!buddyPhoneContractReady) setCompletedMessage('已同意申请。后台会移除已处理通知，可到搭子列表查看真实关系。')
     } catch { setError('确认失败，请稍后重试') }
     finally { setSubmitting(false) }
   }
@@ -49,7 +55,7 @@ export default function BuddyInvitationInbox() {
         <h2 className="text-sm font-semibold text-buddy-text">洗头搭子邀请</h2>
         {buddyPhoneContractReady && <span className="text-xs text-buddy-muted">演示数据</span>}
       </div>
-      {!buddyPhoneContractReady ? (
+      {!buddyPhoneInboxReady ? (
         <p role="status" className="text-sm leading-6 text-text-secondary">
           搭子邀请通知接口待后台接入，当前无法查询或确认真实邀请
         </p>
@@ -71,7 +77,7 @@ export default function BuddyInvitationInbox() {
                   </span>
                 )}
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-buddy-text">{item.inviter.nickname}</p>
+                  <p className="text-sm font-medium text-buddy-text">{item.detail || item.inviter.nickname}</p>
                   <p className="text-xs text-text-secondary">
                     {item.status === 'pending' ? '邀请你成为洗头搭子 · 等待确认' : '已成为搭子 · 邀请已完成'}
                   </p>
@@ -88,6 +94,7 @@ export default function BuddyInvitationInbox() {
           </div>
         </>
       )}
+      {completedMessage && <p role="status" className="mt-3 text-sm text-buddy-accent">{completedMessage}</p>}
       {error && (
         <div role="alert" className="mt-3 space-y-2 text-xs text-danger-text">
           <p>{error}</p><Button variant="outline" onClick={() => void refresh()}>重试</Button>
@@ -99,7 +106,7 @@ export default function BuddyInvitationInbox() {
           <Button variant="outline" disabled={submitting} onClick={() => setSelected(null)}>取消</Button>
           <Button loading={submitting} disabled={submitting} onClick={() => void confirm()}>确认成为搭子</Button>
         </>}>
-        {selected?.inviter.nickname} 邀请你成为洗头搭子。成为搭子后，当前版本暂不支持解除关系。
+        {selected?.detail || `${selected?.inviter.nickname} 邀请你成为洗头搭子`}。成为搭子后，当前版本暂不支持解除关系。
         关闭通知或取消不会拒绝邀请。
       </Dialog>
     </section>
