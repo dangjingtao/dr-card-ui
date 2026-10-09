@@ -78,6 +78,51 @@ describe('#122 remote notice state', () => {
     expect(useApiNoticeStore.getState().items[0]?.unread).toBe(false)
   })
 
+  it('releases pagination after a superseding refresh, ignoring the stale page response', async () => {
+    mocks.fetchPage.mockResolvedValueOnce(page([31], 1, 2))
+    await act(async () => { await refreshRemoteNotices() })
+    let resolveOld: ((data: ReturnType<typeof page>) => void) | undefined
+    mocks.fetchPage.mockImplementationOnce(() => new Promise(resolve => { resolveOld = resolve }))
+      .mockResolvedValueOnce(page([31], 1, 2))
+    const oldPage = loadMoreRemoteNotices()
+    expect(useApiNoticeStore.getState().loadingMore).toBe(true)
+    await act(async () => { await refreshRemoteNotices() })
+    expect(useApiNoticeStore.getState().loadingMore).toBe(false)
+    resolveOld?.(page([32], 2, 2))
+    await act(async () => { await oldPage })
+    expect(useApiNoticeStore.getState().items.map(x => x.id)).toEqual(['31'])
+    expect(useApiNoticeStore.getState().loadingMore).toBe(false)
+    mocks.fetchPage.mockResolvedValueOnce(page([33], 2, 2))
+    await act(async () => { await loadMoreRemoteNotices() })
+    expect(useApiNoticeStore.getState().items.map(x => x.id)).toEqual(['31', '33'])
+  })
+
+  it('releases pagination when its superseding refresh fails', async () => {
+    mocks.fetchPage.mockResolvedValueOnce(page([31], 1, 2))
+    await act(async () => { await refreshRemoteNotices() })
+    let resolveOld: ((data: ReturnType<typeof page>) => void) | undefined
+    mocks.fetchPage.mockImplementationOnce(() => new Promise(resolve => { resolveOld = resolve }))
+      .mockRejectedValueOnce(new Error('backend offline'))
+    const oldPage = loadMoreRemoteNotices()
+    await act(async () => { await refreshRemoteNotices() })
+    expect(useApiNoticeStore.getState().loadingMore).toBe(false)
+    expect(useApiNoticeStore.getState().error).toMatch(/加载失败/)
+    resolveOld?.(page([32], 2, 2))
+    await act(async () => { await oldPage })
+    expect(useApiNoticeStore.getState().loadingMore).toBe(false)
+  })
+
+  it('scopes a detail error to the notice that failed', async () => {
+    mocks.fetchDetail.mockRejectedValueOnce(new Error('missing'))
+    await act(async () => { await loadRemoteNoticeDetail('31') })
+    expect(useApiNoticeStore.getState().detailErrorId).toBe('31')
+    mocks.fetchDetail.mockResolvedValueOnce(data(91, 1))
+    await act(async () => { await loadRemoteNoticeDetail('91') })
+    expect(useApiNoticeStore.getState().detailError).toBeNull()
+    expect(useApiNoticeStore.getState().detailErrorId).toBeNull()
+    expect(useApiNoticeStore.getState().details['91']?.id).toBe('91')
+  })
+
   it('clears cached messages on authenticated identity change', async () => {
     mocks.fetchPage.mockResolvedValueOnce(page([31])).mockResolvedValueOnce(page([91]))
     await act(async () => { await refreshRemoteNotices() })
