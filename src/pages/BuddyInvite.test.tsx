@@ -52,6 +52,7 @@ describe('BuddyInvite real QR image / poster workflow', () => {
     expect(mocks.renderBuddyQrPng).toHaveBeenCalledWith(demoUrl)
     expect(screen.getByText(/演示二维码，仅用于预览/)).toBeTruthy()
     expect(screen.queryByRole('button', { name: /复制链接/ })).toBeNull()
+    expect(screen.getByText('更多分享方式')).toBeTruthy()
     expect(mocks.saveInvitePoster).not.toHaveBeenCalled()
   })
 
@@ -71,7 +72,7 @@ describe('BuddyInvite real QR image / poster workflow', () => {
     fireEvent.click(screen.getByRole('button', { name: /保存到本地/ }))
     await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith('/buddy/invite/qrcode', {
       state: 'saved', debug: null,
-    }))
+    }, { state: { buddyPosterPreview: 'data:image/png;base64,cG9zdGVy' } }))
     expect(mocks.createBuddyPoster).toHaveBeenCalledWith(png, { demo: true })
     expect(mocks.saveInvitePoster).toHaveBeenCalledWith(poster)
   })
@@ -84,7 +85,7 @@ describe('BuddyInvite real QR image / poster workflow', () => {
     fireEvent.click(screen.getByRole('button', { name: /保存到本地/ }))
     await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith('/buddy/invite/qrcode', {
       state: 'poster-failed', debug: null,
-    }))
+    }, { state: undefined }))
     expect(mocks.saveInvitePoster).not.toHaveBeenCalled()
   })
 
@@ -96,6 +97,6 @@ describe('BuddyInvite real QR image / poster workflow', () => {
     fireEvent.click(screen.getByRole('button', { name: /保存到本地/ }))
     await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith('/buddy/invite/qrcode', {
       state: 'poster-failed', debug: null,
-    }))
+    }, { state: undefined }))
   })
 })

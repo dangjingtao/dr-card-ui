@@ -47,11 +47,16 @@ export default function BuddyInvite() {
     if (pending || qr.status !== 'ready') return
     setPending(true)
     let outcome: 'saved' | 'poster-failed' = 'poster-failed'
+    let posterPreview: string | undefined
     try {
       // 先从已展示的同一 PNG QR 生成可导出海报，再交给现有 Native 保存接口。
       const payload = await createBuddyPoster(qr.dataUrl, { demo: qr.demo })
       const result = await saveInvitePoster(payload)
-      if (result.outcome === 'poster-saved' && result.ok) outcome = 'saved'
+      if (result.outcome === 'poster-saved' && result.ok) {
+        outcome = 'saved'
+        // Only the actual saved bytes are displayed in the result; never a fixture placeholder.
+        posterPreview = `data:image/png;base64,${payload.imageData}`
+      }
     } catch {
       // canvas / 图片读取 / 相册权限失败都不能伪装保存成功。
     } finally {
@@ -60,7 +65,7 @@ export default function BuddyInvite() {
         fixtureNavigate('/buddy/invite/qrcode', {
           state: outcome,
           debug: debug ? '1' : null,
-        })
+        }, { state: posterPreview ? { buddyPosterPreview: posterPreview } : undefined })
       }
     }
   }
@@ -118,7 +123,8 @@ export default function BuddyInvite() {
         </div>
       </section>
 
-      <section className="mt-5 px-4" aria-label="保存邀请海报">
+      <section className="mt-5 px-4" aria-label={BUDDY_INVITE_COPY.moreShare}>
+        <p className="px-1 text-sm font-medium text-buddy-text">{BUDDY_INVITE_COPY.moreShare}</p>
         <button
           type="button"
           onClick={() => void sharePoster()}
