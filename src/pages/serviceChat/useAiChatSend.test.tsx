@@ -112,6 +112,35 @@ describe('#137 AI stream UI state machine', () => {
     hook.unmount()
   })
 
+  it('retains a content-free warning when re-authentication clears and replaces the session mid-POST', async () => {
+    let complete!: (value: { mode: 'ai'; text: string; messageId: number }) => void
+    mocks.send.mockImplementationOnce(() => new Promise(resolve => { complete = resolve }))
+    const hook = renderHook(() => useAiChatSend(vi.fn()))
+    await act(async () => { void hook.result.current.send('仅A用户可见的敏感问题', []) })
+    expect(hook.result.current.messages).toHaveLength(1)
+
+    await act(async () => {
+      mocks.token = ''
+      window.dispatchEvent(new Event('dr-card-ui:auth-session-cleared'))
+    })
+    expect(hook.result.current.messages).toEqual([])
+    expect(hook.result.current.phase).toBe('failed')
+    expect(hook.result.current.error).toContain('检查聊天历史')
+    expect(hook.result.current.error).not.toContain('敏感问题')
+    await act(async () => {
+      mocks.token = 'refreshed-token'
+      window.dispatchEvent(new Event('dr-card-ui:auth-session-changed'))
+    })
+    expect(hook.result.current.messages).toEqual([])
+    expect(hook.result.current.error).toContain('检查聊天历史')
+    await act(async () => { complete({ mode: 'ai', text: '旧用户回复', messageId: 32 }) })
+    expect(hook.result.current.messages).toEqual([])
+    expect(hook.result.current.error).not.toContain('敏感问题')
+    act(() => hook.result.current.clear())
+    expect(hook.result.current.phase).toBe('idle')
+    hook.unmount()
+  })
+
   it('deduplicates confirmed server AI bubbles against transient bubbles by ID', () => {
     const official = message(50, 'bot', '服务器的回答')
     const transient = { id: '50', role: 'bot' as const, text: '流中回答', status: 'sent' as const }
