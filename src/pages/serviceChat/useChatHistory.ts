@@ -80,6 +80,31 @@ export function useChatHistory() {
     )
   }, [update])
 
+  /** Reconcile persisted messages without blanking an active chat. */
+  const syncLatest = useCallback(async (): Promise<ChatHistoryMessage[] | null> => {
+    const state = current.current
+    const key = sessionToken()
+    if (state.token !== key || state.data.status !== 'ready') return null
+    pending.current?.abort()
+    const controller = new AbortController()
+    pending.current = controller
+    const requestRevision = ++revision.current
+    try {
+      const page = await fetchChatHistoryPage(1, undefined, controller.signal)
+      if (controller.signal.aborted || revision.current !== requestRevision || sessionToken() !== key) return null
+      const now = current.current
+      if (now.token !== key || now.data.status !== 'ready') return null
+      const latest = page.data.map(mapChatRecord)
+      update({ token: key, data: {
+        ...now.data, messages: mergeChatHistory(now.data.messages, latest),
+        page: 1, lastPage: page.last_page, loadingMore: false, moreError: null,
+      } })
+      return latest
+    } catch {
+      return null
+    }
+  }, [update])
+
   useEffect(() => {
     reload()
     const onSessionChanged = () => reload()
@@ -93,5 +118,5 @@ export function useChatHistory() {
     }
   }, [reload])
 
-  return { ...data, hasMore: data.status === 'ready' && data.page < data.lastPage, reload, loadMore }
+  return { ...data, hasMore: data.status === 'ready' && data.page < data.lastPage, reload, loadMore, syncLatest }
 }
