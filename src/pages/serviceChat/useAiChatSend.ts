@@ -28,10 +28,12 @@ export function useAiChatSend(syncLatest: () => Promise<ChatHistoryMessage[] | n
   const locked = useRef(false)
   const generation = useRef(0)
   const sequence = useRef(0)
+  const authInterrupted = useRef(false)
   const mounted = useRef(true)
 
   const clear = useCallback(() => {
     generation.current++
+    authInterrupted.current = false
     controller.current?.abort()
     controller.current = null
     locked.current = false
@@ -40,7 +42,20 @@ export function useAiChatSend(syncLatest: () => Promise<ChatHistoryMessage[] | n
 
   useEffect(() => {
     mounted.current = true
-    const onAuthChange = () => clear()
+    const onAuthChange = () => {
+      // Re-authentication and a genuine account switch both invalidate private bubbles.
+      // Keep ONLY a content-free warning across transient token loss/new token events,
+      // or a 401-cleared session would hide the uncertain-delivery warning entirely.
+      const interrupted = locked.current || authInterrupted.current
+      clear()
+      if (interrupted) {
+        authInterrupted.current = true
+        setSnapshot({
+          ...blank(), phase: 'failed',
+          error: '登录状态变化，当前消息结果尚未确认。' + CHECK_HISTORY,
+        })
+      }
+    }
     window.addEventListener('dr-card-ui:auth-session-changed', onAuthChange)
     window.addEventListener('dr-card-ui:auth-session-cleared', onAuthChange)
     return () => {
