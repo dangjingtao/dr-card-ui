@@ -20,7 +20,7 @@ test('@formal-h5 UX-D notification tabs remain sticky and navigation retains sel
   const viewportTitleBar = await header.count()
   if (viewportTitleBar) {
     const titleBox = await header.first().boundingBox()
-    if (titleBox) expect(topAfterScroll).toBeGreaterThanOrEqual(titleBox.bottom - 2)
+    if (titleBox) expect(topAfterScroll).toBeGreaterThanOrEqual(titleBox.y + titleBox.height - 2)
   }
   expect(Math.abs(topAfterScroll - tabsBefore!.y)).toBeLessThanOrEqual(2)
 
