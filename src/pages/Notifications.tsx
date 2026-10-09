@@ -9,6 +9,7 @@ import {
   Sparkles,
 } from 'lucide-react'
 import PageContainer from '../components/mobile/PageContainer'
+import BuddyInvitationInbox from '../components/mobile/BuddyInvitationInbox'
 import { Button, Dialog, EmptyState, SegmentedControl, Toast } from '../components/ui'
 import { useFixtureState, useOverlay } from '../app/fixtures/useFixture'
 import { findRouteByPathname } from '../app/router/routes'
@@ -122,6 +123,8 @@ export default function Notifications() {
         <SegmentedControl items={tabs} value={tab} onChange={(value) => setTab(value as TabKey)} />
       </div>
 
+      {/* Business invitation status does not change when a generic notification is marked read. */}
+      {(tab === 'all' || tab === 'unread') && <BuddyInvitationInbox />}
       <div className="px-4 pt-3" aria-live="polite">
         {groups.length > 0 ? (
           <div className="flex flex-col gap-2.5">

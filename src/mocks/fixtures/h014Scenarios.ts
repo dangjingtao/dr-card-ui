@@ -1,5 +1,8 @@
 export const H014_BUDDY_PHONE_SCENARIOS = {
   success: '13900000000',
+  incoming: '13800000004',
+  alreadyBuddies: '13800000005',
+  self: '13800000006',
   empty: '13800000000',
   invited: '13800000001',
   businessError: '13800000002',

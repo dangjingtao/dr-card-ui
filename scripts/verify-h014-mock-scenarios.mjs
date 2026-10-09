@@ -19,6 +19,8 @@ try {
   const {
     searchBuddyByPhone,
     sendBuddyPhoneInvite,
+    getBuddyPhoneInvitations,
+    acceptBuddyPhoneInvitation,
   } = await vite.ssrLoadModule('/src/services/buddyPhone.ts')
   const { redeemExchangeProduct } = await vite.ssrLoadModule('/src/services/exchange.ts')
   const { AppError } = await vite.ssrLoadModule('/src/services/http/appError.ts')
@@ -30,15 +32,9 @@ try {
   mockServer = setupServer(...handlers)
   mockServer.listen({ onUnhandledRequest: 'error' })
 
-  assert.deepEqual(await searchBuddyByPhone(H014_BUDDY_PHONE_SCENARIOS.success), {
-    outcome: 'invitable',
-  })
-  assert.deepEqual(await searchBuddyByPhone(H014_BUDDY_PHONE_SCENARIOS.empty), {
-    outcome: 'not-found',
-  })
-  assert.deepEqual(await searchBuddyByPhone(H014_BUDDY_PHONE_SCENARIOS.invited), {
-    outcome: 'invited',
-  })
+  assert.equal((await searchBuddyByPhone(H014_BUDDY_PHONE_SCENARIOS.success)).outcome, 'invitable')
+  assert.equal((await searchBuddyByPhone(H014_BUDDY_PHONE_SCENARIOS.empty)).outcome, 'not-found')
+  assert.equal((await searchBuddyByPhone(H014_BUDDY_PHONE_SCENARIOS.invited)).outcome, 'invited')
 
   await assert.rejects(
     searchBuddyByPhone(H014_BUDDY_PHONE_SCENARIOS.businessError),
@@ -58,18 +54,28 @@ try {
   )
 
   const slowStartedAt = performance.now()
-  assert.deepEqual(await searchBuddyByPhone(H014_BUDDY_PHONE_SCENARIOS.slow), {
-    outcome: 'invitable',
-  })
+  assert.equal((await searchBuddyByPhone(H014_BUDDY_PHONE_SCENARIOS.slow)).outcome, 'invitable')
   assert.ok(
     performance.now() - slowStartedAt >= H014_SLOW_RESPONSE_MS - 50,
     'slow scenario must be delayed at the network handler boundary',
   )
 
   const newlyInvitedPhone = '13900000088'
-  assert.deepEqual(await searchBuddyByPhone(newlyInvitedPhone), { outcome: 'invitable' })
+  assert.equal((await searchBuddyByPhone(newlyInvitedPhone)).outcome, 'invitable')
   await sendBuddyPhoneInvite(newlyInvitedPhone)
-  assert.deepEqual(await searchBuddyByPhone(newlyInvitedPhone), { outcome: 'invited' })
+  assert.equal((await searchBuddyByPhone(newlyInvitedPhone)).outcome, 'invited')
+
+  // #111 mock-specific invitation/notification semantics; no fake backend claims.
+  assert.equal((await searchBuddyByPhone(H014_BUDDY_PHONE_SCENARIOS.self)).outcome, 'self')
+  assert.equal((await searchBuddyByPhone(H014_BUDDY_PHONE_SCENARIOS.alreadyBuddies)).outcome, 'already-buddies')
+  const incoming = await searchBuddyByPhone(H014_BUDDY_PHONE_SCENARIOS.incoming)
+  assert.equal(incoming.outcome, 'incoming-pending')
+  assert.ok(incoming.invitationId)
+  assert.equal((await getBuddyPhoneInvitations())[0].status, 'pending')
+  assert.equal(await acceptBuddyPhoneInvitation(incoming.invitationId), 'accepted')
+  assert.equal((await getBuddyPhoneInvitations())[0].status, 'completed')
+  assert.equal((await searchBuddyByPhone(H014_BUDDY_PHONE_SCENARIOS.incoming)).outcome, 'already-buddies')
+  assert.equal(await acceptBuddyPhoneInvitation(incoming.invitationId), 'already-buddies')
 
   await redeemExchangeProduct('e1')
 
