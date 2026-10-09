@@ -1,5 +1,6 @@
 import { buddyPhoneHandlers } from './buddyPhone'
 import { checkinHandlers } from './checkin'
+import { chatMessageHandlers } from './chatMessages'
 import { couponCategoryHandlers } from './couponCategories'
 import { exchangeHandlers } from './exchange'
 import { homeHandlers } from './home'
@@ -17,6 +18,7 @@ export const handlers = [
   ...memberGradesHandlers,
   ...buddyPhoneHandlers,
   ...noticeHandlers,
+  ...chatMessageHandlers,
   ...couponCategoryHandlers,
   ...checkinHandlers,
   ...exchangeHandlers,

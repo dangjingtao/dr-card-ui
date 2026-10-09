@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
+import { runtimePolicy } from '../app/config/runtime'
+import ApiServiceChat from './ApiServiceChat'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Headset, Send } from 'lucide-react'
 import PageContainer from '../components/mobile/PageContainer'
@@ -32,7 +34,7 @@ const STATE_MESSAGES: Record<string, ChatMessage[]> = {
 /** T013R4：人工客服进入状态机 —— 'idle' / 'queuing' / 'connected' */
 type HumanStage = 'idle' | 'queuing' | 'connected'
 
-export default function ServiceChat() {
+function MockServiceChat() {
   const route = findRouteByPathname('/service/chat')
   const { state } = useFixtureState(route)
   const location = useLocation()
@@ -259,4 +261,9 @@ export default function ServiceChat() {
       <DebugPanel route={route} />
     </PageContainer>
   )
+}
+
+/** The old fixture/demo interaction never mounts in api/test/prod mode. */
+export default function ServiceChat() {
+  return runtimePolicy.dataMode === 'api' ? <ApiServiceChat /> : <MockServiceChat />
 }
