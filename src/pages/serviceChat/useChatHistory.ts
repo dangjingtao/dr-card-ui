@@ -97,7 +97,9 @@ export function useChatHistory() {
       const latest = page.data.map(mapChatRecord)
       update({ token: key, data: {
         ...now.data, messages: mergeChatHistory(now.data.messages, latest),
-        page: 1, lastPage: page.last_page, loadingMore: false, moreError: null,
+        // Reconnect uses pageSize=100, while regular pagination uses pageSize=30.
+            // Keep the original page/lastPage metadata rather than mixing sizes.
+            loadingMore: false, moreError: null,
       } })
       return latest
     } catch {
