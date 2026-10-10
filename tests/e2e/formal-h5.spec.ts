@@ -339,8 +339,9 @@ test('@formal-h5 H023 shared empty-state visual is stable across data pages', as
     await expect(image).toHaveCount(1)
     const box = await image.boundingBox()
     expect(box).not.toBeNull()
-    expect(Math.round(box?.width ?? 0)).toBe(112)
-    expect(Math.round(box?.height ?? 0)).toBe(112)
+    // Full-page brand empty states share the 168px standard illustration size.
+    expect(Math.round(box?.width ?? 0)).toBe(168)
+    expect(Math.round(box?.height ?? 0)).toBe(168)
   }
 
   expect(runtimeErrors, runtimeErrors.join('\n')).toEqual([])
