@@ -47,6 +47,15 @@ describe('live user detail contract', () => {
     })
   })
 
+  it('exposes the optional account ID for a PIN mask without returning the password', async () => {
+    mocks.request.mockResolvedValue({
+      code: 0, data: { id: 5, nick_name: '示例', student_grade: '研一', birthday: null },
+    })
+    const detail = await fetchUserProfileDetail()
+    expect(detail.userId).toBe(5)
+    expect(detail).not.toHaveProperty('consume_password')
+  })
+
   it('prefers the persisted student_grade when membership grade differs', async () => {
     mocks.request.mockResolvedValue({
       code: 0,
