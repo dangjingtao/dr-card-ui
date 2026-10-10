@@ -12,7 +12,7 @@ import {
 } from 'lucide-react'
 import DebugPanel from '../components/mobile/DebugPanel'
 import PageContainer from '../components/mobile/PageContainer'
-import { Button, EmptyState, ProgressIndicator } from '../components/ui'
+import { Button, EmptyState, ProgressIndicator, Skeleton } from '../components/ui'
 import { findRouteByPathname } from '../app/router/routes'
 import { LUCK_PLACEHOLDER } from '../app/fixtures'
 import {
@@ -173,6 +173,29 @@ function PointsTaskCard({ task }: { task: TaskCardView }) {
   )
 }
 
+// Loading layout matches two actual task rows instead of showing an empty-state card.
+function PointsTaskSkeleton() {
+  return (
+    <div role="status" aria-label="正在加载签到任务">
+      <span className="sr-only">正在加载签到任务</span>
+      {[0, 1].map((index) => (
+        <div key={index} aria-hidden="true" className="flex items-center gap-3 border-b border-border-subtle px-4 py-3.5 last:border-0">
+          <Skeleton className="h-10 w-10 shrink-0 rounded-app-icon" />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-4 w-28 max-w-[55%]" />
+              <Skeleton className="h-4 w-12 rounded-pill" />
+            </div>
+            <Skeleton className="mt-2 h-3 w-24" />
+            <Skeleton className="mt-2 h-1.5 w-full rounded-pill" />
+          </div>
+          <Skeleton className="h-3 w-8 shrink-0" />
+        </div>
+      ))}
+    </div>
+  )
+}
+
 /** 三个福利入口共用同一张卡片皮肤，保证「同风格」要求 */
 const BENEFIT_CARD_CLASS =
   'group relative flex flex-col items-center overflow-hidden rounded-[16px] border border-[#efcf98] bg-[linear-gradient(150deg,#fffaf0_0%,#fff8e9_58%,#f8e3bc_100%)] px-1.5 pb-3 pt-3 text-center shadow-[0_5px_14px_rgba(166,111,32,0.08)] transition active:scale-[.98]'
@@ -320,7 +343,7 @@ export default function Points() {
           aria-busy={activityRemote.state === 'loading'}
         >
           {activityRemote.state === 'loading' ? (
-            <EmptyState variant="no-data" title="正在加载签到任务" />
+            <PointsTaskSkeleton />
           ) : activityRemote.state === 'error' ? (
             <EmptyState
               variant="recoverable-error"

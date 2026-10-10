@@ -6,10 +6,12 @@ const mocks = vi.hoisted(() => ({
   useRemoteData: vi.fn(),
   reload: vi.fn(),
   download: vi.fn(),
+  saveImageToAlbum: vi.fn(),
 }))
 
 vi.mock('./profile/useProfileFeed', () => ({ useRemoteData: mocks.useRemoteData }))
 vi.mock('../services/welfareQrDownload', () => ({ requestWelfareQrDownload: mocks.download }))
+vi.mock('../services/nativeBridge', () => ({ saveImageToAlbum: mocks.saveImageToAlbum }))
 vi.mock('../components/mobile/PageContainer', () => ({
   default: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }))
@@ -21,6 +23,7 @@ afterEach(() => {
   mocks.useRemoteData.mockReset()
   mocks.reload.mockReset()
   mocks.download.mockReset()
+  mocks.saveImageToAlbum.mockReset()
   vi.useRealTimers()
 })
 
@@ -37,6 +40,9 @@ const config = {
 }
 
 describe('WelfareOfficer page remote states', () => {
+  // Simulate a browser / unsupported host by default; native-specific tests
+  // override this and ensure the H5 path never falsely reports album success.
+
   it('renders loading without stale fixture content or fake QR', () => {
     mocks.useRemoteData.mockReturnValue({ remote: { state: 'loading' }, reload: mocks.reload })
     render(<WelfareOfficer />)
@@ -121,10 +127,14 @@ describe('WelfareOfficer page remote states', () => {
     mocks.useRemoteData.mockReturnValue({ remote: { state: 'success', data: config }, reload: mocks.reload })
     render(<WelfareOfficer />)
     fireEvent.click(screen.getByRole('button', { name: '保存二维码' }))
-    fireEvent.click(screen.getByRole('button', { name: '尝试下载图片' }))
-    await waitFor(() => expect(screen.getByText(/已向浏览器请求下载，但无法确认是否存入相册/)).toBeTruthy())
+    mocks.saveImageToAlbum.mockRejectedValue(new Error('unsupported host'))
+    fireEvent.click(screen.getByRole('button', { name: '保存图片' }))
+    await waitFor(() => expect(screen.getByText(/已发起下载/)).toBeTruthy())
+    expect(mocks.saveImageToAlbum).toHaveBeenCalledWith({
+      imageType: 'url', imageData: config.qrcodeUrl, fileName: 'brand-welfare-qr.png',
+    })
     expect(mocks.download).toHaveBeenCalledWith(config.qrcodeUrl)
-    expect(screen.queryByText('保存成功')).toBeNull()
+    expect(screen.queryByText('已保存到相册')).toBeNull()
   })
 
   it('shows honest failure information when CORS or WebView blocks H5 download', async () => {
@@ -132,9 +142,32 @@ describe('WelfareOfficer page remote states', () => {
     mocks.useRemoteData.mockReturnValue({ remote: { state: 'success', data: config }, reload: mocks.reload })
     render(<WelfareOfficer />)
     fireEvent.click(screen.getByRole('button', { name: '保存二维码' }))
-    fireEvent.click(screen.getByRole('button', { name: '尝试下载图片' }))
-    await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('H5 无法下载该图片'))
+    mocks.saveImageToAlbum.mockRejectedValue(new Error('unsupported host'))
+    fireEvent.click(screen.getByRole('button', { name: '保存图片' }))
+    await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('保存失败'))
     expect(screen.queryByText('保存成功')).toBeNull()
+  })
+
+  it('confirms album saved only after native acknowledgement, without attempting H5', async () => {
+    mocks.saveImageToAlbum.mockResolvedValue({ success: true })
+    mocks.useRemoteData.mockReturnValue({ remote: { state: 'success', data: config }, reload: mocks.reload })
+    render(<WelfareOfficer />)
+    fireEvent.click(screen.getByRole('button', { name: '保存二维码' }))
+    fireEvent.click(screen.getByRole('button', { name: '保存图片' }))
+    await waitFor(() => expect(screen.getByText('已保存到相册')).toBeTruthy())
+    expect(mocks.download).not.toHaveBeenCalled()
+  })
+
+  it('falls back to H5 when the host returns success false', async () => {
+    mocks.saveImageToAlbum.mockResolvedValue({ success: false })
+    mocks.download.mockResolvedValue(undefined)
+    mocks.useRemoteData.mockReturnValue({ remote: { state: 'success', data: config }, reload: mocks.reload })
+    render(<WelfareOfficer />)
+    fireEvent.click(screen.getByRole('button', { name: '保存二维码' }))
+    fireEvent.click(screen.getByRole('button', { name: '保存图片' }))
+    await waitFor(() => expect(screen.getByText(/已发起下载/)).toBeTruthy())
+    expect(mocks.download).toHaveBeenCalledWith(config.qrcodeUrl)
+    expect(screen.queryByText('已保存到相册')).toBeNull()
   })
 
   it('never presents the loopback QR URL as a usable image', () => {

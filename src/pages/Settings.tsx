@@ -22,9 +22,9 @@ import {
   takePhoto,
 } from '../services/nativeBridge'
 
-type SheetKey = 'avatar' | 'nickname' | null
+type SheetKey = 'avatar' | 'nickname' | 'birthday' | 'pin' | null
 
-const initialProfile = { nickname: '', year: '' }
+const initialProfile = { nickname: '', year: '', birthday: '' }
 
 const yearGroups: Array<{ group: string; items: string[] }> = [
   { group: '本科', items: ['大一', '大二', '大三', '大四', '大五'] },
@@ -45,6 +45,10 @@ export default function Settings() {
   const [sheet, setSheet] = useState<SheetKey>(null)
   const [nickname, setNickname] = useState(initialProfile.nickname)
   const [year, setYear] = useState(initialProfile.year)
+  const [birthday, setBirthday] = useState(initialProfile.birthday)
+  const [pin, setPin] = useState('')
+  const [pinConfirmation, setPinConfirmation] = useState('')
+  const [pinConfigured, setPinConfigured] = useState<boolean | undefined>()
   const [toast, setToast] = useState<string | null>(null)
   const [avatarSrc, setAvatarSrc] = useState<string | undefined>()
   const [pendingImage, setPendingImage] = useState<{ mimeType: string; imageBase64: string } | null>(null)
@@ -55,20 +59,51 @@ export default function Settings() {
   const bypassGuard = useRef(false)
   const [baseline, setBaseline] = useState(initialProfile)
   const profileLoad = identity.state === 'success' ? 'ready' : identity.state
-  const dirty = nickname !== baseline.nickname || year !== baseline.year || pendingImage !== null
+  const dirty = nickname !== baseline.nickname || year !== baseline.year ||
+    birthday !== baseline.birthday || pin.length > 0 || pendingImage !== null
   // Track which individual fields the user has touched, not just a global dirty
   // boolean: a late /detail response must fill the untouched nickname even when
   // the user picked a grade/avatar before the first request completed.
-  const touchedRef = useRef({ nickname: false, year: false, avatar: false })
+  const touchedRef = useRef({ nickname: false, year: false, avatar: false, birthday: false })
 
   useEffect(() => {
     if (identity.state !== 'success') return
-    const next = { nickname: identity.data.nickname, year: matchYearOption(identity.data.grade) }
+    const next = {
+      nickname: identity.data.nickname,
+      year: matchYearOption(identity.data.grade),
+      birthday: identity.data.birthday ?? '',
+    }
+    setBirthday((current) => touchedRef.current.birthday ? current : next.birthday)
+    setPinConfigured(identity.data.pinConfigured)
     setNickname((current) => touchedRef.current.nickname ? current : next.nickname)
     setYear((current) => touchedRef.current.year ? current : next.year)
     setAvatarSrc((current) => touchedRef.current.avatar ? current : identity.data.avatar)
     setBaseline(next)
   }, [identity])
+
+  // Account changes must never carry a draft PIN (or other profile edits)
+  // across sessions. The identity store independently invalidates its cache.
+  useEffect(() => {
+    const resetDraft = () => {
+      setPin('')
+      setPinConfirmation('')
+      setPinConfigured(undefined)
+      setBirthday('')
+      setNickname('')
+      setYear('')
+      setAvatarSrc(undefined)
+      setPendingImage(null)
+      setBaseline(initialProfile)
+      setSheet(null)
+      touchedRef.current = { nickname: false, year: false, avatar: false, birthday: false }
+    }
+    window.addEventListener('dr-card-ui:auth-session-changed', resetDraft)
+    window.addEventListener('dr-card-ui:auth-session-cleared', resetDraft)
+    return () => {
+      window.removeEventListener('dr-card-ui:auth-session-changed', resetDraft)
+      window.removeEventListener('dr-card-ui:auth-session-cleared', resetDraft)
+    }
+  }, [])
 
   const blocker = useBlocker(
     ({ historyAction }) => !bypassGuard.current && dirty && historyAction !== 'REPLACE',
@@ -77,6 +112,10 @@ export default function Settings() {
   const discardOpen = blocker.state === 'blocked' || overlay === 'discard'
 
   const close = () => {
+    if (sheet === 'pin') {
+      setPin('')
+      setPinConfirmation('')
+    }
     setSheet(null)
   }
 
@@ -86,7 +125,7 @@ export default function Settings() {
   }
 
   // Sheet changes are staged until the footer confirms a server write.
-  const save = () => close()
+  const save = () => setSheet(null)
 
   const updateAvatar = async (source: 'photo' | 'album') => {
     if (avatarPending) return
@@ -138,6 +177,34 @@ export default function Settings() {
     const payload: UserUpdatePayload = {}
     if (trimmed !== baseline.nickname) payload.nick_name = trimmed
     if (year !== baseline.year) payload.student_grade = year
+    if (birthday !== baseline.birthday) {
+      // Avoid a partial write to other fields on a backend that drops birthday.
+      if (identity.data.birthday === undefined) {
+        setSaveError('生日保存暂不可用，请联系管理员')
+        return
+      }
+      if (birthday && (
+        !/^\d{4}-\d{2}-\d{2}$/.test(birthday) ||
+        Number.isNaN(Date.parse(birthday)) ||
+        new Date(birthday + 'T00:00:00Z').toISOString().slice(0, 10) !== birthday ||
+        birthday > new Date().toLocaleDateString('sv-SE')
+      )) {
+        setSaveError('请选择有效的生日日期')
+        return
+      }
+      payload.birthday = birthday
+    }
+    if (pin) {
+      if (!/^\d{6}$/.test(pin) || pin !== pinConfirmation) {
+        setSaveError('请输入两次相同的 6 位数字消费密码')
+        return
+      }
+      if (identity.data.pinConfigured === undefined) {
+        setSaveError('消费密码服务暂不可用，请联系管理员')
+        return
+      }
+      payload.consume_password = pin
+    }
     if (!Object.keys(payload).length && !pendingImage) {
       bypassGuard.current = true
       navigate('/profile')
@@ -151,11 +218,19 @@ export default function Settings() {
       acceptUserIdentityUpdate(updated)
       setPendingImage(null)
       setAvatarSrc(updated.avatar_img || undefined)
-      const next = { nickname: updated.nick_name.trim(), year: matchYearOption(updated.student_grade ?? '') }
+      const next = {
+        nickname: updated.nick_name.trim(),
+        year: matchYearOption(updated.student_grade ?? ''),
+        birthday: updated.birthday ?? baseline.birthday,
+      }
       setNickname(next.nickname)
       setYear(next.year)
+      setBirthday(next.birthday)
+      setPin('')
+      setPinConfirmation('')
+      setPinConfigured(updated.consume_password_set ?? pinConfigured)
       setBaseline(next)
-      touchedRef.current = { nickname: false, year: false, avatar: false }
+      touchedRef.current = { nickname: false, year: false, avatar: false, birthday: false }
       bypassGuard.current = true
       flashToast()
       close()
@@ -225,14 +300,22 @@ export default function Settings() {
             <ChevronRight className="h-5 w-5" />
           </button>
         </div>
-        <div className="flex items-center gap-3 border-b border-border-subtle px-4 py-3">
+        <button type="button" onClick={() => setSheet('birthday')} aria-label="修改生日"
+          className="flex w-full items-center gap-3 border-b border-border-subtle px-4 py-3 text-left">
           <span className="w-20 shrink-0 whitespace-nowrap text-sm text-text-tertiary">生日</span>
-          <span className="min-w-0 flex-1 text-right text-sm text-text-tertiary">暂不支持修改（等待后台接口）</span>
-        </div>
-        <div className="flex items-center gap-3 px-4 py-3">
+          <span className="min-w-0 flex-1 text-right text-sm text-text-primary">
+            {identity.state !== 'success' ? '—' : identity.data.birthday === undefined ? '尚未开放' : birthday || '未填写'}
+          </span>
+          <ChevronRight className="h-5 w-5 shrink-0 text-text-tertiary" aria-hidden />
+        </button>
+        <button type="button" onClick={() => setSheet('pin')} aria-label="设置消费密码"
+          className="flex w-full items-center gap-3 px-4 py-3 text-left">
           <span className="w-20 shrink-0 whitespace-nowrap text-sm text-text-tertiary">消费密码</span>
-          <span className="min-w-0 flex-1 text-right text-sm text-text-tertiary">暂不支持设置（等待后台接口）</span>
-        </div>
+          <span className="min-w-0 flex-1 text-right text-sm text-text-tertiary">
+            {pin ? '待保存' : pinConfigured === undefined ? '尚未开放' : pinConfigured ? '已设置' : '未设置'}
+          </span>
+          <ChevronRight className="h-5 w-5 shrink-0 text-text-tertiary" aria-hidden />
+        </button>
       </section>
 
       <section className="relative z-10 mt-6 px-4">
@@ -276,7 +359,7 @@ export default function Settings() {
           <div
             role="dialog"
             aria-modal="true"
-            aria-label={sheet === 'nickname' ? '修改昵称' : '修改头像'}
+            aria-label={{ nickname: '修改昵称', avatar: '修改头像', birthday: '修改生日', pin: '设置消费密码' }[sheet]}
             className="w-full max-w-[448px] rounded-t-overlay bg-surface px-4 pb-[env(safe-area-inset-bottom)]"
             onClick={(e) => e.stopPropagation()}
           >
@@ -285,6 +368,8 @@ export default function Settings() {
               <h2 className="text-lg font-semibold text-text-primary">
                 {sheet === 'avatar' && '修改头像'}
                 {sheet === 'nickname' && '修改昵称'}
+                {sheet === 'birthday' && '修改生日'}
+                {sheet === 'pin' && '设置消费密码'}
               </h2>
               <button type="button" aria-label="关闭" onClick={close} className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-subtle text-text-secondary">
                 <X className="h-5 w-5" />
@@ -330,6 +415,37 @@ export default function Settings() {
                 </>
               )}
 
+              {sheet === 'birthday' && (
+                <>
+                  <label className="block text-sm text-text-primary">
+                    生日
+                    <input type="date" value={birthday}
+                      onChange={(event) => { touchedRef.current.birthday = true; setBirthday(event.target.value) }}
+                      className="mt-2 block h-11 w-full rounded-control border border-border bg-surface px-3 text-base" />
+                  </label>
+                  <button type="button" onClick={save}
+                    className="mt-5 h-11 w-full rounded-control bg-primary text-sm font-medium text-text-inverse">完成</button>
+                </>
+              )}
+              {sheet === 'pin' && (
+                <>
+                  <p className="text-sm text-text-tertiary">设置 6 位数字消费密码，保存时将提交至账户服务。</p>
+                  <label className="mt-4 block text-sm text-text-primary">
+                    新消费密码
+                    <input type="password" autoComplete="new-password" inputMode="numeric" maxLength={6}
+                      value={pin} onChange={(event) => setPin(event.target.value.replace(/\D/g, '').slice(0, 6))}
+                      className="mt-1.5 block h-11 w-full rounded-control border border-border bg-surface px-3 text-base" />
+                  </label>
+                  <label className="mt-4 block text-sm text-text-primary">
+                    确认消费密码
+                    <input type="password" autoComplete="new-password" inputMode="numeric" maxLength={6}
+                      value={pinConfirmation} onChange={(event) => setPinConfirmation(event.target.value.replace(/\D/g, '').slice(0, 6))}
+                      className="mt-1.5 block h-11 w-full rounded-control border border-border bg-surface px-3 text-base" />
+                  </label>
+                  <button type="button" onClick={save}
+                    className="mt-5 h-11 w-full rounded-control bg-primary text-sm font-medium text-text-inverse">完成</button>
+                </>
+              )}
               {sheet === 'nickname' && (
                 <>
                   <p className="text-sm text-text-tertiary">昵称将展示在您的会员主页与互动记录中</p>
