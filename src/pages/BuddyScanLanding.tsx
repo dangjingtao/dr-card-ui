@@ -19,7 +19,7 @@ export default function BuddyScanLanding() {
       aria-label="洗头搭子扫码使用提示"
     >
       <div className="w-full max-w-[420px]">
-        <p className="m-0 text-[11px] font-bold tracking-[0.3em] text-[#cc9b70]">
+        <p className="m-0 text-[11px] font-bold tracking-[0.3em] text-text-secondary">
           KABOS · SCAN GUIDE
         </p>
 
@@ -33,7 +33,7 @@ export default function BuddyScanLanding() {
           height={1019}
         />
 
-        <p className="mx-auto mt-1 w-fit rounded-full border border-[#ffe6cc] bg-[#fff1e3] px-4 py-1.5 text-[11px] text-[#ca946d]">
+        <p className="mx-auto mt-1 w-fit rounded-full border border-[#ffe6cc] bg-[#fff1e3] px-4 py-1.5 text-[11px] text-text-secondary">
           洗头搭子 · 扫码指引
         </p>
 
@@ -42,7 +42,7 @@ export default function BuddyScanLanding() {
           <span className="block text-[#eb6a34]">请在 App 内扫码</span>
         </h1>
 
-        <p className="mx-auto mt-3 max-w-[315px] text-sm leading-[1.9] text-[#8d8177]">
+        <p className="mx-auto mt-3 max-w-[315px] text-sm leading-[1.9] text-text-secondary">
           洗头搭子二维码需要使用卡博士 App 中的「诗得丽扫一扫」识别，微信或系统相机无法直接绑定搭子。
         </p>
 
@@ -61,14 +61,14 @@ export default function BuddyScanLanding() {
             <strong className="block text-[14px] font-semibold leading-[1.6] text-[#30241d]">
               打开卡博士 App → 底部「扫码」
             </strong>
-            <span className="mt-1 block text-xs text-[#bc886a]">
+            <span className="mt-1 block text-xs text-text-secondary">
               微信扫一扫 / 系统相机暂不支持
             </span>
           </div>
         </div>
       </div>
 
-      <footer className="mt-auto pt-9 text-xs leading-[1.7] text-[#aa9c8b]">
+      <footer className="mt-auto pt-9 text-xs leading-[1.7] text-text-secondary">
         尚未安装？请通过官方渠道获取卡博士 App。
         <div className="mx-auto mt-4 h-[3px] w-[30px] rounded-full bg-[#f7cfad]" aria-hidden="true" />
       </footer>
