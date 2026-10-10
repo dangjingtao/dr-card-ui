@@ -63,6 +63,7 @@ vi.mock('../services/userProfile', () => ({
 vi.mock('../services/userAvatarUpload', () => ({ uploadUserAvatar: mocks.uploadUserAvatar }))
 
 import Settings from './Settings'
+import { storage, STORAGE_KEYS } from '../storage'
 import { clearUserIdentity } from './profile/useUserIdentity'
 
 beforeEach(() => {
@@ -79,6 +80,7 @@ afterEach(() => {
   mocks.fetchUserProfileDetail.mockReset()
   mocks.updateUserProfile.mockReset()
   mocks.uploadUserAvatar.mockReset()
+  storage.remove(STORAGE_KEYS.profilePinMasks)
   clearUserIdentity()
 })
 
@@ -289,10 +291,10 @@ describe('H044 birthday and PIN profile editing (#142)', () => {
     expect(mocks.navigate).not.toHaveBeenCalled()
   })
 
-  it('submits a six-digit PIN without requiring a backend status flag', async () => {
-    mocks.fetchUserProfileDetail.mockResolvedValue({ nickname: '测试用户', grade: '大一', birthday: '' })
+  it('accepts code-zero PIN save, shows six dots on reentry, and scopes the mask to the user', async () => {
+    mocks.fetchUserProfileDetail.mockResolvedValue({ userId: 5, nickname: '测试用户', grade: '大一', birthday: '' })
     mocks.updateUserProfile.mockResolvedValue({ id: 5, nick_name: '测试用户', student_grade: '大一', avatar_img: null })
-    render(<Settings />)
+    const firstMount = render(<Settings />)
     await screen.findByText('测试用户')
     const entry = screen.getByRole('button', { name: '设置消费密码' })
     fireEvent.click(entry)
@@ -305,10 +307,23 @@ describe('H044 birthday and PIN profile editing (#142)', () => {
     expect(entry.textContent).toContain('●●●●●●')
     fireEvent.click(screen.getByRole('button', { name: '确认修改' }))
     await waitFor(() => expect(mocks.updateUserProfile).toHaveBeenCalledWith({ consume_password: '123456' }))
-    await screen.findByText('请求已提交，后台保存状态待核对')
+    await screen.findByText('保存成功')
     expect(entry.textContent).toContain('●●●●●●')
-    expect(mocks.navigate).not.toHaveBeenCalled()
+    expect(storage.read(STORAGE_KEYS.profilePinMasks)?.['5']).toBe(true)
+    expect(JSON.stringify(storage.read(STORAGE_KEYS.profilePinMasks))).not.toContain('123456')
     expect(screen.queryByText('123456')).toBeNull()
+    await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith('/profile'))
+    firstMount.unmount()
+    clearUserIdentity()
+    const secondMount = render(<Settings />)
+    await screen.findByText('测试用户')
+    expect(screen.getByRole('button', { name: '设置消费密码' }).textContent).toContain('●●●●●●')
+    secondMount.unmount()
+    clearUserIdentity()
+    mocks.fetchUserProfileDetail.mockResolvedValue({ userId: 6, nickname: '另一个账号', grade: '大一', birthday: '' })
+    render(<Settings />)
+    await screen.findByText('另一个账号')
+    expect(screen.getByRole('button', { name: '设置消费密码' }).textContent).not.toContain('●●●●●●')
   })
 
   it('validates PIN confirmation without blocking on a missing support flag', async () => {

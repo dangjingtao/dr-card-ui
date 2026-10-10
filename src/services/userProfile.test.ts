@@ -47,6 +47,15 @@ describe('live user detail contract', () => {
     })
   })
 
+  it('exposes the optional account ID for a PIN mask without returning the password', async () => {
+    mocks.request.mockResolvedValue({
+      code: 0, data: { id: 5, nick_name: '示例', student_grade: '研一', birthday: null },
+    })
+    const detail = await fetchUserProfileDetail()
+    expect(detail.userId).toBe(5)
+    expect(detail).not.toHaveProperty('consume_password')
+  })
+
   it('prefers the persisted student_grade when membership grade differs', async () => {
     mocks.request.mockResolvedValue({
       code: 0,
@@ -259,11 +268,11 @@ describe('user update contract', () => {
     })
   })
 
-  it('surfaces an explicit failed PIN status from the backend', async () => {
+  it('treats a code-zero response as successful without a second PIN-status gate', async () => {
     mocks.request.mockResolvedValue({
       code: 0, data: { id: 5, nick_name: '示例', gender: '1', points: 0, consume_password_set: false },
     })
-    await expect(updateUserProfile({ consume_password: '123456' })).rejects.toThrow('后台未确认')
+    await expect(updateUserProfile({ consume_password: '123456' })).resolves.toMatchObject({ id: 5 })
   })
 
   it('surfaces the backend message when validation fails', async () => {
