@@ -57,7 +57,7 @@ export default function Settings() {
   const [avatarPending, setAvatarPending] = useState<'photo' | 'album' | null>(null)
   const [avatarError, setAvatarError] = useState<string | null>(null)
   const bypassGuard = useRef(false)
-  const postSaveNavigation = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const postSaveNavigation = useRef<number | null>(null)
   const [baseline, setBaseline] = useState(initialProfile)
   const profileLoad = identity.state === 'success' ? 'ready' : identity.state
   const dirty = nickname !== baseline.nickname || year !== baseline.year ||
