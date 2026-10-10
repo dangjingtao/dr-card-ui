@@ -289,16 +289,26 @@ describe('H044 birthday and PIN profile editing (#142)', () => {
     expect(mocks.navigate).not.toHaveBeenCalled()
   })
 
-  it('disables PIN editing upfront when the backend has no PIN status contract', async () => {
+  it('allows PIN form preview without a backend contract but never uploads or stages a secret', async () => {
     mocks.fetchUserProfileDetail.mockResolvedValue({ nickname: '测试用户', grade: '大一', birthday: '' })
     render(<Settings />)
     await screen.findByText('测试用户')
     const pinEntry = screen.getByRole('button', { name: '设置消费密码' }) as HTMLButtonElement
-    expect(pinEntry.textContent).toContain('暂不可用')
-    expect(pinEntry.disabled).toBe(true)
+    expect(pinEntry.textContent).toContain('可预览，待接通')
+    expect(pinEntry.disabled).toBe(false)
     fireEvent.click(pinEntry)
-    expect(screen.queryByLabelText('新消费密码')).toBeNull()
+    expect(screen.getByRole('status').textContent).toContain('本次输入不会上传或保存')
+    fireEvent.change(screen.getByLabelText('新消费密码'), { target: { value: '123456' } })
+    fireEvent.change(screen.getByLabelText('确认消费密码'), { target: { value: '123456' } })
+    expect((screen.getByLabelText('新消费密码') as HTMLInputElement).type).toBe('password')
+    fireEvent.click(screen.getByRole('button', { name: '完成预览' }))
+    expect(screen.queryByRole('dialog', { name: '设置消费密码' })).toBeNull()
+    expect(pinEntry.textContent).toContain('可预览，待接通')
+    expect(screen.getByText('仅完成界面预览，未保存消费密码')).toBeTruthy()
     expect(mocks.updateUserProfile).not.toHaveBeenCalled()
+    fireEvent.click(pinEntry)
+    expect((screen.getByLabelText('新消费密码') as HTMLInputElement).value).toBe('')
+    expect((screen.getByLabelText('确认消费密码') as HTMLInputElement).value).toBe('')
   })
 
   it('saves birthday via user/update even when PIN remains unsupported', async () => {
@@ -311,7 +321,7 @@ describe('H044 birthday and PIN profile editing (#142)', () => {
     })
     render(<Settings />)
     await screen.findByText('测试用户')
-    expect((screen.getByRole('button', { name: '设置消费密码' }) as HTMLButtonElement).disabled).toBe(true)
+    expect(screen.getByRole('button', { name: '设置消费密码' }).textContent).toContain('可预览，待接通')
     fireEvent.click(screen.getByRole('button', { name: '修改生日' }))
     fireEvent.change(screen.getByLabelText('生日', { selector: 'input' }), {
       target: { value: '2001-05-06' },
@@ -337,9 +347,9 @@ describe('H044 birthday and PIN profile editing (#142)', () => {
     act(() => window.dispatchEvent(new Event('dr-card-ui:auth-session-cleared')))
     const entry = screen.getByRole('button', { name: '设置消费密码' }) as HTMLButtonElement
     expect(entry.textContent).not.toContain('待保存')
-    expect(entry.disabled).toBe(true)
+    expect(entry.disabled).toBe(false)
     fireEvent.click(entry)
-    expect(screen.queryByLabelText('新消费密码')).toBeNull()
+    expect((screen.getByLabelText('新消费密码') as HTMLInputElement).value).toBe('')
   })
 
   it('submits both staged edits through user/update when detail declares support', async () => {

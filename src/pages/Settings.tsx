@@ -57,6 +57,7 @@ export default function Settings() {
   const [avatarPending, setAvatarPending] = useState<'photo' | 'album' | null>(null)
   const [avatarError, setAvatarError] = useState<string | null>(null)
   const bypassGuard = useRef(false)
+  const postSaveNavigation = useRef<number | null>(null)
   const [baseline, setBaseline] = useState(initialProfile)
   const profileLoad = identity.state === 'success' ? 'ready' : identity.state
   const dirty = nickname !== baseline.nickname || year !== baseline.year ||
@@ -80,6 +81,12 @@ export default function Settings() {
     setAvatarSrc((current) => touchedRef.current.avatar ? current : identity.data.avatar)
     setBaseline(next)
   }, [identity])
+
+  // The success redirect belongs to the current settings mount. If the user
+  // leaves before it fires, never send a later page back to /profile.
+  useEffect(() => () => {
+    if (postSaveNavigation.current !== null) clearTimeout(postSaveNavigation.current)
+  }, [])
 
   // Account changes must never carry a draft PIN (or other profile edits)
   // across sessions. The identity store independently invalidates its cache.
@@ -234,7 +241,7 @@ export default function Settings() {
       bypassGuard.current = true
       flashToast()
       close()
-      window.setTimeout(() => navigate('/profile'), 600)
+      postSaveNavigation.current = window.setTimeout(() => navigate('/profile'), 600)
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : '保存失败，请重试')
     } finally {
@@ -309,13 +316,12 @@ export default function Settings() {
           <ChevronRight className="h-5 w-5 shrink-0 text-text-tertiary" aria-hidden />
         </button>
         <button type="button" onClick={() => setSheet('pin')} aria-label="设置消费密码"
-          disabled={pinConfigured === undefined}
-          className="flex w-full items-center gap-3 px-4 py-3 text-left disabled:cursor-not-allowed">
+          className="flex w-full items-center gap-3 px-4 py-3 text-left">
           <span className="w-20 shrink-0 whitespace-nowrap text-sm text-text-tertiary">消费密码</span>
           <span className="min-w-0 flex-1 text-right text-sm text-text-tertiary">
-            {pinConfigured === undefined ? '暂不可用' : pin ? '待保存' : pinConfigured ? '已设置' : '未设置'}
+            {pinConfigured === undefined ? '可预览，待接通' : pin ? '待保存' : pinConfigured ? '已设置' : '未设置'}
           </span>
-          {pinConfigured !== undefined && <ChevronRight className="h-5 w-5 shrink-0 text-text-tertiary" aria-hidden />}
+          <ChevronRight className="h-5 w-5 shrink-0 text-text-tertiary" aria-hidden />
         </button>
       </section>
 
@@ -430,7 +436,13 @@ export default function Settings() {
               )}
               {sheet === 'pin' && (
                 <>
-                  <p className="text-sm text-text-tertiary">设置 6 位数字消费密码，保存时将提交至账户服务。</p>
+                  {pinConfigured === undefined ? (
+                    <p role="status" className="text-sm text-text-tertiary">
+                      当前可体验输入界面，后台尚未开放消费密码保存。本次输入不会上传或保存。
+                    </p>
+                  ) : (
+                    <p className="text-sm text-text-tertiary">设置 6 位数字消费密码，保存时将提交至账户服务。</p>
+                  )}
                   <label className="mt-4 block text-sm text-text-primary">
                     新消费密码
                     <input type="password" autoComplete="new-password" inputMode="numeric" maxLength={6}
@@ -443,8 +455,17 @@ export default function Settings() {
                       value={pinConfirmation} onChange={(event) => setPinConfirmation(event.target.value.replace(/\D/g, '').slice(0, 6))}
                       className="mt-1.5 block h-11 w-full rounded-control border border-border bg-surface px-3 text-base" />
                   </label>
-                  <button type="button" onClick={save}
-                    className="mt-5 h-11 w-full rounded-control bg-primary text-sm font-medium text-text-inverse">完成</button>
+                  <button type="button" onClick={() => {
+                    if (pinConfigured === undefined) {
+                      close()
+                      flashToast('仅完成界面预览，未保存消费密码')
+                    } else {
+                      save()
+                    }
+                  }}
+                    className="mt-5 h-11 w-full rounded-control bg-primary text-sm font-medium text-text-inverse">
+                    {pinConfigured === undefined ? '完成预览' : '完成'}
+                  </button>
                 </>
               )}
               {sheet === 'nickname' && (
