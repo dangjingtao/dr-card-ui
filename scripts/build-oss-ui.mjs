@@ -2,13 +2,17 @@
 import { spawnSync } from 'node:child_process'
 import { readFileSync, writeFileSync } from 'node:fs'
 
-const env = {
-  ...process.env,
-  H5_OSS_ARTIFACT: '1',
-  OSS_WEB_TARGET: 'ui',
+for (const args of [
+  ['run', 'typecheck'],
+  ['run', 'verify:images'],
+]) {
+  const result = spawnSync('npm', args, { stdio: 'inherit' })
+  if (result.status !== 0) process.exit(result.status ?? 1)
 }
-const result = spawnSync('npm', ['run', 'build'], { stdio: 'inherit', env })
-if (result.status !== 0) process.exit(result.status ?? 1)
+const vite = spawnSync(process.execPath, ['node_modules/vite/bin/vite.js', 'build', '--base', '/kbs-web/ui/'], {
+  stdio: 'inherit',
+})
+if (vite.status !== 0) process.exit(vite.status ?? 1)
 
 const sha = process.env.GITHUB_SHA || spawnSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).stdout.trim()
 const sourceBranch = process.env.GITHUB_REF_NAME || 'preview'
