@@ -9,7 +9,7 @@ export async function startApiMocking() {
     serviceWorker: {
       // Prefix-scoped OSS UI/dev previews need a worker inside their own path.
       // Root deployments (Cloudflare and local dev) keep the original URL.
-      url: `${import.meta.env.VITE_ROUTER_BASENAME?.replace(/\\/$/, '') || ''}/mockServiceWorker.js`,
+      url: `${import.meta.env.VITE_ROUTER_BASENAME?.replace(/\/$/, '') || ''}/mockServiceWorker.js`,
     },
     onUnhandledRequest: 'bypass',
   })
