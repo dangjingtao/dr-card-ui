@@ -41,6 +41,25 @@ jobs:
           NODE
           test -f dist/index.html
           test ! -f dist/mockServiceWorker.js
+      - name: Verify nested artifact build independently of cloud upload
+        env:
+          H5_OSS_ARTIFACT: '1'
+          VITE_ROUTER_BASENAME: /h5/releases/ci-package/1.1
+        shell: bash
+        run: |
+          npm run build:prod
+          node <<'NODE'
+          const fs = require('node:fs')
+          const html = fs.readFileSync('dist/index.html', 'utf8')
+          if (!html.includes('src="./assets/') || !html.includes('href="./assets/')) {
+            throw new Error('OSS package must use relative JS and CSS assets')
+          }
+          const basename = '/h5/releases/ci-package/1.1'
+          const chunks = fs.readdirSync('dist/assets').filter(name => name.endsWith('.js'))
+          if (!chunks.some(name => fs.readFileSync(`dist/assets/${name}`, 'utf8').includes(basename))) {
+            throw new Error('OSS router basename not injected')
+          }
+          NODE
 
   upload-oss:
     name: Upload immutable H5 package to OSS (not site launch)
@@ -80,6 +99,10 @@ jobs:
           fi
       - run: npm ci --no-audit --no-fund
       - name: Build immutable H5 verification package
+        env:
+          # Artifact lives at an immutable nested prefix, not at the host root.
+          H5_OSS_ARTIFACT: '1'
+          VITE_ROUTER_BASENAME: /h5/releases/${{ github.sha }}/${{ github.run_id }}.${{ github.run_attempt }}
         run: npm run build:prod
       - name: Validate production package
         shell: bash
@@ -93,6 +116,23 @@ jobs:
           NODE
           test -f dist/index.html
           test ! -f dist/mockServiceWorker.js
+      - name: Verify nested OSS asset paths and router basename
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs')
+          const html = fs.readFileSync('dist/index.html', 'utf8')
+          if (!/src="\.\/assets\//.test(html) || !/href="\.\/assets\//.test(html) ||
+              /(?:src|href)="\/assets\//.test(html)) {
+            throw new Error('Versioned OSS index.html must use ./assets/... for JS and CSS')
+          }
+          const basename = `/h5/releases/${process.env.GITHUB_SHA}/${process.env.GITHUB_RUN_ID}.${process.env.GITHUB_RUN_ATTEMPT}`
+          const chunks = fs.readdirSync('dist/assets').filter(name => name.endsWith('.js'))
+          if (!chunks.some(name => fs.readFileSync(`dist/assets/${name}`, 'utf8').includes(basename))) {
+            throw new Error(`Built router does not contain release basename: ${basename}`)
+          }
+          console.log('Verified relative JS/CSS and router basename:', basename)
+          NODE
       - name: Install official ossutil 2.4.0 (checksum verified)
         shell: bash
         run: |
