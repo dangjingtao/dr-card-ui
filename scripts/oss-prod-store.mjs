@@ -59,7 +59,18 @@ export class OssProdStore {
     }
     localTemp(path => {
       writeFileSync(path, bytes)
-      execOss('cp', path, BUCKET + key)
+      // Fixed HTML/metadata must revalidate; versioned hashed assets can
+      // safely be cached after content-collision checks in the release core.
+      const hashedAsset = key.startsWith(LAST + 'assets/') &&
+        /-[A-Za-z0-9_-]{8,}\\.[^.]+$/.test(key)
+      const cache = key === LAST + 'index.html' ||
+        key === LAST + 'build-meta.json' || key === LAST + 'release-manifest.json'
+          ? 'no-cache, must-revalidate'
+          : hashedAsset
+            ? 'public, max-age=31536000, immutable'
+            : 'no-cache'
+      execOss('cp', path, BUCKET + key, '--cache-control', cache)
+
     })
   }
   async remove(key) {
