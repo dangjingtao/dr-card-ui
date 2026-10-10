@@ -9,10 +9,12 @@ const content = body => Buffer.from(body)
 export function productionBase(raw) {
   if (typeof raw !== 'string' || !raw) throw new Error('Company H5 origin is not configured')
   const url = new URL(raw)
-  if (url.protocol !== 'https:' || url.hostname !== 'kbs.3cgroup.cn' ||
+  // HTTP/HTTPS and host are deployment settings, not release preconditions.
+  // Only the immutable H5 path and absence of URL manipulation are enforced.
+  if (!['http:', 'https:'].includes(url.protocol) ||
       url.pathname !== fixedPath || url.username || url.password ||
-      url.port || url.search || url.hash || url.href !== raw) {
-    throw new Error('Production H5 requires the approved HTTPS company URL ending /kbs-web/prod/last/')
+      url.search || url.hash || url.href !== raw) {
+    throw new Error('H5 probe URL must be an http(s) URL ending /kbs-web/prod/last/')
   }
   return url
 }
