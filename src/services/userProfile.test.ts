@@ -225,6 +225,36 @@ describe('user update contract', () => {
     })
   })
 
+  it('reads optional extended profile fields without treating absent flags as unset', async () => {
+    mocks.request.mockResolvedValueOnce({
+      code: 0, data: { nick_name: '示例', student_grade: '大一', birthday: '2001-02-03', consume_password_set: true },
+    }).mockResolvedValueOnce({ code: 0, data: { nick_name: '示例', student_grade: '大一' } })
+    await expect(fetchUserProfileDetail()).resolves.toMatchObject({ birthday: '2001-02-03', pinConfigured: true })
+    const absent = await fetchUserProfileDetail()
+    expect(absent.birthday).toBeUndefined()
+    expect(absent.pinConfigured).toBeUndefined()
+  })
+
+  it('rejects success-code responses that silently discard a birthday edit', async () => {
+    mocks.request.mockResolvedValue({
+      code: 0, data: { id: 5, nick_name: '示例', gender: '1', points: 0 },
+    })
+    await expect(updateUserProfile({ birthday: '2001-02-03' })).rejects.toThrow('生日未保存')
+  })
+
+  it('requires an acknowledgement for a PIN change, not a bare code zero', async () => {
+    mocks.request.mockResolvedValueOnce({
+      code: 0, data: { id: 5, nick_name: '示例', gender: '1', points: 0 },
+    }).mockResolvedValueOnce({
+      code: 0, data: { id: 5, nick_name: '示例', gender: '1', points: 0, consume_password_set: true },
+    })
+    await expect(updateUserProfile({ consume_password: '123456' })).rejects.toThrow('未确认保存')
+    await expect(updateUserProfile({ consume_password: '123456' })).resolves.toMatchObject({ consume_password_set: true })
+    expect(mocks.request).toHaveBeenLastCalledWith({
+      method: 'POST', url: '/api/user/update', data: { consume_password: '123456' },
+    })
+  })
+
   it('surfaces the backend message when validation fails', async () => {
     mocks.request.mockResolvedValue({ code: 500, message: '"nick_name" is required', data: [] })
 

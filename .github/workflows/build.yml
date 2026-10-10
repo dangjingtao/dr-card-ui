@@ -206,7 +206,7 @@ jobs:
       - name: Reject Mock in production-like builds
         shell: bash
         run: |
-          if VITE_API_BASE_URL=http://example.invalid node scripts/build-h5.mjs test --dry-run; then
+          if VITE_API_BASE_URL=http://example.invalid VITE_BUDDY_PUBLIC_ORIGIN='' node scripts/build-h5.mjs test --dry-run; then
             echo 'test accepted an absent official Buddy QR origin.'
             exit 1
           fi

@@ -272,6 +272,85 @@ describe('H044 slow profile hydration and UX-A layout', () => {
   })
 })
 
+describe('H044 birthday and PIN profile editing (#142)', () => {
+  it('allows birthday entry but refuses to falsely save when backend detail omits the field', async () => {
+    mocks.fetchUserProfileDetail.mockResolvedValue({ nickname: '测试用户', grade: '大一' })
+    render(<Settings />)
+    await screen.findByText('测试用户')
+    expect(screen.getByRole('button', { name: '修改生日' }).textContent).toContain('尚未开放')
+    fireEvent.click(screen.getByRole('button', { name: '修改生日' }))
+    fireEvent.change(screen.getByLabelText('生日', { selector: 'input' }), {
+      target: { value: '2001-05-06' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: '完成' }))
+    fireEvent.click(screen.getByRole('button', { name: '确认修改' }))
+    expect(screen.getByRole('alert').textContent).toContain('生日保存暂不可用')
+    expect(mocks.updateUserProfile).not.toHaveBeenCalled()
+    expect(mocks.navigate).not.toHaveBeenCalled()
+  })
+
+  it('validates PIN confirmation and never assumes absent status means not set', async () => {
+    mocks.fetchUserProfileDetail.mockResolvedValue({ nickname: '测试用户', grade: '大一' })
+    render(<Settings />)
+    await screen.findByText('测试用户')
+    expect(screen.getByRole('button', { name: '设置消费密码' }).textContent).toContain('尚未开放')
+    fireEvent.click(screen.getByRole('button', { name: '设置消费密码' }))
+    fireEvent.change(screen.getByLabelText('新消费密码'), { target: { value: '123456' } })
+    fireEvent.change(screen.getByLabelText('确认消费密码'), { target: { value: '222222' } })
+    fireEvent.click(screen.getByRole('button', { name: '完成' }))
+    fireEvent.click(screen.getByRole('button', { name: '确认修改' }))
+    expect(screen.getByRole('alert').textContent).toContain('两次相同')
+    expect(mocks.updateUserProfile).not.toHaveBeenCalled()
+  })
+
+  it('clears an unsaved PIN when the authentication session changes', async () => {
+    mocks.fetchUserProfileDetail.mockResolvedValue({
+      nickname: '账号一', grade: '大一', birthday: '', pinConfigured: false,
+    })
+    render(<Settings />)
+    await screen.findByText('账号一')
+    fireEvent.click(screen.getByRole('button', { name: '设置消费密码' }))
+    fireEvent.change(screen.getByLabelText('新消费密码'), { target: { value: '123456' } })
+    fireEvent.change(screen.getByLabelText('确认消费密码'), { target: { value: '123456' } })
+    fireEvent.click(screen.getByRole('button', { name: '完成' }))
+    expect(screen.getByRole('button', { name: '设置消费密码' }).textContent).toContain('待保存')
+    act(() => window.dispatchEvent(new Event('dr-card-ui:auth-session-cleared')))
+    expect(screen.getByRole('button', { name: '设置消费密码' }).textContent).not.toContain('待保存')
+    fireEvent.click(screen.getByRole('button', { name: '设置消费密码' }))
+    expect((screen.getByLabelText('新消费密码') as HTMLInputElement).value).toBe('')
+  })
+
+  it('submits both staged edits through user/update when detail declares support', async () => {
+    mocks.fetchUserProfileDetail.mockResolvedValue({
+      nickname: '测试用户', grade: '大一', birthday: '', pinConfigured: false,
+    })
+    mocks.updateUserProfile.mockResolvedValue({
+      id: 5, nick_name: '测试用户', student_grade: '大一', avatar_img: null,
+      birthday: '2001-05-06', consume_password_set: true,
+    })
+    render(<Settings />)
+    await screen.findByText('测试用户')
+    fireEvent.click(screen.getByRole('button', { name: '修改生日' }))
+    fireEvent.change(screen.getByLabelText('生日', { selector: 'input' }), {
+      target: { value: '2001-05-06' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: '完成' }))
+    fireEvent.click(screen.getByRole('button', { name: '设置消费密码' }))
+    fireEvent.change(screen.getByLabelText('新消费密码'), { target: { value: '123456' } })
+    fireEvent.change(screen.getByLabelText('确认消费密码'), { target: { value: '123456' } })
+    fireEvent.click(screen.getByRole('button', { name: '完成' }))
+    expect(screen.getByRole('button', { name: '设置消费密码' }).textContent).toContain('待保存')
+    fireEvent.click(screen.getByRole('button', { name: '确认修改' }))
+    await waitFor(() => expect(mocks.updateUserProfile).toHaveBeenCalledWith({
+      birthday: '2001-05-06', consume_password: '123456',
+    }))
+    await screen.findByText('保存成功')
+    expect(screen.getByRole('button', { name: '修改生日' }).textContent).toContain('2001-05-06')
+    expect(screen.getByRole('button', { name: '设置消费密码' }).textContent).toContain('已设置')
+    expect(screen.queryByText('123456')).toBeNull()
+  })
+})
+
 describe('Settings real persistence', () => {
   it('stages nickname changes and only reports success after user/update resolves', async () => {
     mocks.fetchUserProfileDetail.mockResolvedValue({ nickname: '原昵称', grade: '大二' })
