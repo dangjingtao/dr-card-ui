@@ -313,7 +313,9 @@ describe('UX-E: page-local exchange flow', () => {
     const emptyTitle = screen.getByText('没有找到相关体验券')
     const emptySection = emptyTitle.closest('section')
     expect(emptySection).toBeTruthy()
-    expect(emptySection?.querySelector('[data-empty-state-illustration] img')).toBeTruthy()
+    const illustration = emptySection?.querySelector('[data-empty-state-illustration] img')
+    expect(illustration).toBeTruthy()
+    expect(illustration?.className).toContain('w-[168px]')
     expect(emptySection?.parentElement?.className).not.toContain('bg-surface')
   })
 
