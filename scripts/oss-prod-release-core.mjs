@@ -46,8 +46,8 @@ export function makeCandidate({ files, runId, attempt, sha, at = new Date().toIS
   ensure(meta.appEnvironment === 'prod' && meta.dataMode === 'api' &&
     meta.bridgeMode === 'native' && meta.ossWeb?.target === 'prod' &&
     meta.ossWeb?.path === '/kbs-web/prod/last/' &&
-    meta.build?.sha === sha && typeof meta.build?.id === 'string' &&
-    meta.build.id.length > 0, 'Refusing nonproduction, mismatched or Mock H5 bundle')
+    meta.build?.sha === sha && meta.build?.id === `${runId}.${attempt}`,
+    'Refusing nonproduction, mismatched or Mock H5 bundle')
   return { manifest: {
     schemaVersion: 1, id, sha, buildId: meta.build.id, activatedAt: at,
     files: fileEntries(map),
