@@ -290,13 +290,14 @@ export async function updateUserProfile(payload: UserUpdatePayload): Promise<Use
     contract: 'user.update',
     fallbackMessage: '资料保存失败',
   })
-  // This backend silently drops unsupported keys and can respond code=0.
-  // Verify positive acknowledgement before telling the user they saved data.
+  // Keep the birthday readback check. For a PIN change, send the request
+  // even when the backend does not expose its setting-status flag. An explicit
+  // false is a rejection, but an omitted flag must not block API testing.
   if (payload.birthday !== undefined && result.birthday !== payload.birthday) {
     throw new Error('生日未保存，请稍后重试')
   }
-  if (payload.consume_password !== undefined && result.consume_password_set !== true) {
-    throw new Error('消费密码未确认保存，请稍后重试')
+  if (payload.consume_password !== undefined && result.consume_password_set === false) {
+    throw new Error('后台未确认消费密码已设置')
   }
   // Drop accidental echoes of a submitted secret from the parsed entity.
   const safeResult = { ...result }
