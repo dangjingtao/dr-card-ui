@@ -7,13 +7,33 @@ import {
 import { OssProdStore } from './oss-prod-store.mjs'
 
 class MemoryStore {
-  constructor() { this.objects = new Map(); this.removed = []; this.fail = null }
+  constructor() {
+    this.objects = new Map()
+    this.removed = []
+    this.fail = null
+    this.failNthCatalogPut = null
+    this.failRemoveOnce = false
+  }
   async get(key) { return this.objects.get(key) ?? null }
   async put(key, bytes) {
     if (this.fail === key) { this.fail = null; throw new Error('Injected OSS write interruption') }
+    if (key === CATALOG && this.failNthCatalogPut != null) {
+      this.failNthCatalogPut--
+      if (this.failNthCatalogPut === 0) {
+        this.failNthCatalogPut = null
+        throw new Error('Injected final catalog write failure')
+      }
+    }
     this.objects.set(key, Buffer.from(bytes))
   }
-  async remove(key) { this.removed.push(key); this.objects.delete(key) }
+  async remove(key) {
+    this.removed.push(key)
+    this.objects.delete(key)
+    if (this.failRemoveOnce) {
+      this.failRemoveOnce = false
+      throw new Error('Injected interrupted object deletion')
+    }
+  }
 }
 function make(version, { at, sha } = {}) {
   const gitSha = sha ?? (String(version).padStart(40, 'a'))
@@ -167,6 +187,35 @@ test('retention dry-run and 6th history prune delete oldest only with real attes
   assert.ok(store.removed.every(k => k.startsWith(HISTORY + 'r101-a1/')))
   assert.ok(store.objects.has(LAST + 'index.html'))
   assert.ok(store.objects.has(HISTORY + 'r102-a1/index.html'))
+})
+
+test('crash after history files are removed can resume from durable deletion journal', async () => {
+  const store = new MemoryStore()
+  for (let i = 1; i <= 7; i++) await installed(store, i)
+  store.failNthCatalogPut = 2 // journal succeeds; final removal from catalog fails
+  const args = { store, activeId: 'r107-a1', allowDelete: true,
+    attestation: { ok: true, releaseId: 'r107-a1', fromExistingHealthcheck: true } }
+  await assert.rejects(pruneHistory(args), /Injected final catalog/)
+  assert.equal(catalog(store).entries[0].state, 'deleting')
+  assert.equal(store.objects.has(HISTORY + 'r101-a1/' + MANIFEST), false)
+  const recovered = await pruneHistory(args)
+  assert.deepEqual(recovered.removed, ['r101-a1'])
+  assert.equal(catalog(store).entries.length, 5)
+  assert.ok(store.removed.every(key => key.startsWith(HISTORY + 'r101-a1/')))
+})
+
+test('crash halfway through deletion skips removed keys on retry', async () => {
+  const store = new MemoryStore()
+  for (let i = 1; i <= 7; i++) await installed(store, i)
+  store.failRemoveOnce = true
+  const args = { store, activeId: 'r107-a1', allowDelete: true,
+    attestation: { ok: true, releaseId: 'r107-a1', fromExistingHealthcheck: true } }
+  await assert.rejects(pruneHistory(args), /Injected interrupted object deletion/)
+  assert.equal(catalog(store).entries[0].state, 'deleting')
+  await pruneHistory(args)
+  assert.equal(catalog(store).entries.length, 5)
+  assert.ok(store.objects.has(LAST + 'index.html'))
+  assert.ok(store.removed.every(key => key.startsWith(HISTORY + 'r101-a1/')))
 })
 
 test('protected historic snapshots block unsafe prune and do not delete anything', async () => {
