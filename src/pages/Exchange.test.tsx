@@ -45,6 +45,7 @@ vi.mock('../components/card/BubbleValueRedeemCard', () => ({
   ),
 }))
 
+import { EXCHANGE_COPY } from '../app/fixtures'
 import Exchange from './Exchange'
 import ExchangeResult from './ExchangeResult'
 
@@ -322,7 +323,7 @@ describe('UX-E: page-local exchange flow', () => {
     fireEvent.click(screen.getByRole('tab', { name: '洗发体验' }))
     expect(screen.getByText('没有找到相关体验券')).toBeTruthy()
     expect(document.querySelector('[data-empty-state-illustration]')).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: '清空搜索' }))
+    fireEvent.click(screen.getByRole('button', { name: EXCHANGE_COPY.emptyAction }))
     expect(screen.getByRole('tab', { name: '全部' }).getAttribute('aria-selected')).toBe('true')
   })
 })
