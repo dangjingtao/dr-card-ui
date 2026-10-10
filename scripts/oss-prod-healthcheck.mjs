@@ -100,6 +100,6 @@ export async function checkPublishedH5({ baseUrl, manifest, fetchImpl = fetch })
   for (const path of new Set(assets)) {
     await verify(path, path.endsWith('.js') ? 'js' : 'css')
   }
-  return { ok: true, releaseId: manifest.id, fromExistingHealthcheck: true,
-    source: 'oss-connection-smoke + company-static-readback', checkedPaths: requested }
+  return { ok: true, releaseId: manifest.id,
+    source: 'company-domain-static-readback', checkedPaths: requested }
 }
