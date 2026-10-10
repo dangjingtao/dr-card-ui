@@ -21,29 +21,21 @@ Bucket `kbs-sdl`（`cn-guangzhou`）：
 
 ## GitHub 环境准备（必须由仓库/云账号管理员完成）
 
-**#171 更新**：非生产推送会实际尝试上传；取消 `OSS_WEB_NONPROD_ENABLED` 开关。缺少 OSS 凭据时部署作业明确失败，不能用 CI 打包成功代替真实发布。当前可由 Repository secrets 统一提供 OSS AK；`oss-ui/dev/test` Environment 继续承载环境边界，未来如需更强 RAM 隔离，可用同名 Environment secrets 覆盖。发布脚本不做对象删除。
+**#171 更新**：非生产推送会实际尝试上传；取消 `OSS_WEB_NONPROD_ENABLED` 开关。OSS 只保留一套已经由生产上传/读回证明有效的 GitHub Environment 凭据，现有名称为 `oss-production`；ui/dev/test 不再复制 AK。环境名是历史命名，不代表非生产工作流可以写 `prod`：代码仍强制 `preview→ui`、`dev→dev`、`test→test`，且不执行 delete。
 
-首次执行自动部署前，在 GitHub Settings → Environments 创建：
-
-- `oss-ui`：只允许 `preview` 分支；
-- `oss-dev`：只允许 `dev` 分支；
-- `oss-test`：只允许 `test` 分支。
-
-当前可以使用 Repository-level OSS 凭据完成非生产固定目录发布；代码仍强制 `preview→ui`、`dev→dev`、`test→test`，且不执行删除。若后续需要云侧最小权限隔离，再为三个 Environment 配置同名、仅限各自前缀的 RAM 凭据即可，无需改变工作流。
-
-| GitHub 参数 | 类型 | 要求 |
+| GitHub Environment 参数 | 类型 | 要求 |
 | --- | --- | --- |
-| `OSS_ACCESS_KEY_ID` | Repository 或 Environment Secret | OSS 写/读凭据；Environment 同名值可覆盖仓库级值 |
-| `OSS_ACCESS_KEY_SECRET` | Repository 或 Environment Secret | 对应密钥，不进入源代码、`VITE_*` 或公开日志 |
+| `OSS_ACCESS_KEY_ID` | `oss-production` Secret | 已验证可访问 `kbs-sdl` 的 OSS AK |
+| `OSS_ACCESS_KEY_SECRET` | `oss-production` Secret | 对应密钥，不进入源代码、`VITE_*` 或公开日志 |
 
-缺少 OSS 凭据时部署作业**明确失败**。测试 API / 邀请 Origin 不再作为静态包上传前置：固定目录可以先落 OSS 并完成人工页面验证，`build-meta.json` 会如实记录 API / Origin 是否配置；真实业务连通性继续在 #171 单独验收。项目原有 `Build` 与 CF 部署工作流继续保留。
+缺少上述凭据时部署作业**明确失败**。测试 API / 邀请 Origin 不作为静态包上传前置：固定目录可以先落 OSS 并完成人工页面验证，`build-meta.json` 会如实记录 API / Origin 是否配置；真实业务连通性继续在 #171 单独验收。项目原有 `Build` 与 CF 部署工作流继续保留。
 
 ## CI / 发布流程
 
 工作流 `.github/workflows/oss-web-nonprod.yml`：
 
 1. PR 上无密钥的包测试分别生成 `ui/dev/test/prod` 四种固定路径构建，逐个校验 JS/CSS 和 Router basename、runtime 模式与 Mock Worker。
-2. 各非生产分支 push 后，仅构建**对应**的目标，成功才进入受该 GitHub Environment 管理的部署作业。 `prod` 根本不在部署触发列表中。
+2. 各非生产分支 push 后，仅构建**对应**的目标；上传步骤读取现有 `oss-production` Environment 的已验证 OSS 凭据。`prod` 根本不在此工作流的部署触发列表中。
 3. 真实部署核对分支 SHA、目标前缀和密钥；如分支有新提交、旧 CI 重跑，拒绝切入口。
 4. 上传/读回验证每一个文件（包括静态资源）；`build-meta.json` 在最后阶段写入，`index.html` **最后写入**。已有前一版的入口与元数据在更新中断时尽力恢复；无旧版对象则不假装有历史可回滚。
 5. **不执行 OSS delete / rm**，不改其他环境，不修改 Bucket ACL。旧带哈希资源暂时保留，保护已打开旧 HTML 的用户；后续非生产无引用资源的安全清理须有缓存窗口和真实验证，不能先清空。
@@ -56,4 +48,4 @@ Bucket `kbs-sdl`（`cn-guangzhou`）：
 - OSS 上原 `h5/releases/`、`_ci-smoke/` 等文件不动，无任何批量删除。
 - UI/Dev 的 Mock Service Worker URL 随 Router basename 解析，Cloudflare 根路径不变；Test 不允许 Mock。
 - 固定入口更新按对象顺序，不是多文件原子事务。若使用 CDN 缓存、灰度回滚、长时在用资源，需按 #171 真人验收记录范围与风险。
-- 实际账号权限、各环境 Secret、HTTPS/反向代理映射、真实环境访问/JSBridge 属外部前置条件（#80）；缺失即保持待验收，不声称已上生产。
+- 实际账号权限、共享 OSS Secret、HTTPS/反向代理映射、真实环境访问/JSBridge 属外部前置条件（#80）；缺失即保持待验收，不声称已上生产。
