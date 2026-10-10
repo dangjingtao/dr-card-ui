@@ -62,6 +62,22 @@ if (!target) {
   fail(`Unknown build target "${requestedTarget}". Expected auto, dev, preview, test, prod, or cf.`)
 }
 
+// #168: fixed OSS web paths are opt-in; old Cloudflare and immutable release
+// builds retain their existing artifact and router conventions.
+const OSS_WEB_TARGETS = { ui: 'preview', dev: 'dev', test: 'test', prod: 'prod' }
+const ossWebTarget = process.env.OSS_WEB_TARGET?.trim() ?? ''
+if (ossWebTarget) {
+  if (!(ossWebTarget in OSS_WEB_TARGETS) || OSS_WEB_TARGETS[ossWebTarget] !== targetName) {
+    fail(`OSS_WEB_TARGET=${ossWebTarget} does not match the ${targetName} build target.`)
+  }
+  if (process.env.H5_OSS_ARTIFACT !== '1' || cloudflareBuildContext) {
+    fail('Fixed-path OSS builds require H5_OSS_ARTIFACT=1 and must not use the Cloudflare target.')
+  }
+}
+const ossWebPath = ossWebTarget
+  ? `/kbs-web/${ossWebTarget === 'prod' ? 'prod/last' : ossWebTarget}`
+  : ''
+
 const fileEnv = loadEnv(target.mode, root, 'VITE_')
 const readEnv = (key) => process.env[key] ?? fileEnv[key]
 const errors = []
@@ -168,6 +184,7 @@ const runtimeEnv = {
   VITE_BUILD_SHA: buildSha,
   VITE_BUILD_ID: buildId,
   VITE_SOURCE_BRANCH: sourceBranch,
+  ...(ossWebPath ? { VITE_ROUTER_BASENAME: ossWebPath } : {}),
 }
 
 const metadata = {
@@ -178,6 +195,7 @@ const metadata = {
   bridgeMode,
   apiBaseConfigured: Boolean(apiBaseUrl),
   buddyPublicOriginConfigured: Boolean(publicOrigin),
+  ...(ossWebPath ? { ossWeb: { target: ossWebTarget, path: `${ossWebPath}/` } } : {}),
   build: {
     sha: buildSha,
     id: buildId,
