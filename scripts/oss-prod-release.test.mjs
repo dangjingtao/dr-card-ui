@@ -116,10 +116,32 @@ test('failing Healthcheck restores verified previous last; history is never prun
   await installed(store, 1)
   const prior = store.objects.get(LAST + 'index.html').toString()
   await assert.rejects(installed(store, 2, {
-    healthcheck: async () => ({ ok: false, releaseId: 'r102-a1' }),
+    healthcheck: async manifest => ({ ok: manifest.id === 'r101-a1',
+      releaseId: manifest.id }),
   }), /Healthcheck failed/)
   assert.equal(last(store).id, 'r101-a1')
   assert.equal(store.objects.get(LAST + 'index.html').toString(), prior)
+  assert.deepEqual(store.removed, [])
+})
+
+test('failed publish and its failed recovery verification are clearly distinguished', async () => {
+  const store = new MemoryStore()
+  await installed(store, 1)
+  await assert.rejects(installed(store, 2, {
+    healthcheck: async manifest => ({ ok: false, releaseId: manifest.id }),
+  }), AggregateError)
+  assert.equal(last(store).id, 'r101-a1')
+  assert.deepEqual(store.removed, [])
+})
+
+test('failed historic rollback revalidates restored original release', async () => {
+  const store = new MemoryStore()
+  for (let i = 1; i <= 3; i++) await installed(store, i)
+  await assert.rejects(rollback({ store, releaseId: 'r102-a1',
+    authorizeRollback: async () => true,
+    healthcheck: async manifest => ({ ok: manifest.id === 'r103-a1', releaseId: manifest.id }),
+  }), /Rollback healthcheck failed/)
+  assert.equal(last(store).id, 'r103-a1')
   assert.deepEqual(store.removed, [])
 })
 
