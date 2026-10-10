@@ -57,6 +57,7 @@ export default function Settings() {
   const [avatarPending, setAvatarPending] = useState<'photo' | 'album' | null>(null)
   const [avatarError, setAvatarError] = useState<string | null>(null)
   const bypassGuard = useRef(false)
+  const postSaveNavigation = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [baseline, setBaseline] = useState(initialProfile)
   const profileLoad = identity.state === 'success' ? 'ready' : identity.state
   const dirty = nickname !== baseline.nickname || year !== baseline.year ||
@@ -80,6 +81,12 @@ export default function Settings() {
     setAvatarSrc((current) => touchedRef.current.avatar ? current : identity.data.avatar)
     setBaseline(next)
   }, [identity])
+
+  // The success redirect belongs to the current settings mount. If the user
+  // leaves before it fires, never send a later page back to /profile.
+  useEffect(() => () => {
+    if (postSaveNavigation.current !== null) clearTimeout(postSaveNavigation.current)
+  }, [])
 
   // Account changes must never carry a draft PIN (or other profile edits)
   // across sessions. The identity store independently invalidates its cache.
@@ -234,7 +241,7 @@ export default function Settings() {
       bypassGuard.current = true
       flashToast()
       close()
-      window.setTimeout(() => navigate('/profile'), 600)
+      postSaveNavigation.current = window.setTimeout(() => navigate('/profile'), 600)
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : '保存失败，请重试')
     } finally {
