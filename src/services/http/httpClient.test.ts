@@ -151,13 +151,17 @@ describe('HTTP foundation', () => {
     expect(attempts).toBe(2)
   })
 
-  it('recognizes a top-level business code 401 and never retries the replay again', async () => {
+  it('recognizes a top-level business code 401 and reports terminal auth failure after one replay', async () => {
     let attempts = 0
     let renewals = 0
+    let failures = 0
     const client = createHttpClient({
       baseURL: 'https://api.example.test',
       onUnauthorized: () => {
         renewals += 1
+      },
+      onAuthFailure: () => {
+        failures += 1
       },
       adapter: async (config) => {
         attempts += 1
@@ -177,6 +181,7 @@ describe('HTTP foundation', () => {
     })
     expect(attempts).toBe(2)
     expect(renewals).toBe(1)
+    expect(failures).toBe(1)
   })
 
   it('reports a second unauthorized response without starting another login loop', async () => {
