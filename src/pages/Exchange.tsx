@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronRight, Droplets, PartyPopper, Ticket } from 'lucide-react'
 import DebugPanel from '../components/mobile/DebugPanel'
+import EmptyStateIllustration from '../components/mobile/EmptyStateIllustration'
 import PageContainer from '../components/mobile/PageContainer'
 import PromptOverlay from '../components/mobile/PromptOverlay'
 import BubbleValueRedeemCard from '../components/card/BubbleValueRedeemCard'
@@ -225,20 +226,19 @@ export default function Exchange() {
             />
           </div>
         ) : list.length === 0 ? (
-          <div className="rounded-container bg-surface py-2 shadow-sm">
-            <EmptyState
-              variant="no-results"
-              title={EXCHANGE_COPY.emptyTitle}
-              supportingText={EXCHANGE_COPY.emptyDesc}
-              primaryAction={
-                category === 'all' ? undefined : (
-                  <Button variant="outline" onClick={() => changeCategory('all')}>
-                    {EXCHANGE_COPY.emptyAction}
-                  </Button>
-                )
-              }
-            />
-          </div>
+          <EmptyState
+            variant="no-results"
+            visual={<EmptyStateIllustration />}
+            title={EXCHANGE_COPY.emptyTitle}
+            supportingText={EXCHANGE_COPY.emptyDesc}
+            primaryAction={
+              category === 'all' ? undefined : (
+                <Button variant="outline" onClick={() => changeCategory('all')}>
+                  {EXCHANGE_COPY.emptyAction}
+                </Button>
+              )
+            }
+          />
         ) : (
           <ul className="grid grid-cols-2 gap-3" aria-live="polite">
             {list.map((product) => {
