@@ -888,7 +888,7 @@ export const ROUTES: RouteMeta[] = [
   },
   {
     path: '/buddy/invite/scan',
-    title: '请在卡博士 App 内扫码',
+    title: '认识新搭子，请在 App 内扫码',
     nodes: [30],
     task: 'H034',
     /* #102 最终版：该路由只是微信/系统相机的公开引导页，无 Native 安装检测、
