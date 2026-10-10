@@ -289,18 +289,38 @@ describe('H044 birthday and PIN profile editing (#142)', () => {
     expect(mocks.navigate).not.toHaveBeenCalled()
   })
 
-  it('validates PIN confirmation and never assumes absent status means not set', async () => {
-    mocks.fetchUserProfileDetail.mockResolvedValue({ nickname: '测试用户', grade: '大一' })
+  it('disables PIN editing upfront when the backend has no PIN status contract', async () => {
+    mocks.fetchUserProfileDetail.mockResolvedValue({ nickname: '测试用户', grade: '大一', birthday: '' })
     render(<Settings />)
     await screen.findByText('测试用户')
-    expect(screen.getByRole('button', { name: '设置消费密码' }).textContent).toContain('尚未开放')
-    fireEvent.click(screen.getByRole('button', { name: '设置消费密码' }))
-    fireEvent.change(screen.getByLabelText('新消费密码'), { target: { value: '123456' } })
-    fireEvent.change(screen.getByLabelText('确认消费密码'), { target: { value: '222222' } })
+    const pinEntry = screen.getByRole('button', { name: '设置消费密码' }) as HTMLButtonElement
+    expect(pinEntry.textContent).toContain('暂不可用')
+    expect(pinEntry.disabled).toBe(true)
+    fireEvent.click(pinEntry)
+    expect(screen.queryByLabelText('新消费密码')).toBeNull()
+    expect(mocks.updateUserProfile).not.toHaveBeenCalled()
+  })
+
+  it('saves birthday via user/update even when PIN remains unsupported', async () => {
+    mocks.fetchUserProfileDetail.mockResolvedValue({
+      nickname: '测试用户', grade: '大一', birthday: '', pinConfigured: undefined,
+    })
+    mocks.updateUserProfile.mockResolvedValue({
+      id: 5, nick_name: '测试用户', student_grade: '大一', avatar_img: null,
+      birthday: '2001-05-06',
+    })
+    render(<Settings />)
+    await screen.findByText('测试用户')
+    expect((screen.getByRole('button', { name: '设置消费密码' }) as HTMLButtonElement).disabled).toBe(true)
+    fireEvent.click(screen.getByRole('button', { name: '修改生日' }))
+    fireEvent.change(screen.getByLabelText('生日', { selector: 'input' }), {
+      target: { value: '2001-05-06' },
+    })
     fireEvent.click(screen.getByRole('button', { name: '完成' }))
     fireEvent.click(screen.getByRole('button', { name: '确认修改' }))
-    expect(screen.getByRole('alert').textContent).toContain('两次相同')
-    expect(mocks.updateUserProfile).not.toHaveBeenCalled()
+    await waitFor(() => expect(mocks.updateUserProfile).toHaveBeenCalledWith({ birthday: '2001-05-06' }))
+    await screen.findByText('保存成功')
+    expect(screen.getByRole('button', { name: '修改生日' }).textContent).toContain('2001-05-06')
   })
 
   it('clears an unsaved PIN when the authentication session changes', async () => {
@@ -315,9 +335,11 @@ describe('H044 birthday and PIN profile editing (#142)', () => {
     fireEvent.click(screen.getByRole('button', { name: '完成' }))
     expect(screen.getByRole('button', { name: '设置消费密码' }).textContent).toContain('待保存')
     act(() => window.dispatchEvent(new Event('dr-card-ui:auth-session-cleared')))
-    expect(screen.getByRole('button', { name: '设置消费密码' }).textContent).not.toContain('待保存')
-    fireEvent.click(screen.getByRole('button', { name: '设置消费密码' }))
-    expect((screen.getByLabelText('新消费密码') as HTMLInputElement).value).toBe('')
+    const entry = screen.getByRole('button', { name: '设置消费密码' }) as HTMLButtonElement
+    expect(entry.textContent).not.toContain('待保存')
+    expect(entry.disabled).toBe(true)
+    fireEvent.click(entry)
+    expect(screen.queryByLabelText('新消费密码')).toBeNull()
   })
 
   it('submits both staged edits through user/update when detail declares support', async () => {

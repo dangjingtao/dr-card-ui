@@ -235,6 +235,13 @@ describe('user update contract', () => {
     expect(absent.pinConfigured).toBeUndefined()
   })
 
+  it('preserves a null birthday as an editable empty date, without inventing PIN support', async () => {
+    mocks.request.mockResolvedValue({ code: 0, data: { nick_name: '会员', student_grade: '', birthday: null } })
+    await expect(fetchUserProfileDetail()).resolves.toMatchObject({ birthday: '' })
+    const result = await fetchUserProfileDetail()
+    expect(result.pinConfigured).toBeUndefined()
+  })
+
   it('rejects success-code responses that silently discard a birthday edit', async () => {
     mocks.request.mockResolvedValue({
       code: 0, data: { id: 5, nick_name: '示例', gender: '1', points: 0 },
