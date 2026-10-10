@@ -43,7 +43,7 @@ describe('buddy list backend truth', () => {
     const refresh = within(toolbar).getByRole('button', { name: '刷新搭子列表' })
     expect(refresh.textContent).toBe('刷新')
     expect(refresh.className).toContain('bg-transparent')
-    expect(refresh.className).not.toContain('border')
+    expect(refresh.classList.contains('border')).toBe(false)
     expect(toolbar.nextElementSibling?.getAttribute('aria-label')).toBe('我的洗头搭子')
     expect(screen.getAllByRole('button', { name: '刷新搭子列表' })).toHaveLength(1)
   })
