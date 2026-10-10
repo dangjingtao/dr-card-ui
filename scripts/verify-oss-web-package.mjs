@@ -27,11 +27,11 @@ if (target === 'test' || target === 'prod') {
 } else if (meta.dataMode !== 'mock' || !existsSync(join(root, 'mockServiceWorker.js'))) {
   throw new Error('UI/development fixture bundle must preserve its Mock worker')
 }
-if (/(?:src|href)=["']\\/assets\\//.test(html)) {
+if (/(?:src|href)=["']\/assets\//.test(html)) {
   throw new Error('Absolute /assets URLs break fixed OSS subdirectories')
 }
-const jsRefs = [...html.matchAll(/src=["'](\\.\\/assets\\/[^"']+\\.js)["']/g)].map(m => m[1])
-const cssRefs = [...html.matchAll(/href=["'](\\.\\/assets\\/[^"']+\\.css)["']/g)].map(m => m[1])
+const jsRefs = [...html.matchAll(/src=["'](\.\/assets\/[^"']+\.js)["']/g)].map(m => m[1])
+const cssRefs = [...html.matchAll(/href=["'](\.\/assets\/[^"']+\.css)["']/g)].map(m => m[1])
 if (!jsRefs.length || !cssRefs.length) {
   throw new Error('Missing relative ./assets JS/CSS references')
 }
