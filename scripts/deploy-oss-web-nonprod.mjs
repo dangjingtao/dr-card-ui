@@ -34,7 +34,7 @@ function assertCurrentBranchHead() {
   const result = spawnSync('git', ['ls-remote', '--exit-code', 'origin', `refs/heads/${branch}`], {
     encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
   })
-  if (result.status !== 0 || result.stdout.trim().split(/\\s+/)[0] !== process.env.GITHUB_SHA) {
+  if (result.status !== 0 || result.stdout.trim().split(/\s+/)[0] !== process.env.GITHUB_SHA) {
     throw new Error('Stale or unverifiable source branch HEAD: refusing to publish fixed entry.')
   }
 }
