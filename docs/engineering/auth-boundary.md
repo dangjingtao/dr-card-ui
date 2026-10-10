@@ -14,7 +14,7 @@
 - H5 统一通过 `src/services/nativeBridge.ts` 获取并验证结果，业务页面不得直接访问宿主对象。
 - OAuth 开发登录：`POST {VITE_API_BASE_URL}/api/oauth/login`，请求体 `{ salt, token }`；成功响应兼容旧的 `{ userInfo, accessToken }`，以及当前后台返回的 `{ code: 0, data: { userInfo, accessToken, ... } }`；后续同源 API 请求使用 `Authorization: Bearer <accessToken>`。
 - 正式 H5 根首页在 `VITE_DATA_MODE=api` 时先完成登录；仅 `accessToken` 暂存于 `sessionStorage`，`userInfo` 保留在当前文档内存。Mock 模式保留独立浏览器预览，不模拟真实登录。
-- HTTP 401 或响应顶层 `code: 401` 触发一次单飞重登；原请求最多重放一次。若这次重登本身再次返回 401，或重登成功后重放原请求仍返回 401，则判定当前用户会话已失效：H5 弹出「用户信息过期」Toast，并调用 Native `closeWebView()` 关闭当前 WebView，不再继续重登或停留在当前业务页。重登过程中的非 401 失败仍进入 `/error?reason=auth`，不循环。
+- HTTP 401 或响应顶层 `code: 401` 触发一次单飞重登；原请求最多重放一次。首次打开文档时，如果初始 `/api/oauth/login` 自身返回 401，同样只允许再登录一次。若这次重登/重试登录再次返回 401，或重登成功后重放原请求仍返回 401，则判定当前用户会话已失效：H5 弹出「用户信息过期」Toast，并调用 Native `closeWebView()` 关闭当前 WebView，不再继续重登或停留在当前业务页。重登过程中的非 401 失败仍进入 `/error?reason=auth`，不循环。
 - 2026-09-28 后端统一响应协议：成功码 `code: 0`（兼容原生；`GET /api/user/detail` 此前 2026-09-24 实测的 `code: 200` 已由后端统一改回 0）；失败为非 0 code + `message` 字段（无 `msg` / `status`）。正式接口共用 `parseApiEnvelope` 解析。
 
 旧 iOS `webkit.messageHandlers.getAuthorizationInfo.postMessage({}) → window.onToken(token)` 仅作为历史联调 / Bridge Lab Raw Probe 证据保留，不再是 production auth contract。
