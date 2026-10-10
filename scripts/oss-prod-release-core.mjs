@@ -99,7 +99,18 @@ function parseCatalog(bytes) {
     ensure(safeId(item.id) && !ids.has(item.id) &&
       typeof item.activatedAt === 'string' &&
       !Number.isNaN(Date.parse(item.activatedAt)) &&
-      /^[a-f0-9]{40}$/.test(item.sha), 'Invalid catalog entry')
+      /^[a-f0-9]{40}$/.test(item.sha) &&
+      (item.state === undefined || item.state === 'deleting'),
+      'Invalid catalog entry')
+    if (item.state === 'deleting') {
+      ensure(Array.isArray(item.deleteFiles) && item.deleteFiles.length >= 3 &&
+        item.deleteFiles.at(-1) === MANIFEST &&
+        item.deleteFiles.every(path => safeFile(path)) &&
+        new Set(item.deleteFiles).size === item.deleteFiles.length,
+        'Damaged historic deletion journal')
+    } else {
+      ensure(item.deleteFiles === undefined, 'Unexpected historic delete file list')
+    }
     ids.add(item.id)
   }
   return cat
@@ -109,6 +120,9 @@ async function catalog(store) { return parseCatalog(await store.get(CATALOG)) }
 // The previous accepted release is archived BEFORE any last/ file is modified.
 // Existing history IDs are verified, never silently overwritten.
 async function archivePrevious(store, oldManifest, oldFiles) {
+  const listing = await catalog(store)
+  ensure(!listing.entries.some(e => e.id === oldManifest.id && e.state === 'deleting'),
+    'Historic archive is pending deletion; cannot re-use its release ID')
   const prefix = releasePrefix(oldManifest.id)
   const existing = await getManifest(store, prefix)
   if (existing) {
@@ -125,7 +139,6 @@ async function archivePrevious(store, oldManifest, oldFiles) {
     }
     await putAndCheck(store, prefix + MANIFEST, json(oldManifest))
   }
-  const listing = await catalog(store)
   const catalogued = listing.entries.find(e => e.id === oldManifest.id)
   ensure(!catalogued || (catalogued.sha === oldManifest.sha &&
     catalogued.activatedAt === oldManifest.activatedAt), 'Conflicting history catalog ID')
@@ -217,7 +230,8 @@ export async function rollback({ store, releaseId, healthcheck, authorizeRollbac
   ensure(safeId(releaseId) && typeof healthcheck === 'function' &&
     typeof authorizeRollback === 'function', 'Rollback requires explicit approval and real Healthcheck')
   const list = await catalog(store)
-  ensure(list.entries.some(x => x.id === releaseId), 'Not a catalogued successful historic release')
+  ensure(list.entries.some(x => x.id === releaseId && x.state !== 'deleting'),
+    'Not a catalogued successful historic release')
   const oldManifest = await getManifest(store, LAST)
   ensure(oldManifest && oldManifest.id !== releaseId, 'No distinct current release to restore')
   const oldFiles = await readSnapshot(store, LAST, oldManifest)
@@ -249,17 +263,22 @@ export async function retentionPlan({ store, activeId, protectedIds = [] }) {
   const list = await catalog(store)
   const all = [...list.entries].sort((a, b) =>
     Date.parse(a.activatedAt) - Date.parse(b.activatedAt) || a.id.localeCompare(b.id))
-  const over = Math.max(0, all.length - KEEP)
   const keep = new Set([activeId, ...protectedIds])
   for (const id of keep) ensure(safeId(id), 'Unsafe protected release ID')
-  const victims = all.filter(x => !keep.has(x.id)).slice(0, over)
-  ensure(victims.length === over, 'Cannot prune: protected history exceeds retention capacity')
-  return { total: all.length, keep: KEEP, victims, dryRun: true }
+  const deleting = all.filter(e => e.state === 'deleting')
+  ensure(deleting.every(e => !keep.has(e.id)),
+    'Pending history deletion is now protected or active; intervention required')
+  const extra = Math.max(0, all.length - KEEP - deleting.length)
+  const further = all.filter(e => e.state !== 'deleting' && !keep.has(e.id)).slice(0, extra)
+  ensure(further.length === extra, 'Cannot prune: protected history exceeds retention capacity')
+  return { total: all.length, keep: KEEP, victims: [...deleting, ...further], dryRun: true }
 }
 
-// #170 must provide attestation from the EXISTING post-publish Healthcheck.
-// This function does not enable itself; caller needs an explicit allowDelete
-// gate. Deletions are exact file keys from verified history manifests.
+// Crash-safe two-phase history cleanup:
+// 1. Write a recoverable deletion journal into catalog.json.
+// 2. Remove exact keys idempotently. If the final catalog write fails, a new
+//    run can resume from the journal even when the manifest is already gone.
+// No pruning can happen without the existing post-publish Healthcheck proof.
 export async function pruneHistory({ store, activeId, attestation, allowDelete = false, protectedIds = [] }) {
   const current = await getManifest(store, LAST)
   ensure(current?.id === activeId, 'History prune refused: active last/ does not match')
@@ -268,14 +287,26 @@ export async function pruneHistory({ store, activeId, attestation, allowDelete =
   ensure(healthy(attestation, activeId) && attestation.fromExistingHealthcheck === true,
     'Deletion requires post-publish existing Healthcheck attestation (#170)')
   const listing = await catalog(store)
-  for (const entry of plan.victims) {
-    const prefix = releasePrefix(entry.id)
-    const manifest = await getManifest(store, prefix)
-    ensure(manifest?.id === entry.id, 'History manifest missing: refusing deletion')
-    await readSnapshot(store, prefix, manifest)
-    for (const item of manifest.files) await store.remove(prefix + item.path)
-    await store.remove(prefix + MANIFEST)
-    listing.entries = listing.entries.filter(x => x.id !== entry.id)
+  for (const victim of plan.victims) {
+    const prefix = releasePrefix(victim.id)
+    let entry = listing.entries.find(e => e.id === victim.id)
+    ensure(entry, 'Uncatalogued history cannot be deleted')
+    if (entry.state !== 'deleting') {
+      const manifest = await getManifest(store, prefix)
+      ensure(manifest?.id === entry.id, 'History manifest missing: refusing deletion')
+      await readSnapshot(store, prefix, manifest)
+      entry = { ...entry, state: 'deleting',
+        deleteFiles: [...manifest.files.map(x => x.path), MANIFEST] }
+      listing.entries = listing.entries.map(e => e.id === entry.id ? entry : e)
+      await putAndCheck(store, CATALOG, json(listing))
+    }
+    // The journal is durable before the first remove. On retry, already
+    // deleted keys are skipped; the final manifest can already be missing.
+    for (const relativePath of entry.deleteFiles) {
+      const key = prefix + relativePath
+      if (await store.get(key) != null) await store.remove(key)
+    }
+    listing.entries = listing.entries.filter(e => e.id !== entry.id)
     await putAndCheck(store, CATALOG, json(listing))
   }
   return { ...plan, dryRun: false, removed: plan.victims.map(x => x.id) }
