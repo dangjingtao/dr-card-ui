@@ -137,6 +137,8 @@ test('rollback restores an exact historic version at same last URL', async () =>
   assert.equal(r.restored, 'r102-a1')
   assert.equal(last(store).id, 'r102-a1')
   assert.match(store.objects.get(LAST + 'index.html').toString(), /index-2.js/)
+  assert.ok(store.objects.has(HISTORY + 'r103-a1/index.html'),
+    'outgoing current release must be archived for roll-forward')
   assert.deepEqual(store.removed, [])
   await assert.rejects(rollback({ store, releaseId: 'r999-a1',
     healthcheck: ok, authorizeRollback: async () => true }), /Not a catalogued/)
