@@ -1,0 +1,262 @@
+// #169: production release primitives. No process environment, cloud access or
+// scheduled operations here. #170 must inject the REAL health check before use.
+import { createHash } from 'node:crypto'
+
+export const LAST = 'kbs-web/prod/last/'
+export const HISTORY = 'kbs-web/prod/history/'
+export const CATALOG = HISTORY + 'catalog.json'
+export const MANIFEST = 'release-manifest.json'
+export const KEEP = 5
+
+export const sha256 = bytes => createHash('sha256').update(bytes).digest('hex')
+const data = bytes => Buffer.isBuffer(bytes) ? bytes : Buffer.from(bytes)
+const parse = bytes => JSON.parse(data(bytes).toString('utf8'))
+const json = value => Buffer.from(JSON.stringify(value, null, 2) + '\n')
+
+export function safeFile(path) {
+  return typeof path === 'string' && path.length < 512 &&
+    !path.startsWith('/') && !path.includes('\\') &&
+    !/[\x00-\x1f]/.test(path) &&
+    path.split('/').every(part => part && part !== '.' && part !== '..')
+}
+export function safeId(id) {
+  return typeof id === 'string' && /^r[1-9][0-9]{0,15}-a[1-9][0-9]{0,5}$/.test(id)
+}
+function ensure(cond, reason) { if (!cond) throw new Error(reason) }
+const releasePrefix = id => {
+  ensure(safeId(id), 'Invalid release ID')
+  return HISTORY + id + '/'
+}
+function fileEntries(fileMap) {
+  const files = [...fileMap.entries()].map(([path, content]) => {
+    ensure(safeFile(path) && path !== MANIFEST, 'Unsafe release filename')
+    return { path, sha256: sha256(data(content)), size: data(content).length }
+  }).sort((a, b) => a.path.localeCompare(b.path))
+  ensure(files.some(x => x.path === 'index.html') && files.some(x => x.path === 'build-meta.json'),
+    'Release is missing index or build metadata')
+  return files
+}
+export function makeCandidate({ files, runId, attempt, sha, at = new Date().toISOString() }) {
+  const id = `r${runId}-a${attempt}`
+  ensure(safeId(id), 'Invalid GitHub run ID or attempt')
+  ensure(/^[a-f0-9]{40}$/.test(sha), 'Invalid source Git SHA')
+  ensure(!Number.isNaN(Date.parse(at)), 'Invalid release timestamp')
+  const map = files instanceof Map ? files : new Map(Object.entries(files))
+  const meta = parse(map.get('build-meta.json') ?? '{}')
+  ensure(meta.appEnvironment === 'prod' && meta.dataMode === 'api' &&
+    meta.bridgeMode === 'native' && meta.ossWeb?.target === 'prod' &&
+    meta.ossWeb?.path === '/kbs-web/prod/last/' &&
+    meta.build?.sha === sha, 'Refusing nonproduction, mismatched or Mock H5 bundle')
+  return { manifest: {
+    schemaVersion: 1, id, sha, buildId: meta.build.id, activatedAt: at,
+    files: fileEntries(map),
+  }, files: new Map([...map].map(([k, v]) => [k, data(v)])) }
+}
+export function checkManifest(manifest) {
+  ensure(manifest?.schemaVersion === 1 && safeId(manifest.id) &&
+    /^[a-f0-9]{40}$/.test(manifest.sha) &&
+    typeof manifest.activatedAt === 'string' &&
+    !Number.isNaN(Date.parse(manifest.activatedAt)) &&
+    Array.isArray(manifest.files) && manifest.files.length > 1, 'Invalid release manifest')
+  const names = new Set()
+  for (const f of manifest.files) {
+    ensure(safeFile(f.path) && f.path !== MANIFEST &&
+      /^[a-f0-9]{64}$/.test(f.sha256) &&
+      Number.isSafeInteger(f.size) && f.size >= 0 &&
+      !names.has(f.path), 'Unsafe release manifest file entry')
+    names.add(f.path)
+  }
+  ensure(names.has('index.html') && names.has('build-meta.json'), 'Incomplete release manifest')
+  return manifest
+}
+async function getManifest(store, prefix) {
+  const bytes = await store.get(prefix + MANIFEST)
+  return bytes == null ? null : checkManifest(parse(bytes))
+}
+async function readSnapshot(store, prefix, manifest) {
+  const files = new Map()
+  for (const item of manifest.files) {
+    const bytes = await store.get(prefix + item.path)
+    ensure(bytes != null && data(bytes).length === item.size &&
+      sha256(data(bytes)) === item.sha256,
+    `Missing or damaged artifact: ${prefix + item.path}`)
+    files.set(item.path, data(bytes))
+  }
+  return files
+}
+async function putAndCheck(store, key, bytes) {
+  await store.put(key, bytes)
+  const remote = await store.get(key)
+  ensure(remote != null && sha256(data(remote)) === sha256(data(bytes)),
+    `OSS readback mismatch: ${key}`)
+}
+function parseCatalog(bytes) {
+  const cat = bytes == null ? { schemaVersion: 1, entries: [] } : parse(bytes)
+  ensure(cat?.schemaVersion === 1 && Array.isArray(cat.entries), 'Invalid history catalog')
+  const ids = new Set()
+  for (const item of cat.entries) {
+    ensure(safeId(item.id) && !ids.has(item.id) &&
+      typeof item.activatedAt === 'string' &&
+      !Number.isNaN(Date.parse(item.activatedAt)) &&
+      /^[a-f0-9]{40}$/.test(item.sha), 'Invalid catalog entry')
+    ids.add(item.id)
+  }
+  return cat
+}
+async function catalog(store) { return parseCatalog(await store.get(CATALOG)) }
+
+// The previous accepted release is archived BEFORE any last/ file is modified.
+// Existing history IDs are verified, never silently overwritten.
+async function archivePrevious(store, oldManifest, oldFiles) {
+  const prefix = releasePrefix(oldManifest.id)
+  const existing = await getManifest(store, prefix)
+  if (existing) {
+    ensure(JSON.stringify(existing) === JSON.stringify(oldManifest),
+      'Conflicting existing history release ID')
+    await readSnapshot(store, prefix, existing)
+  } else {
+    for (const entry of oldManifest.files) {
+      ensure(await store.get(prefix + entry.path) == null,
+        'Partial/conflicting immutable history prefix; manual repair required')
+    }
+    for (const entry of oldManifest.files) {
+      await putAndCheck(store, prefix + entry.path, oldFiles.get(entry.path))
+    }
+    await putAndCheck(store, prefix + MANIFEST, json(oldManifest))
+  }
+  const listing = await catalog(store)
+  if (!listing.entries.some(e => e.id === oldManifest.id)) {
+    listing.entries.push({
+      id: oldManifest.id, sha: oldManifest.sha, activatedAt: oldManifest.activatedAt,
+    })
+    await putAndCheck(store, CATALOG, json(listing))
+  }
+}
+
+// Never change an already-published static key to different bytes.
+// Keeping old assets preserves clients still using cached old HTML.
+async function stageAssets(store, candidate) {
+  for (const f of candidate.manifest.files) {
+    if (f.path === 'index.html' || f.path === 'build-meta.json') continue
+    const key = LAST + f.path
+    const previous = await store.get(key)
+    ensure(previous == null || sha256(data(previous)) === f.sha256,
+      `Non-versioned static object collision at ${key}; rename/hash the asset`)
+    if (previous == null) await putAndCheck(store, key, candidate.files.get(f.path))
+  }
+}
+async function switchEntry(store, manifest, files) {
+  // The HTML entry point is the last file to change. No rm or folder sync.
+  await putAndCheck(store, LAST + 'build-meta.json', files.get('build-meta.json'))
+  await putAndCheck(store, LAST + MANIFEST, json(manifest))
+  await putAndCheck(store, LAST + 'index.html', files.get('index.html'))
+}
+async function revertEntry(store, oldManifest, oldFiles) {
+  if (!oldManifest) throw new Error('Bootstrap has no previous release; manual recovery required')
+  await switchEntry(store, oldManifest, oldFiles)
+}
+function healthy(result, id) {
+  return result?.ok === true && result.releaseId === id
+}
+
+// Pipeline integration point for #170. Without a real injected healthcheck
+// publish is rejected; this module is NOT wired to a production Action in #169.
+export async function publish({ store, candidate, healthcheck, currentHead, allowBootstrap = false }) {
+  ensure(typeof healthcheck === 'function' && typeof currentHead === 'function',
+    'Real Healthcheck and source branch guard are mandatory')
+  checkManifest(candidate.manifest)
+  const oldManifest = await getManifest(store, LAST)
+  const oldIndex = await store.get(LAST + 'index.html')
+  ensure(Boolean(oldManifest) === Boolean(oldIndex),
+    'Unmanaged or damaged last/ entry; refuse to establish a false rollback baseline')
+  ensure(oldManifest || allowBootstrap,
+    'First prod/last deployment requires separately approved bootstrap')
+  ensure(!oldManifest || oldManifest.id !== candidate.manifest.id,
+    'Release already active; refusing duplicate promotion')
+  const oldFiles = oldManifest ? await readSnapshot(store, LAST, oldManifest) : null
+  if (oldManifest) await archivePrevious(store, oldManifest, oldFiles)
+  await stageAssets(store, candidate)
+  ensure(await currentHead(candidate.manifest.sha), 'Stale or unverifiable prod branch HEAD')
+  let switched = false
+  try {
+    switched = true // includes partial entry writes
+    await switchEntry(store, candidate.manifest, candidate.files)
+    const result = await healthcheck(candidate.manifest)
+    ensure(healthy(result, candidate.manifest.id), 'Real Healthcheck failed or returned wrong release ID')
+    return { releaseId: candidate.manifest.id, previousId: oldManifest?.id ?? null,
+      healthcheck: 'passed', history: (await catalog(store)).entries.length }
+  } catch (error) {
+    if (switched) {
+      try { await revertEntry(store, oldManifest, oldFiles) }
+      catch (restoreError) {
+        throw new AggregateError([error, restoreError],
+          'Release failed; automatic recovery could not restore a verified prior entry')
+      }
+    }
+    throw error
+  }
+}
+
+export async function rollback({ store, releaseId, healthcheck, currentHead }) {
+  ensure(safeId(releaseId) && typeof healthcheck === 'function' &&
+    typeof currentHead === 'function', 'Rollback requires exact ID and a real Healthcheck')
+  const list = await catalog(store)
+  ensure(list.entries.some(x => x.id === releaseId), 'Not a catalogued successful historic release')
+  const oldManifest = await getManifest(store, LAST)
+  ensure(oldManifest && oldManifest.id !== releaseId, 'No distinct current release to restore')
+  const oldFiles = await readSnapshot(store, LAST, oldManifest)
+  const manifest = await getManifest(store, releasePrefix(releaseId))
+  ensure(manifest && manifest.id === releaseId, 'Historic release manifest missing')
+  const files = await readSnapshot(store, releasePrefix(releaseId), manifest)
+  await stageAssets(store, { manifest, files })
+  ensure(await currentHead(oldManifest.sha), 'Cannot verify current deployed build')
+  try {
+    await switchEntry(store, manifest, files)
+    const result = await healthcheck(manifest)
+    ensure(healthy(result, releaseId), 'Rollback healthcheck failed or returned wrong release')
+    return { restored: releaseId, previous: oldManifest.id }
+  } catch (error) {
+    try { await revertEntry(store, oldManifest, oldFiles) }
+    catch (restoreError) {
+      throw new AggregateError([error, restoreError], 'Rollback failed; automatic recovery failed')
+    }
+    throw error
+  }
+}
+
+export async function retentionPlan({ store, activeId, protectedIds = [] }) {
+  ensure(safeId(activeId), 'Active release identity required')
+  const list = await catalog(store)
+  const all = [...list.entries].sort((a, b) =>
+    Date.parse(a.activatedAt) - Date.parse(b.activatedAt) || a.id.localeCompare(b.id))
+  const over = Math.max(0, all.length - KEEP)
+  const keep = new Set([activeId, ...protectedIds])
+  for (const id of keep) ensure(safeId(id), 'Unsafe protected release ID')
+  const victims = all.filter(x => !keep.has(x.id)).slice(0, over)
+  ensure(victims.length === over, 'Cannot prune: protected history exceeds retention capacity')
+  return { total: all.length, keep: KEEP, victims, dryRun: true }
+}
+
+// #170 must provide attestation from the EXISTING post-publish Healthcheck.
+// This function does not enable itself; caller needs an explicit allowDelete
+// gate. Deletions are exact file keys from verified history manifests.
+export async function pruneHistory({ store, activeId, attestation, allowDelete = false, protectedIds = [] }) {
+  const current = await getManifest(store, LAST)
+  ensure(current?.id === activeId, 'History prune refused: active last/ does not match')
+  const plan = await retentionPlan({ store, activeId, protectedIds })
+  if (!allowDelete) return plan
+  ensure(healthy(attestation, activeId) && attestation.fromExistingHealthcheck === true,
+    'Deletion requires post-publish existing Healthcheck attestation (#170)')
+  const listing = await catalog(store)
+  for (const entry of plan.victims) {
+    const prefix = releasePrefix(entry.id)
+    const manifest = await getManifest(store, prefix)
+    ensure(manifest?.id === entry.id, 'History manifest missing: refusing deletion')
+    await readSnapshot(store, prefix, manifest)
+    for (const item of manifest.files) await store.remove(prefix + item.path)
+    await store.remove(prefix + MANIFEST)
+    listing.entries = listing.entries.filter(x => x.id !== entry.id)
+    await putAndCheck(store, CATALOG, json(listing))
+  }
+  return { ...plan, dryRun: false, removed: plan.victims.map(x => x.id) }
+}
