@@ -79,10 +79,10 @@ jobs:
     needs: package-check
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    # Repository-level OSS credentials may publish the guarded nonproduction prefixes.
-    # Environment-level secrets can still override them later for stricter RAM isolation.
+    # Reuse the one OSS credential set already proven by production upload/readback.
+    # This workflow itself can only target ui/dev/test and never deletes OSS objects.
     environment:
-      name: oss-${{ github.ref_name == 'preview' && 'ui' || github.ref_name }}
+      name: oss-production
     env:
       OSS_REGION: cn-guangzhou
       OSS_ENDPOINT: https://oss-cn-guangzhou.aliyuncs.com
@@ -100,8 +100,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -n "$OSS_ACCESS_KEY_ID" || { echo "::error::oss-$OSS_WEB_TARGET missing OSS_ACCESS_KEY_ID"; exit 1; }
-          test -n "$OSS_ACCESS_KEY_SECRET" || { echo "::error::oss-$OSS_WEB_TARGET missing OSS_ACCESS_KEY_SECRET"; exit 1; }
+          test -n "$OSS_ACCESS_KEY_ID" || { echo "::error::shared OSS credential missing OSS_ACCESS_KEY_ID"; exit 1; }
+          test -n "$OSS_ACCESS_KEY_SECRET" || { echo "::error::shared OSS credential missing OSS_ACCESS_KEY_SECRET"; exit 1; }
           case "$GITHUB_REF_NAME:$OSS_WEB_TARGET" in
             preview:ui|dev:dev|test:test) ;;
             *) echo "::error::Wrong branch/target pair"; exit 1 ;;
