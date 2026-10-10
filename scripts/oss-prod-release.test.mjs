@@ -62,7 +62,7 @@ test('initial last requires explicit bootstrap and mandatory external healthchec
   const store = new MemoryStore()
   await assert.rejects(publish({ store, candidate: make(1), currentHead: head }), /Real Healthcheck/)
   await assert.rejects(publish({ store, candidate: make(1),
-    healthcheck: ok, authorizeRollback: async () => true }), /approved bootstrap/)
+    healthcheck: ok, currentHead: head }), /approved bootstrap/)
   assert.equal(store.objects.size, 0)
   const result = await installed(store, 1)
   assert.equal(result.releaseId, 'r101-a1')
