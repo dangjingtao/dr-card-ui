@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // #168: deploy only fixed *nonproduction* web prefixes. Never deletes OSS keys.
-// Uses the existing verified ossutil binary and scoped GitHub Environment keys.
+// Uses the existing verified ossutil binary and the repository's single verified OSS credential set.
 import { spawnSync } from 'node:child_process'
 import { mkdtempSync, readFileSync, readdirSync, rmSync, mkdirSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -24,7 +24,7 @@ if (process.env.GITHUB_REF_NAME !== expectedBranch || process.env.GITHUB_EVENT_N
   throw new Error(`Refusing non-branch or mismatched deployment to ${prefix}`)
 }
 if (!process.env.OSS_ACCESS_KEY_ID || !process.env.OSS_ACCESS_KEY_SECRET) {
-  throw new Error(`Missing credentials for GitHub Environment oss-${target}; no production fallback is allowed.`)
+  throw new Error('Missing verified OSS deployment credentials.')
 }
 
 // Refuse late reruns from stale commits, even if a previously queued job starts
