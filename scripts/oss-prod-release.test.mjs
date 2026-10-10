@@ -62,7 +62,7 @@ test('initial last requires explicit bootstrap and mandatory external healthchec
   const store = new MemoryStore()
   await assert.rejects(publish({ store, candidate: make(1), currentHead: head }), /Real Healthcheck/)
   await assert.rejects(publish({ store, candidate: make(1),
-    healthcheck: ok, currentHead: head }), /approved bootstrap/)
+    healthcheck: ok, authorizeRollback: async () => true }), /approved bootstrap/)
   assert.equal(store.objects.size, 0)
   const result = await installed(store, 1)
   assert.equal(result.releaseId, 'r101-a1')
@@ -120,9 +120,10 @@ test('damaged previous live file cannot be silently archived or overwritten', as
 test('identical static keys may be reused but changed unversioned assets are blocked', async () => {
   const store = new MemoryStore()
   await installed(store, 1)
-  const bad = make(2)
-  bad.files.set('images/logo.png', Buffer.from('changed-logo'))
-  bad.manifest.files.find(x => x.path === 'images/logo.png').sha256 = 'b'.repeat(64)
+  const normal = make(2)
+  normal.files.set('images/logo.png', Buffer.from('changed-logo'))
+  const bad = makeCandidate({ files: normal.files, runId: 102, attempt: 1,
+    sha: normal.manifest.sha, at: normal.manifest.activatedAt })
   await assert.rejects(publish({ store, candidate: bad, currentHead: head,
     healthcheck: ok }), /Non-versioned static object collision/)
   assert.equal(last(store).id, 'r101-a1')
@@ -132,13 +133,13 @@ test('rollback restores an exact historic version at same last URL', async () =>
   const store = new MemoryStore()
   for (let i = 1; i <= 3; i++) await installed(store, i)
   const r = await rollback({ store, releaseId: 'r102-a1',
-    healthcheck: ok, currentHead: head })
+    healthcheck: ok, authorizeRollback: async () => true })
   assert.equal(r.restored, 'r102-a1')
   assert.equal(last(store).id, 'r102-a1')
   assert.match(store.objects.get(LAST + 'index.html').toString(), /index-2.js/)
   assert.deepEqual(store.removed, [])
   await assert.rejects(rollback({ store, releaseId: 'r999-a1',
-    healthcheck: ok, currentHead: head }), /Not a catalogued/)
+    healthcheck: ok, authorizeRollback: async () => true }), /Not a catalogued/)
 })
 
 test('retention dry-run and 6th history prune delete oldest only with real attestation', async () => {
