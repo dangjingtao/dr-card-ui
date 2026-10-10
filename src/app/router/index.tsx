@@ -252,6 +252,11 @@ const bridgeLabRoutes =
         },
       ]
 
+// OSS artifacts are mounted at /h5/releases/<sha>/<run>/, whereas normal H5
+// deployments and Cloudflare previews remain at /. A build-time basename keeps
+// route matching and internal navigation inside the immutable release directory.
+const routerBasename = import.meta.env.VITE_ROUTER_BASENAME?.trim() || '/'
+
 export const router = createBrowserRouter([
   ...bridgeLabRoutes,
   /* 页面级错误边界（参考稿「页面开小差了」）：
@@ -280,4 +285,4 @@ export const router = createBrowserRouter([
       { path: '*', element: <NotFound /> },
     ],
   },
-])
+], { basename: routerBasename })
