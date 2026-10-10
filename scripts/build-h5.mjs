@@ -134,15 +134,16 @@ if (apiBaseUrl) {
 }
 
 const publicOrigin = readEnv('VITE_BUDDY_PUBLIC_ORIGIN')?.trim() ?? ''
-if (dataMode === 'api' && prodLike && !publicOrigin) {
+if (dataMode === 'api' && prodLike && !publicOrigin && ossWebTarget !== 'prod') {
   errors.push(`${target.appEnvironment} API builds require VITE_BUDDY_PUBLIC_ORIGIN.`)
 }
 if (publicOrigin) {
   try {
     const url = new URL(publicOrigin)
-    if (url.protocol !== 'https:' || url.username || url.password || url.port ||
-      url.pathname !== '/' || url.search || url.hash || url.origin !== publicOrigin) {
-      errors.push('VITE_BUDDY_PUBLIC_ORIGIN must be an exact HTTPS origin without path, credentials, port, query or fragment.')
+    if (!(ossWebTarget === 'prod' ? ['http:', 'https:'].includes(url.protocol) : url.protocol === 'https:') ||
+      url.username || url.password || url.pathname !== '/' || url.search || url.hash ||
+      url.origin !== publicOrigin) {
+      errors.push('VITE_BUDDY_PUBLIC_ORIGIN must be an exact http(s) origin without path, credentials, query or fragment.')
     }
   } catch {
     errors.push('VITE_BUDDY_PUBLIC_ORIGIN must be a valid HTTPS origin.')
