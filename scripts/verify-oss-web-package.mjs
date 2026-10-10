@@ -27,17 +27,17 @@ if (target === 'test' || target === 'prod') {
 } else if (meta.dataMode !== 'mock' || !existsSync(join(root, 'mockServiceWorker.js'))) {
   throw new Error('UI/development fixture bundle must preserve its Mock worker')
 }
-if (/(?:src|href)=["']\/assets\//.test(html)) {
-  throw new Error('Absolute /assets URLs break fixed OSS subdirectories')
-}
-const jsRefs = [...html.matchAll(/src=["'](\.\/assets\/[^"']+\.js)["']/g)].map(m => m[1])
-const cssRefs = [...html.matchAll(/href=["'](\.\/assets\/[^"']+\.css)["']/g)].map(m => m[1])
+const assetBase = `${expectedBase}/assets/`
+const urlRefs = [...html.matchAll(/(?:src|href)=["']([^"']+)["']/g)].map(m => m[1])
+const jsRefs = urlRefs.filter(url => url.startsWith(assetBase) && url.endsWith('.js'))
+const cssRefs = urlRefs.filter(url => url.startsWith(assetBase) && url.endsWith('.css'))
 if (!jsRefs.length || !cssRefs.length) {
-  throw new Error('Missing relative ./assets JS/CSS references')
+  throw new Error(`Missing fixed-path JS/CSS references below ${assetBase}`)
 }
-for (const asset of [...jsRefs, ...cssRefs]) {
-  if (asset.includes('..') || !existsSync(join(root, asset))) {
-    throw new Error(`Invalid or missing referenced static asset: ${asset}`)
+for (const url of urlRefs.filter(url => url.endsWith('.js') || url.endsWith('.css'))) {
+  if (!url.startsWith(assetBase) || url.includes('..') ||
+      !existsSync(join(root, url.slice(expectedBase.length + 1)))) {
+    throw new Error(`Invalid or missing fixed-path static asset: ${url}`)
   }
 }
 const jsFiles = readdirSync(join(root, 'assets')).filter(name => name.endsWith('.js'))
