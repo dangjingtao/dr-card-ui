@@ -15,7 +15,7 @@ Bucket `kbs-sdl`（`cn-guangzhou`）：
 
 示例：`http://kbs.3cgroup.cn/kbs-web/ui/` 等需要公司端将 URL 精确映射到上述对象前缀，且服务器对 SPA 路由做对应目录的 fallback，不能把静态资源 404 伪装成 HTML。优先启用 HTTPS。当前属于待公司验证的**目标地址**，不能用 CI 成功代替公网真实页面验证。
 
-在 `scripts/build-h5.mjs` 以 `H5_OSS_ARTIFACT=1 OSS_WEB_TARGET=ui|dev|test|prod` **显式**触发前缀构建，内部自动注入固定 basename 与 `build-meta.json.ossWeb`。Vite 使用相对 `./assets/`，独立构建保留现有 Cloudflare 根路径模式。旧 `h5/releases/<sha>/<run>/` 生产 OSS 工作流不受影响。
+在 `scripts/build-h5.mjs` 以 `H5_OSS_ARTIFACT=1 OSS_WEB_TARGET=ui|dev|test|prod` **显式**触发前缀构建，内部自动注入固定 basename 与 `build-meta.json.ossWeb`。新固定路径构建使用绝对资源前缀（如 `/kbs-web/ui/assets/`），确保 SPA 多级路由直接刷新后资源仍从环境根目录加载。旧 OSS 不可变发布包继续使用 `./assets/`；Cloudflare 仍用 `/assets/`，三种模式互不改变。旧 `h5/releases/<sha>/<run>/` 生产 OSS 工作流不受影响。
 
 ## GitHub 环境准备（必须由仓库/云账号管理员完成）
 
