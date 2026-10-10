@@ -64,7 +64,9 @@ describe('Points task truthfulness (UX-03)', () => {
 
   it('shows loading without fabricated tasks', () => {
     showPoints()
-    expect(screen.getByRole('heading', { name: '正在加载签到任务' })).toBeTruthy()
+    expect(screen.getByRole('status', { name: '正在加载签到任务' })).toBeTruthy()
+    expect(screen.getByRole('status', { name: '正在加载签到任务' }).querySelectorAll('.animate-pulse').length).toBeGreaterThanOrEqual(8)
+    expect(screen.queryByRole('heading', { name: '正在加载签到任务' })).toBeNull()
     expect(screen.queryByText('观看视频')).toBeNull()
   })
 

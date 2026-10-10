@@ -246,8 +246,9 @@ describe('Card MyCoupons integration', () => {
     mocks.fetchMyCoupons.mockImplementation(() => new Promise(() => {}))
 
     renderCard()
-    expect(screen.getByRole('heading', { name: '正在加载体验券' })).toBeTruthy()
-    expect(screen.getByText('正在读取我的优惠卡')).toBeTruthy()
+    expect(screen.getByRole('status', { name: '正在加载体验券' })).toBeTruthy()
+    expect(document.querySelectorAll('.animate-pulse').length).toBeGreaterThanOrEqual(8)
+    expect(screen.queryByRole('heading', { name: /暂无可用的体验券|正在加载体验券/ })).toBeNull()
   })
 
   it('retries a failed coupon load without falling back to fixtures', async () => {

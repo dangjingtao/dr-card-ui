@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import PageContainer from '../components/mobile/PageContainer'
 import { BottomSheet, Skeleton } from '../components/ui'
 import { requestWelfareQrDownload } from '../services/welfareQrDownload'
+import { saveImageToAlbum } from '../services/nativeBridge'
 import { useRemoteData } from './profile/useProfileFeed'
 import { fetchWelfareOfficerConfig, type WelfareBenefit } from '../services/welfareOfficer'
 
@@ -52,7 +53,7 @@ function WelfareOfficerSkeleton() {
 function WelfareQrImage({ src }: { src: string }) {
   const [failed, setFailed] = useState(false)
   const [saveSheetOpen, setSaveSheetOpen] = useState(false)
-  const [saveState, setSaveState] = useState<'idle' | 'pending' | 'requested' | 'error'>('idle')
+  const [saveState, setSaveState] = useState<'idle' | 'pending' | 'saved' | 'requested' | 'error'>('idle')
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pressOrigin = useRef<{ x: number; y: number } | null>(null)
 
@@ -77,12 +78,26 @@ function WelfareQrImage({ src }: { src: string }) {
     setSaveSheetOpen(true)
   }
 
-  const requestDownload = async () => {
+  const requestSave = async () => {
     if (saveState === 'pending') return
     setSaveState('pending')
+    // The confirmed native capability acknowledges album persistence. When
+    // unavailable or unsuccessful, the H5 path only requests a download.
+    try {
+      const result = await saveImageToAlbum({
+        imageType: 'url',
+        imageData: src,
+        fileName: 'brand-welfare-qr.png',
+      })
+      if (result.success) {
+        setSaveState('saved')
+        return
+      }
+    } catch {
+      // Unsupported host, permission failure, timeout etc.: try the H5 path.
+    }
     try {
       await requestWelfareQrDownload(src)
-      // The click on an H5 download link does NOT confirm a file was saved.
       setSaveState('requested')
     } catch {
       setSaveState('error')
@@ -141,25 +156,25 @@ function WelfareQrImage({ src }: { src: string }) {
       </button>
       <BottomSheet open={saveSheetOpen} title="保存福利官二维码" onClose={() => setSaveSheetOpen(false)}>
         <div className="space-y-3">
-          <p className="text-sm leading-6 text-text-secondary">
-            尝试通过 H5 下载二维码图片。部分 App WebView 不支持下载到相册，操作后请到相册或下载管理核对。
-          </p>
           <button
             type="button"
             disabled={saveState === 'pending'}
             className="min-h-11 w-full rounded-pill bg-primary px-4 text-sm font-medium text-text-inverse disabled:opacity-60"
-            onClick={() => void requestDownload()}
+            onClick={() => void requestSave()}
           >
-            {saveState === 'pending' ? '正在准备图片…' : '尝试下载图片'}
+            {saveState === 'pending' ? '保存中…' : '保存图片'}
           </button>
+          {saveState === 'saved' ? (
+            <p role="status" className="text-sm text-success-text">已保存到相册</p>
+          ) : null}
           {saveState === 'requested' ? (
             <p role="status" className="text-xs leading-5 text-text-secondary">
-              已向浏览器请求下载，但无法确认是否存入相册。请检查下载管理或相册。
+              已发起下载，请在相册或下载记录中查看。
             </p>
           ) : null}
           {saveState === 'error' ? (
             <p role="alert" className="text-xs leading-5 text-danger-text">
-              H5 无法下载该图片（可能受图片跨域或 WebView 限制）。可以打开原图，尝试使用系统长按保存。
+              保存失败，请打开原图后长按保存。
             </p>
           ) : null}
           <a

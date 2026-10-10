@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { CalendarDays, Check, Clock, Info, KeyRound, QrCode, ReceiptText, Ticket, X } from 'lucide-react'
 import DebugPanel from '../components/mobile/DebugPanel'
 import PageContainer from '../components/mobile/PageContainer'
-import { Button, EmptyState } from '../components/ui'
+import { Button, EmptyState, Skeleton } from '../components/ui'
 import { isAppError } from '../lib/appError'
 import { useFixtureState, useOverlay } from '../app/fixtures/useFixture'
 import { findRouteByPathname } from '../app/router/routes'
@@ -218,6 +218,32 @@ function MovieTicket({ coupon, expired, used, onUse, onShare }: MovieTicketProps
         </div>
       </div>
     </article>
+  )
+}
+
+// Reserve the height and two-column silhouette of the real coupon ticket.
+function CouponTicketSkeleton() {
+  return (
+    <div role="status" aria-label="正在加载体验券" className="space-y-4">
+      <span className="sr-only">正在加载体验券</span>
+      {[0, 1].map((index) => (
+        <div key={index} aria-hidden="true" className="flex min-h-[166px] overflow-hidden rounded-[16px] bg-surface shadow-sm">
+          <div className="flex w-[120px] shrink-0 flex-col items-center justify-center gap-3 bg-reward-subtle px-4">
+            <Skeleton className="h-9 w-14" />
+            <Skeleton className="h-3 w-12" />
+          </div>
+          <div className="min-w-0 flex-1 space-y-3 border-l border-dashed border-border-subtle px-4 py-4">
+            <Skeleton className="h-4 w-4/5" />
+            <Skeleton className="h-3 w-3/5" />
+            <Skeleton className="h-3 w-2/3" />
+            <div className="flex gap-2 pt-1">
+              <Skeleton className="h-8 flex-1 rounded-pill" />
+              <Skeleton className="h-8 flex-1 rounded-pill" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
   )
 }
 
@@ -444,7 +470,7 @@ export default function Card() {
         ))}
       </div>
 
-      <div className="mt-4 space-y-4" aria-live="polite">
+      <div className="mt-4 space-y-4" aria-live="polite" aria-busy={currentRemote.state === 'loading'}>
         {currentRemote.state === 'success' &&
           list.map((coupon, index) => (
             <MovieTicket
@@ -459,28 +485,12 @@ export default function Card() {
             />
           ))}
 
-        {currentRemote.state === 'loading' && (
-          <EmptyState
-            className="rounded-2xl bg-surface shadow-sm"
-            visual={
-              <span className="flex h-[60px] w-[60px] items-center justify-center rounded-full bg-surface-inactive text-icon-inactive">
-                <Ticket className="h-7 w-7" />
-              </span>
-            }
-            title="正在加载体验券"
-            supportingText="正在读取我的优惠卡"
-          />
-        )}
+        {currentRemote.state === 'loading' && <CouponTicketSkeleton />}
 
         {currentRemote.state === 'error' && (
           <EmptyState
             variant="recoverable-error"
-            className="rounded-2xl bg-surface shadow-sm"
-            visual={
-              <span className="flex h-[60px] w-[60px] items-center justify-center rounded-full bg-surface-inactive text-icon-inactive">
-                <Info className="h-7 w-7" />
-              </span>
-            }
+            className="min-h-[180px]"
             title="体验券加载失败"
             supportingText={currentRemote.message}
             primaryAction={
@@ -492,18 +502,7 @@ export default function Card() {
         {currentRemote.state === 'success' && list.length === 0 && (
           <EmptyState
             variant="no-data"
-            className="rounded-2xl bg-surface shadow-sm"
-            visual={
-              <span className="flex h-[60px] w-[60px] items-center justify-center rounded-full bg-surface-inactive text-icon-inactive">
-                {tab === 'available' ? (
-                  <Ticket className="h-7 w-7" />
-                ) : tab === 'used' ? (
-                  <ReceiptText className="h-7 w-7" />
-                ) : (
-                  <Clock className="h-7 w-7" />
-                )}
-              </span>
-            }
+            className="min-h-[180px]"
             title={
               tab === 'available'
                 ? '暂无可用的体验券'
