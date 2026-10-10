@@ -9,15 +9,15 @@ on:
     inputs:
       operation:
         type: choice
-        description: Explicit recovery operation (normal releases run on prod push)
-        options: [rollback]
+        description: Publish selected branch or restore historical release
+        options: [publish, rollback]
         required: true
       release_id:
         description: Exact production history release ID to restore
-        required: true
+        required: false
       confirm_release_id:
         description: Repeat the identical release ID to confirm manual rollback
-        required: true
+        required: false
 
 permissions:
   contents: read
@@ -38,11 +38,11 @@ jobs:
           node --check scripts/oss-prod-activate.mjs
           node --test scripts/oss-prod-release.test.mjs scripts/oss-prod-healthcheck.test.mjs
           if node scripts/oss-prod-activate.mjs publish; then
-            echo "::error::Production activation unexpectedly succeeded without explicit opt-in."
+            echo "::error::OSS upload unexpectedly succeeded without a valid GitHub branch and credentials."
             exit 1
           fi
           if node scripts/oss-prod-activate.mjs rollback; then
-            echo "::error::Manual rollback unexpectedly succeeded without explicit opt-in."
+            echo "::error::Rollback unexpectedly succeeded without an explicit historic release ID."
             exit 1
           fi
       - name: Keep legacy connectivity smoke unchanged
@@ -55,11 +55,9 @@ jobs:
   publish:
     name: Publish guarded fixed prod H5 and verify live company website
     if: >-
-      vars.OSS_PROD_WEB_ENABLED == 'true' &&
-      vars.OSS_PROD_HEALTHCHECK_CONFIRMED == 'true' &&
-      github.ref == 'refs/heads/prod' &&
-      (github.event_name == 'push' ||
-       (github.event_name == 'workflow_dispatch' && inputs.operation == 'rollback'))
+      (github.event_name == 'push' && github.ref == 'refs/heads/prod') ||
+      (github.event_name == 'workflow_dispatch' &&
+       (inputs.operation == 'publish' || inputs.operation == 'rollback'))
     needs: contract-tests
     runs-on: ubuntu-latest
     timeout-minutes: 25
@@ -72,12 +70,7 @@ jobs:
       OSS_ENDPOINT: https://oss-cn-guangzhou.aliyuncs.com
       OSS_ACCESS_KEY_ID: ${{ secrets.OSS_ACCESS_KEY_ID }}
       OSS_ACCESS_KEY_SECRET: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
-      OSS_PROD_WEB_ENABLED: ${{ vars.OSS_PROD_WEB_ENABLED }}
-      OSS_PROD_HEALTHCHECK_CONFIRMED: ${{ vars.OSS_PROD_HEALTHCHECK_CONFIRMED }}
-      OSS_PROD_WEB_BASE_URL: ${{ vars.OSS_PROD_WEB_BASE_URL }}
-      OSS_PROD_PRUNE_ENABLED: ${{ vars.OSS_PROD_PRUNE_ENABLED }}
-      OSS_PROD_ROLLBACK_ENABLED: ${{ vars.OSS_PROD_ROLLBACK_ENABLED }}
-      OSS_PROD_BOOTSTRAP_APPROVED: ${{ vars.OSS_PROD_BOOTSTRAP_APPROVED }}
+      OSS_PROD_WEB_BASE_URL: ${{ vars.OSS_PROD_WEB_BASE_URL || 'http://kbs.3cgroup.cn/kbs-web/prod/last/' }}
       OSS_PROD_ROLLBACK_ID: ${{ inputs.release_id }}
       OSS_PROD_ROLLBACK_CONFIRM_ID: ${{ inputs.confirm_release_id }}
       VITE_API_BASE_URL: ${{ vars.OSS_PROD_API_BASE_URL }}
@@ -90,25 +83,22 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      - name: Check production config and company HTTPS before cloud writes
+      - name: Check OSS credentials and target path (no HTTPS/API prerequisite)
         run: |
           set -euo pipefail
           test -n "$OSS_ACCESS_KEY_ID"
           test -n "$OSS_ACCESS_KEY_SECRET"
-          test "$OSS_PROD_WEB_ENABLED" = true
-          test "$OSS_PROD_HEALTHCHECK_CONFIRMED" = true
           node -e "import('./scripts/oss-prod-healthcheck.mjs').then(({productionBase}) => productionBase(process.env.OSS_PROD_WEB_BASE_URL))"
-          test "$OSS_PROD_WEB_BASE_URL" = "https://kbs.3cgroup.cn/kbs-web/prod/last/"
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            test "$OSS_PROD_ROLLBACK_ENABLED" = true
+          [[ "$GITHUB_REF" == refs/heads/* ]] || { echo "::error::Use a Git branch"; exit 1; }
+          if [[ "${{ inputs.operation }}" == "rollback" ]]; then
             test -n "$OSS_PROD_ROLLBACK_ID"
             test "$OSS_PROD_ROLLBACK_ID" = "$OSS_PROD_ROLLBACK_CONFIRM_ID"
           fi
       - name: Install build dependencies
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.operation == 'publish')
         run: npm ci --no-audit --no-fund
       - name: Build fixed prod package and verify runtime contract
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.operation == 'publish')
         run: |
           set -euo pipefail
           node scripts/build-h5.mjs prod
@@ -126,7 +116,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [[ "$GITHUB_EVENT_NAME" == 'workflow_dispatch' ]]; then
+          if [[ "$GITHUB_EVENT_NAME" == 'workflow_dispatch' && "${{ inputs.operation }}" == 'rollback' ]]; then
             node scripts/oss-prod-activate.mjs rollback
           else
             node scripts/oss-prod-activate.mjs publish
@@ -136,10 +126,10 @@ jobs:
         run: |
           {
             echo '### Production Health Gate'
-            echo 'Branch: prod'
+            echo "Source branch: ${GITHUB_REF_NAME}"
             echo "Run: ${GITHUB_RUN_ID}.${GITHUB_RUN_ATTEMPT}"
             echo "SHA: ${GITHUB_SHA}"
             echo "Production fixed entry: ${OSS_PROD_WEB_BASE_URL}"
-            echo 'OSS connection readback + real company HTTP identity/static asset checks are mandatory.'
+            echo 'OSS byte-readback is mandatory. Public URL verification may remain pending for human acceptance; no history prune unless the public URL check passes.'
             echo 'Existing Healthcheck/OSS smoke unchanged; App WebView and API business acceptance are separate.'
           } >> "$GITHUB_STEP_SUMMARY"
