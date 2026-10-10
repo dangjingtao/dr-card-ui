@@ -249,17 +249,21 @@ describe('user update contract', () => {
     await expect(updateUserProfile({ birthday: '2001-02-03' })).rejects.toThrow('生日未保存')
   })
 
-  it('requires an acknowledgement for a PIN change, not a bare code zero', async () => {
-    mocks.request.mockResolvedValueOnce({
+  it('sends a PIN to the existing update endpoint when status is omitted', async () => {
+    mocks.request.mockResolvedValue({
       code: 0, data: { id: 5, nick_name: '示例', gender: '1', points: 0 },
-    }).mockResolvedValueOnce({
-      code: 0, data: { id: 5, nick_name: '示例', gender: '1', points: 0, consume_password_set: true },
     })
-    await expect(updateUserProfile({ consume_password: '123456' })).rejects.toThrow('未确认保存')
-    await expect(updateUserProfile({ consume_password: '123456' })).resolves.toMatchObject({ consume_password_set: true })
-    expect(mocks.request).toHaveBeenLastCalledWith({
+    await expect(updateUserProfile({ consume_password: '123456' })).resolves.toMatchObject({ id: 5 })
+    expect(mocks.request).toHaveBeenCalledWith({
       method: 'POST', url: '/api/user/update', data: { consume_password: '123456' },
     })
+  })
+
+  it('surfaces an explicit failed PIN status from the backend', async () => {
+    mocks.request.mockResolvedValue({
+      code: 0, data: { id: 5, nick_name: '示例', gender: '1', points: 0, consume_password_set: false },
+    })
+    await expect(updateUserProfile({ consume_password: '123456' })).rejects.toThrow('后台未确认')
   })
 
   it('surfaces the backend message when validation fails', async () => {
