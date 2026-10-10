@@ -309,12 +309,13 @@ export default function Settings() {
           <ChevronRight className="h-5 w-5 shrink-0 text-text-tertiary" aria-hidden />
         </button>
         <button type="button" onClick={() => setSheet('pin')} aria-label="设置消费密码"
-          className="flex w-full items-center gap-3 px-4 py-3 text-left">
+          disabled={pinConfigured === undefined}
+          className="flex w-full items-center gap-3 px-4 py-3 text-left disabled:cursor-not-allowed">
           <span className="w-20 shrink-0 whitespace-nowrap text-sm text-text-tertiary">消费密码</span>
           <span className="min-w-0 flex-1 text-right text-sm text-text-tertiary">
-            {pin ? '待保存' : pinConfigured === undefined ? '尚未开放' : pinConfigured ? '已设置' : '未设置'}
+            {pinConfigured === undefined ? '暂不可用' : pin ? '待保存' : pinConfigured ? '已设置' : '未设置'}
           </span>
-          <ChevronRight className="h-5 w-5 shrink-0 text-text-tertiary" aria-hidden />
+          {pinConfigured !== undefined && <ChevronRight className="h-5 w-5 shrink-0 text-text-tertiary" aria-hidden />}
         </button>
       </section>
 
