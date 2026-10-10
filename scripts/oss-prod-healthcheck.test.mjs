@@ -43,11 +43,13 @@ function fakeSite(candidate, overrides = {}) {
   }
   return { fetchImpl, requests }
 }
-test('reject HTTP, custom domains, hidden query, traversal and foreign paths', () => {
+test('accept configured HTTP/HTTPS hosts; reject wrong H5 path and unsafe URL forms', () => {
   assert.equal(productionBase(base).href, base)
+  assert.equal(productionBase('http://kbs.3cgroup.cn/kbs-web/prod/last/').protocol, 'http:')
+  assert.equal(productionBase('https://staging.example.com/kbs-web/prod/last/').hostname,
+    'staging.example.com')
   for (const bad of [
-    'http://kbs.3cgroup.cn/kbs-web/prod/last/',
-    'https://evil.example/kbs-web/prod/last/',
+    'ftp://kbs.3cgroup.cn/kbs-web/prod/last/',
     'https://kbs.3cgroup.cn/kbs-web/ui/',
     base + '?redirect=http://evil.example', base + '#fragment',
     'https://a@kbs.3cgroup.cn/kbs-web/prod/last/',
