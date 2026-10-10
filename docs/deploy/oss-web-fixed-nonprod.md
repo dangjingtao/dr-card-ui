@@ -21,7 +21,7 @@ Bucket `kbs-sdl`（`cn-guangzhou`）：
 
 ## GitHub 环境准备（必须由仓库/云账号管理员完成）
 
-默认安全状态：新非生产部署**不立即启用**，PR/branch CI 仍会做无密钥构建验证。管理员在下面三个 Environment 和测试 API/HTTPS 配置全部就绪后，在仓库 **Settings → Secrets and variables → Actions → Variables** 新建 `OSS_WEB_NONPROD_ENABLED=true` 才允许自动上传。禁用时 push 工作流明确输出 Notice；**启用后若凭据或 test API 缺失则部署失败**，不跳过校验，不回退到生产密钥。
+**#171 修订**：取消 `OSS_WEB_NONPROD_ENABLED` 额外开关。非生产分支 push 后先进行无密钥包检查，通过就**真正尝试**所属环境的 OSS 上传；若对应 GitHub Environment 凭据缺失，作业明确失败并输出配置要求，**不再以 skipped 假装已部署**。仍不借用生产密钥，也不自动删除任何 OSS 文件。
 
 首次执行自动部署前，在 GitHub Settings → Environments 创建：
 
