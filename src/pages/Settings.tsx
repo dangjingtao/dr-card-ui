@@ -49,6 +49,9 @@ export default function Settings() {
   const [pin, setPin] = useState('')
   const [pinConfirmation, setPinConfirmation] = useState('')
   const [pinConfigured, setPinConfigured] = useState<boolean | undefined>()
+  // The six-dot preview only reflects a submitted request until the server
+  // reports a persisted PIN flag. Never retain or display the raw PIN.
+  const [pinSubmitted, setPinSubmitted] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [avatarSrc, setAvatarSrc] = useState<string | undefined>()
   const [pendingImage, setPendingImage] = useState<{ mimeType: string; imageBase64: string } | null>(null)
@@ -95,6 +98,7 @@ export default function Settings() {
       setPin('')
       setPinConfirmation('')
       setPinConfigured(undefined)
+      setPinSubmitted(false)
       setBirthday('')
       setNickname('')
       setYear('')
@@ -206,10 +210,8 @@ export default function Settings() {
         setSaveError('请输入两次相同的 6 位数字消费密码')
         return
       }
-      if (identity.data.pinConfigured === undefined) {
-        setSaveError('消费密码服务暂不可用，请联系管理员')
-        return
-      }
+      // Always send a validated six-digit PIN to the existing update endpoint.
+      // Missing detail flags must not prevent the user from testing the API.
       payload.consume_password = pin
     }
     if (!Object.keys(payload).length && !pendingImage) {
@@ -222,6 +224,7 @@ export default function Settings() {
     try {
       if (pendingImage) payload.avatar_img = await uploadUserAvatar(pendingImage)
       const updated = await updateUserProfile(payload)
+      const pinAttempted = payload.consume_password !== undefined
       acceptUserIdentityUpdate(updated)
       setPendingImage(null)
       setAvatarSrc(updated.avatar_img || undefined)
@@ -236,12 +239,18 @@ export default function Settings() {
       setPin('')
       setPinConfirmation('')
       setPinConfigured(updated.consume_password_set ?? pinConfigured)
+      if (pinAttempted) setPinSubmitted(true)
       setBaseline(next)
       touchedRef.current = { nickname: false, year: false, avatar: false, birthday: false }
       bypassGuard.current = true
-      flashToast()
+      // An API success code proves receipt, not PIN persistence. Keep the user
+      // on this page to inspect the six-dot mask when no status was returned.
+      const pinUnverified = pinAttempted && updated.consume_password_set === undefined
+      flashToast(pinUnverified ? '请求已提交，后台保存状态待核对' : '保存成功')
       close()
-      postSaveNavigation.current = window.setTimeout(() => navigate('/profile'), 600)
+      if (!pinUnverified) {
+        postSaveNavigation.current = window.setTimeout(() => navigate('/profile'), 600)
+      }
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : '保存失败，请重试')
     } finally {
@@ -319,7 +328,9 @@ export default function Settings() {
           className="flex w-full items-center gap-3 px-4 py-3 text-left">
           <span className="w-20 shrink-0 whitespace-nowrap text-sm text-text-tertiary">消费密码</span>
           <span className="min-w-0 flex-1 text-right text-sm text-text-tertiary">
-            {pinConfigured === undefined ? '可预览，待接通' : pin ? '待保存' : pinConfigured ? '已设置' : '未设置'}
+            {pin.length === 6 || pinSubmitted || pinConfigured === true
+              ? '●●●●●●'
+              : pinConfigured === false ? '未设置' : '设置'}
           </span>
           <ChevronRight className="h-5 w-5 shrink-0 text-text-tertiary" aria-hidden />
         </button>
@@ -436,13 +447,7 @@ export default function Settings() {
               )}
               {sheet === 'pin' && (
                 <>
-                  {pinConfigured === undefined ? (
-                    <p role="status" className="text-sm text-text-tertiary">
-                      当前可体验输入界面，后台尚未开放消费密码保存。本次输入不会上传或保存。
-                    </p>
-                  ) : (
-                    <p className="text-sm text-text-tertiary">设置 6 位数字消费密码，保存时将提交至账户服务。</p>
-                  )}
+                  <p className="text-sm text-text-tertiary">设置 6 位数字消费密码，确认修改后提交至账户服务。</p>
                   <label className="mt-4 block text-sm text-text-primary">
                     新消费密码
                     <input type="password" autoComplete="new-password" inputMode="numeric" maxLength={6}
@@ -455,17 +460,8 @@ export default function Settings() {
                       value={pinConfirmation} onChange={(event) => setPinConfirmation(event.target.value.replace(/\D/g, '').slice(0, 6))}
                       className="mt-1.5 block h-11 w-full rounded-control border border-border bg-surface px-3 text-base" />
                   </label>
-                  <button type="button" onClick={() => {
-                    if (pinConfigured === undefined) {
-                      close()
-                      flashToast('仅完成界面预览，未保存消费密码')
-                    } else {
-                      save()
-                    }
-                  }}
-                    className="mt-5 h-11 w-full rounded-control bg-primary text-sm font-medium text-text-inverse">
-                    {pinConfigured === undefined ? '完成预览' : '完成'}
-                  </button>
+                  <button type="button" onClick={save}
+                    className="mt-5 h-11 w-full rounded-control bg-primary text-sm font-medium text-text-inverse">完成</button>
                 </>
               )}
               {sheet === 'nickname' && (
