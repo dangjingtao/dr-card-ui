@@ -71,9 +71,16 @@ jobs:
             exit 1
           fi
 
+  rollout-status:
+    name: Report nonprod activation state
+    if: github.event_name == 'push' && vars.OSS_WEB_NONPROD_ENABLED != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "::notice::OSS nonproduction publishing is disabled. Configure oss-ui/oss-dev/oss-test and set repository variable OSS_WEB_NONPROD_ENABLED=true to activate uploads; package checks still run."
+
   deploy:
     name: Publish fixed nonprod OSS path
-    if: github.event_name == 'push' && (github.ref_name == 'preview' || github.ref_name == 'dev' || github.ref_name == 'test')
+    if: github.event_name == 'push' && vars.OSS_WEB_NONPROD_ENABLED == 'true' && (github.ref_name == 'preview' || github.ref_name == 'dev' || github.ref_name == 'test')
     needs: package-check
     runs-on: ubuntu-latest
     timeout-minutes: 25
