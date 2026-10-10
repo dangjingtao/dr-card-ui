@@ -71,3 +71,24 @@
 可能遇到的 `PublicEndpointForbidden` 是 OSS 内地公共 Endpoint 使用限制，应走公司云账号官方支持的接入方案，不能把错误归因于前端或擅自改到个人账户。
 
 本轮使用 OSS 默认域名作为临时 `OSS_PROD_PUBLIC_ORIGIN`，**正式生产上传**工作流仍会有意拒绝该域名；`OSS Connection Smoke` 成功表示凭证与 OSS 数据操作可用，不代表 H5 正式发版成功。若发行 CI 因域名被拒绝，须区分这是预期上线门禁，不应为使其变绿而篡改判定。
+
+## 2026-10-10 后台静态站点版本目录白屏修复
+
+后台提供的浏览器入口采用形如：
+`http://kbs.3cgroup.cn/h5/releases/<sha>/<run-id>.<attempt>/`
+
+此前 Vite 默认 `base: '/'`，会把 `index.html` 的 JS/CSS 引到 `/assets/...`，忽略版本前缀，浏览器出现 HTML 200 但 JS/CSS 请求 404、空白页面。
+
+OSS Release Pipeline 现专属注入：
+
+- `H5_OSS_ARTIFACT=1`：Vite 构建为 `base: './'`，index 的资源路径为 `./assets/...`；其他 Cloudflare、test、dev 构建维持根路径行为；
+- `VITE_ROUTER_BASENAME=/h5/releases/<sha>/<run-id>.<attempt>`：React Router 匹配、内部导航落在对应的隔离发布目录；
+- PR CI 与实际上传 CI 均验证资源引用与 basename。每次发布继续创建独立 SHA/Run 目录，不覆盖原制品。
+
+**部署端必须配合：**
+
+1. 建议 `https://kbs.3cgroup.cn` 提供有效 TLS 证书。原生 WebView 对明文 HTTP 可能存在安全策略限制；H5 和 API 应尽量都是 HTTPS。
+2. URL 使用单斜杠 `/h5/releases/...`；后台提供的 `//h5/` 多余斜杠可能导致代理层路由差异。
+3. 所有 `/h5/releases/<sha>/<run>/assets/*` 需要正确回源到该目录的 JS/CSS，类型分别为 JS 和 CSS。服务端**只针对该版本前缀**配置 history fallback 到对应 `index.html`，保证刷新二级 H5 路由不 404；不可把 CSS/JS 缺失时也错误地 fallback 成 HTML。
+4. `test/prod` H5 还有 **Native Host Gate**，裸浏览器即使资源加载成功，可能显示“请在 App 内使用”之类提示；此为运行时预期，不等于空白页面修复失败。
+5. 本次只修复构建路径/路由基址，不意味着真实 API、邀请二维码公开页面和 WebView 已全部通过验收。
