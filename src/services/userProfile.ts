@@ -38,6 +38,7 @@ export const USER_UPDATE_PATH = '/api/user/update'
  */
 const userDetailSchema = z
   .object({
+    id: z.number().optional(),
     nick_name: z.string().nullish(),
     grade: z.string().nullish(),
     // Persisted academic year. Do not confuse it with the membership tier `grade`.
@@ -50,6 +51,8 @@ const userDetailSchema = z
   .passthrough()
 
 export interface UserProfileDetail {
+  /** User ID is used only to scope a non-secret UI mask flag to the account. */
+  userId?: number
   /** `nick_name`；接口未给时为空串。 */
   nickname: string
   /** Saved academic year: `student_grade` first; legacy `grade` only if absent. */
@@ -69,6 +72,7 @@ export function parseUserProfileDetail(payload: unknown): UserProfileDetail {
   })
 
   return {
+    ...(detail.id !== undefined ? { userId: detail.id } : {}),
     nickname: detail.nick_name?.trim() ?? '',
     // `grade` may be a membership title; `student_grade` is the academic year
     // written by POST /api/user/update. An explicit empty academic year is valid
