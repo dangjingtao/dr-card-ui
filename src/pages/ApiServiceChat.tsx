@@ -3,9 +3,9 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { Headset, Send } from 'lucide-react'
 import PageContainer from '../components/mobile/PageContainer'
 import ChatMessageList from '../components/mobile/ChatMessageList'
-import WecomQrPlaceholder from '../components/mobile/WecomQrPlaceholder'
+import ServiceChatWecomQr from './serviceChat/ServiceChatWecomQr'
 import { BottomSheet, Button } from '../components/ui'
-import { CHAT_BOT, CHAT_HUMAN_PROMPT, WELFARE_OFFICER } from '../app/fixtures'
+import { CHAT_BOT, CHAT_HUMAN_PROMPT } from '../app/fixtures'
 import { useChatHistory } from './serviceChat/useChatHistory'
 import { combineChatMessages, useAiChatSend } from './serviceChat/useAiChatSend'
 import { useHumanChat } from './serviceChat/useHumanChat'
@@ -158,11 +158,7 @@ export default function ApiServiceChat() {
         actions={<div className="flex justify-center"><Button variant="ghost" onClick={closeWecom}>{CHAT_HUMAN_PROMPT.cancelLabel}</Button></div>}
       >
         <div className="flex flex-col items-center pb-1 text-center" data-chat-human-sheet>
-          <WecomQrPlaceholder />
-          <p className="mt-3 text-sm font-medium text-text-primary">
-            {WELFARE_OFFICER.brand}{WELFARE_OFFICER.role} · {WELFARE_OFFICER.name}
-          </p>
-          <p className="mt-1 text-xs text-text-tertiary">{WELFARE_OFFICER.qrHint}</p>
+          {wecomOpen && <ServiceChatWecomQr />}
         </div>
       </BottomSheet>
     </PageContainer>

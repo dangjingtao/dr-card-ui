@@ -31,8 +31,8 @@ vi.mock('./serviceChat/useHumanChat', () => ({
 vi.mock('../components/mobile/PageContainer', () => ({
   default: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }))
-vi.mock('../components/mobile/WecomQrPlaceholder', () => ({
-  default: () => <div>企业微信二维码入口</div>,
+vi.mock('./serviceChat/ServiceChatWecomQr', () => ({
+  default: () => <img alt="企业微信福利官二维码" src="https://cdn.example.com/real-qr.png" />,
 }))
 vi.mock('../components/ui', async original => {
   const real = await original<typeof import('../components/ui')>()
@@ -155,6 +155,6 @@ describe('#135 real API chat page', () => {
 
   it('preserves the independent WeCom QR hash entry', () => {
     mount('/service/chat#wecom')
-    expect(screen.getByText('企业微信二维码入口')).toBeTruthy()
+    expect(screen.getByRole('img', { name: '企业微信福利官二维码' }).getAttribute('src')).toContain('/real-qr.png')
   })
 })
