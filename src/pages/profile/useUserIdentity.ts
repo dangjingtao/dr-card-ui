@@ -84,6 +84,14 @@ export function acceptUserIdentityUpdate(value: UserUpdateResult) {
       nickname: value.nick_name.trim(),
       grade: value.student_grade?.trim() ?? '',
       avatar: value.avatar_img?.trim() || undefined,
+      ...(value.birthday !== undefined
+        ? { birthday: value.birthday ?? '' }
+        : snapshot.state === 'success' && snapshot.data.birthday !== undefined
+          ? { birthday: snapshot.data.birthday } : {}),
+      ...(value.consume_password_set !== undefined
+        ? { pinConfigured: value.consume_password_set }
+        : snapshot.state === 'success' && snapshot.data.pinConfigured !== undefined
+          ? { pinConfigured: snapshot.data.pinConfigured } : {}),
     },
   }
   emit()

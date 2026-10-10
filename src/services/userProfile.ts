@@ -43,6 +43,9 @@ const userDetailSchema = z
     // Persisted academic year. Do not confuse it with the membership tier `grade`.
     student_grade: z.string().nullish(),
     avatar_img: z.union([z.string(), z.number()]).nullish(),
+    // #142 proposed wire contract, not yet deployed in the checked backend.
+    birthday: z.string().nullish(),
+    consume_password_set: z.boolean().optional(),
   })
   .passthrough()
 
@@ -52,6 +55,10 @@ export interface UserProfileDetail {
   /** Saved academic year: `student_grade` first; legacy `grade` only if absent. */
   grade: string
   avatar?: string
+  /** Undefined means the backend did not expose this field. */
+  birthday?: string
+  /** Only a status flag; no plaintext PIN ever comes from the server. */
+  pinConfigured?: boolean
 }
 
 /** 纯解析：把统一信封的 `data` 收成页面可用字段；非 0 code 取 `message` 抛业务错误。 */
@@ -70,6 +77,8 @@ export function parseUserProfileDetail(payload: unknown): UserProfileDetail {
       ? detail.grade?.trim() ?? ''
       : detail.student_grade?.trim() ?? '',
     avatar: typeof detail.avatar_img === 'string' ? trimOrUndefined(detail.avatar_img) : undefined,
+    ...(detail.birthday !== undefined ? { birthday: detail.birthday ?? '' } : {}),
+    ...(detail.consume_password_set !== undefined ? { pinConfigured: detail.consume_password_set } : {}),
   }
 }
 
@@ -235,6 +244,9 @@ export interface UserUpdatePayload {
   city?: string
   real_name?: string
   student_grade?: string
+  // #142 proposed wire fields. Names/validation need backend contract approval.
+  birthday?: string // ISO YYYY-MM-DD
+  consume_password?: string // six-digit PIN: transport only, never persisted on client
 }
 
 /**
@@ -260,6 +272,8 @@ const userUpdateSchema = z
     real_name: z.string().nullish(),
     grade_id: z.number().nullish(),
     student_grade: z.string().nullish(),
+    birthday: z.string().nullish(),
+    consume_password_set: z.boolean().optional(),
   })
   .passthrough()
 
@@ -272,8 +286,20 @@ export async function updateUserProfile(payload: UserUpdatePayload): Promise<Use
     data: payload,
   })
 
-  return parseApiEnvelope(response, userUpdateSchema, {
+  const result = parseApiEnvelope(response, userUpdateSchema, {
     contract: 'user.update',
     fallbackMessage: '资料保存失败',
   })
+  // This backend silently drops unsupported keys and can respond code=0.
+  // Verify positive acknowledgement before telling the user they saved data.
+  if (payload.birthday !== undefined && result.birthday !== payload.birthday) {
+    throw new Error('生日未保存，请稍后重试')
+  }
+  if (payload.consume_password !== undefined && result.consume_password_set !== true) {
+    throw new Error('消费密码未确认保存，请稍后重试')
+  }
+  // Drop accidental echoes of a submitted secret from the parsed entity.
+  const safeResult = { ...result }
+  delete safeResult.consume_password
+  return safeResult
 }
