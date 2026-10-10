@@ -1,0 +1,39 @@
+name: OSS Production History Safety
+
+on:
+  pull_request:
+    branches: [dev, test, prod]
+  push:
+    branches: [dev, test, prod]
+
+permissions:
+  contents: read
+
+jobs:
+  offline-release-contracts:
+    name: Verify prod release, rollback and history pruning (offline)
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Validate implementation without OSS credentials
+        run: |
+          set -euo pipefail
+          node --check scripts/oss-prod-release-core.mjs
+          node --check scripts/oss-prod-store.mjs
+          node --test scripts/oss-prod-release.test.mjs
+      - name: Assert production cutover remains disabled
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Existing production workflow continues writing legacy immutable
+          # evidence to h5/releases; this PR cannot activate prod/last.
+          grep -F 'h5/releases/' .github/workflows/oss-production.yml
+          if grep -Fq 'oss-prod-release' .github/workflows/oss-production.yml; then
+            echo '::error::#169 unexpectedly activated new production cutover.'
+            exit 1
+          fi
+          echo 'New prod/last publishing is NOT wired into the live CI workflow.'
