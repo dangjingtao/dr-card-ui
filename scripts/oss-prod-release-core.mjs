@@ -224,9 +224,12 @@ export async function rollback({ store, releaseId, healthcheck, authorizeRollbac
   const manifest = await getManifest(store, releasePrefix(releaseId))
   ensure(manifest && manifest.id === releaseId, 'Historic release manifest missing')
   const files = await readSnapshot(store, releasePrefix(releaseId), manifest)
-  await stageAssets(store, { manifest, files })
   ensure(await authorizeRollback({ from: oldManifest.id, to: releaseId }),
     'Rollback not authorized for this exact release pair')
+  // Preserve the currently deployed version BEFORE rollback, so a healthy
+  // rollback does not lose the ability to roll forward to that exact build.
+  await archivePrevious(store, oldManifest, oldFiles)
+  await stageAssets(store, { manifest, files })
   try {
     await switchEntry(store, manifest, files)
     const result = await healthcheck(manifest)
