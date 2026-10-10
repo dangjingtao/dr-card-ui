@@ -228,7 +228,7 @@ export default function Exchange() {
         ) : list.length === 0 ? (
           <EmptyState
             variant="no-results"
-            visual={<EmptyStateIllustration />}
+            visual={<EmptyStateIllustration size="md" />}
             title={EXCHANGE_COPY.emptyTitle}
             supportingText={EXCHANGE_COPY.emptyDesc}
             primaryAction={
