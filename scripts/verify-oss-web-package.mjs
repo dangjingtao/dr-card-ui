@@ -19,10 +19,12 @@ if (meta.appEnvironment !== allowed[target] ||
   throw new Error(`OSS package build identity mismatch for ${target}`)
 }
 if (target === 'test' || target === 'prod') {
+  // API origin readiness is checked during business acceptance, not before
+  // someone can upload a fixed-path prod bundle for human verification.
   if (meta.dataMode !== 'api' || meta.bridgeMode !== 'native' ||
-      !meta.apiBaseConfigured || !meta.buddyPublicOriginConfigured ||
+      (target === 'test' && (!meta.apiBaseConfigured || !meta.buddyPublicOriginConfigured)) ||
       existsSync(join(root, 'mockServiceWorker.js'))) {
-    throw new Error('Formal H5 cannot ship Mock or unconfigured API/Native bridge')
+    throw new Error('Formal H5 cannot ship Mock or invalid Native bridge')
   }
 } else if (meta.dataMode !== 'mock' || !existsSync(join(root, 'mockServiceWorker.js'))) {
   throw new Error('UI/development fixture bundle must preserve its Mock worker')
