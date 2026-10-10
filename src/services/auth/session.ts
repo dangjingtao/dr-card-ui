@@ -34,6 +34,7 @@ const loginClient = createHttpClient({
 })
 
 let inFlightLogin: Promise<AuthSession> | undefined
+let initialBootstrap: Promise<AuthSession> | undefined
 let authFlowEnabled = false
 let initializedForDocument = false
 let volatileSession: AuthSession | undefined
@@ -151,8 +152,12 @@ async function authenticateInitialDocument(): Promise<AuthSession> {
 export function bootstrapAuthSession(): Promise<AuthSession> {
   if (!initializedForDocument) {
     initializedForDocument = true
-    return authenticateInitialDocument()
+    initialBootstrap = authenticateInitialDocument().finally(() => {
+      initialBootstrap = undefined
+    })
+    return initialBootstrap
   }
+  if (initialBootstrap) return initialBootstrap
   return authenticate()
 }
 
