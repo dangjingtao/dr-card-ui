@@ -6,7 +6,7 @@ import { spawnSync } from 'node:child_process'
 import { readFileSync, readdirSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
 import { OssProdStore } from './oss-prod-store.mjs'
-import { makeCandidate, publish, rollback, pruneHistory, LAST } from './oss-prod-release-core.mjs'
+import { makeCandidate, publish, rollback, pruneHistory, LAST, sha256 } from './oss-prod-release-core.mjs'
 import { checkPublishedH5, productionBase } from './oss-prod-healthcheck.mjs'
 
 const mode = process.argv[2] ?? 'publish'
@@ -67,8 +67,15 @@ if (mode === 'publish') {
   // A cleanup failure never causes a rollback of a HEALTHY live release.
   // The workflow is marked failed and retains evidence for operator action.
   const proof = await healthcheck(candidate.manifest)
+  // Reuse the EXISTING OSS Connection Smoke's remote read-back principle,
+  // additionally requiring the actual live index bytes to match this build.
+  const remoteIndex = await store.get(LAST + 'index.html')
+  const indexRecord = candidate.manifest.files.find(file => file.path === 'index.html')
+  assert(remoteIndex && sha256(remoteIndex) === indexRecord.sha256,
+    'OSS read-back and live website identity disagree; history may not be pruned')
+  const attestation = { ...proof, fromExistingHealthcheck: true }
   const plan = await pruneHistory({ store, activeId: candidate.manifest.id,
-    attestation: proof, allowDelete: process.env.OSS_PROD_PRUNE_ENABLED === 'true' })
+    attestation, allowDelete: process.env.OSS_PROD_PRUNE_ENABLED === 'true' })
   console.log(JSON.stringify({ event: 'history-retention', dryRun: plan.dryRun,
     count: plan.total, victims: plan.victims.map(x => x.id), removed: plan.removed || [] }))
 } else {
