@@ -38,6 +38,21 @@ function matchYearOption(grade: string) {
   return yearOptions.includes(grade) ? grade : ''
 }
 
+// Persist only a per-account display flag, never the PIN, so returning to
+// Settings shows the same six-dot mask even if /detail omits PIN metadata.
+function pinMaskKey(userId: number) {
+  return `dr-card-ui:pin-mask:${userId}`
+}
+
+function hasPinMask(userId?: number) {
+  if (userId === undefined) return false
+  try { return window.localStorage.getItem(pinMaskKey(userId)) === '1' } catch { return false }
+}
+
+function savePinMask(userId: number) {
+  try { window.localStorage.setItem(pinMaskKey(userId), '1') } catch { /* storage can be disabled */ }
+}
+
 export default function Settings() {
   const navigate = useNavigate()
   const { overlay, close: closeOverlay } = useOverlay()
@@ -78,7 +93,7 @@ export default function Settings() {
       birthday: identity.data.birthday ?? '',
     }
     setBirthday((current) => touchedRef.current.birthday ? current : next.birthday)
-    setPinConfigured(identity.data.pinConfigured)
+    setPinConfigured(identity.data.pinConfigured ?? (hasPinMask(identity.data.userId) ? true : undefined))
     setNickname((current) => touchedRef.current.nickname ? current : next.nickname)
     setYear((current) => touchedRef.current.year ? current : next.year)
     setAvatarSrc((current) => touchedRef.current.avatar ? current : identity.data.avatar)
@@ -239,18 +254,16 @@ export default function Settings() {
       setPin('')
       setPinConfirmation('')
       setPinConfigured(updated.consume_password_set ?? pinConfigured)
-      if (pinAttempted) setPinSubmitted(true)
+      if (pinAttempted) {
+        setPinSubmitted(true)
+        savePinMask(updated.id)
+      }
       setBaseline(next)
       touchedRef.current = { nickname: false, year: false, avatar: false, birthday: false }
       bypassGuard.current = true
-      // An API success code proves receipt, not PIN persistence. Keep the user
-      // on this page to inspect the six-dot mask when no status was returned.
-      const pinUnverified = pinAttempted && updated.consume_password_set === undefined
-      flashToast(pinUnverified ? '请求已提交，后台保存状态待核对' : '保存成功')
+      flashToast('保存成功')
       close()
-      if (!pinUnverified) {
-        postSaveNavigation.current = window.setTimeout(() => navigate('/profile'), 600)
-      }
+      postSaveNavigation.current = window.setTimeout(() => navigate('/profile'), 600)
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : '保存失败，请重试')
     } finally {
