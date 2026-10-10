@@ -1,6 +1,6 @@
 import { runtimePolicy } from '../../app/config/runtime'
 import { getLoginToken } from '../nativeBridge'
-import { createContractError } from '../http/appError'
+import { createContractError, isAppError } from '../http/appError'
 import { STORAGE_KEYS, storage } from '../../storage'
 import {
   createHttpClient,
@@ -10,6 +10,7 @@ import {
 } from '../http/httpClient'
 
 const AUTH_FAILURE_EVENT = 'dr-card-ui:auth-failure'
+const AUTH_EXPIRED_EVENT = 'dr-card-ui:auth-expired'
 const LOGIN_PATH = '/api/oauth/login'
 
 export interface AuthSession {
@@ -136,7 +137,13 @@ async function reauthenticateAfterUnauthorized() {
     await authenticate(true)
   } catch (error) {
     clearAuthSession()
-    if (typeof window !== 'undefined') window.dispatchEvent(new Event(AUTH_FAILURE_EVENT))
+    if (typeof window !== 'undefined') {
+      const eventName =
+        isAppError(error) && error.status === 401
+          ? AUTH_EXPIRED_EVENT
+          : AUTH_FAILURE_EVENT
+      window.dispatchEvent(new Event(eventName))
+    }
     throw error
   }
 }
@@ -158,8 +165,8 @@ setHttpUnauthorizedHandler(() => {
 setHttpAuthFailureHandler(() => {
   if (authFlowEnabled && typeof window !== 'undefined') {
     clearAuthSession()
-    window.dispatchEvent(new Event(AUTH_FAILURE_EVENT))
+    window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT))
   }
 })
 
-export { AUTH_FAILURE_EVENT }
+export { AUTH_EXPIRED_EVENT, AUTH_FAILURE_EVENT }
