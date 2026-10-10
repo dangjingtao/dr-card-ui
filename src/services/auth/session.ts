@@ -124,10 +124,34 @@ export function authenticate(force = false): Promise<AuthSession> {
   return inFlightLogin
 }
 
+function isUnauthorizedAuthError(error: unknown) {
+  return isAppError(error) && error.status === 401
+}
+
+function dispatchAuthEvent(eventName: string) {
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event(eventName))
+}
+
+async function authenticateInitialDocument(): Promise<AuthSession> {
+  try {
+    return await authenticate(true)
+  } catch (error) {
+    if (!isUnauthorizedAuthError(error)) throw error
+  }
+
+  try {
+    return await authenticate(true)
+  } catch (error) {
+    clearAuthSession()
+    if (isUnauthorizedAuthError(error)) dispatchAuthEvent(AUTH_EXPIRED_EVENT)
+    throw error
+  }
+}
+
 export function bootstrapAuthSession(): Promise<AuthSession> {
   if (!initializedForDocument) {
     initializedForDocument = true
-    return authenticate(true)
+    return authenticateInitialDocument()
   }
   return authenticate()
 }
@@ -137,13 +161,9 @@ async function reauthenticateAfterUnauthorized() {
     await authenticate(true)
   } catch (error) {
     clearAuthSession()
-    if (typeof window !== 'undefined') {
-      const eventName =
-        isAppError(error) && error.status === 401
-          ? AUTH_EXPIRED_EVENT
-          : AUTH_FAILURE_EVENT
-      window.dispatchEvent(new Event(eventName))
-    }
+    dispatchAuthEvent(
+      isUnauthorizedAuthError(error) ? AUTH_EXPIRED_EVENT : AUTH_FAILURE_EVENT,
+    )
     throw error
   }
 }
@@ -163,9 +183,9 @@ setHttpUnauthorizedHandler(() => {
   if (authFlowEnabled) return reauthenticateAfterUnauthorized()
 })
 setHttpAuthFailureHandler(() => {
-  if (authFlowEnabled && typeof window !== 'undefined') {
+  if (authFlowEnabled) {
     clearAuthSession()
-    window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT))
+    dispatchAuthEvent(AUTH_EXPIRED_EVENT)
   }
 })
 
