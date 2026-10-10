@@ -63,6 +63,7 @@ vi.mock('../services/userProfile', () => ({
 vi.mock('../services/userAvatarUpload', () => ({ uploadUserAvatar: mocks.uploadUserAvatar }))
 
 import Settings from './Settings'
+import { storage, STORAGE_KEYS } from '../storage'
 import { clearUserIdentity } from './profile/useUserIdentity'
 
 beforeEach(() => {
@@ -79,8 +80,7 @@ afterEach(() => {
   mocks.fetchUserProfileDetail.mockReset()
   mocks.updateUserProfile.mockReset()
   mocks.uploadUserAvatar.mockReset()
-  window.localStorage.removeItem('dr-card-ui:pin-mask:5')
-  window.localStorage.removeItem('dr-card-ui:pin-mask:6')
+  storage.remove(STORAGE_KEYS.profilePinMasks)
   clearUserIdentity()
 })
 
@@ -309,8 +309,8 @@ describe('H044 birthday and PIN profile editing (#142)', () => {
     await waitFor(() => expect(mocks.updateUserProfile).toHaveBeenCalledWith({ consume_password: '123456' }))
     await screen.findByText('保存成功')
     expect(entry.textContent).toContain('●●●●●●')
-    expect(window.localStorage.getItem('dr-card-ui:pin-mask:5')).toBe('1')
-    expect(JSON.stringify(window.localStorage)).not.toContain('123456')
+    expect(storage.read(STORAGE_KEYS.profilePinMasks)?.['5']).toBe(true)
+    expect(JSON.stringify(storage.read(STORAGE_KEYS.profilePinMasks))).not.toContain('123456')
     expect(screen.queryByText('123456')).toBeNull()
     await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith('/profile'))
     firstMount.unmount()
