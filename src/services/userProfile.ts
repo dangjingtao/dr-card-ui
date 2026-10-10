@@ -294,14 +294,10 @@ export async function updateUserProfile(payload: UserUpdatePayload): Promise<Use
     contract: 'user.update',
     fallbackMessage: '资料保存失败',
   })
-  // Keep the birthday readback check. For a PIN change, send the request
-  // even when the backend does not expose its setting-status flag. An explicit
-  // false is a rejection, but an omitted flag must not block API testing.
+  // The unified code=0 API response is the PIN save success criterion.
+  // Do not add a second client-side PIN status acknowledgement requirement.
   if (payload.birthday !== undefined && result.birthday !== payload.birthday) {
     throw new Error('生日未保存，请稍后重试')
-  }
-  if (payload.consume_password !== undefined && result.consume_password_set === false) {
-    throw new Error('后台未确认消费密码已设置')
   }
   // Drop accidental echoes of a submitted secret from the parsed entity.
   const safeResult = { ...result }
