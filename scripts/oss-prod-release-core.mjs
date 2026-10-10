@@ -204,6 +204,7 @@ export async function publish({ store, candidate, healthcheck, currentHead, allo
     'Release already active; refusing duplicate promotion')
   const oldFiles = oldManifest ? await readSnapshot(store, LAST, oldManifest) : null
   if (oldManifest) await archivePrevious(store, oldManifest, oldFiles)
+  const historyCount = (await catalog(store)).entries.length
   await stageAssets(store, candidate)
   ensure(await currentHead(candidate.manifest.sha), 'Stale or unverifiable prod branch HEAD')
   let switched = false
@@ -213,11 +214,15 @@ export async function publish({ store, candidate, healthcheck, currentHead, allo
     const result = await healthcheck(candidate.manifest)
     ensure(healthy(result, candidate.manifest.id), 'Real Healthcheck failed or returned wrong release ID')
     return { releaseId: candidate.manifest.id, previousId: oldManifest?.id ?? null,
-      healthcheck: 'passed', history: (await catalog(store)).entries.length }
+      healthcheck: 'passed', history: historyCount }
   } catch (error) {
     if (switched) {
-      try { await revertEntry(store, oldManifest, oldFiles) }
-      catch (restoreError) {
+      try {
+        await revertEntry(store, oldManifest, oldFiles)
+        const restored = await healthcheck(oldManifest)
+        ensure(healthy(restored, oldManifest.id),
+          'Reverted entry did not pass the live Healthcheck')
+      } catch (restoreError) {
         throw new AggregateError([error, restoreError],
           'Release failed; automatic recovery could not restore a verified prior entry')
       }
@@ -250,9 +255,14 @@ export async function rollback({ store, releaseId, healthcheck, authorizeRollbac
     ensure(healthy(result, releaseId), 'Rollback healthcheck failed or returned wrong release')
     return { restored: releaseId, previous: oldManifest.id }
   } catch (error) {
-    try { await revertEntry(store, oldManifest, oldFiles) }
-    catch (restoreError) {
-      throw new AggregateError([error, restoreError], 'Rollback failed; automatic recovery failed')
+    try {
+      await revertEntry(store, oldManifest, oldFiles)
+      const restored = await healthcheck(oldManifest)
+      ensure(healthy(restored, oldManifest.id),
+        'Restored pre-rollback entry did not pass the live Healthcheck')
+    } catch (restoreError) {
+      throw new AggregateError([error, restoreError],
+        'Rollback failed; automatic recovery failed its live verification')
     }
     throw error
   }

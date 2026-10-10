@@ -62,7 +62,7 @@ export class OssProdStore {
       // Fixed HTML/metadata must revalidate; versioned hashed assets can
       // safely be cached after content-collision checks in the release core.
       const hashedAsset = key.startsWith(LAST + 'assets/') &&
-        /-[A-Za-z0-9_-]{8,}\\.[^.]+$/.test(key)
+        /-[A-Za-z0-9_-]{8,}\.[^.]+$/.test(key)
       const cache = key === LAST + 'index.html' ||
         key === LAST + 'build-meta.json' || key === LAST + 'release-manifest.json'
           ? 'no-cache, must-revalidate'
