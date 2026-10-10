@@ -1,51 +1,42 @@
-# #170 · 生产健康门禁与现有 OSS 连接检查复用
+# #170 · KBS Web 生产固定目录发布（修订：取消擅自设置的前置条件）
 
-设计 #167 → 固定路径 #168 → last/history #169 → 本卡 #170 → 线上验收 #171。
+设计 #167 → 构建 #168 → last/history #169 → 发布流程 #170 → 人工端到端验收 #171。
 
-## 已有能力调查（2026-10-10）
+## 这次纠正了什么
 
-仓库现有 `.github/workflows/oss-connection-smoke.yml`，对应 **OSS Connection Smoke**：
-- 触发条件仅为 `prod` 分支上该 workflow 文件发生变化；不是每次 H5 发布自动执行。
-- 使用 `oss-production` 环境中的 OSS 密钥和经 SHA256 校验的 ossutil v2.4.0；向隔离的 `h5/releases/_ci-smoke/<run>.<attempt>/proof.txt` 写入一个校验对象，然后 `stat`、远程读回与本地逐字节比较。
-- **能证明 OSS 连接/写入/读回，不能证明生产网站 HTTP、JS/CSS、React Router、后台 API 或 App WebView 健康。**
-- 仓库中未发现第二个可直接复用的公网 HTTP Healthcheck URL、签名方式或响应契约。如果公司运维另有服务端 Healthcheck，需要提供正式调用协议再接入；这里不臆造 API 返回。
+以下项目**不再是向 `kbs-web/prod/last/` 上传的前置条件**：
 
-因此本刀**不重建连接测试服务**：保留原连接 Smoke 工作流、继续使用同一 ossutil + OSS 实际对象读回校验机制；仅用 `scripts/oss-prod-healthcheck.mjs` 给固定生产 URL 增加缺失的静态页面验证。
+- ❌ 必须从 `prod` 分支发布。现在 `prod` push 可以自动发布，或通过工作流 **Run workflow → publish** 明确选择需要验证的任意分支。
+- ❌ 必须设置 `OSS_PROD_WEB_ENABLED`、`OSS_PROD_HEALTHCHECK_CONFIRMED` 或其它额外激活开关。
+- ❌ 必须预先开通 HTTPS；当前可使用 `http://kbs.3cgroup.cn/kbs-web/prod/last/`，将来具备 HTTPS 时可替换。
+- ❌ 必须事先配置所谓「正式生产 API」与邀请 Origin。构建可使用现有 API 地址（包括开发隧道），也可先留空以便交付静态包、做人工验证。**静态包能打开不代表接口业务可用**。
+- ❌ 必须事先配置 `OSS_PROD_BOOTSTRAP_APPROVED` 才能首次发布：空的 last 自动初始化。若 last 有未知旧文件、缺失清单，则必须明确处理数据而不能覆盖。
 
-## 发布时必须验证
+## 发布入口
 
-新固定入口只允许 `https://kbs.3cgroup.cn/kbs-web/prod/last/`（不是旧 HTTP，不能跳转至外站或相邻环境）。
+GitHub Actions → **OSS Production Health Gate**：
 
-**校验顺序：**
-1. #169 `makeCandidate` 验证 `prod` 构建、真实 SHA、Run+Attempt 身份；新包的静态文件先上传并远程读回，已有成功版完整保存进 `history/<id>/`。
-2. 最后切换固定的 `index.html`；在公司真实 HTTPS 地址用 `GET`（`cache: no-store` + 防缓存查询参数，禁止重定向）读取入口与版本元数据。
-3. 校验 `index.html`、`build-meta.json` 与 `release-manifest.json`，要求生产 API+Native 模式、实际 SHA/构建编号/发布 ID 都一致，并验证 HTML/元数据 `Cache-Control` 不长期缓存。
-4. 从**当前 HTML** 提取 JS/CSS URL，只允许 `/kbs-web/prod/last/assets/` 同源资产；分别 GET 并检查真实 Content-Type、长度和清单中的 SHA256。返回 404、错误 MIME、旧版、错误缓存或读取失败，均不得宣称成功。
-5. 验证失败：#169 自动恢复原先已成功版本的元数据/入口，并**再次从公司网站检查回滚版本**；恢复或复验失败必须显式报严重错误，绝不自动删除历史。
-6. 验证成功：再次 OSS 读回 `last/index.html` 对比 SHA256。只有公司真实 URL 与 OSS 读回**双重成功**，才可生成正式清理证明；清理超过 5 个已成功历史版本最旧项。历史清理失败时保留已验证可用的新入口，报出清理失败，禁止把它描述为发布回滚。
+- `prod` 分支 push：正常构建并发布固定 `last/`。
+- 手动 `workflow_dispatch` 选择一个分支，再选择 `publish`：从所选分支构建一份 prod 模式的 H5 到同一固定 `last/`，用于真人验证。**选择来源分支不影响固定目录**。
+- 手动选择 `rollback`：填入完全一致的历史发布 ID 两次，恢复指定成功归档。回滚时先保护当前版本，且不做历史清理。
 
-**未覆盖的能力**：App WebView/JSBridge、登录、扫码、设备和真实业务 API；需要 #171 真机与真实后台人工验收。
+`oss-production` GitHub Environment 仍用于提供**实际必需的 OSS 读写密钥**，以及 OSS 凭据的权限隔离；如果已有 Environment 自己限制分支，需要仓库管理员同步调整，否则 GitHub 仍可能阻断手动发布。这属于现有平台权限设置，不是代码的四项限制。
 
-## 默认关闭，运维批准后才放开
+Web 预览默认访问目标：`http://kbs.3cgroup.cn/kbs-web/prod/last/`。可用 GitHub Variable `OSS_PROD_WEB_BASE_URL` 修改成其它 HTTP/HTTPS 域名，只要路径仍为 `/kbs-web/prod/last/`。**URL 能否访问由公司 Nginx/OSS 代理事实决定，工作流不会虚称已配置。**
 
-`.github/workflows/oss-prod-health-gate.yml` 的 PR/普通分支仅执行无密钥离线测试；真实发布作业必须同时满足：
+## 执行与证据
 
-- `prod` 分支 push（或由明确批准的手工 `workflow_dispatch` 回滚），且 `oss-production` 环境准入通过；
-- 仓库 Variables：`OSS_PROD_WEB_ENABLED=true` 与 `OSS_PROD_HEALTHCHECK_CONFIRMED=true`；**当前不设置/不启用**；
-- OSS 环境 Secret：现有 `OSS_ACCESS_KEY_ID`、`OSS_ACCESS_KEY_SECRET`；必须核实其最小范围权限与环境分支限制；
-- OSS 环境 Variable：`OSS_PROD_WEB_BASE_URL=https://kbs.3cgroup.cn/kbs-web/prod/last/`；公司必须先部署可信 HTTPS 证书、反代映射、SPA fallback、正确 Cache-Control/MIME；
-- OSS 环境 Variables：`OSS_PROD_API_BASE_URL` 必须为正式稳定的 HTTPS API，`OSS_PROD_PUBLIC_ORIGIN` 必须是真实 HTTPS 邀请公开站，**不得继续使用开发隧道或私有 OSS 默认域名**；
-- `OSS_PROD_BOOTSTRAP_APPROVED=true`：只在明确批准全新空的 `last/` 首次引导时临时设置；如果旧入口存在但缺少正确清单则阻断，不伪造历史版本；
-- `OSS_PROD_PRUNE_ENABLED=true`：默认关闭；#171 实际发布/回滚/第 6 个历史清理验收和授权后才设置。关闭时只输出 dry-run 清理计划；
-- `OSS_PROD_ROLLBACK_ENABLED=true`：仅已批准的人工恢复场景启用。必须输入两次匹配的合法归档 Release ID，受 GitHub Environment 保护，不允许正常 push 自动回滚至任意历史。
+1. 构建 `OSS_WEB_TARGET=prod H5_OSS_ARTIFACT=1`，强制非 Mock 的 prod API/Native 运行模式；若业务 API/邀请域名暂时没配齐，只记录为业务待验收，不阻止打包。必须验证构建身份与资源路径。
+2. 按 #169 检查旧 last 的 manifest/资源完整性，归档已存在的受管理版本到 `history/<run-attempt>/`，上传新静态文件并**最后切换 index.html**。保存旧 JS/CSS，避免缓存中的用户白屏。
+3. 按现有 **OSS Connection Smoke** 的方式做 OSS 远程对象逐字节读回，至少覆盖 manifest 列出的所有文件。**OSS 读回失败时发布失败并恢复上一已知版本**。
+4. 尝试从配置的 HTTP/HTTPS 站点读取 index、metadata、manifest 及 JS/CSS、校验 HTTP status / MIME / 内容身份 / Cache-Control。**若网站还没有配置、校验失败：记录为「公网待验收」，但不撤销已经完整验证的 OSS 上传**，方便真人使用实际新版本排查。
+5. **只有公网也验证成功**，才允许按成功发布后的保留规则清理 `history/` 超过 5 个的最老历史版本。页面不通、接口未验收或发生回滚时零历史删除。
+6. `Cloudflare` 旧构建、`h5/releases/` 历史版本、`_ci-smoke` 不由该工作流清理。历史删除仍限制为 #169 清单中的精确文件，不能删除 OSS 根目录或 last。
 
-CI 的发布互斥组为 `oss-prod-last-and-history`；过期 SHA 不能切换当前入口。保留旧 `oss-production.yml` 的 `h5/releases/` 证据上传、Cloudflare 和旧 OSS 目录，不做清理与迁移。
+## 复用已有 Healthcheck 的真实边界
 
-## 现实阻塞与验收责任
+现有 `.github/workflows/oss-connection-smoke.yml` 是 OSS 写入、stat 和远端读回测试，并没有“公司网站健康检查”接口。新方案只在发布后尝试附加公网 H5 GET 验证，不新建监控平台。
 
-- 当前已验证的公司 H5 URL 是 **HTTP**；并未取得公司生产 HTTPS 已开通的证据。
-- 旧 OSS 构建配置历史上使用 `https://tunnel-dev.3cgroup.cn`，这不能当成正式生产 API。
-- 有现成的 **OSS 连接健康检查**，但仓库没有已确认的“站点自身健康检查”接口，本卡补的是最小生产 H5 GET+字节身份校验，并非公司侧另建服务。
-- 新 `prod/last` 目前**没有通过真实域名运行的验收证据**。代码、离线测试或 Actions 流程存在，不代表生产已上线。
-- #171 必须记录真实 HTTPS 响应、OSS 读回、正确 MIME/缓存、失败注入后的回滚和是否删除超额历史；缺少公司运维交接则 #170 保持 Open。
+**#171 真人验收还要核对**：公司代理 URL、SPA 路由刷新、API 请求、原生桥接、缓存、受管理 last 的回滚以及实际保留 5 版。这些是上线评估，不是打包/上传门槛。
 
+**注意**：本文件仅描述 CI 方案，不等于真实公司 OSS 已重新部署。以 GitHub Actions 成功结果和真实域名访问作为证据。
