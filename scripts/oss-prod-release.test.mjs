@@ -53,7 +53,11 @@ test('release IDs, safe paths, exact identity and Mock/Native boundaries', () =>
     files: { 'index.html': 'x', 'build-meta.json': JSON.stringify({ appEnvironment: 'preview' }) },
     runId: 200, attempt: 1, sha: 'a'.repeat(40),
   }), /Refusing nonproduction/)
-  assert.notEqual(makeCandidate({ files: make(1).files,
+  const retriedFiles = new Map(make(1).files)
+  const retryMeta = JSON.parse(retriedFiles.get('build-meta.json').toString())
+  retryMeta.build.id = '101.2'
+  retriedFiles.set('build-meta.json', Buffer.from(JSON.stringify(retryMeta)))
+  assert.notEqual(makeCandidate({ files: retriedFiles,
     runId: 101, attempt: 2, sha: make(1).manifest.sha }).manifest.id,
   make(1).manifest.id)
 })
