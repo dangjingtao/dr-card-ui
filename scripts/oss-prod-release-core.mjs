@@ -46,7 +46,8 @@ export function makeCandidate({ files, runId, attempt, sha, at = new Date().toIS
   ensure(meta.appEnvironment === 'prod' && meta.dataMode === 'api' &&
     meta.bridgeMode === 'native' && meta.ossWeb?.target === 'prod' &&
     meta.ossWeb?.path === '/kbs-web/prod/last/' &&
-    meta.build?.sha === sha, 'Refusing nonproduction, mismatched or Mock H5 bundle')
+    meta.build?.sha === sha && typeof meta.build?.id === 'string' &&
+    meta.build.id.length > 0, 'Refusing nonproduction, mismatched or Mock H5 bundle')
   return { manifest: {
     schemaVersion: 1, id, sha, buildId: meta.build.id, activatedAt: at,
     files: fileEntries(map),
@@ -125,7 +126,10 @@ async function archivePrevious(store, oldManifest, oldFiles) {
     await putAndCheck(store, prefix + MANIFEST, json(oldManifest))
   }
   const listing = await catalog(store)
-  if (!listing.entries.some(e => e.id === oldManifest.id)) {
+  const catalogued = listing.entries.find(e => e.id === oldManifest.id)
+  ensure(!catalogued || (catalogued.sha === oldManifest.sha &&
+    catalogued.activatedAt === oldManifest.activatedAt), 'Conflicting history catalog ID')
+  if (!catalogued) {
     listing.entries.push({
       id: oldManifest.id, sha: oldManifest.sha, activatedAt: oldManifest.activatedAt,
     })
@@ -159,12 +163,24 @@ function healthy(result, id) {
   return result?.ok === true && result.releaseId === id
 }
 
+function assertCandidate(candidate) {
+  checkManifest(candidate?.manifest)
+  ensure(candidate.files instanceof Map, 'Candidate must contain verifiable static files')
+  const declared = candidate.manifest.files
+  ensure(declared.length === candidate.files.size, 'Candidate includes undeclared files')
+  for (const file of declared) {
+    const bytes = candidate.files.get(file.path)
+    ensure(bytes != null && data(bytes).length === file.size &&
+      sha256(data(bytes)) === file.sha256, 'Candidate file/manifest hash mismatch')
+  }
+}
+
 // Pipeline integration point for #170. Without a real injected healthcheck
 // publish is rejected; this module is NOT wired to a production Action in #169.
 export async function publish({ store, candidate, healthcheck, currentHead, allowBootstrap = false }) {
   ensure(typeof healthcheck === 'function' && typeof currentHead === 'function',
     'Real Healthcheck and source branch guard are mandatory')
-  checkManifest(candidate.manifest)
+  assertCandidate(candidate)
   const oldManifest = await getManifest(store, LAST)
   const oldIndex = await store.get(LAST + 'index.html')
   ensure(Boolean(oldManifest) === Boolean(oldIndex),
@@ -197,9 +213,9 @@ export async function publish({ store, candidate, healthcheck, currentHead, allo
   }
 }
 
-export async function rollback({ store, releaseId, healthcheck, currentHead }) {
+export async function rollback({ store, releaseId, healthcheck, authorizeRollback }) {
   ensure(safeId(releaseId) && typeof healthcheck === 'function' &&
-    typeof currentHead === 'function', 'Rollback requires exact ID and a real Healthcheck')
+    typeof authorizeRollback === 'function', 'Rollback requires explicit approval and real Healthcheck')
   const list = await catalog(store)
   ensure(list.entries.some(x => x.id === releaseId), 'Not a catalogued successful historic release')
   const oldManifest = await getManifest(store, LAST)
@@ -209,7 +225,8 @@ export async function rollback({ store, releaseId, healthcheck, currentHead }) {
   ensure(manifest && manifest.id === releaseId, 'Historic release manifest missing')
   const files = await readSnapshot(store, releasePrefix(releaseId), manifest)
   await stageAssets(store, { manifest, files })
-  ensure(await currentHead(oldManifest.sha), 'Cannot verify current deployed build')
+  ensure(await authorizeRollback({ from: oldManifest.id, to: releaseId }),
+    'Rollback not authorized for this exact release pair')
   try {
     await switchEntry(store, manifest, files)
     const result = await healthcheck(manifest)
