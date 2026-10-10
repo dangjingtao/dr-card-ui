@@ -85,6 +85,47 @@ describe('bootstrap auth 401 handling', () => {
     window.removeEventListener(AUTH_EXPIRED_EVENT, expired)
   })
 
+  it('shares the whole initial retry flow with concurrent bootstrap callers', async () => {
+    const { bootstrapAuthSession, AUTH_EXPIRED_EVENT } = await import('./session')
+    const { AppError } = await import('../http/appError')
+    const expired = vi.fn()
+    window.addEventListener(AUTH_EXPIRED_EVENT, expired)
+
+    let rejectFirst!: (error: unknown) => void
+    const firstAttempt = new Promise<never>((_, reject) => {
+      rejectFirst = reject
+    })
+
+    mocks.request
+      .mockReturnValueOnce(firstAttempt)
+      .mockResolvedValueOnce({
+        code: 0,
+        data: { userInfo: { id: 'user-1' }, accessToken: 'access-1' },
+      })
+
+    const first = bootstrapAuthSession()
+    const concurrent = bootstrapAuthSession()
+
+    expect(concurrent).toBe(first)
+
+    rejectFirst(
+      new AppError({ kind: 'business', message: 'unauthorized', status: 401, code: '401' }),
+    )
+
+    await expect(first).resolves.toEqual({
+      userInfo: { id: 'user-1' },
+      accessToken: 'access-1',
+    })
+    await expect(concurrent).resolves.toEqual({
+      userInfo: { id: 'user-1' },
+      accessToken: 'access-1',
+    })
+    expect(mocks.request).toHaveBeenCalledTimes(2)
+    expect(expired).not.toHaveBeenCalled()
+
+    window.removeEventListener(AUTH_EXPIRED_EVENT, expired)
+  })
+
   it('does not relabel a non-401 bootstrap failure as expired', async () => {
     const { bootstrapAuthSession, AUTH_EXPIRED_EVENT } = await import('./session')
     const { AppError } = await import('../http/appError')
