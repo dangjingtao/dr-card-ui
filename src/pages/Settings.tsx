@@ -15,6 +15,7 @@ import { useOverlay } from '../app/fixtures/useFixture'
 import UserAvatar from '../components/mobile/UserAvatar'
 import { useUserIdentity, acceptUserIdentityUpdate } from './profile/useUserIdentity'
 import { updateUserProfile, type UserUpdatePayload } from '../services/userProfile'
+import { storage, STORAGE_KEYS } from '../storage'
 import { uploadUserAvatar } from '../services/userAvatarUpload'
 import {
   chooseImage,
@@ -40,17 +41,14 @@ function matchYearOption(grade: string) {
 
 // Persist only a per-account display flag, never the PIN, so returning to
 // Settings shows the same six-dot mask even if /detail omits PIN metadata.
-function pinMaskKey(userId: number) {
-  return `dr-card-ui:pin-mask:${userId}`
-}
-
 function hasPinMask(userId?: number) {
   if (userId === undefined) return false
-  try { return window.localStorage.getItem(pinMaskKey(userId)) === '1' } catch { return false }
+  return storage.read(STORAGE_KEYS.profilePinMasks)?.[String(userId)] === true
 }
 
 function savePinMask(userId: number) {
-  try { window.localStorage.setItem(pinMaskKey(userId), '1') } catch { /* storage can be disabled */ }
+  const saved = storage.read(STORAGE_KEYS.profilePinMasks) ?? {}
+  storage.write(STORAGE_KEYS.profilePinMasks, { ...saved, [String(userId)]: true })
 }
 
 export default function Settings() {
