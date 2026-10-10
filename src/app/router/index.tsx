@@ -215,6 +215,8 @@ const customPages: Record<string, ReactElement> = {
   '/signin/detail': <PointsPage />,
 }
 
+const routerBasename = import.meta.env.BASE_URL === '/' ? '/' : import.meta.env.BASE_URL.replace(/\/$/, '')
+
 export const router = createBrowserRouter([
   {
     element: <MobileLayout />,
@@ -233,4 +235,4 @@ export const router = createBrowserRouter([
       { path: '*', element: <NotFound /> },
     ],
   },
-])
+], { basename: routerBasename })
