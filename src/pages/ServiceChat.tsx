@@ -172,9 +172,11 @@ function MockServiceChat() {
     settle(id, target.text)
   }
 
-  /** T013R4：人工坐席已接入后输入区可用；否则禁用并显示「正在接入...」 */
+  /** 兼容处理：保留原「人工」关键词触发 requestHuman() 的入口。
+   * idle 时允许正常 AI 输入或输入「人工」进入原模拟转接状态；
+   * 仅排队中禁用输入，接入后继续可发送。 */
   const humanActive = humanStage === 'connected'
-  const inputDisabled = !humanActive
+  const inputDisabled = humanStage === 'queuing'
   const inputPlaceholder = humanActive
     ? `与 ${CHAT_QUEUE.connected.agentName} 对话中…`
     : humanStage === 'queuing'
