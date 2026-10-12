@@ -35,7 +35,7 @@ export default function Redeem() {
   const [outcome, setOutcome] = useState<RedeemOutcome | null>(null)
   const timers = useRef<number[]>([])
 
-  const trimmed = code.replace(/\s/g, '')
+  const trimmed = code
   const feedback = outcome ? REDEEM_FEEDBACK[outcome] : null
   const done = outcome === 'success'
 
@@ -60,7 +60,7 @@ export default function Redeem() {
   }
 
   const submit = () => {
-    if (!trimmed || submitting) return
+    if (trimmed.length < REDEEM_CODE_RULE.minLength || submitting) return
     setOutcome(null)
     setSubmitting(true)
     /** 提交中态：夹具环境下用固定时长模拟一次请求往返，非随机 */
@@ -122,12 +122,10 @@ export default function Redeem() {
           type="text"
           inputMode="text"
           autoComplete="off"
-          autoCapitalize="characters"
           spellCheck={false}
-          maxLength={REDEEM_CODE_RULE.length}
           value={code}
           onChange={(event) => {
-            setCode(event.target.value.toUpperCase())
+            setCode(event.target.value)
             setOutcome(null)
           }}
           placeholder="请输入兑换码"
@@ -145,7 +143,7 @@ export default function Redeem() {
 
       <button
         type="button"
-        disabled={!trimmed || submitting}
+        disabled={trimmed.length < REDEEM_CODE_RULE.minLength || submitting}
         onClick={submit}
         className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary text-base font-medium text-text-inverse active:bg-primary-pressed disabled:bg-disabled disabled:text-text-disabled"
       >
