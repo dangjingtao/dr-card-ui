@@ -217,7 +217,7 @@ export default function MobileLayout() {
           <Toast message="用户信息过期" />
         </div>
       )}
-      <div className="app-background flex h-dvh flex-col overflow-hidden pt-[env(safe-area-inset-top)] text-text-primary">
+      <div className="app-background flex h-screen supports-[height:100dvh]:h-dvh flex-col overflow-hidden pt-[env(safe-area-inset-top)] text-text-primary">
         {/* T013R7：min-w-0 防止 TitleBar 第三列 action 被撑大撑出页面右侧 */}
         <div className="min-w-0 shrink-0">
           {titleBarMode !== 'hidden' && (
