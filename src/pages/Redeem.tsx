@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { AlertCircle, CheckCircle2, Loader2, Ticket, XCircle } from 'lucide-react'
 import DebugPanel from '../components/mobile/DebugPanel'
 import { runtimePolicy } from '../app/config/runtime'
-import { redeemCardCode } from '../services/redeemCode'
+import { redeemCardCode, type RedemptionReceipt } from '../services/redeemCode'
 import PageContainer from '../components/mobile/PageContainer'
 import { useFixtureState } from '../app/fixtures/useFixture'
 import { findRouteByPathname } from '../app/router/routes'
@@ -20,12 +20,8 @@ import {
  * -------------------------------------------------------------
  * 视觉与交互取自 reference/兑换卡券.html：ticket 前缀图标、56 高输入框、聚焦描边、
  * 清除按钮仅在有输入时出现、48 高圆角主按钮、居中 toast（成功绿 / 失败红）。
- * ⚠️ 未定稿（B-009）：摹客原型分别出现「8 位」「11 位」，reference 与历史稿为 12 位。
- *    页面不自持任何位数常量，位数 / 字符集 / 提示文案全部读 REDEEM_CODE_RULE，
- *    定稿时只改夹具一处。规则未定期间提交按钮只在「空输入」时禁用（照 reference syncState），
- *    不用位数提前拦截，避免把未确认的位数表现成最终校验规则。
- * 失败分支（无效 / 已使用 / 网络异常）通过 REDEEM_CODE_OUTCOMES 的确定性演示码触发，
- * 也可用 `?state=invalid` 等直达截图。
+ * 兑换码至少 10 位，不修改用户输入字符；API 模式走后台正式核兑接口。
+ * 只有 preview/dev Mock 模式使用固定演示码，API/test/prod 以后台发券回执为准。
  */
 export default function Redeem() {
   const navigate = useNavigate()
@@ -36,6 +32,7 @@ export default function Redeem() {
   const [submitting, setSubmitting] = useState(false)
   const [outcome, setOutcome] = useState<RedeemOutcome | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [receipt, setReceipt] = useState<RedemptionReceipt | null>(null)
   const timers = useRef<number[]>([])
 
   const trimmed = code
@@ -47,6 +44,7 @@ export default function Redeem() {
     const key = state?.key as RedeemOutcome | undefined
     if (!key || !(key in REDEEM_SAMPLE_CODES)) return
     setCode(REDEEM_SAMPLE_CODES[key])
+    setReceipt(null)
     setOutcome(key)
     setErrorMessage(null)
     setSubmitting(false)
@@ -59,6 +57,7 @@ export default function Redeem() {
   }
 
   const clear = () => {
+    setReceipt(null)
     setCode('')
     setOutcome(null)
     setErrorMessage(null)
@@ -67,6 +66,7 @@ export default function Redeem() {
   const submit = async () => {
     if (trimmed.length < REDEEM_CODE_RULE.minLength || submitting) return
     setOutcome(null)
+    setReceipt(null)
     setErrorMessage(null)
     setSubmitting(true)
     if (runtimePolicy.dataMode === 'mock') {
@@ -80,7 +80,8 @@ export default function Redeem() {
       return
     }
     try {
-      await redeemCardCode(trimmed)
+      const nextReceipt = await redeemCardCode(trimmed)
+      setReceipt(nextReceipt)
       setOutcome('success')
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : '兑换失败，请稍后重试')
@@ -98,6 +99,7 @@ export default function Redeem() {
           </span>
           <h1 className="text-lg font-semibold text-text-primary">兑换成功</h1>
           <p className="max-w-[260px] text-sm leading-6 text-text-secondary">{REDEEM_FEEDBACK.success.text}</p>
+          {receipt && <p className="max-w-[260px] text-sm font-medium text-text-primary">{receipt.card_name}</p>}
         </div>
 
         <section className="mx-4 mt-5 flex items-center gap-3 rounded-container bg-surface p-3 shadow-sm">
@@ -110,6 +112,7 @@ export default function Redeem() {
           <div className="min-w-0 flex-1">
             <p className="text-xs text-text-tertiary">兑换码</p>
             <p className="mt-0.5 truncate text-base font-semibold tracking-[0.08em] text-text-primary">{trimmed}</p>
+            {receipt && <p className="mt-1 truncate text-xs text-text-secondary">卡券编号：{receipt.card_sn}</p>}
           </div>
         </section>
 
