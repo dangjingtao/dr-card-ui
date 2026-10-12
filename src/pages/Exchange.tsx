@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronRight, Droplets, PartyPopper, Ticket } from 'lucide-react'
 import DebugPanel from '../components/mobile/DebugPanel'
+import EmptyStateIllustration from '../components/mobile/EmptyStateIllustration'
 import PageContainer from '../components/mobile/PageContainer'
 import PromptOverlay from '../components/mobile/PromptOverlay'
 import BubbleValueRedeemCard from '../components/card/BubbleValueRedeemCard'
@@ -12,7 +13,7 @@ import { useUserPointsStat } from './points/usePointsFeed'
 import { useExchangeCategories, useExchangeCoupons } from './exchange/useExchangeFeed'
 import { EXCHANGE_COPY } from '../app/fixtures'
 import type { CouponRedeemView } from '../services/coupons'
-import { redeemExchangeProduct, H014_EXCHANGE_REDEEM_UNAVAILABLE_COPY } from '../services/exchange'
+import { redeemExchangeProduct, type ExchangeRedeemResult } from '../services/exchange'
 import kitThumb from '../assets/brand/member/checkin-dearseed-kit.webp'
 
 /** 接口 `image` 为空时的券图兜底（沿用已验收品牌图，不新增假字段）。 */
@@ -63,7 +64,7 @@ const availabilityButtonLabel = (state: ExchangeAvailability): string =>
  * ⚠️ B-024 / B-025 / B-026：排序方向、完整 SKU 清单与泡泡值扣减 / 卡包写入均为服务端规则，
  *    页面只展示接口结果，不做持久化扣减。
  * UX-E（2026-10-09）：分类 / 券选择 / 确认 / 兑换结果只用组件状态，绝不通过 URL 驱动。
- * H014 占位仅允许 Mock 演示；正式 API 未接通之前禁止假成功或模拟扣点入包。
+ * #74：兑换动作统一走 POST /api/coupons/exchange；库存、扣泡泡值、流水、发券及失败补偿均由后端负责。
  */
 export default function Exchange() {
   const navigate = useNavigate()
@@ -71,7 +72,7 @@ export default function Exchange() {
   /** UX-E 分类为页面本地状态；真实分类 key 来自后台，绝不靠 URL/硬编码维护。 */
   const [category, setCategory] = useState<string>('all')
   const [activeProductId, setActiveProductId] = useState<string | null>(null)
-  const [simulationComplete, setSimulationComplete] = useState(false)
+  const [redeemResult, setRedeemResult] = useState<ExchangeRedeemResult | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const submissionLock = useRef(false)
@@ -97,7 +98,7 @@ export default function Exchange() {
   }, [categoriesRemote.state, validCategory])
 
   /** GET /api/userpoints/stat：余额严格取 points。兑换结果不在页面伪扣款。 */
-  const { remote: statRemote } = useUserPointsStat()
+  const { remote: statRemote, reload: reloadPoints } = useUserPointsStat()
   const balance = statRemote.state === 'success' ? statRemote.data.points : null
 
   // Resolve against current list to prevent a stale coupon selection after a reload.
@@ -121,13 +122,13 @@ export default function Exchange() {
   }
 
   const openRedeem = (product: CouponRedeemView) => {
-    if (submissionLock.current || simulationComplete) return
+    if (submissionLock.current || redeemResult) return
     setActiveProductId(String(product.id))
     setSubmitError(null)
   }
 
   const closeResult = () => {
-    setSimulationComplete(false)
+    setRedeemResult(null)
     setActiveProductId(null)
     setSubmitError(null)
   }
@@ -144,22 +145,19 @@ export default function Exchange() {
 
   const submit = async () => {
     if (!activeProduct || availability !== 'redeemable' || submissionLock.current) return
-    // #74: No confirmed production endpoint exists. H014 mock is strictly a dev/preview
-    // simulation and must not emit a real issue/settlement success in API/test/prod.
-    if (runtimePolicy.dataMode !== 'mock') {
-      setSubmitError(H014_EXCHANGE_REDEEM_UNAVAILABLE_COPY)
-      return
-    }
 
     submissionLock.current = true
     setSubmitting(true)
     setSubmitError(null)
     try {
-      await redeemExchangeProduct(String(activeProduct.id))
+      const result = await redeemExchangeProduct(activeProduct.id)
       setActiveProductId(null)
-      setSimulationComplete(true)
-      // A mock response does NOT decrement points, issue a coupon or prove real settlement.
-      // #74 owns the eventual real endpoint and authoritative refresh rules.
+      setRedeemResult(result)
+
+      // Backend response is authoritative for success. Refresh the two page-level reads
+      // that can change after settlement: remaining points and coupon stock/redeemed count.
+      reloadPoints()
+      reloadCoupons()
     } catch (error) {
       setSubmitError(error instanceof Error && error.message ? error.message : EXCHANGE_REQUEST_ERROR_COPY)
     } finally {
@@ -225,20 +223,19 @@ export default function Exchange() {
             />
           </div>
         ) : list.length === 0 ? (
-          <div className="rounded-container bg-surface py-2 shadow-sm">
-            <EmptyState
-              variant="no-results"
-              title={EXCHANGE_COPY.emptyTitle}
-              supportingText={EXCHANGE_COPY.emptyDesc}
-              primaryAction={
-                category === 'all' ? undefined : (
-                  <Button variant="outline" onClick={() => changeCategory('all')}>
-                    {EXCHANGE_COPY.emptyAction}
-                  </Button>
-                )
-              }
-            />
-          </div>
+          <EmptyState
+            variant="no-results"
+            visual={<EmptyStateIllustration size="md" />}
+            title={EXCHANGE_COPY.emptyTitle}
+            supportingText={EXCHANGE_COPY.emptyDesc}
+            primaryAction={
+              category === 'all' ? undefined : (
+                <Button variant="outline" onClick={() => changeCategory('all')}>
+                  {EXCHANGE_COPY.emptyAction}
+                </Button>
+              )
+            }
+          />
         ) : (
           <ul className="grid grid-cols-2 gap-3" aria-live="polite">
             {list.map((product) => {
@@ -346,12 +343,6 @@ export default function Exchange() {
               </p>
             )}
 
-            {runtimePolicy.dataMode !== 'mock' && (
-              <p className="mt-2 text-xs text-text-secondary" role="status">
-                {H014_EXCHANGE_REDEEM_UNAVAILABLE_COPY}
-              </p>
-            )}
-
             {submitError && (
               <p className="mt-2 text-xs text-danger-text" role="alert">
                 {submitError}
@@ -362,7 +353,7 @@ export default function Exchange() {
               size="large"
               className="mt-4 w-full rounded-full"
               loading={submitting}
-              disabled={availability !== 'redeemable' || runtimePolicy.dataMode !== 'mock'}
+              disabled={availability !== 'redeemable' || submitting}
               onClick={() => void submit()}
             >
               {submitting ? EXCHANGE_COPY.submitting : availabilityButtonLabel(availability)}
@@ -372,8 +363,8 @@ export default function Exchange() {
       </BottomSheet>
 
       <PromptOverlay
-        open={simulationComplete}
-        label="模拟兑换结果"
+        open={redeemResult !== null}
+        label={runtimePolicy.dataMode === 'mock' ? '模拟兑换结果' : '兑换结果'}
         onDismiss={closeResult}
         className="bg-surface px-6 pb-6 pt-7 text-center"
       >
@@ -385,10 +376,12 @@ export default function Exchange() {
           <PartyPopper className="h-9 w-9 text-claim-text" />
         </div>
         <h2 className="mt-4 text-lg font-bold leading-6 text-text-primary">
-          兑换成功演示
+          {runtimePolicy.dataMode === 'mock' ? '兑换成功演示' : '兑换成功'}
         </h2>
         <p className="mt-2 text-sm leading-6 text-text-secondary">
-          仅供 H5 预览。未实际扣除泡泡值，也未发放卡券。
+          {runtimePolicy.dataMode === 'mock'
+            ? '当前为 Mock 预览，仅验证正式兑换协议与页面状态，不代表真实扣值或发券。'
+            : `兑换完成，剩余泡泡值 ${redeemResult?.points.toLocaleString() ?? '--'}。可前往卡包查看新券。`}
         </p>
         <Button size="large" className="mt-6 h-11 w-full rounded-full" onClick={openCardPack}>
           {EXCHANGE_COPY.successAction}

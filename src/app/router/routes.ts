@@ -923,7 +923,7 @@ export const ROUTES: RouteMeta[] = [
     label: '商城',
     icon: Headset,
     title: '商城',
-    titleBar: 'plain',
+    titleBar: 'hidden',
     titleBarTitle: '商城',
     nodes: [17],
     task: 'T008',
@@ -976,7 +976,7 @@ export const ROUTES: RouteMeta[] = [
       { key: 'used', node: 68, label: '兑换失败-已被使用' },
       { key: 'network', node: 68, label: '兑换失败-网络异常' },
     ],
-    owner: '兑换码输入（T009 施工；8/11/12 位规则 ⚠️ 待确认 B-009，规则收在 REDEEM_CODE_RULE）',
+    owner: '兑换码输入（T009；2026-10-12 后台合同至少 10 位，原值提交，规则收在 REDEEM_CODE_RULE）',
   },
   {
     path: '/card/share',

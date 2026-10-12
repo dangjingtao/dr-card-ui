@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import {
   Navigate,
   Outlet,
@@ -7,7 +7,7 @@ import {
   useNavigationType,
   useViewTransitionState,
 } from 'react-router-dom'
-import { Bell, MessageSquare, Settings } from 'lucide-react'
+import { Bell, Settings } from 'lucide-react'
 import BottomNav from '../components/mobile/BottomNav'
 import TitleBar from '../components/mobile/TitleBar'
 import { findRouteByPathname, isLegacyTabPath } from '../app/router/routes'
@@ -16,7 +16,9 @@ import { navigateWithH5ViewTransition } from '../app/router/h5Transition'
 import { useNotifications } from '../app/state/notifications'
 import { protectedFixtureRedirect, useOverlay } from '../app/fixtures/useFixture'
 import H5ScrollRestoration from '../components/mobile/H5ScrollRestoration'
-import { AUTH_FAILURE_EVENT, setAuthFlowEnabled } from '../services/auth/session'
+import Toast from '../components/ui/Toast'
+import { closeWebView } from '../services/nativeBridge'
+import { AUTH_EXPIRED_EVENT, AUTH_FAILURE_EVENT, setAuthFlowEnabled } from '../services/auth/session'
 
 type H5RouteTransitionKind = 'none' | 'tab' | 'forward' | 'back'
 
@@ -111,6 +113,8 @@ export default function MobileLayout() {
   const scrollSourcePathname = previousShellPathname.current
   const { unreadCount, countLoaded } = useNotifications()
   const { open: openOverlay } = useOverlay()
+  const [authExpired, setAuthExpired] = useState(false)
+  const authExpiredHandledRef = useRef(false)
   const showLegacyNav = isLegacyTabPath(location.pathname)
   const showNav = showLegacyNav || isFormalH5TabPath(location.pathname)
   const route = findRouteByPathname(location.pathname)
@@ -122,9 +126,22 @@ export default function MobileLayout() {
     if (!activeFormalH5) return
 
     const handleAuthFailure = () => navigate('/error?reason=auth', { replace: true })
+    const handleAuthExpired = () => {
+      if (authExpiredHandledRef.current) return
+      authExpiredHandledRef.current = true
+      setAuthExpired(true)
+      window.setTimeout(() => {
+        void closeWebView().catch((error) => {
+          console.error('[auth-expired-close]', error)
+        })
+      }, 800)
+    }
+
     window.addEventListener(AUTH_FAILURE_EVENT, handleAuthFailure)
+    window.addEventListener(AUTH_EXPIRED_EVENT, handleAuthExpired)
     return () => {
       window.removeEventListener(AUTH_FAILURE_EVENT, handleAuthFailure)
+      window.removeEventListener(AUTH_EXPIRED_EVENT, handleAuthExpired)
       setAuthFlowEnabled(false)
     }
   }, [activeFormalH5, navigate])
@@ -168,17 +185,6 @@ export default function MobileLayout() {
     openOverlay('clear')
   }
 
-  const openWecom = () => {
-    navigate(
-      {
-        pathname: location.pathname,
-        search: location.search,
-        hash: '#wecom',
-      },
-      { replace: true, state: location.state },
-    )
-  }
-
   const titleAction = isNotificationsPage
     ? (
       <button
@@ -202,45 +208,37 @@ export default function MobileLayout() {
             <Bell className="h-[22px] w-[22px]" />
           </button>
         )
-        : location.pathname === '/service/chat'
-          ? (
-            /* T013R5+R6：「企微客服」pill 回到壳层 TitleBar 右侧（与「< 智能客服」同右侧）；
-              * H016：hash 只表示当前页弹层状态，使用 replace 避免新增历史项和触发页面级滚动/过渡。
-              * T013R6：pill 不限制宽度、whitespace-nowrap，保证「企微客服」四个字自然横向不被换行或裁剪。 */
-            <button
-              type="button"
-              data-chat-wecom-entry
-              onClick={openWecom}
-              className="inline-flex min-h-9 items-center gap-1 whitespace-nowrap rounded-pill bg-surface px-3 text-[13px] font-medium text-text-brand shadow-sm active:bg-surface-selected"
-            >
-              <MessageSquare className="h-3.5 w-3.5" aria-hidden />
-              企微客服
-            </button>
-          )
-          : undefined
+        : undefined
 
   return (
-    <div className="app-background flex h-dvh flex-col overflow-hidden pt-[env(safe-area-inset-top)] text-text-primary">
-      {/* T013R7：min-w-0 防止 TitleBar 第三列 action 被撑大撑出页面右侧 */}
-      <div className="min-w-0 shrink-0">
-        {titleBarMode !== 'hidden' && (
-          <TitleBar
-            title={title}
-            leadingAction={leadingAction}
-            onBack={route?.backTo ? () => navigateShell(route.backTo as string) : undefined}
-            action={titleAction}
-            actionWide={isNotificationsPage || location.pathname === '/service/chat'}
-            fullWidth={activeFormalH5}
-          />
-        )}
+    <>
+      {authExpired && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-24 z-[100] flex justify-center px-6">
+          <Toast message="用户信息过期" />
+        </div>
+      )}
+      <div className="app-background flex h-dvh flex-col overflow-hidden pt-[env(safe-area-inset-top)] text-text-primary">
+        {/* T013R7：min-w-0 防止 TitleBar 第三列 action 被撑大撑出页面右侧 */}
+        <div className="min-w-0 shrink-0">
+          {titleBarMode !== 'hidden' && (
+            <TitleBar
+              title={title}
+              leadingAction={leadingAction}
+              onBack={route?.backTo ? () => navigateShell(route.backTo as string) : undefined}
+              action={titleAction}
+              actionWide={isNotificationsPage}
+              fullWidth={activeFormalH5}
+            />
+          )}
+        </div>
+        <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain" data-page-scroll>
+          {isActiveFormalH5Route(route) && (
+            <H5ScrollRestoration previousPathname={scrollSourcePathname} />
+          )}
+          <H5RouteOutlet />
+        </div>
+        {showNav && <BottomNav variant={showLegacyNav ? 'legacy' : 'main'} />}
       </div>
-      <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain" data-page-scroll>
-        {isActiveFormalH5Route(route) && (
-          <H5ScrollRestoration previousPathname={scrollSourcePathname} />
-        )}
-        <H5RouteOutlet />
-      </div>
-      {showNav && <BottomNav variant={showLegacyNav ? 'legacy' : 'main'} />}
-    </div>
+    </>
   )
 }

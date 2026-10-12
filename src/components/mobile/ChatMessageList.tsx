@@ -1,5 +1,6 @@
 import { AlertCircle, RotateCcw } from 'lucide-react'
 import { CHAT_BOT, CHAT_RETRY_LABEL, CHAT_SEND_FAILED_HINT, type ChatMessage } from '../../app/fixtures'
+import { hasChatRichText, sanitizeChatRichText } from './safeRichText'
 
 export interface ChatMessageListProps {
   messages: ChatMessage[]
@@ -49,7 +50,15 @@ export default function ChatMessageList({
                     : `bg-primary text-text-inverse ${message.status === 'sending' ? 'opacity-70' : ''}`
                 }`}
               >
-                {message.text}
+                {hasChatRichText(message.text) ? (
+                  <div
+                    data-chat-rich-text
+                    className="whitespace-normal [&_blockquote]:border-l-2 [&_blockquote]:pl-2 [&_code]:font-mono [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
+                    dangerouslySetInnerHTML={{ __html: sanitizeChatRichText(message.text) }}
+                  />
+                ) : (
+                  message.text
+                )}
               </div>
 
               {message.status === 'sending' && (

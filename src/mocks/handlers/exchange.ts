@@ -1,24 +1,35 @@
 import { http, HttpResponse } from 'msw'
 
-import { H014_EXCHANGE_REDEEM_PATH } from '../../services/exchange'
-import { H014_EXCHANGE_REDEEM_SUCCESS } from '../fixtures/h014Scenarios'
+import { EXCHANGE_REDEEM_PATH } from '../../services/exchange'
 
-async function readProductId(request: Request) {
+async function readCouponId(request: Request) {
   const body: unknown = await request.json().catch(() => null)
-  if (!body || typeof body !== 'object') return ''
-  const productId = (body as { productId?: unknown }).productId
-  return typeof productId === 'string' ? productId.trim() : ''
+  if (!body || typeof body !== 'object') return null
+  const id = (body as { id?: unknown }).id
+  return typeof id === 'number' && Number.isInteger(id) && id > 0 ? id : null
 }
 
 export const exchangeHandlers = [
-  http.post(`*${H014_EXCHANGE_REDEEM_PATH}`, async ({ request }) => {
-    const productId = await readProductId(request)
-    if (!productId) {
-      return HttpResponse.json({ message: 'productId is required' }, { status: 400 })
+  http.post(`*${EXCHANGE_REDEEM_PATH}`, async ({ request }) => {
+    const couponId = await readCouponId(request)
+    if (couponId === null) {
+      return HttpResponse.json({
+        code: 500,
+        message: '"优惠券ID" is required',
+        data: [],
+      })
     }
 
-    // B-026 settlement rules are still unconfirmed. H014 only migrates the existing successful
-    // request lifecycle to the network boundary; it does not invent stock/balance settlement rules.
-    return HttpResponse.json(H014_EXCHANGE_REDEEM_SUCCESS)
+    // Preview/dev mock intentionally uses the exact production endpoint and envelope.
+    // It only simulates the confirmed contract; it does not claim a real deduction/issue.
+    return HttpResponse.json({
+      code: 0,
+      msg: 'success',
+      status: 'succ',
+      data: {
+        coupon_id: couponId,
+        points: 1080,
+      },
+    })
   }),
 ]

@@ -1,6 +1,6 @@
 import { runtimePolicy } from '../../app/config/runtime'
 import { getLoginToken } from '../nativeBridge'
-import { createContractError } from '../http/appError'
+import { createContractError, isAppError } from '../http/appError'
 import { STORAGE_KEYS, storage } from '../../storage'
 import {
   createHttpClient,
@@ -10,6 +10,7 @@ import {
 } from '../http/httpClient'
 
 const AUTH_FAILURE_EVENT = 'dr-card-ui:auth-failure'
+const AUTH_EXPIRED_EVENT = 'dr-card-ui:auth-expired'
 const LOGIN_PATH = '/api/oauth/login'
 
 export interface AuthSession {
@@ -33,6 +34,7 @@ const loginClient = createHttpClient({
 })
 
 let inFlightLogin: Promise<AuthSession> | undefined
+let initialBootstrap: Promise<AuthSession> | undefined
 let authFlowEnabled = false
 let initializedForDocument = false
 let volatileSession: AuthSession | undefined
@@ -123,11 +125,39 @@ export function authenticate(force = false): Promise<AuthSession> {
   return inFlightLogin
 }
 
+function isUnauthorizedAuthError(error: unknown) {
+  return isAppError(error) && error.status === 401
+}
+
+function dispatchAuthEvent(eventName: string) {
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event(eventName))
+}
+
+async function authenticateInitialDocument(): Promise<AuthSession> {
+  try {
+    return await authenticate(true)
+  } catch (error) {
+    if (!isUnauthorizedAuthError(error)) throw error
+  }
+
+  try {
+    return await authenticate(true)
+  } catch (error) {
+    clearAuthSession()
+    if (isUnauthorizedAuthError(error)) dispatchAuthEvent(AUTH_EXPIRED_EVENT)
+    throw error
+  }
+}
+
 export function bootstrapAuthSession(): Promise<AuthSession> {
   if (!initializedForDocument) {
     initializedForDocument = true
-    return authenticate(true)
+    initialBootstrap = authenticateInitialDocument().finally(() => {
+      initialBootstrap = undefined
+    })
+    return initialBootstrap
   }
+  if (initialBootstrap) return initialBootstrap
   return authenticate()
 }
 
@@ -136,7 +166,9 @@ async function reauthenticateAfterUnauthorized() {
     await authenticate(true)
   } catch (error) {
     clearAuthSession()
-    if (typeof window !== 'undefined') window.dispatchEvent(new Event(AUTH_FAILURE_EVENT))
+    dispatchAuthEvent(
+      isUnauthorizedAuthError(error) ? AUTH_EXPIRED_EVENT : AUTH_FAILURE_EVENT,
+    )
     throw error
   }
 }
@@ -156,10 +188,10 @@ setHttpUnauthorizedHandler(() => {
   if (authFlowEnabled) return reauthenticateAfterUnauthorized()
 })
 setHttpAuthFailureHandler(() => {
-  if (authFlowEnabled && typeof window !== 'undefined') {
+  if (authFlowEnabled) {
     clearAuthSession()
-    window.dispatchEvent(new Event(AUTH_FAILURE_EVENT))
+    dispatchAuthEvent(AUTH_EXPIRED_EVENT)
   }
 })
 
-export { AUTH_FAILURE_EVENT }
+export { AUTH_EXPIRED_EVENT, AUTH_FAILURE_EVENT }

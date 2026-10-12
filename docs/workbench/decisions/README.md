@@ -23,7 +23,7 @@
 | D-014 | 卡包采用 reference 卡包标准页的 可用/已使用/已过期 三态 Tab，不引入原型文档写的第 4 个「全部」Tab 与右上角「使用记录」入口（用户已关闭 B-016，定案「卡包以 `reference/卡包.html` 为准，只保留三个 Tab」） | PASS | [T009-wallet-redemption.md](T009-wallet-redemption.md) | T009 #54 #62 #63 #64 |
 | D-015 | `#63 卡包-已使用` 保持标准页设计的空态，不新增 `status: 'used'` 卡券夹具填充画面；核销成功跳 `/card?state=used` 落到空态属预期 | PASS | [T009-wallet-redemption.md](T009-wallet-redemption.md) | T009 #63 #67 |
 | D-016 | 分享为 单选＋搜索＋「下一步」→ 成功页 的前端闭环；对象列表按原型做「搭子列表」夹具，不做对方接受、次数限制、时效限制和持久化，分享后原卡包状态不变（用户已关闭 B-015 并定案该范围） | PASS | [T009-wallet-redemption.md](T009-wallet-redemption.md) | T009 #65 #66 |
-| D-017 | 兑换码规则集中在夹具 `REDEEM_CODE_RULE`（含 `pending`/`blocker`/`source`），页面不硬编码位数；提交仅在空输入时禁用，不用位数拦提交 | PASS | [T009-wallet-redemption.md](T009-wallet-redemption.md) | T009 #68 #69 |
+| D-017 | **历史原型决策；已被 D-083 覆盖**：兑换码规则曾含 `pending`/`blocker`/`source`、仅空输入禁用；正式后台合同按至少 10 位执行 | Superseded by D-083 | [T009-wallet-redemption.md](T009-wallet-redemption.md) | T009 #68 #69 |
 | D-018 | 核销链路收口为 确认 → 结果反馈 Toast → 回 `/card?state=used`，并补 `?state=repeat` 重复核销态 | PASS | [T009-wallet-redemption.md](T009-wallet-redemption.md) | T009 #67 |
 | D-019 | #65/#66 以用户当轮提供的原型为准还原：#65 为「搜索 + 搭子列表单选 + 底部主按钮」，#66 为「成功 hero + 副文案「已成功分享给好友，邀请他也来一起玩吧」+ 分享的商品卡 + 查看我的卡包/返回 双按钮」；`/card/share` 路由标题统一为「分享」，卡包入口按钮保留原型的「转赠」 | PASS | [分享.html](../../../reference/分享.html)、[分享成功.html](../../../reference/分享成功.html)、[CardShare.tsx](../../../src/pages/CardShare.tsx) | T009 #65 #66 |
 | D-020 | 状态验收统一由 `DebugPanel` 承载：胶囊只读 `routes.ts` 已登记的 `states`/`overlays`，切换仅改 `?state=`/`?overlay=`（`replace`），未登记状态的路由渲染 null；面板为验收工具，不属业务 UI，`z-[60]` 高于弹层/Toast（z-50）与 Tabbar（z-40） | PASS | [DebugPanel.tsx](../../../src/components/mobile/DebugPanel.tsx)、[routes.ts](../../../src/app/router/routes.ts) | T009 #62 #63 #64 #65 #66 #67 #68 #69 |
@@ -90,6 +90,7 @@
 | D-080 | 金刚区删除（D-072）带来一处连带脚本失效：`capture-t005.mjs` 原先点击首页「诗得丽品牌专栏」卡片进入 `/dearseed?overlay=reminder`，而该卡片正是金刚区的一部分（已由 `git show HEAD:src/pages/Home.tsx` 核实旧版存在），故这不是弹窗遮挡、加 `?newcomer=off` 无效。改为直连 `/dearseed?overlay=reminder`，该脚本只继续验证专栏侧提示层与关闭出口；首页与专栏的新入口关系由 `capture-t021.mjs` 覆盖。**T005 历史验收结论不回改** | PASS | [capture-t005.mjs](../../../scripts/capture-t005.mjs)、[T005-entry-home-onboarding.md](T005-entry-home-onboarding.md) | T021 T005 #2 |
 | D-081 | 首页「公益板块」和「极地种子品牌故事」均为可点击入口，分别进入 `/cause` 与 `/brand-culture`；两个详情页使用共享空富文本承载组件，当前不请求接口、不填充假内容，未来由统一数据层提供富文本。两个路由沿用 App 壳层标题栏，返回各自来源页；`/cause` 为新增空节点，`/brand-culture` 保留原路径和来源入口 | Implemented | [Home.tsx](../../../src/pages/Home.tsx)、[RichTextPlaceholder.tsx](../../../src/pages/RichTextPlaceholder.tsx)、[routes.ts](../../../src/app/router/routes.ts) | T021 |
 
+| D-083 | **2026-10-12 用户确认后台兑换码合同**：兑换码至少 10 位，不自动去空格/大写、不限定字符类型或 H5 最大长度；输入不足 10 位禁用提交；真实 API `/api/cardredemptioncodes/redeem`；成功返回卡包券凭证；本地卡包 source=60，第三方 MyCoupons 独立读取。覆盖历史 D-004/D-008/D-017 中与兑换码格式及提交门槛相冲突的规则，原型历史保留不篡改 | Implementation in PR #195 / API validation pending | [card-code-redeem-contract.md](../../engineering/card-code-redeem-contract.md) | T009 #68 #69 |
 | D-082 | **2026-09-29 Maintainer 定案商城主入口**：`/mall` 使用 `MallWebView` 在现有 H5 壳层内 iframe 承载 `http://www.3-wins.cn/`；HTTP scheme 为当前明确输入，不自动替换。该决策覆盖 D-031 对 `/mall` 主入口的占位口径；商品详情/购物车边界继续保留。真实 App WebView 的 cleartext/mixed-content、iframe policy 与鉴权仍需联调证据 | Implemented / validation pending | [T008-mall-exchange.md](T008-mall-exchange.md)、[MallWebView.tsx](../../../src/pages/MallWebView.tsx) | T008 #17 |
 
 ## 2. 待确认/阻塞项（施工前必须决策）
@@ -124,7 +125,7 @@
 | 编号 | 阻塞项 | 关闭方式 | 关闭记录 |
 | --- | --- | --- | --- |
 | B-001 | 品牌文化视觉方向（深绿深色长页 + 浮动 CTA 是否保留） | **用户定案（2026-08-24）**：#16 只铺摹客原型长图、不加浮动 CTA，T13 深绿深色稿与右下浮动按钮均不继承；实现按 `D1gOOzGEq` 真值（全页 0 button、单张长图铺满 artboard），返回栏沿用 MobileLayout 统一提供（D-051） | [T005-entry-home-onboarding.md](T005-entry-home-onboarding.md) |
-| B-009 | 兑换码长度/字符集/错误态/成功态（原型 8 位、11 位 vs 历史 12 位） | D-008/D-017：位数按 `reference/兑换卡券.html` 取 12，规则集中在夹具 `REDEEM_CODE_RULE` 且保留 `pending`，页面不硬编码 | [T009-wallet-redemption.md](T009-wallet-redemption.md) |
+| B-009 | 兑换码长度/字符集/错误态/成功态（原型 8 位、11 位 vs 历史 12 位） | **历史** D-008/D-017 曾按 reference 取 12；**2026-10-12 D-083 新合同覆盖**：至少 10 位，原样提交，不限制字符集/前端最大长度；此处仅保留决策演变 | [T009-wallet-redemption.md](T009-wallet-redemption.md) |
 | B-007 | H5 商城承载方式（本地高保真 / WebView / 外链占位） | 2026-08-22 的三路由边界定案 D-031 仍保留历史；**2026-09-29 Maintainer 以 D-082 覆盖 `/mall` 主入口**，改用 `MallWebView` iframe `http://www.3-wins.cn/`，商品详情/购物车仍保留边界 | [T008-mall-exchange.md](T008-mall-exchange.md) §3.1 / §7 |
 | B-008 | 洗护兑换专区主视觉与搜索/排序；T11 深绿 KV 不自动生效 | **用户定案（2026-08-22）**：兑换专区在本仓库本地实现（搜索/三维度排序/商品卡/兑换确认/余额不足/售罄/成功存入卡包）；禁止照搬历史 T11 深绿金 KV 与私有配色，只消费已注册语义 Token（D-032、D-033） | [T008-mall-exchange.md](T008-mall-exchange.md) §7 |
 | B-010 | 通知 Tab 结构：原型「全部/未读」两类 vs 历史 4 Tab | D-010：按 reference 通知标准页采用 4 Tab | [T012-notifications.md](T012-notifications.md) |
