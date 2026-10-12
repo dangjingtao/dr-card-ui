@@ -2,14 +2,14 @@
  * 商城 H5 承载页
  * -------------------------------------------------------------
  * 底部 Tab「商城」(/mall) 不再做本地原生还原，改为在当前手机界面框架内
- * 以 iframe 加载商城 H5（www.3-wins.cn），使底栏与手机壳层保持可见，
+ * 以 iframe 加载商城 H5，使底栏与手机壳层保持可见，
  * 不跳出 App / H5 外层界面。
  *
- * 2026-09-29 Maintainer 明确定案：当前联调地址固定为 http://www.3-wins.cn/，
- * 不自动替换 scheme。鉴权透传、cleartext/mixed-content 以及目标站 iframe 策略
- * （X-Frame-Options / CSP frame-ancestors）仍需在真实 App WebView 内验证。
+ * 2026-10-12：当前地址仅用于效果预览，不代表正式商城接入方案。
+ * 保留用户提供的 http scheme，不自动改写为 https；鉴权透传、cleartext/mixed-content
+ * 及目标站 iframe 策略仍需在真实 App WebView 内单独验证。
  */
-const MALL_H5_URL = 'http://www.3-wins.cn/'
+const MALL_H5_URL = 'http://scmzhds07.m.demo.webportal.top/?_sc=1'
 
 export default function MallWebView() {
   return (
