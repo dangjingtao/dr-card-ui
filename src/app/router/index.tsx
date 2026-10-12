@@ -48,6 +48,7 @@ import DeviceDetailPage from '../../pages/DeviceDetailPage'
 import VendingBuyPage from '../../pages/VendingBuyPage'
 import VendingOrderPage from '../../pages/VendingOrderPage'
 import MallHome from '../../pages/MallHome'
+import MallEmbedDemo from '../../pages/MallEmbedDemo'
 import LegacyService from '../../pages/LegacyService'
 import RepairProjects from '../../pages/RepairProjects'
 import RepairForm from '../../pages/RepairForm'
@@ -96,7 +97,7 @@ const customPages: Record<string, ReactElement> = {
   '/': <Home />,
   '/legacy-home': <LegacyHome />,
   '/legacy-home/scan': <LegacyScan />,
-  '/mall': <MallHome />,
+  '/mall': <MallEmbedDemo />,
   '/dearseed': <DearseedColumn />,
   '/checkin': <Checkin />,
   /* 2026-08-28：恢复既有会员中心，由「我的 → 快捷服务」进入，不新建页面。 */
