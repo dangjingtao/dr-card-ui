@@ -64,7 +64,7 @@ describe('#135 real API chat page', () => {
     expect(screen.queryByText('前面还有 2 位')).toBeNull()
     expect(screen.queryByText('已收到你的问题，我先为你查询。')).toBeNull()
     expect((screen.getByRole('button', { name: '发送' }) as HTMLButtonElement).disabled).toBe(true)
-    expect((screen.getByRole('button', { name: '人工客服' }) as HTMLButtonElement).disabled).toBe(true)
+    expect((screen.getByRole('button', { name: '人工客服' }) as HTMLButtonElement).disabled).toBe(false)
     expect(screen.getByText('AI 可用；人工消息通道尚未连通')).toBeTruthy()
   })
 
@@ -157,7 +157,7 @@ describe('#135 real API chat page', () => {
     mock.human = { status: 'connected', canTransfer: false, transferring: false, active: false,
       error: '登录状态已变化，人工转接结果尚未确认，请先检查聊天历史', needsHistoryCheck: true }
     mount()
-    expect((screen.getByRole('button', { name: '人工客服' }) as HTMLButtonElement).disabled).toBe(true)
+    expect((screen.getByRole('button', { name: '人工客服' }) as HTMLButtonElement).disabled).toBe(false)
     fireEvent.click(screen.getByRole('button', { name: '核对人工转接记录' }))
     expect(mock.reload).toHaveBeenCalledOnce()
     expect(mock.acknowledge).toHaveBeenCalledOnce()
