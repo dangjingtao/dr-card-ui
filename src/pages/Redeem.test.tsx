@@ -72,8 +72,8 @@ describe('Redeem confirmed backend integration', () => {
     fireEvent.change(screen.getByRole('textbox', { name: '兑换码' }), {
       target: { value: 'a1-b2+3' },
     })
-    expect(screen.getByRole<HTMLInputElement>('textbox', { name: '兑换码' }).value).toBe('a1-b2+3')
-    expect(screen.getByRole<HTMLButtonElement>('button', { name: '确认兑换' }).disabled).toBe(true)
+    expect((screen.getByRole('textbox', { name: '兑换码' }) as HTMLInputElement).value).toBe('a1-b2+3')
+    expect((screen.getByRole('button', { name: '确认兑换' }) as HTMLButtonElement).disabled).toBe(true)
     expect(mocks.redeemCardCode).not.toHaveBeenCalled()
   })
 })
