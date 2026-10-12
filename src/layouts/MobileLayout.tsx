@@ -7,7 +7,7 @@ import {
   useNavigationType,
   useViewTransitionState,
 } from 'react-router-dom'
-import { Bell, MessagesSquare, Settings } from 'lucide-react'
+import { Bell, Settings } from 'lucide-react'
 import BottomNav from '../components/mobile/BottomNav'
 import TitleBar from '../components/mobile/TitleBar'
 import { findRouteByPathname, isLegacyTabPath } from '../app/router/routes'
@@ -185,17 +185,6 @@ export default function MobileLayout() {
     openOverlay('clear')
   }
 
-  const openWecom = () => {
-    navigate(
-      {
-        pathname: location.pathname,
-        search: location.search,
-        hash: '#wecom',
-      },
-      { replace: true, state: location.state },
-    )
-  }
-
   const titleAction = isNotificationsPage
     ? (
       <button
@@ -219,22 +208,7 @@ export default function MobileLayout() {
             <Bell className="h-[22px] w-[22px]" />
           </button>
         )
-        : location.pathname === '/service/chat'
-          ? (
-            /* T013R5+R6：「企微客服」pill 回到壳层 TitleBar 右侧（与「< 智能客服」同右侧）；
-              * H016：hash 只表示当前页弹层状态，使用 replace 避免新增历史项和触发页面级滚动/过渡。
-              * T013R6：pill 不限制宽度、whitespace-nowrap，保证「企微客服」四个字自然横向不被换行或裁剪。 */
-            <button
-              type="button"
-              data-chat-wecom-entry
-              onClick={openWecom}
-              className="inline-flex min-h-9 items-center gap-1 whitespace-nowrap rounded-pill bg-surface px-3 text-[13px] font-medium text-text-brand shadow-sm active:bg-surface-selected"
-            >
-              <MessagesSquare className="h-4 w-4" strokeWidth={2.2} aria-hidden />
-              企微客服
-            </button>
-          )
-          : undefined
+        : undefined
 
   return (
     <>
@@ -252,7 +226,7 @@ export default function MobileLayout() {
               leadingAction={leadingAction}
               onBack={route?.backTo ? () => navigateShell(route.backTo as string) : undefined}
               action={titleAction}
-              actionWide={isNotificationsPage || location.pathname === '/service/chat'}
+              actionWide={isNotificationsPage}
               fullWidth={activeFormalH5}
             />
           )}

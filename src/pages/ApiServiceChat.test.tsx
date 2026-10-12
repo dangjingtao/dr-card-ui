@@ -36,7 +36,7 @@ vi.mock('./serviceChat/ServiceChatWecomQr', () => ({
 }))
 vi.mock('../components/ui', async original => {
   const real = await original<typeof import('../components/ui')>()
-  return { ...real, BottomSheet: ({ open, children }: { open: boolean; children: ReactNode }) => open ? <div>{children}</div> : null }
+  return { ...real, BottomSheet: ({ open, children, actions, title }: { open: boolean; children: ReactNode; actions: ReactNode; title: string }) => open ? <div role="dialog" aria-label={title}>{children}{actions}</div> : null }
 })
 import ApiServiceChat from './ApiServiceChat'
 
@@ -64,7 +64,7 @@ describe('#135 real API chat page', () => {
     expect(screen.queryByText('前面还有 2 位')).toBeNull()
     expect(screen.queryByText('已收到你的问题，我先为你查询。')).toBeNull()
     expect((screen.getByRole('button', { name: '发送' }) as HTMLButtonElement).disabled).toBe(true)
-    expect((screen.getByRole('button', { name: '申请转人工客服' }) as HTMLButtonElement).disabled).toBe(true)
+    expect((screen.getByRole('button', { name: '人工客服' }) as HTMLButtonElement).disabled).toBe(false)
     expect(screen.getByText('AI 可用；人工消息通道尚未连通')).toBeTruthy()
   })
 
@@ -132,22 +132,32 @@ describe('#135 real API chat page', () => {
     expect(mock.reload).toHaveBeenCalledOnce()
   })
 
-  it('allows real manual transfer only after socket connect, without fake agent queue', () => {
+  it('compatibility: human entry opens the original WeCom QR while keeping real transfer uninvoked', () => {
     mock.human = { status: 'connected', canTransfer: true, transferring: false, active: false, error: null, needsHistoryCheck: false }
     mount()
-    const button = screen.getByRole('button', { name: '申请转人工客服' }) as HTMLButtonElement
+    const button = screen.getByRole('button', { name: '人工客服' }) as HTMLButtonElement
     expect(button.disabled).toBe(false)
     fireEvent.click(button)
-    expect(mock.transfer).toHaveBeenCalledOnce()
+    expect(screen.getByRole('img', { name: '企业微信福利官二维码' }).getAttribute('src')).toContain('/real-qr.png')
+    expect(mock.transfer).not.toHaveBeenCalled()
     expect(screen.getByText('AI 可用；可申请转人工，接入坐席状态未知')).toBeTruthy()
-    expect(screen.queryByText('前面还有 2 位')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: '取消' }))
+    expect(screen.queryByRole('img', { name: '企业微信福利官二维码' })).toBeNull()
+  })
+
+  it('does not gate WeCom access on Socket.IO or AI history readiness', () => {
+    mock.state = { status: 'error', message: '客服历史加载失败', messages: [], hasMore: false, loadingMore: false, moreError: null }
+    mount()
+    fireEvent.click(screen.getByRole('button', { name: '人工客服' }))
+    expect(screen.getByRole('img', { name: '企业微信福利官二维码' })).toBeTruthy()
+    expect(mock.transfer).not.toHaveBeenCalled()
   })
 
   it('requires explicit latest-history inspection after uncertain human transfer', () => {
     mock.human = { status: 'connected', canTransfer: false, transferring: false, active: false,
       error: '登录状态已变化，人工转接结果尚未确认，请先检查聊天历史', needsHistoryCheck: true }
     mount()
-    expect((screen.getByRole('button', { name: '申请转人工客服' }) as HTMLButtonElement).disabled).toBe(true)
+    expect((screen.getByRole('button', { name: '人工客服' }) as HTMLButtonElement).disabled).toBe(false)
     fireEvent.click(screen.getByRole('button', { name: '核对人工转接记录' }))
     expect(mock.reload).toHaveBeenCalledOnce()
     expect(mock.acknowledge).toHaveBeenCalledOnce()

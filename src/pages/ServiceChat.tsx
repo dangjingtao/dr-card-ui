@@ -50,6 +50,14 @@ function MockServiceChat() {
 
   /** T013R5：企微二维码弹层 —— 与壳层 TitleBar 联动，靠 `#wecom` hash 触发 */
   const [wecomOpen, setWecomOpen] = useState(false)
+  // Compatibility: the visible "人工" entry opens the original #wecom sheet.
+  // Keep requestHuman() and the existing human-stage implementation unchanged.
+  const openWecom = () => {
+    navigate(
+      { pathname: location.pathname, search: location.search, hash: '#wecom' },
+      { replace: true, state: location.state },
+    )
+  }
   const closeWecom = () => {
     setWecomOpen(false)
     /* H016：通过 Router replace 清 hash，保留当前 history entry/state，不绕过 React Router。 */
@@ -164,9 +172,11 @@ function MockServiceChat() {
     settle(id, target.text)
   }
 
-  /** T013R4：人工坐席已接入后输入区可用；否则禁用并显示「正在接入...」 */
+  /** 兼容处理：保留原「人工」关键词触发 requestHuman() 的入口。
+   * idle 时允许正常 AI 输入或输入「人工」进入原模拟转接状态；
+   * 仅排队中禁用输入，接入后继续可发送。 */
   const humanActive = humanStage === 'connected'
-  const inputDisabled = !humanActive
+  const inputDisabled = humanStage === 'queuing'
   const inputPlaceholder = humanActive
     ? `与 ${CHAT_QUEUE.connected.agentName} 对话中…`
     : humanStage === 'queuing'
@@ -191,8 +201,7 @@ function MockServiceChat() {
           <button
             type="button"
             data-chat-human-entry
-            onClick={requestHuman}
-            disabled={humanStage !== 'idle'}
+            onClick={openWecom}
             className="flex h-11 w-11 flex-none flex-col items-center justify-center rounded-container bg-surface text-[10px] font-medium text-text-brand shadow-sm active:bg-surface-selected disabled:opacity-50"
           >
             <Headset className="h-4 w-4" aria-hidden />
@@ -232,10 +241,8 @@ function MockServiceChat() {
         </div>
       </div>
 
-      {/* T013R4：企微二维码弹层恢复（R1+R2 撤掉的 #71 重新启用，但仅承担"企微客服"入口）。
-        * 触发：点击壳层 TitleBar 右侧「企微客服」pill（data-chat-wecom-entry）。
-        * 行为：仅展示福利官二维码 + 「取消」按钮，不承担"转人工"职责 ——「人工」走 requestHuman。
-        * T013R5：「取消」按钮居中（外层 flex justify-center）。 */}
+      {/* 兼容性处理：右上企微入口隐藏；底部「人工」复用原 #wecom 弹层。
+        * 既有 requestHuman()／人工状态机保留，单独治理，不在此变更删除。 */}
       <BottomSheet
         open={wecomOpen}
         title={CHAT_HUMAN_PROMPT.title}

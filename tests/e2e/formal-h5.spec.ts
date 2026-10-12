@@ -153,7 +153,15 @@ test('@formal-h5 H021 title-bar actions remain available', async ({ page }) => {
 
   await page.goto('/service/chat', { waitUntil: 'domcontentloaded' })
   await expectHealthyFormalRoute(page)
-  await expect(page.locator('[data-chat-wecom-entry]')).toBeVisible()
+  // Compat: the TitleBar WeCom pill is hidden; the original QR sheet is opened by bottom 人工.
+  await expect(page.locator('[data-chat-wecom-entry]')).toHaveCount(0)
+  const humanEntry = page.locator('[data-chat-human-entry]')
+  await expect(humanEntry).toBeVisible()
+  await expect(humanEntry).toBeEnabled()
+  await humanEntry.click()
+  await expect(page.locator('[data-chat-human-sheet]')).toBeVisible()
+  await page.getByRole('button', { name: '取消' }).click()
+  await expect(page.locator('[data-chat-human-sheet]')).toHaveCount(0)
 
   expect(runtimeErrors, runtimeErrors.join('\n')).toEqual([])
 })
