@@ -28,6 +28,7 @@ vi.mock('../components/mobile/PageContainer', () => ({
 }))
 
 import Redeem from './Redeem'
+import { AppError } from '../lib/appError'
 
 const receipt = {
   user_card_id: 21, card_id: 4,
@@ -65,6 +66,20 @@ describe('Redeem confirmed backend integration', () => {
     expect(await screen.findByText('该兑换码已被使用')).toBeTruthy()
     expect(screen.queryByText('兑换成功')).toBeNull()
     expect(screen.getByRole('button', { name: '确认兑换' })).toBeTruthy()
+  })
+
+  it('shows neutral user-facing text when backend receipt fails contract validation', async () => {
+    mocks.redeemCardCode.mockRejectedValue(new AppError({
+      kind: 'contract', message: '外部数据不符合 cardredemptioncodes.redeem.data 契约',
+    }))
+    renderRedeem()
+    fireEvent.change(screen.getByRole('textbox', { name: '兑换码' }), {
+      target: { value: 'ABC123456789' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: '确认兑换' }))
+    expect(await screen.findByText('兑换结果暂时无法确认，请稍后重试')).toBeTruthy()
+    expect(screen.queryByText(/cardredemptioncodes.redeem.data/)).toBeNull()
+    expect(screen.queryByText('兑换成功')).toBeNull()
   })
 
   it('disables submitting fewer than ten characters, but does not alter or uppercase content', () => {
