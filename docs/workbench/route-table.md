@@ -73,7 +73,7 @@
 | `/card/share` | #65、#66 | 卡包-转赠 | 卡包 | `?coupon=`；`?state=success` |
 | `/card/verify` | #67 | 卡包-使用 | 卡包 | — |
 | `/card/verify/confirm` | #67 | 扫码页 / 使用弹层 | 卡包 | `?state=done/repeat`；确认后回 `/card?state=used` |
-| `/redeem` | #68、#69 | 我的-卡券兑换 | 我的 / 卡包 | `?state=success/format/invalid/used/network`（12 位规则按 reference 标准页确认，B-009 已关闭） |
+| `/redeem` | #68、#69 | 我的-卡券兑换 | 我的 / 卡包 | `?state=success/format/invalid/used/network`（2026-10-12 D-083 合同：至少 10 位，原值核兑；原型 12 位为历史） |
 
 ### T010 地址与订单
 
@@ -170,4 +170,4 @@ T013: 57,58,71,70                                = 4
 - T001 当前五项 Tab 的 375 × 812 种籽页截图命名：`docs/workbench/evidence/screenshots/t001-seed-{home,points,scan,mall,profile}.png`（T023 起「服务」Tab 为 `/mall`）。`t001-seed-checkin.png`、`t001-seed-membership.png` 与 `t004-*.png` 保留为历史证据。
 - 运行断言：`BASE_URL=http://127.0.0.1:<port> node scripts/verify-t004.mjs`（11 项路由用例 + Tab 高亮 + `/draw-success`、`/membership` 两项重定向，全部 PASS）。
 - 工程检查：`npm run typecheck`、`npm run build` 通过。
-- 已知差异与未决：`/draw-success` 旧路由移除；三档签运规则仍待 T006；兑换码位数仍待 T009。
+- 已知差异与未决：`/draw-success` 旧路由移除；三档签运规则仍待 T006；兑换码位数已由 2026-10-12 后台合同定为至少 10 位（D-083）。
