@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   redeem: vi.fn(),
   useExchangeCoupons: vi.fn(),
   reloadCoupons: vi.fn(),
+  reloadPoints: vi.fn(),
   categoryRemote: { state: 'success', data: [
     { key: '2', label: '洗发体验' }, { key: '3', label: '护发体验' },
   ] } as { state: string; data?: Array<{ key: string; label: string }>; message?: string },
@@ -23,14 +24,13 @@ vi.mock('../app/config/runtime', () => ({
 }))
 vi.mock('../services/exchange', () => ({
   redeemExchangeProduct: mocks.redeem,
-  H014_EXCHANGE_REDEEM_UNAVAILABLE_COPY: '兑换服务尚未接通，请稍后再试',
 }))
 vi.mock('./exchange/useExchangeFeed', () => ({
   useExchangeCoupons: mocks.useExchangeCoupons,
   useExchangeCategories: () => ({ remote: mocks.categoryRemote, reload: mocks.categoryReload }),
 }))
 vi.mock('./points/usePointsFeed', () => ({
-  useUserPointsStat: () => ({ remote: mocks.pointsRemote, reload: vi.fn() }),
+  useUserPointsStat: () => ({ remote: mocks.pointsRemote, reload: mocks.reloadPoints }),
 }))
 vi.mock('../app/router/routes', () => ({
   findRouteByPathname: () => ({ path: '/exchange', task: 'T008', nodes: [18], states: [], overlays: [] }),
@@ -116,6 +116,7 @@ afterEach(() => {
   mocks.redeem.mockReset()
   mocks.useExchangeCoupons.mockReset()
   mocks.reloadCoupons.mockReset()
+  mocks.reloadPoints.mockReset()
   mocks.mode = 'mock'
   mocks.pointsRemote = { state: 'success', data: { points: 500, income: 0, expense: 0 } }
 })
@@ -233,7 +234,9 @@ describe('UX-E: page-local exchange flow', () => {
 
   it('preserves request failure in the same sheet and permits an explicit retry', async () => {
     mocks.useExchangeCoupons.mockReturnValue(successRemote())
-    mocks.redeem.mockRejectedValueOnce(new Error('后端拒绝兑换')).mockResolvedValueOnce(undefined)
+    mocks.redeem
+      .mockRejectedValueOnce(new Error('后端拒绝兑换'))
+      .mockResolvedValueOnce({ couponId: 1, points: 300 })
     renderExchange()
     let sheet = openCoupon()
     fireEvent.click(within(sheet).getByRole('button', { name: '立即兑换' }))
@@ -249,7 +252,9 @@ describe('UX-E: page-local exchange flow', () => {
   it('guards against rapid double submission until pending request settles', async () => {
     mocks.useExchangeCoupons.mockReturnValue(successRemote())
     let resolveRequest!: () => void
-    mocks.redeem.mockReturnValue(new Promise<void>(resolve => { resolveRequest = resolve }))
+    mocks.redeem.mockReturnValue(new Promise(resolve => {
+      resolveRequest = () => resolve({ couponId: 1, points: 300 })
+    }))
     renderExchange()
     const sheet = openCoupon()
     const submit = within(sheet).getByRole('button', { name: '立即兑换' })
@@ -264,12 +269,14 @@ describe('UX-E: page-local exchange flow', () => {
 
   it('shows mock success as simulation only and only navigates by explicit card-pack action', async () => {
     mocks.useExchangeCoupons.mockReturnValue(successRemote())
-    mocks.redeem.mockResolvedValue(undefined)
+    mocks.redeem.mockResolvedValue({ couponId: 1, points: 300 })
     renderExchange()
     const sheet = openCoupon()
     fireEvent.click(within(sheet).getByRole('button', { name: '立即兑换' }))
     const result = await screen.findByRole('dialog', { name: '模拟兑换结果' })
-    expect(within(result).getByText('未实际扣除泡泡值，也未发放卡券。', { exact: false })).toBeTruthy()
+    expect(within(result).getByText('当前为 Mock 预览，仅验证正式兑换协议与页面状态，不代表真实扣值或发券。')).toBeTruthy()
+    expect(mocks.reloadPoints).toHaveBeenCalledOnce()
+    expect(mocks.reloadCoupons).toHaveBeenCalledOnce()
     expect(screen.getByTestId('route').textContent).toBe('/exchange')
     fireEvent.click(within(result).getByRole('button', { name: '关闭' }))
     expect(screen.queryByRole('dialog')).toBeNull()
@@ -282,15 +289,23 @@ describe('UX-E: page-local exchange flow', () => {
     expect(screen.getByText('卡包页面')).toBeTruthy()
   })
 
-  it('never exposes fake H014 redemption success in API/test/prod mode', () => {
+  it('uses the real exchange service in API mode and refreshes authoritative reads after success', async () => {
     mocks.mode = 'api'
     mocks.useExchangeCoupons.mockReturnValue(successRemote())
+    mocks.redeem.mockResolvedValue({ couponId: 1, points: 300 })
     renderExchange()
+
     const sheet = openCoupon()
-    expect(within(sheet).getByText('兑换服务尚未接通，请稍后再试')).toBeTruthy()
-    expect((within(sheet).getByRole('button', { name: '立即兑换' }) as HTMLButtonElement).disabled).toBe(true)
-    expect(mocks.redeem).not.toHaveBeenCalled()
-    expect(screen.queryByRole('dialog', { name: '模拟兑换结果' })).toBeNull()
+    const submit = within(sheet).getByRole('button', { name: '立即兑换' }) as HTMLButtonElement
+    expect(submit.disabled).toBe(false)
+    fireEvent.click(submit)
+
+    const result = await screen.findByRole('dialog', { name: '兑换结果' })
+    expect(within(result).getByText('兑换完成，剩余泡泡值 300。可前往卡包查看新券。')).toBeTruthy()
+    expect(mocks.redeem).toHaveBeenCalledWith(1)
+    expect(mocks.reloadPoints).toHaveBeenCalledOnce()
+    expect(mocks.reloadCoupons).toHaveBeenCalledOnce()
+    expect(screen.getByTestId('route').textContent).toBe('/exchange')
   })
 
   it('does not convert legacy /exchange/result deep links into a success state', async () => {
