@@ -79,7 +79,7 @@ function uploadAndVerify(file, key) {
   const remote = prefix + key
   const downloaded = join(temp, 'check', key)
   mkdirSync(dirname(downloaded), { recursive: true })
-  ossutil('cp', file, remote)
+  ossutil('cp', file, remote, '-f')
   ossutil('cp', remote, downloaded)
   if (!readFileSync(file).equals(readFileSync(downloaded))) {
     throw new Error(`OSS readback differs: ${key}`)
@@ -104,8 +104,8 @@ try {
 } catch (error) {
   if (hadOld && (metadataTouched || indexTouched)) {
     try {
-      ossutil('cp', oldMeta, prefix + 'build-meta.json')
-      if (indexTouched) ossutil('cp', oldIndex, prefix + 'index.html')
+      ossutil('cp', oldMeta, prefix + 'build-meta.json', '-f')
+      if (indexTouched) ossutil('cp', oldIndex, prefix + 'index.html', '-f')
       console.error('Prior entry state restored after interrupted upload.')
     } catch (restoreError) {
       console.error('CRITICAL: prior entry restore failed:', String(restoreError))
