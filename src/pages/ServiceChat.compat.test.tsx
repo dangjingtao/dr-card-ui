@@ -50,6 +50,20 @@ describe('legacy/mock ServiceChat compatibility', () => {
     expect(screen.getByText('原企微二维码区域')).toBeTruthy()
   })
 
+  it('keeps mock AI input available and original typed 人工 transfer reachable', () => {
+    render(<MemoryRouter initialEntries={['/service/chat']}><ServiceChat /></MemoryRouter>)
+    const input = screen.getByRole('textbox', { name: '输入你的问题' }) as HTMLInputElement
+    expect(input.disabled).toBe(false)
+    fireEvent.change(input, { target: { value: '你好' } })
+    fireEvent.click(screen.getByRole('button', { name: '发送' }))
+    expect(document.querySelector('[data-human-stage]')?.getAttribute('data-human-stage')).toBe('idle')
+
+    fireEvent.change(input, { target: { value: '人工' } })
+    fireEvent.click(screen.getByRole('button', { name: '发送' }))
+    expect(document.querySelector('[data-human-stage]')?.getAttribute('data-human-stage')).toBe('queuing')
+    expect(input.disabled).toBe(true)
+  })
+
   it('keeps the previous #wecom deep link working', () => {
     render(<MemoryRouter initialEntries={['/service/chat#wecom']}><ServiceChat /></MemoryRouter>)
     expect(screen.getByText('原企微二维码区域')).toBeTruthy()
