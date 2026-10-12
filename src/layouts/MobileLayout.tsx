@@ -7,7 +7,7 @@ import {
   useNavigationType,
   useViewTransitionState,
 } from 'react-router-dom'
-import { Bell, MessageSquare, Settings } from 'lucide-react'
+import { Bell, MessagesSquare, Settings } from 'lucide-react'
 import BottomNav from '../components/mobile/BottomNav'
 import TitleBar from '../components/mobile/TitleBar'
 import { findRouteByPathname, isLegacyTabPath } from '../app/router/routes'
@@ -230,7 +230,7 @@ export default function MobileLayout() {
               onClick={openWecom}
               className="inline-flex min-h-9 items-center gap-1 whitespace-nowrap rounded-pill bg-surface px-3 text-[13px] font-medium text-text-brand shadow-sm active:bg-surface-selected"
             >
-              <MessageSquare className="h-3.5 w-3.5" aria-hidden />
+              <MessagesSquare className="h-4 w-4" strokeWidth={2.2} aria-hidden />
               企微客服
             </button>
           )
