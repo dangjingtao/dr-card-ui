@@ -47,7 +47,6 @@ import DeviceDetailPage from '../../pages/DeviceDetailPage'
 /* T042：自助售货机扫码购买页 */
 import VendingBuyPage from '../../pages/VendingBuyPage'
 import VendingOrderPage from '../../pages/VendingOrderPage'
-import MallHome from '../../pages/MallHome'
 import MallEmbedDemo from '../../pages/MallEmbedDemo'
 import LegacyService from '../../pages/LegacyService'
 import RepairProjects from '../../pages/RepairProjects'
