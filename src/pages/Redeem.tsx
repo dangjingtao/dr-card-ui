@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AlertCircle, CheckCircle2, Loader2, Ticket, XCircle } from 'lucide-react'
 import DebugPanel from '../components/mobile/DebugPanel'
+import { runtimePolicy } from '../app/config/runtime'
+import { redeemCardCode } from '../services/redeemCode'
 import PageContainer from '../components/mobile/PageContainer'
 import { useFixtureState } from '../app/fixtures/useFixture'
 import { findRouteByPathname } from '../app/router/routes'
@@ -33,10 +35,11 @@ export default function Redeem() {
   const [code, setCode] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [outcome, setOutcome] = useState<RedeemOutcome | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const timers = useRef<number[]>([])
 
   const trimmed = code
-  const feedback = outcome ? REDEEM_FEEDBACK[outcome] : null
+  const feedback = errorMessage ? { ok: false, text: errorMessage } : outcome ? REDEEM_FEEDBACK[outcome] : null
   const done = outcome === 'success'
 
   /** `?state=` 直达：回填该分支的演示码并落到对应反馈，便于逐节点截图 */
@@ -45,6 +48,7 @@ export default function Redeem() {
     if (!key || !(key in REDEEM_SAMPLE_CODES)) return
     setCode(REDEEM_SAMPLE_CODES[key])
     setOutcome(key)
+    setErrorMessage(null)
     setSubmitting(false)
   }, [state?.key])
 
@@ -57,19 +61,32 @@ export default function Redeem() {
   const clear = () => {
     setCode('')
     setOutcome(null)
+    setErrorMessage(null)
   }
 
-  const submit = () => {
+  const submit = async () => {
     if (trimmed.length < REDEEM_CODE_RULE.minLength || submitting) return
     setOutcome(null)
+    setErrorMessage(null)
     setSubmitting(true)
-    /** 提交中态：夹具环境下用固定时长模拟一次请求往返，非随机 */
-    track(() => {
+    if (runtimePolicy.dataMode === 'mock') {
+      /** Mock 只在预览环境产生确定性演示结果，API 模式绝不模拟成功。 */
+      track(() => {
+        setSubmitting(false)
+        const next = resolveRedeemOutcome(trimmed)
+        setOutcome(next)
+        if (next !== 'success') track(() => setOutcome(null), 2000)
+      }, 700)
+      return
+    }
+    try {
+      await redeemCardCode(trimmed)
+      setOutcome('success')
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : '兑换失败，请稍后重试')
+    } finally {
       setSubmitting(false)
-      const next = resolveRedeemOutcome(trimmed)
-      setOutcome(next)
-      if (next !== 'success') track(() => setOutcome(null), 2000)
-    }, 700)
+    }
   }
 
   if (done) {
@@ -127,6 +144,7 @@ export default function Redeem() {
           onChange={(event) => {
             setCode(event.target.value)
             setOutcome(null)
+            setErrorMessage(null)
           }}
           placeholder="请输入兑换码"
           aria-label="兑换码"
