@@ -197,6 +197,43 @@ test('@formal-h5 H021 active formal H5 fills a wide WebView', async ({ page }) =
   expect(runtimeErrors, runtimeErrors.join('\n')).toEqual([])
 })
 
+test('@formal-h5 H082 older WebView keeps title and TabBar outside the scroller', async ({ page }) => {
+  const runtimeErrors = collectRuntimeErrors(page)
+
+  await page.setViewportSize({ width: 375, height: 568 })
+  await page.goto('/?newcomer=off', { waitUntil: 'domcontentloaded' })
+  await expectHealthyFormalRoute(page)
+
+  const scroll = page.locator('[data-page-scroll]')
+  const shell = scroll.locator('..')
+  // The first height class is the Chromium 88 fallback; the supports variant
+  // lets newer WebViews use the dynamic viewport without losing that fallback.
+  await expect(shell).toHaveClass(/\bh-screen\b/)
+  await expect(shell).toHaveClass(/supports-\[height:100dvh\]:h-dvh/)
+
+  const positions = () => page.evaluate(() => {
+    const title = document.querySelector('[data-title-bar]')
+    const nav = document.querySelector('nav[aria-label="主导航"]')
+    if (!title || !nav) throw new Error('H082 app shell controls not found')
+    return {
+      titleTop: title.getBoundingClientRect().top,
+      navTop: nav.getBoundingClientRect().top,
+      documentScroll: window.scrollY,
+    }
+  })
+
+  await expect.poll(() => scroll.evaluate((node) => node.scrollHeight > node.clientHeight)).toBe(true)
+  const before = await positions()
+  await scroll.evaluate((node) => { node.scrollTop = node.scrollHeight })
+  expect(await scroll.evaluate((node) => node.scrollTop)).toBeGreaterThan(0)
+  const after = await positions()
+
+  expect(after.documentScroll).toBe(0)
+  expect(Math.abs(after.titleTop - before.titleTop)).toBeLessThanOrEqual(1)
+  expect(Math.abs(after.navTop - before.navTop)).toBeLessThanOrEqual(1)
+  expect(runtimeErrors, runtimeErrors.join('\n')).toEqual([])
+})
+
 test('@formal-h5 H021 App title bar stays reachable while content scrolls', async ({ page }) => {
   const runtimeErrors = collectRuntimeErrors(page)
 
