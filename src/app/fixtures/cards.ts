@@ -126,31 +126,15 @@ export const VERIFY_FEEDBACK = {
   repeat: { title: '该券已核销', desc: '这张券已经完成核销，无法重复使用' },
 } as const
 
-/**
- * 兑换码规则配置（T009 #68）
- * ⚠️ 未定稿：摹客原型出现 8 位与 11 位，reference 标准页与历史稿为 12 位（阻塞项 B-009）。
- *    这里把「位数 / 字符集 / 提示文案」收成唯一配置源，页面只读不写，决策落地时只改这一处。
- *    当前取值来自 reference/兑换卡券.html（maxlength=12、/^[A-Za-z0-9]{12}$/），仅作为夹具呈现值，不等于定稿规则。
- */
+/** 兑换码唯一前端校验：至少 10 个字符，不限制字符类型或最大长度。 */
 export interface RedeemCodeRule {
-  length: number
-  pattern: RegExp
+  minLength: number
   hint: string
-  /** 规则是否仍未定稿；为 true 时页面不得表现为最终校验规则 */
-  pending: boolean
-  /** 关联阻塞项编号，便于反查决策记录 */
-  blocker: string
-  /** 当前取值来源 */
-  source: string
 }
 
 export const REDEEM_CODE_RULE: RedeemCodeRule = {
-  length: 12,
-  pattern: /^[A-Za-z0-9]{12}$/,
-  hint: '兑换码为 12 位字母与数字组合，不区分大小写',
-  pending: true,
-  blocker: 'B-009',
-  source: 'reference/兑换卡券.html',
+  minLength: 10,
+  hint: '兑换码不少于 10 位',
 }
 
 /** 兑换结果分支（#68 失败态 / #69 成功态） */
@@ -165,7 +149,7 @@ export interface RedeemFeedbackFixture {
 /** 反馈文案：成功/格式错误照抄 reference 标准页；其余分支为服务端失败态的中性提示，不含未确认的业务规则 */
 export const REDEEM_FEEDBACK: Record<RedeemOutcome, RedeemFeedbackFixture> = {
   success: { outcome: 'success', ok: true, text: '兑换成功，已存入卡包' },
-  format: { outcome: 'format', ok: false, text: '兑换码格式错误' },
+  format: { outcome: 'format', ok: false, text: '兑换码不能少于 10 位' },
   invalid: { outcome: 'invalid', ok: false, text: '兑换码无效，请核对后重试' },
   used: { outcome: 'used', ok: false, text: '该兑换码已被使用' },
   network: { outcome: 'network', ok: false, text: '网络异常，请稍后重试' },
@@ -195,7 +179,7 @@ export const REDEEM_SAMPLE_CODES: Record<RedeemOutcome, string> = {
 
 /** 判定兑换结果：先按配置规则校验格式，再查确定性映射 */
 export function resolveRedeemOutcome(input: string): RedeemOutcome {
-  const code = input.replace(/\s/g, '')
-  if (!REDEEM_CODE_RULE.pattern.test(code)) return 'format'
+  const code = input
+  if (code.length < REDEEM_CODE_RULE.minLength) return 'format'
   return REDEEM_CODE_OUTCOMES[code.toUpperCase()] ?? 'success'
 }
