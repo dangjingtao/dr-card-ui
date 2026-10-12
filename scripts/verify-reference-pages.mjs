@@ -9,7 +9,7 @@ const cases = [
   ['ref-confirm', '/card/verify/confirm', ['即将核销此券', '泡泡洗护 · 朝阳大悦城店', '确认核销']],
   ['ref-password', '/card/verify/password', ['请输入消费密码', '确认核销']],
   ['ref-levels', '/membership/levels', ['会员等级参考', 'LV.4', '会员卡面']],
-  ['ref-redeem', '/redeem', ['兑换卡券', '12 位字母与数字组合', '确认兑换']],
+  ['ref-redeem', '/redeem', ['兑换卡券', '兑换码不少于 10 位', '确认兑换']],
   ['ref-points', '/points', ['泡泡值余额', '1,280', '泡泡任务', '泡泡值兑换']],
   ['ref-points-detail', '/points/detail', ['泡泡值明细', '全部', '收入', '消耗']],
   ['ref-settings', '/settings', ['资料设置', '消费密码', '确认修改']],
