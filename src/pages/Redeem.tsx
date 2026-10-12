@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AlertCircle, CheckCircle2, Loader2, Ticket, XCircle } from 'lucide-react'
 import DebugPanel from '../components/mobile/DebugPanel'
+import { isAppError } from '../services/http'
 import { runtimePolicy } from '../app/config/runtime'
 import { redeemCardCode, type RedemptionReceipt } from '../services/redeemCode'
 import PageContainer from '../components/mobile/PageContainer'
@@ -84,7 +85,13 @@ export default function Redeem() {
       setReceipt(nextReceipt)
       setOutcome('success')
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : '兑换失败，请稍后重试')
+      if (isAppError(error) && error.kind === 'contract') {
+        setErrorMessage('兑换结果暂时无法确认，请稍后重试')
+      } else if (isAppError(error) && (error.kind === 'network' || error.kind === 'timeout')) {
+        setErrorMessage('网络异常，请稍后重试')
+      } else {
+        setErrorMessage(error instanceof Error ? error.message : '兑换失败，请稍后重试')
+      }
     } finally {
       setSubmitting(false)
     }
