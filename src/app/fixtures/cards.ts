@@ -157,9 +157,11 @@ export const REDEEM_FEEDBACK: Record<RedeemOutcome, RedeemFeedbackFixture> = {
 
 /**
  * 确定性兑换码 → 结果映射（禁止随机）
- * 格式正确但需要落在不同服务端分支的验收码在此登记；未登记且格式正确的码统一走成功分支。
+ * 仅登记演示专用码：真实 API 绝不调用这个函数。
+ * 未登记的任意字符串按“无效码”演示，不用默认成功掩盖异常。
  */
 export const REDEEM_CODE_OUTCOMES: Record<string, RedeemOutcome> = {
+  DRCARD000888: 'success',
   DRCARD000404: 'invalid',
   DRCARD000USE: 'used',
   DRCARD000NET: 'network',
@@ -181,5 +183,5 @@ export const REDEEM_SAMPLE_CODES: Record<RedeemOutcome, string> = {
 export function resolveRedeemOutcome(input: string): RedeemOutcome {
   const code = input
   if (code.length < REDEEM_CODE_RULE.minLength) return 'format'
-  return REDEEM_CODE_OUTCOMES[code.toUpperCase()] ?? 'success'
+  return REDEEM_CODE_OUTCOMES[code.toUpperCase()] ?? 'invalid'
 }
