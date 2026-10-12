@@ -41,6 +41,13 @@ export default function ApiServiceChat() {
   const navigate = useNavigate()
   const [wecomOpen, setWecomOpen] = useState(false)
 
+  // Compatibility: reuse the exact #wecom action previously owned by the titlebar.
+  // useHumanChat()/human.transfer() and its real Socket.IO flow are deliberately retained.
+  const openWecom = () => {
+    navigate({ pathname: location.pathname, search: location.search, hash: '#wecom' },
+      { replace: true, state: location.state })
+  }
+
   const closeWecom = () => {
     setWecomOpen(false)
     if (location.hash === '#wecom') {
@@ -119,10 +126,8 @@ export default function ApiServiceChat() {
         </div>}
         <div className="flex items-end gap-2">
           <button type="button" data-chat-human-entry
-            onClick={() => { void human.transfer() }}
-            disabled={history.status !== 'ready' || !human.canTransfer ||
-              chat.busy || chat.blocked || chat.humanAwait}
-            aria-label="申请转人工客服"
+            onClick={openWecom}
+            aria-label="人工客服"
             className="flex h-11 w-11 flex-none flex-col items-center justify-center rounded-container bg-surface text-[10px] font-medium text-text-brand shadow-sm disabled:opacity-50">
             <Headset className="h-4 w-4" aria-hidden />人工
           </button>
@@ -150,7 +155,7 @@ export default function ApiServiceChat() {
           )}
         </div>
       </div>
-      {/* TitleBar's #wecom QR is a separate action, never a fake transfer to a human agent. */}
+      {/* 「人工」入口现复用原 #wecom 弹层；真实 human.transfer()/Socket.IO 链路保持原样。 */}
       <BottomSheet
         open={wecomOpen}
         title={CHAT_HUMAN_PROMPT.title}
