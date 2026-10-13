@@ -1,6 +1,6 @@
 # 卡博士 App 内嵌 H5 测试与验收方案
 
-> 适用仓库：`dangjingtao/dr-card-ui`
+> 适用仓库：`sanchuang-dev/dr-card-web`
 >
 > 适用主链路：`preview → dev → test → prod`
 >
