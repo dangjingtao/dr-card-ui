@@ -34,7 +34,7 @@ function useRemoteData<T>(load: () => Promise<T>, reloadToken = 0): HomeRemoteDa
     return () => {
       active = false
     }
-  }, [load, reloadToken]
+  }, [load, reloadToken])
 
   return remote
 }
