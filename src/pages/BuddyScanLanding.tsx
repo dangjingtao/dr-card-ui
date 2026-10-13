@@ -29,8 +29,8 @@ export default function BuddyScanLanding() {
           className="mx-auto mt-4 block h-auto w-full max-w-[392px] select-none"
           draggable={false}
           decoding="async"
-          width={1544}
-          height={1019}
+          width={1176}
+          height={776}
         />
 
         <p className="mx-auto mt-1 w-fit rounded-full border border-[#ffe6cc] bg-[#fff1e3] px-4 py-1.5 text-[11px] text-text-secondary">
