@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CalendarCheck, CalendarDays, Check, CheckCircle2, ChevronRight, Gift, Sparkles, X } from 'lucide-react'
-import { BottomSheet, Button, ProgressIndicator, Skeleton } from '../../../components/ui'
+import { Button, ProgressIndicator, Skeleton } from '../../../components/ui'
 import {
   CHECKIN_DAILY_TASK,
   CHECKIN_RULE_STATUS,
@@ -13,7 +13,7 @@ import checkinRitualHero from '../../../assets/brand/bubble/checkin-ritual-hero-
 import exchangePromoShampoo from '../../../assets/brand/exchange/exchange-promo-shampoo.webp'
 
 const CHECKIN_CYCLE_TARGET = 7
-const CHECKIN_WEEK_LABELS = ['日', '一', '二', '三', '四', '五', '六'] as const
+const CHECKIN_WEEK_LABELS = ['一', '二', '三', '四', '五', '六', '日'] as const
 const CHECKIN_MONTH_WEEK_LABELS = ['日', '一', '二', '三', '四', '五', '六'] as const
 
 /** 一个月的天数（本地时区）。 */
@@ -128,7 +128,7 @@ export function buildCheckinCalendar(options: BuildCalendarOptions = {}): Checki
   }
 }
 
-/** 7 天签到挑战轨道：展示过去 6 天 + 今天，不把未来日期当成可累计进度。 */
+/** 首页自然周：从周一到周日七天。签到和补签共用业务日期，同一天至多计一次。 */
 export function buildCycleDays(
   records: SignRecord[] | null | undefined,
   today: Date,
@@ -137,17 +137,54 @@ export function buildCycleDays(
   const dayMap = buildSignRecordDayMap(records ?? [])
   const optimistic = new Set(optimisticMakeupDays)
   const todayKey = toLocalDateKey(today)
+  const daysSinceMonday = (today.getDay() + 6) % 7
+  const monday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - daysSinceMonday)
 
   return Array.from({ length: CHECKIN_CYCLE_TARGET }, (_, index) => {
-    const date = new Date(today)
-    date.setDate(today.getDate() - (CHECKIN_CYCLE_TARGET - 1 - index))
+    // 使用本地日历构造日期，避免 UTC 与夏令时换日影响自然周边界。
+    const date = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + index)
     const dateKey = toLocalDateKey(date)
+    const record = dayMap.get(dateKey)
+    const isOptimistic = optimistic.has(dateKey) && dateKey < todayKey
+    const signed = dateKey <= todayKey && (Boolean(record) || isOptimistic)
+    const state: CheckinDayState = dateKey === todayKey
+      ? 'today'
+      : signed
+        ? 'done'
+        : dateKey < todayKey
+          ? 'makeup'
+          : 'upcoming'
 
+    return {
+      day: date.getDate(),
+      dateKey,
+      state,
+      signed,
+      makeup: signed && (record?.status === SIGN_RECORD_STATUS_MAKEUP || isOptimistic),
+      makeupApplied: isOptimistic && !record,
+    }
+  })
+}
+
+/**
+ * 签到详情页既有「7 天挑战」的兼容兜底：当 status 不可用时仍按过去六天＋今天显示。
+ * 此函数只供 full 模式使用，不能用于首页自然周进度。
+ */
+export function buildRollingCycleDays(
+  records: SignRecord[] | null | undefined,
+  today: Date,
+  optimisticMakeupDays: string[] = [],
+): CheckinCalendarDay[] {
+  const dayMap = buildSignRecordDayMap(records ?? [])
+  const optimistic = new Set(optimisticMakeupDays)
+  const todayKey = toLocalDateKey(today)
+  return Array.from({ length: CHECKIN_CYCLE_TARGET }, (_, index) => {
+    const date = new Date(today.getFullYear(), today.getMonth(), today.getDate() - (CHECKIN_CYCLE_TARGET - 1 - index))
+    const dateKey = toLocalDateKey(date)
     const record = dayMap.get(dateKey)
     const isOptimistic = optimistic.has(dateKey)
     const signed = Boolean(record) || isOptimistic
     const state: CheckinDayState = dateKey === todayKey ? 'today' : signed ? 'done' : 'makeup'
-
     return {
       day: date.getDate(),
       dateKey,
@@ -157,6 +194,11 @@ export function buildCycleDays(
       makeupApplied: isOptimistic && !record,
     }
   })
+}
+
+/** 自然周进度只由本周有效日期计算，不读取跨周期连续签到天数。 */
+export function resolveWeeklyCompletedDays(weekDays: CheckinCalendarDay[]): number {
+  return weekDays.filter((day) => day.signed).length
 }
 
 /** 是日任务进度条比例：解析夹具里既有的「1 / 1」文案，不额外引入进度字段。 */
@@ -178,7 +220,7 @@ export interface HomeSignStatusView {
 }
 
 /**
- * 7 天挑战累计值优先使用 status 接口的连续签到口径。
+ * 仅为既有签到详情页的连续签到 Hero 保留旧口径；首页自然周不得调用此函数。
  * 未签到时后端 consecutive_days 表示「今天签到后将达到的值」，因此当前值减 1。
  */
 export function resolveChallengeCompletedDays(
@@ -209,6 +251,8 @@ export interface CheckinBoardProps {
   loading?: boolean
   /** 接口签到记录（打卡日历依据）；缺省时不渲染任何已签格。 */
   records?: SignRecord[] | null
+  /** 首页周记录请求状态；仅 success 才可显示确定的周进度。 */
+  weekRecordsState?: 'loading' | 'success' | 'error'
   /** 本次会话补签乐观点亮的日期。 */
   optimisticMakeupDays?: string[]
   /** 点击日历中的「补签」，参数为该格本地日期 `YYYY-MM-DD`；由宿主页面执行（先过广告闸门）。 */
@@ -239,6 +283,7 @@ export default function CheckinBoard({
   signStatus,
   loading = false,
   records,
+  weekRecordsState,
   optimisticMakeupDays,
   onMakeupDay,
   onSignIn,
@@ -246,7 +291,6 @@ export default function CheckinBoard({
   debug = false,
 }: CheckinBoardProps) {
   const navigate = useNavigate()
-  const [calendarOpen, setCalendarOpen] = useState(false)
   const [now, setNow] = useState(() => new Date())
 
   // 「今天」按本地时间计算；跨日（含从后台恢复）时刷新一次，避免停在昨天。
@@ -267,12 +311,16 @@ export default function CheckinBoard({
     [records, now, optimisticMakeupDays],
   )
 
-  // 7 天挑战累计值以 status 接口的连续签到口径为准；接口不可用时才回退近 7 日记录。
-  const completedDays = resolveChallengeCompletedDays(signStatus, cycleDays)
-  const remainingDays = Math.max(0, CHECKIN_CYCLE_TARGET - completedDays)
+  // 详情页原有 Hero 暂不纳入 #220；首页自然周进度严格使用本周记录。
+  const completedDays = resolveChallengeCompletedDays(
+    signStatus,
+    mode === 'full' ? buildRollingCycleDays(records, now, optimisticMakeupDays) : cycleDays,
+  )
+  const weekRecordsReady = weekRecordsState === 'success' || (weekRecordsState === undefined && Array.isArray(records))
+  const weeklyCompletedDays = weekRecordsReady ? resolveWeeklyCompletedDays(cycleDays) : null
+  const weekLabel = `${cycleDays[0].dateKey.slice(5).replace('-', '/')}—${cycleDays[6].dateKey.slice(5).replace('-', '/')}`
 
   const handleMakeupDay = (dateKey: string) => {
-    setCalendarOpen(false)
     onMakeupDay?.(dateKey)
   }
 
@@ -325,133 +373,88 @@ export default function CheckinBoard({
       )}
 
       {mode === 'home' ? (
-        <>
-          <button
-            type="button"
-            onClick={() => navigate('/checkin')}
-            aria-label={`查看 7 天签到日历，当前 ${completedDays} / ${CHECKIN_CYCLE_TARGET}`}
-            className="mx-4 block w-[calc(100%-2rem)] rounded-[16px] bg-checkin-home-surface px-3.5 pb-3.5 pt-3.5 text-left shadow-bubble transition active:scale-[0.995] active:bg-surface-pressed"
-          >
-            <div className="flex items-center justify-between gap-3">
-              <span className="flex min-w-0 items-center gap-2 text-[14px] font-semibold leading-5 text-text-primary">
-                <span className="flex h-7 w-7 flex-none items-center justify-center rounded-[8px] bg-secondary text-reward-strong" aria-hidden>
-                  <CalendarDays className="h-4 w-4" />
-                </span>
-                <span>7天签到</span>
-                <span className="text-[12px] font-semibold text-reward-text">{completedDays}/{CHECKIN_CYCLE_TARGET}</span>
+        <button
+          type="button"
+          onClick={() => navigate('/checkin')}
+          data-checkin-week-state={weekRecordsReady ? 'success' : weekRecordsState ?? 'loading'}
+          aria-label={weeklyCompletedDays === null
+            ? '查看本周签到，进入本月签到日历'
+            : `查看本周签到，已签到 ${weeklyCompletedDays} / 7 天，进入本月签到日历`}
+          className="mx-4 block w-[calc(100%-2rem)] rounded-[16px] bg-checkin-home-surface px-3.5 pb-3.5 pt-3.5 text-left shadow-bubble transition active:scale-[0.995] active:bg-surface-pressed"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <span className="flex min-w-0 items-center gap-2 text-[14px] font-semibold leading-5 text-text-primary">
+              <span className="flex h-7 w-7 flex-none items-center justify-center rounded-[8px] bg-secondary text-reward-strong" aria-hidden>
+                <CalendarDays className="h-4 w-4" />
               </span>
-              <span className="flex flex-none items-center gap-0.5 rounded-pill bg-surface-subtle px-2.5 py-1 text-[11px] font-medium leading-4 text-text-secondary">
-                {remainingDays === 0 ? '已完成' : `还差 ${remainingDays} 天`}
-                <ChevronRight className="h-3 w-3" aria-hidden />
+              <span>本周签到</span>
+              <span className="text-[12px] font-semibold text-reward-text">
+                {weeklyCompletedDays === null ? '—/7' : `${weeklyCompletedDays}/7`}
               </span>
-            </div>
+            </span>
+            <span className="flex flex-none items-center gap-0.5 rounded-pill bg-surface-subtle px-2.5 py-1 text-[11px] font-medium leading-4 text-text-secondary">
+              {weeklyCompletedDays === null
+                ? weekRecordsState === 'error' ? '记录暂不可用' : '记录加载中'
+                : weeklyCompletedDays === 7 ? '本周已满勤' : `已签到 ${weeklyCompletedDays} 天`}
+              <ChevronRight className="h-3 w-3" aria-hidden />
+            </span>
+          </div>
 
-            <div className="mt-3 grid grid-cols-7 gap-1" aria-hidden>
-              {cycleDays.map((item) => {
-                const completed = item.signed
-                return (
-                  <span key={item.dateKey} className="flex min-w-0 flex-col items-center gap-1.5">
-                    <span className="text-[9px] leading-none text-checkin-home-muted">
-                      {CHECKIN_WEEK_LABELS[new Date(`${item.dateKey}T00:00:00`).getDay()]}
-                    </span>
-                    <span
-                      className={`flex h-7 w-7 items-center justify-center text-[10px] font-semibold ${
-                        item.state === 'today' && !completed
-                          ? 'flex-col rounded-[10px] bg-checkin-home-today text-checkin-home-today-text shadow-sm'
-                          : completed
-                            ? 'flex-col rounded-full bg-checkin-home-day-surface text-reward-strong'
-                            : 'rounded-full bg-checkin-home-day-surface text-checkin-home-day-text'
-                      }`}
-                    >
-                      {item.state === 'today' && !completed ? (
-                        <>
-                          <span className="text-[10px] leading-3">{item.day}</span>
-                          <span className="mt-0.5 text-[8px] font-medium leading-3">今天</span>
-                        </>
-                      ) : completed ? (
-                        <>
-                          <Check className="h-2.5 w-2.5" strokeWidth={3} />
-                          <span className="mt-0.5 text-[8px] leading-none">{item.day}</span>
-                        </>
-                      ) : (
-                        item.day
-                      )}
-                    </span>
+          <span className="mt-2 block text-[10px] text-text-tertiary">周一至周日 · {weekLabel}</span>
+          <div className="mt-3 grid grid-cols-7 gap-1" aria-hidden>
+            {cycleDays.map((item, index) => {
+              const completed = weekRecordsReady && item.signed
+              return (
+                <span key={item.dateKey} className="flex min-w-0 flex-col items-center gap-1.5">
+                  <span className="text-[9px] leading-none text-checkin-home-muted">
+                    {CHECKIN_WEEK_LABELS[index]}
                   </span>
-                )
-              })}
-            </div>
-
-            {signStatus && (
-              <span
-                data-checkin-sign-status={signStatus.signed ? 'signed' : 'unsigned'}
-                className={`mt-3 flex items-center gap-1 text-[11px] leading-4 ${
-                  signStatus.signed ? 'text-reward-text' : 'text-text-tertiary'
-                }`}
-              >
-                {signStatus.signed && <Check className="h-3 w-3" strokeWidth={3} aria-hidden />}
-                {buildSignStatusHint(signStatus)}
-              </span>
-            )}
-          </button>
-
-          <BottomSheet
-            open={calendarOpen}
-            title="7 天签到日历"
-            onClose={() => setCalendarOpen(false)}
-            actions={
-              <Button variant="ghost" onClick={() => setCalendarOpen(false)}>
-                收起
-              </Button>
-            }
-          >
-            <div className="pb-1" data-checkin-calendar-sheet>
-              <div className="flex items-end justify-between gap-3">
-                <div>
-                  <p className="text-[11px] font-medium tracking-[0.12em] text-reward-strong">WEEKLY CHECK-IN</p>
-                  <p className="mt-1 text-lg font-bold text-text-primary">
-                    {remainingDays === 0 ? '本轮 7 天挑战已完成' : `再签到 ${remainingDays} 天完成本轮`}
-                  </p>
-                </div>
-                <span className="rounded-pill bg-reward-subtle px-2.5 py-1 text-xs font-bold text-reward-text">
-                  {completedDays} / {CHECKIN_CYCLE_TARGET}
+                  <span
+                    className={`flex h-7 w-7 items-center justify-center text-[10px] font-semibold ${
+                      item.state === 'today' && !completed
+                        ? 'flex-col rounded-[10px] bg-checkin-home-today text-checkin-home-today-text shadow-sm'
+                        : completed
+                          ? 'flex-col rounded-full bg-checkin-home-day-surface text-reward-strong'
+                          : item.state === 'upcoming'
+                            ? 'rounded-full bg-checkin-home-day-surface text-text-tertiary/60'
+                            : 'rounded-full bg-checkin-home-day-surface text-checkin-home-day-text'
+                    }`}
+                  >
+                    {item.state === 'today' && !completed ? (
+                      <>
+                        <span className="text-[10px] leading-3">{item.day}</span>
+                        <span className="mt-0.5 text-[8px] font-medium leading-3">今天</span>
+                      </>
+                    ) : completed ? (
+                      <>
+                        <Check className="h-2.5 w-2.5" strokeWidth={3} />
+                        <span className="mt-0.5 text-[8px] leading-none">{item.day}</span>
+                      </>
+                    ) : (
+                      item.day
+                    )}
+                  </span>
                 </span>
-              </div>
+              )
+            })}
+          </div>
 
-              <ProgressIndicator
-                value={completedDays}
-                max={CHECKIN_CYCLE_TARGET}
-                label={`7 天签到挑战进度 ${completedDays} / ${CHECKIN_CYCLE_TARGET}`}
-                className="mt-3 [&>div]:h-2 [&>div]:bg-surface-subtle [&>div>div]:bg-[image:var(--gradient-bubble)]"
-              />
-
-              <div className="mt-5 grid grid-cols-7 gap-1.5">
-                {cycleDays.map((item) => (
-                  <div key={item.dateKey} className="min-w-0">
-                    <span className="mb-1.5 block text-center text-[10px] font-medium text-text-tertiary">
-                      周{CHECKIN_WEEK_LABELS[new Date(`${item.dateKey}T00:00:00`).getDay()]}
-                    </span>
-                    <CalendarCell item={item} onMakeup={handleMakeupDay} />
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-5 flex items-center gap-3 border-t border-border-subtle pt-4">
-                <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-reward-subtle text-reward-strong" aria-hidden>
-                  {remainingDays === 0 ? <Check className="h-4 w-4" strokeWidth={3} /> : <Gift className="h-4 w-4" />}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-text-primary">
-                    {remainingDays === 0 ? '连续签到目标已达成' : '继续点亮，完成 7 日挑战'}
-                  </p>
-                  <p className="mt-0.5 text-[11px] leading-4 text-text-tertiary">
-                    {remainingDays === 0 ? '本轮签到已完成，可以继续保持节奏。' : `完整 ${calendar.monthLabel} 签到记录与补签请进入「每日打卡」内页查看。`}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </BottomSheet>
-        </>
+          <span className="mt-3 flex items-center justify-between gap-2 text-[11px] leading-4 text-text-tertiary">
+            <span>周奖励以后台活动规则为准</span>
+            <span className="flex items-center gap-0.5 whitespace-nowrap text-reward-text">查看月历 <ChevronRight className="h-3 w-3" aria-hidden /></span>
+          </span>
+          {signStatus && (
+            <span
+              data-checkin-sign-status={signStatus.signed ? 'signed' : 'unsigned'}
+              className={`mt-2 flex items-center gap-1 text-[11px] leading-4 ${
+                signStatus.signed ? 'text-reward-text' : 'text-text-tertiary'
+              }`}
+            >
+              {signStatus.signed && <Check className="h-3 w-3" strokeWidth={3} aria-hidden />}
+              {buildSignStatusHint(signStatus)}
+            </span>
+          )}
+        </button>
       ) : (
         <section className="mx-4 mt-4 rounded-feature bg-surface px-4 pb-4 pt-4 shadow-bubble" aria-label={`${calendar.monthLabel}签到日历`}>
           <header className="flex items-center justify-between gap-3">
