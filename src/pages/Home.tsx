@@ -48,7 +48,7 @@ export default function Home() {
   const signRecords = useSignRecords(SIGN_RECORDS_RANGE_WEEK)
   const lastSeenDay = useRef(new Date().toDateString())
 
-  // App 从后台跨日恢复时刷新本周事实源，避免周日数据延续到下周一。
+  // App 跨日恢复时同步刷新本周记录与今日签到状态，避免两者显示不同日期。
   useEffect(() => {
     const onVisible = () => {
       if (document.visibilityState !== 'visible') return
@@ -56,10 +56,11 @@ export default function Home() {
       if (todayKey === lastSeenDay.current) return
       lastSeenDay.current = todayKey
       signRecords.reload()
+      signStatus.reload()
     }
     document.addEventListener('visibilitychange', onVisible)
     return () => document.removeEventListener('visibilitychange', onVisible)
-  }, [signRecords.reload])
+  }, [signRecords.reload, signStatus.reload])
 
   const bannerSlides = useMemo(
     () =>

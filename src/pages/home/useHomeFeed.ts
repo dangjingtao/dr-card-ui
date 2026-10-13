@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import { fetchHomeBanners, type BannerItem } from '../../services/banners'
 import { fetchSignStatus, type SignStatus } from '../../services/signrecords'
@@ -12,11 +12,12 @@ export type HomeRemoteData<T> =
  * 首页接口数据加载（mock/api 同路径，页面不做模式分支）。
  * 单个接口失败只落在对应区域的降级展示上，不阻塞其它模块。
  */
-function useRemoteData<T>(load: () => Promise<T>): HomeRemoteData<T> {
+function useRemoteData<T>(load: () => Promise<T>, reloadToken = 0): HomeRemoteData<T> {
   const [remote, setRemote] = useState<HomeRemoteData<T>>({ state: 'loading' })
 
   useEffect(() => {
     let active = true
+    setRemote({ state: 'loading' })
     void load().then(
       (data) => {
         if (active) setRemote({ state: 'success', data })
@@ -33,7 +34,7 @@ function useRemoteData<T>(load: () => Promise<T>): HomeRemoteData<T> {
     return () => {
       active = false
     }
-  }, [load])
+  }, [load, reloadToken]
 
   return remote
 }
@@ -42,6 +43,9 @@ export function useHomeBanners(): HomeRemoteData<BannerItem[]> {
   return useRemoteData(fetchHomeBanners)
 }
 
-export function useSignStatus(): HomeRemoteData<SignStatus> {
-  return useRemoteData(fetchSignStatus)
+export function useSignStatus(): HomeRemoteData<SignStatus> & { reload: () => void } {
+  const [reloadToken, setReloadToken] = useState(0)
+  const remote = useRemoteData(fetchSignStatus, reloadToken)
+  const reload = useCallback(() => setReloadToken((value) => value + 1), [])
+  return { ...remote, reload }
 }
