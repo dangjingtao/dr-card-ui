@@ -16,6 +16,18 @@ afterEach(() => {
 
 describe('Issue #220: home sign status cross-day refresh', () => {
   it('reloads the real status feed and replaces the previous day result', async () => {
+    let resolveRefresh!: (value: {
+      signed: boolean
+      consecutive_days: number
+      points: number
+      reward_desc: string
+    }) => void
+    const refresh = new Promise<{
+      signed: boolean
+      consecutive_days: number
+      points: number
+      reward_desc: string
+    }>((resolve) => { resolveRefresh = resolve })
     mocks.fetchSignStatus
       .mockResolvedValueOnce({
         signed: true,
@@ -23,12 +35,7 @@ describe('Issue #220: home sign status cross-day refresh', () => {
         points: 10,
         reward_desc: '',
       })
-      .mockResolvedValueOnce({
-        signed: false,
-        consecutive_days: 8,
-        points: 10,
-        reward_desc: '',
-      })
+      .mockReturnValueOnce(refresh)
 
     const { result } = renderHook(() => useSignStatus())
 
@@ -38,6 +45,12 @@ describe('Issue #220: home sign status cross-day refresh', () => {
     })
 
     act(() => result.current.reload())
+    expect(result.current.state).toBe('loading')
+
+    await act(async () => {
+      resolveRefresh({ signed: false, consecutive_days: 8, points: 10, reward_desc: '' })
+      await refresh
+    })
 
     await waitFor(() => {
       expect(result.current.state).toBe('success')
