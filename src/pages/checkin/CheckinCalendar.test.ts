@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildCheckinCalendar, buildCycleDays, resolveChallengeCompletedDays, resolveWeeklyCompletedDays } from './components/CheckinBoard'
+import { buildCheckinCalendar, buildCycleDays, buildRollingCycleDays, resolveChallengeCompletedDays, resolveWeeklyCompletedDays } from './components/CheckinBoard'
 
 const record = (id: number, createTime: string, status: number) => {
   const [year, month, day] = createTime.slice(0, 10).split('-')
@@ -230,5 +230,17 @@ describe('Issue #220: natural-week model', () => {
     expect(resolveWeeklyCompletedDays(days)).toBe(1)
     // Old streak resolver remains exclusive to the existing /checkin Hero until #221.
     expect(resolveChallengeCompletedDays({ signed: true, consecutiveDays: 20, points: 5, rewardDesc: '' }, days)).toBe(7)
+  })
+})
+
+describe('Issue #220: keep detail-page fallback unchanged', () => {
+  it('still shows the prior rolling 7-day streak on Monday if status is unavailable', () => {
+    const today = new Date(2026, 9, 12)
+    const lastSeven = Array.from({ length: 7 }, (_, index) => {
+      const day = new Date(2026, 9, 6 + index)
+      return record(index + 1, `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')} 09:00:00`, 10)
+    })
+    expect(resolveWeeklyCompletedDays(buildCycleDays(lastSeven, today))).toBe(1)
+    expect(resolveChallengeCompletedDays(null, buildRollingCycleDays(lastSeven, today))).toBe(7)
   })
 })

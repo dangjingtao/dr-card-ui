@@ -166,6 +166,36 @@ export function buildCycleDays(
   })
 }
 
+/**
+ * 签到详情页既有「7 天挑战」的兼容兜底：当 status 不可用时仍按过去六天＋今天显示。
+ * 此函数只供 full 模式使用，不能用于首页自然周进度。
+ */
+export function buildRollingCycleDays(
+  records: SignRecord[] | null | undefined,
+  today: Date,
+  optimisticMakeupDays: string[] = [],
+): CheckinCalendarDay[] {
+  const dayMap = buildSignRecordDayMap(records ?? [])
+  const optimistic = new Set(optimisticMakeupDays)
+  const todayKey = toLocalDateKey(today)
+  return Array.from({ length: CHECKIN_CYCLE_TARGET }, (_, index) => {
+    const date = new Date(today.getFullYear(), today.getMonth(), today.getDate() - (CHECKIN_CYCLE_TARGET - 1 - index))
+    const dateKey = toLocalDateKey(date)
+    const record = dayMap.get(dateKey)
+    const isOptimistic = optimistic.has(dateKey)
+    const signed = Boolean(record) || isOptimistic
+    const state: CheckinDayState = dateKey === todayKey ? 'today' : signed ? 'done' : 'makeup'
+    return {
+      day: date.getDate(),
+      dateKey,
+      state,
+      signed,
+      makeup: record?.status === SIGN_RECORD_STATUS_MAKEUP || isOptimistic,
+      makeupApplied: isOptimistic && !record,
+    }
+  })
+}
+
 /** 自然周进度只由本周有效日期计算，不读取跨周期连续签到天数。 */
 export function resolveWeeklyCompletedDays(weekDays: CheckinCalendarDay[]): number {
   return weekDays.filter((day) => day.signed).length
@@ -282,7 +312,10 @@ export default function CheckinBoard({
   )
 
   // 详情页原有 Hero 暂不纳入 #220；首页自然周进度严格使用本周记录。
-  const completedDays = resolveChallengeCompletedDays(signStatus, cycleDays)
+  const completedDays = resolveChallengeCompletedDays(
+    signStatus,
+    mode === 'full' ? buildRollingCycleDays(records, now, optimisticMakeupDays) : cycleDays,
+  )
   const weekRecordsReady = weekRecordsState === 'success' || (weekRecordsState === undefined && Array.isArray(records))
   const weeklyCompletedDays = weekRecordsReady ? resolveWeeklyCompletedDays(cycleDays) : null
   const weekLabel = `${cycleDays[0].dateKey.slice(5).replace('-', '/')}—${cycleDays[6].dateKey.slice(5).replace('-', '/')}`
