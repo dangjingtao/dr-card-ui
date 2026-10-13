@@ -1,10 +1,10 @@
-import { afterEach, describe, expect, it } from 'vitest'
-import { cleanup, render, screen, within } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 
 import CheckinBoard, { type HomeSignStatusView } from './CheckinBoard'
 
-afterEach(cleanup)
+afterEach(() => { cleanup(); vi.useRealTimers() })
 
 function renderBoard(signStatus?: HomeSignStatusView) {
   render(
@@ -42,5 +42,57 @@ describe('每日打卡奖励', () => {
   it('does not invent a reward while the sign status is unavailable', () => {
     const mission = renderBoard()
     expect(mission.queryByText(/\+\d+ 泡泡值/)).toBeNull()
+  })
+})
+
+describe('Issue #220: homepage natural week entry', () => {
+  it('shows the actual week count instead of the account streak and navigates straight to the month', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 9, 14, 12))
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <Routes>
+          <Route path="/" element={
+            <CheckinBoard
+              mode="home"
+              weekRecordsState="success"
+              records={[
+                { id: 1, user_id: 3, points: 10, consecutive_days: 20, status: 10, year: '2026', month: '10', day: '12' },
+                { id: 2, user_id: 3, points: 10, consecutive_days: 21, status: 20, year: '2026', month: '10', day: '13' },
+              ]}
+              signStatus={{ signed: false, consecutiveDays: 22, points: 10, rewardDesc: '' }}
+            />
+          } />
+          <Route path="/checkin" element={<div>自然月签到详情</div>} />
+        </Routes>
+      </MemoryRouter>,
+    )
+    const entry = screen.getByRole('button', { name: /已签到 2 \/ 7 天，进入本月签到日历/ })
+    expect(entry.textContent).toContain('2/7')
+    expect(entry.textContent).not.toContain('7/7')
+    expect(screen.getByText('周一至周日 · 10/12—10/18')).toBeTruthy()
+    fireEvent.click(entry)
+    expect(screen.getByText('自然月签到详情')).toBeTruthy()
+  })
+
+  it('does not fabricate zero progress or weekly reward when API data is unavailable', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 9, 14, 12))
+    render(
+      <MemoryRouter>
+        <CheckinBoard
+          mode="home"
+          weekRecordsState="error"
+          records={null}
+          signStatus={{ signed: true, consecutiveDays: 99, points: 10, rewardDesc: '' }}
+        />
+      </MemoryRouter>,
+    )
+    const entry = screen.getByRole('button', { name: '查看本周签到，进入本月签到日历' })
+    expect(entry.getAttribute('data-checkin-week-state')).toBe('error')
+    expect(entry.textContent).toContain('—/7')
+    expect(entry.textContent).toContain('记录暂不可用')
+    expect(entry.textContent).not.toContain('已满勤')
+    expect(entry.textContent).toContain('周奖励以后台活动规则为准')
   })
 })

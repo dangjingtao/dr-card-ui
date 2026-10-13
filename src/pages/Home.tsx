@@ -129,6 +129,7 @@ export default function Home() {
           debug={debug}
           loading={signStatus.state === 'loading' || signRecords.remote.state === 'loading'}
           records={signRecords.remote.state === 'success' ? signRecords.remote.data : null}
+          weekRecordsState={signRecords.remote.state}
           signStatus={
             signStatus.state === 'success'
               ? {
