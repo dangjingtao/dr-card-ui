@@ -6,10 +6,10 @@
  * 不跳出 App / H5 外层界面。
  *
  * 2026-10-12：当前地址仅用于效果预览，不代表正式商城接入方案。
- * 保留用户提供的 http scheme，不自动改写为 https；鉴权透传、cleartext/mixed-content
- * 及目标站 iframe 策略仍需在真实 App WebView 内单独验证。
+ * test 页面由 HTTPS 承载，商城效果地址使用已验证可达的 HTTPS，避免混合内容被浏览器拦截。
+ * 鉴权透传、第三方站内混合资源及 iframe 策略仍需真实 App WebView 验收。
  */
-const MALL_H5_URL = 'http://scmzhds07.m.demo.webportal.top/?_sc=1'
+const MALL_H5_URL = 'https://scmzhds07.m.demo.webportal.top/?_sc=1'
 
 export default function MallWebView() {
   return (
