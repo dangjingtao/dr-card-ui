@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { BookOpen, ChevronLeft, ChevronRight, Gift, Heart, Search } from 'lucide-react'
 import BannerCarousel from '../components/mobile/BannerCarousel'
@@ -46,6 +46,20 @@ export default function Home() {
   const signStatus = useSignStatus()
   // 首页只需要本周七日记录，不读取完整月份。
   const signRecords = useSignRecords(SIGN_RECORDS_RANGE_WEEK)
+  const lastSeenDay = useRef(new Date().toDateString())
+
+  // App 从后台跨日恢复时刷新本周事实源，避免周日数据延续到下周一。
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return
+      const todayKey = new Date().toDateString()
+      if (todayKey === lastSeenDay.current) return
+      lastSeenDay.current = todayKey
+      signRecords.reload()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [signRecords.reload])
 
   const bannerSlides = useMemo(
     () =>
@@ -129,6 +143,7 @@ export default function Home() {
           debug={debug}
           loading={signStatus.state === 'loading' || signRecords.remote.state === 'loading'}
           records={signRecords.remote.state === 'success' ? signRecords.remote.data : null}
+          weekRecordsState={signRecords.remote.state}
           signStatus={
             signStatus.state === 'success'
               ? {
