@@ -180,7 +180,8 @@ export async function refreshChatAuthAfterUnauthorized(): Promise<void> {
 }
 
 setHttpAuthHeadersProvider(() => {
-  if (!authFlowEnabled) return undefined
+  // Route-level authFlowEnabled controls reauthentication/expiry UI, not credential attachment.
+  // Any same-origin API request with an existing session must carry its Bearer token.
   const session = readSession()
   return session ? { Authorization: `Bearer ${session.accessToken}` } : undefined
 })
