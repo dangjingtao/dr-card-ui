@@ -411,12 +411,12 @@ export default function CheckinBoard({
                   )}
                 >
                   <span className={'text-[11px] font-medium leading-[14px] ' + (
-                    today ? 'text-[#FFF9F1]' : 'text-checkin-home-muted'
+                    today ? 'text-[var(--color-checkin-home-today-weekday)]' : 'text-checkin-home-muted'
                   )}>
                     {CHECKIN_WEEK_LABELS[index]}
                   </span>
                   <span className={'mt-1.5 flex h-7 w-7 flex-none items-center justify-center rounded-full text-[15px] font-semibold tabular-nums max-[350px]:h-[27px] max-[350px]:w-[27px] ' + (
-                    today ? 'bg-[var(--color-checkin-home-today-chip)] text-[var(--color-checkin-home-accent-strong)]'
+                    today ? 'bg-[var(--color-checkin-home-today-chip)] text-[var(--color-checkin-home-today-date)]'
                       : 'bg-checkin-home-day-surface text-checkin-home-day-text'
                   )}>
                     {completed && !today
@@ -435,12 +435,14 @@ export default function CheckinBoard({
             <span className="min-w-0 flex-1">
               <span className="flex items-baseline gap-1 whitespace-nowrap text-[13px] font-bold leading-[19px] text-text-primary max-[350px]:gap-[3px] max-[350px]:text-[11px]">
                 每日签到 · 领取泡泡值
-                {signStatus && Number.isFinite(signStatus.points) && (
+                {signStatus && Number.isFinite(signStatus.points) && signStatus.points > 0 && (
                   <span className="tabular-nums text-[var(--color-checkin-home-accent-strong)]">+{signStatus.points}</span>
                 )}
               </span>
               <span className="mt-[3px] block text-[11px] leading-4 text-text-tertiary max-[350px]:text-[10px]">
-                {weeklyCompletedDays === null ? '签到记录暂不可用' : '本周已签到 ' + weeklyCompletedDays + ' 天'}
+                {weeklyCompletedDays === null
+                  ? weekRecordsState === 'error' ? '签到记录暂不可用' : '签到记录加载中'
+                  : '本周已签到 ' + weeklyCompletedDays + ' 天'}
               </span>
             </span>
             <span className="flex min-h-[34px] flex-none items-center gap-0.5 whitespace-nowrap text-xs font-semibold text-[var(--color-checkin-home-accent-strong)] max-[350px]:text-[10px]">
