@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useBlocker, useNavigate } from 'react-router-dom'
 import { AlertCircle, CheckCircle2, Ticket, XCircle } from 'lucide-react'
 import DebugPanel from '../components/mobile/DebugPanel'
 import { isAppError } from '../services/http'
@@ -37,6 +37,17 @@ export default function Redeem() {
   const [receipt, setReceipt] = useState<RedemptionReceipt | null>(null)
   const [pendingCode, setPendingCode] = useState<string | null>(null)
   const submissionLock = useRef(false)
+  // A full-screen in-page step must consume BrowserRouter POP/back without
+  // pushing an artificial history entry (UX-E). Submission stays protected.
+  const blocker = useBlocker(pendingCode !== null)
+  useEffect(() => {
+    if (blocker.state !== 'blocked') return
+    if (!submissionLock.current && !submitting) {
+      setPendingCode(null)
+      setErrorMessage(null)
+    }
+    blocker.reset()
+  }, [blocker, submitting])
   const timers = useRef<number[]>([])
 
   const trimmed = code
