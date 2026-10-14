@@ -384,11 +384,11 @@ export default function CheckinBoard({
         >
           {/* 用户确认的 V8：紧凑 65px 自然周日期卡，仅突出当天；数据仍来自真实签到接口。 */}
           <span className="flex items-center gap-2">
-            <span className="flex h-8 w-8 flex-none items-center justify-center rounded-[10px] bg-[var(--color-checkin-home-icon-surface)] text-checkin-home-accent" aria-hidden>
+            <span className="flex h-8 w-8 flex-none items-center justify-center rounded-[10px] bg-[var(--color-checkin-home-icon-surface)] text-[var(--color-checkin-home-accent)]" aria-hidden>
               <CalendarDays className="h-5 w-5" />
             </span>
             <span className="whitespace-nowrap text-base font-bold tracking-tight text-text-primary">本周签到</span>
-            <span className="whitespace-nowrap text-base font-bold tabular-nums text-checkin-home-accent-strong">
+            <span className="whitespace-nowrap text-base font-bold tabular-nums text-[var(--color-checkin-home-accent-strong)]">
               {weeklyCompletedDays === null ? '—/7' : weeklyCompletedDays + '/7'}
             </span>
           </span>
@@ -416,11 +416,11 @@ export default function CheckinBoard({
                     {CHECKIN_WEEK_LABELS[index]}
                   </span>
                   <span className={'mt-1.5 flex h-7 w-7 flex-none items-center justify-center rounded-full text-[15px] font-semibold tabular-nums max-[350px]:h-[27px] max-[350px]:w-[27px] ' + (
-                    today ? 'bg-[var(--color-checkin-home-today-chip)] text-checkin-home-accent-strong'
+                    today ? 'bg-[var(--color-checkin-home-today-chip)] text-[var(--color-checkin-home-accent-strong)]'
                       : 'bg-checkin-home-day-surface text-checkin-home-day-text'
                   )}>
                     {completed && !today
-                      ? <Check className="h-[18px] w-[18px] text-checkin-home-accent" strokeWidth={3} aria-hidden />
+                      ? <Check className="h-[18px] w-[18px] text-[var(--color-checkin-home-accent)]" strokeWidth={3} aria-hidden />
                       : item.day}
                   </span>
                 </span>
@@ -429,21 +429,21 @@ export default function CheckinBoard({
           </span>
 
           <span className="mt-3.5 flex min-h-[68px] items-center gap-2.5 rounded-[13px] bg-[var(--color-checkin-home-reward-surface)] px-[11px] py-3 max-[350px]:gap-1.5 max-[350px]:px-2">
-            <span className="flex h-[34px] w-[26px] flex-none items-center justify-center text-checkin-home-accent max-[350px]:w-[22px]" aria-hidden>
+            <span className="flex h-[34px] w-[26px] flex-none items-center justify-center text-[var(--color-checkin-home-accent)] max-[350px]:w-[22px]" aria-hidden>
               <Gift className="h-6 w-6 max-[350px]:h-[21px] max-[350px]:w-[21px]" />
             </span>
             <span className="min-w-0 flex-1">
               <span className="flex items-baseline gap-1 whitespace-nowrap text-[13px] font-bold leading-[19px] text-text-primary max-[350px]:gap-[3px] max-[350px]:text-[11px]">
                 每日签到 · 领取泡泡值
                 {signStatus && Number.isFinite(signStatus.points) && (
-                  <span className="tabular-nums text-checkin-home-accent-strong">+{signStatus.points}</span>
+                  <span className="tabular-nums text-[var(--color-checkin-home-accent-strong)]">+{signStatus.points}</span>
                 )}
               </span>
               <span className="mt-[3px] block text-[11px] leading-4 text-text-tertiary max-[350px]:text-[10px]">
                 {weeklyCompletedDays === null ? '签到记录暂不可用' : '本周已签到 ' + weeklyCompletedDays + ' 天'}
               </span>
             </span>
-            <span className="flex min-h-[34px] flex-none items-center gap-0.5 whitespace-nowrap text-xs font-semibold text-checkin-home-accent-strong max-[350px]:text-[10px]">
+            <span className="flex min-h-[34px] flex-none items-center gap-0.5 whitespace-nowrap text-xs font-semibold text-[var(--color-checkin-home-accent-strong)] max-[350px]:text-[10px]">
               查看月历
               <ChevronRight className="h-3.5 w-3.5" aria-hidden />
             </span>
