@@ -4,11 +4,12 @@ interface NotificationBellProps {
   unreadCount: number
   countLoaded: boolean
   onClick: () => void
+  showBadge?: boolean
 }
 
 /** A single notice badge for the shared title bar; the API store owns the count. */
-export default function NotificationBell({ unreadCount, countLoaded, onClick }: NotificationBellProps) {
-  const hasUnread = countLoaded && unreadCount > 0
+export default function NotificationBell({ unreadCount, countLoaded, onClick, showBadge = false }: NotificationBellProps) {
+  const hasUnread = showBadge && countLoaded && unreadCount > 0
 
   return (
     <button
