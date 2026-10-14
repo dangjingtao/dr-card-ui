@@ -61,7 +61,7 @@ describe('Redeem updated API and shared full-screen project selector', () => {
     expect(within(dialog).getByText('Abc- 123456')).toBeTruthy()
     expect(within(dialog).queryByText(/泡泡值余额/)).toBeNull()
     expect(mocks.redeemCardCode).not.toHaveBeenCalled()
-    expect(within(dialog).getByRole('button', { name: '请选择适用片区' })).toBeDisabled()
+    expect((within(dialog).getByRole('button', { name: '请选择适用片区' }) as HTMLButtonElement).disabled).toBe(true)
 
     fireEvent.click(selectProject(dialog))
     await waitFor(() => expect(mocks.redeemCardCode).toHaveBeenCalledWith('Abc- 123456', 12))
@@ -93,7 +93,7 @@ describe('Redeem updated API and shared full-screen project selector', () => {
     expect(await within(dialog).findByText('该兑换码已被使用')).toBeTruthy()
     expect(within(dialog).getByText('ABC123456789')).toBeTruthy()
     expect(screen.queryByText('兑换成功')).toBeNull()
-    expect(within(dialog).getByRole('button', { name: '确认兑换' })).toBeEnabled()
+    expect((within(dialog).getByRole('button', { name: '确认兑换' }) as HTMLButtonElement).disabled).toBe(false)
     fireEvent.click(within(dialog).getByRole('button', { name: '返回兑换码' }))
     expect(screen.getByRole('textbox', { name: '兑换码' })).toHaveProperty('value', 'ABC123456789')
   })
@@ -116,7 +116,7 @@ describe('Redeem updated API and shared full-screen project selector', () => {
       target: { value: 'a1-b2+3' },
     })
     expect((screen.getByRole('textbox', { name: '兑换码' }) as HTMLInputElement).value).toBe('a1-b2+3')
-    expect(screen.getByRole('button', { name: '选择适用片区' })).toBeDisabled()
+    expect((screen.getByRole('button', { name: '选择适用片区' }) as HTMLButtonElement).disabled).toBe(true)
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(mocks.redeemCardCode).not.toHaveBeenCalled()
   })
