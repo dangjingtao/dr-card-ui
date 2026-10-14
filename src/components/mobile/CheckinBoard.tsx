@@ -4,6 +4,7 @@ import { ArrowUpRight, CalendarDays, Check, CheckCircle2, ChevronRight, Gift, Li
 import { BottomSheet, Button, ProgressIndicator } from '../ui'
 import {
   CHECKIN_CALENDAR,
+  CHECKIN_CYCLE_LABEL,
   CHECKIN_DAILY_TASK,
   CHECKIN_RULE_STATUS,
   CHECKIN_STATUS_TEXT,
@@ -74,6 +75,7 @@ export default function CheckinBoard({ mode = 'home', isSuccess = false, onMakeu
   const remainingDays = Math.max(0, CHECKIN_CYCLE_TARGET - completedDays)
   const challengeComplete = remainingDays === 0
   // preview 的 2026 年 6 月确定性夹具；真实日期由 dev 签到服务提供。
+  const previewMonth = CHECKIN_CYCLE_LABEL.slice(5, 7)
   const firstCycleDay = cycleDays[0]?.day
   const lastCycleDay = cycleDays[cycleDays.length - 1]?.day
 
@@ -140,7 +142,7 @@ export default function CheckinBoard({ mode = 'home', isSuccess = false, onMakeu
               </button>
             </div>
             <p className="ml-[43px] mt-0.5 text-xs leading-[18px] text-text-tertiary">
-              周一至周日{firstCycleDay != null && lastCycleDay != null ? ` · 06/${String(firstCycleDay).padStart(2, '0')}—06/${String(lastCycleDay).padStart(2, '0')}` : ''}
+              周一至周日{firstCycleDay != null && lastCycleDay != null ? ` · ${previewMonth}/${String(firstCycleDay).padStart(2, '0')}—${previewMonth}/${String(lastCycleDay).padStart(2, '0')}` : ''}
             </p>
 
             <button
@@ -158,7 +160,7 @@ export default function CheckinBoard({ mode = 'home', isSuccess = false, onMakeu
                     key={`${index}-${item.day}`}
                     className={`flex min-h-[109px] min-w-0 flex-col items-center rounded-[13px] px-0 py-[9px] text-center max-[350px]:rounded-[10px] ${
                       today
-                        ? 'bg-reward-strong shadow-sm'
+                        ? 'bg-[#aa712f] shadow-sm'
                         : signed
                           ? 'bg-reward-subtle'
                           : 'bg-surface-subtle'
