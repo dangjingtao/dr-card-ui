@@ -1,19 +1,19 @@
 import { useEffect, useMemo, useRef, useState, type UIEvent } from 'react'
 import { createPortal } from 'react-dom'
-import { Check, ChevronLeft, Search, X } from 'lucide-react'
+import { Check, ChevronLeft, Search, Ticket, X } from 'lucide-react'
 import type { CouponRedeemView } from '../../services/coupons'
 import type { CouponProject } from '../../services/couponProjects'
 import { useCouponProjects } from './useCouponProjects'
 
-interface Props {
-  coupon: CouponRedeemView
-  fallbackImage: string
-  balance: number | null
+type Props = {
   submitting: boolean
   submitError: string | null
   onClose: () => void
   onConfirm: (projectId: number) => void
-}
+} & (
+  | { mode: 'code'; code: string }
+  | { mode?: 'coupon'; coupon: CouponRedeemView; fallbackImage: string; balance: number | null }
+)
 
 function ProjectOption({ project, checked, onChoose }: {
   project: CouponProject
@@ -45,9 +45,8 @@ function ProjectOption({ project, checked, onChoose }: {
 }
 
 /** Full-screen, in-page exchange step. Selection survives every search and page change. */
-export default function ProjectSelectScreen({
-  coupon, fallbackImage, balance, submitting, submitError, onClose, onConfirm,
-}: Props) {
+export default function ProjectSelectScreen(props: Props) {
+  const { submitting, submitError, onClose, onConfirm } = props
   const [input, setInput] = useState('')
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState<CouponProject | null>(null)
@@ -131,7 +130,7 @@ export default function ProjectSelectScreen({
             type="button"
             disabled={submitting}
             onClick={onClose}
-            aria-label="返回兑换专区"
+            aria-label={props.mode === 'code' ? '返回兑换码' : '返回兑换专区'}
             className="flex h-10 w-10 items-center justify-center rounded-full active:bg-[#F7EEE3] disabled:opacity-50"
           >
             <ChevronLeft size={23} strokeWidth={1.9} aria-hidden />
@@ -139,21 +138,39 @@ export default function ProjectSelectScreen({
           <h1 className="text-center text-[16px] font-semibold">选择适用片区</h1>
         </div>
 
-        <section className="mx-4 mt-[7px] rounded-[15px] border border-[#F2E9DF] bg-white px-[13px] pb-3 pt-[13px] shadow-[0_3px_16px_rgba(70,51,30,.035)]" aria-label="待兑换券详情">
-          <div className="mb-[10px] flex items-center justify-between text-[11px] text-[#99826B]">
-            <span>待兑换体验券</span><span className="font-medium text-[#7B756F]">×1</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <img src={coupon.image || fallbackImage} alt="" className="h-[67px] w-[67px] shrink-0 rounded-[10px] border border-[#F3EFE7] object-cover" />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[15px] font-semibold leading-5">{coupon.name}</p>
-              <p className="mt-1 truncate text-[11px] leading-[17px] text-[#8B8379]">{coupon.desc}</p>
-              <p className="mt-[7px] text-[11px] font-medium text-[#996B30]">
-                <span className="mr-1 text-[17px] font-bold text-[#DF4800]">{coupon.cost}</span>泡泡值
-              </p>
+        {props.mode === 'code' ? (
+          <section className="mx-4 mt-[7px] rounded-[15px] border border-[#F2E9DF] bg-white px-[13px] py-[13px] shadow-[0_3px_16px_rgba(70,51,30,.035)]" aria-label="待核兑兑换码">
+            <div className="mb-[10px] flex items-center justify-between text-[11px] text-[#99826B]">
+              <span>待核兑兑换码</span><span className="font-medium text-[#7B756F]">×1</span>
             </div>
-          </div>
-        </section>
+            <div className="flex items-center gap-3">
+              <span className="flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-[10px] bg-[#FFF2E9] text-[#DF4800]" aria-hidden>
+                <Ticket size={28} strokeWidth={1.7} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[15px] font-semibold leading-5">兑换码兑换卡券</p>
+                <p className="mt-1 break-all text-[12px] leading-[19px] text-[#8B8379]">{props.code}</p>
+                <p className="mt-[5px] text-[11px] text-[#996B30]">选择片区后确认核兑</p>
+              </div>
+            </div>
+          </section>
+        ) : (
+          <section className="mx-4 mt-[7px] rounded-[15px] border border-[#F2E9DF] bg-white px-[13px] pb-3 pt-[13px] shadow-[0_3px_16px_rgba(70,51,30,.035)]" aria-label="待兑换券详情">
+            <div className="mb-[10px] flex items-center justify-between text-[11px] text-[#99826B]">
+              <span>待兑换体验券</span><span className="font-medium text-[#7B756F]">×1</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <img src={props.coupon.image || props.fallbackImage} alt="" className="h-[67px] w-[67px] shrink-0 rounded-[10px] border border-[#F3EFE7] object-cover" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[15px] font-semibold leading-5">{props.coupon.name}</p>
+                <p className="mt-1 truncate text-[11px] leading-[17px] text-[#8B8379]">{props.coupon.desc}</p>
+                <p className="mt-[7px] text-[11px] font-medium text-[#996B30]">
+                  <span className="mr-1 text-[17px] font-bold text-[#DF4800]">{props.coupon.cost}</span>泡泡值
+                </p>
+              </div>
+            </div>
+          </section>
+        )}
 
         <div className="px-4 pb-[10px] pt-[15px]">
           <div className="flex h-[46px] items-center gap-[10px] rounded-full border border-[#EEE6DC] bg-white px-[15px] focus-within:border-[#ED9C69]">
@@ -241,20 +258,24 @@ export default function ProjectSelectScreen({
 
       <footer className="shrink-0 border-t border-[#F1E9DF] bg-[#FFFBF5] px-4 pb-[max(16px,env(safe-area-inset-bottom))] pt-3">
         {submitError && <p role="alert" className="mb-2 text-[12px] text-danger-text">{submitError}</p>}
-        {coupon.soldOut && <p role="status" className="mb-2 text-[12px] text-danger-text">体验券已兑完</p>}
-        {!coupon.soldOut && balance !== null && balance < coupon.cost && (
-          <p role="status" className="mb-2 text-[12px] text-danger-text">泡泡值不足，暂时无法兑换</p>
+        {props.mode !== 'code' && (
+          <>
+            {props.coupon.soldOut && <p role="status" className="mb-2 text-[12px] text-danger-text">体验券已兑完</p>}
+            {!props.coupon.soldOut && props.balance !== null && props.balance < props.coupon.cost && (
+              <p role="status" className="mb-2 text-[12px] text-danger-text">泡泡值不足，暂时无法兑换</p>
+            )}
+            {!props.coupon.soldOut && props.balance === null && (
+              <p role="status" className="mb-2 text-[12px] text-danger-text">当前余额不可用，请稍后重试</p>
+            )}
+            <div className="mb-3 flex items-baseline justify-between gap-2 text-[12px] text-[#93867A]">
+              <span>泡泡值余额 <b className="text-[#38302A]">{props.balance?.toLocaleString() ?? '--'}</b></span>
+              <span>本次消耗 <b className="text-[14px] text-[#DF4800]">{props.coupon.cost}</b> 泡泡值</span>
+            </div>
+          </>
         )}
-        {!coupon.soldOut && balance === null && (
-          <p role="status" className="mb-2 text-[12px] text-danger-text">当前余额不可用，请稍后重试</p>
-        )}
-        <div className="mb-3 flex items-baseline justify-between gap-2 text-[12px] text-[#93867A]">
-          <span>泡泡值余额 <b className="text-[#38302A]">{balance?.toLocaleString() ?? '--'}</b></span>
-          <span>本次消耗 <b className="text-[14px] text-[#DF4800]">{coupon.cost}</b> 泡泡值</span>
-        </div>
         <button
           type="button"
-          disabled={!selected || submitting || balance === null || balance < coupon.cost || coupon.soldOut}
+          disabled={!selected || submitting || (props.mode !== 'code' && (props.balance === null || props.balance < props.coupon.cost || props.coupon.soldOut))}
           onClick={() => { if (selected) onConfirm(selected.id) }}
           className="h-[49px] w-full rounded-full bg-[#DF4800] text-[15px] font-semibold text-white active:bg-[#C83D00] disabled:bg-[#DCCFC1]"
         >
