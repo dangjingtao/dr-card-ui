@@ -52,7 +52,8 @@ export default function ProjectSelectScreen({
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState<CouponProject | null>(null)
   const scroller = useRef<HTMLElement>(null)
-  const { items, total, page, loading, loadingMore, hasMore, error, loadMoreError, reload, loadMore } =
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const { items, total, page, loading, loadingMore, hasMore, error, loadMoreError, restartRequired, reload, loadMore } =
     useCouponProjects(query)
 
   useEffect(() => {
@@ -62,9 +63,44 @@ export default function ProjectSelectScreen({
 
   useEffect(() => { if (scroller.current) scroller.current.scrollTop = 0 }, [query])
 
+  // An in-page portal must own keyboard focus just like the shared Dialog.
+  // Focus the back action (not the search input) to avoid opening the mobile keyboard.
+  useEffect(() => {
+    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    const dialog = dialogRef.current
+    const first = dialog?.querySelector<HTMLButtonElement>('button:not(:disabled)')
+    first?.focus({ preventScroll: true })
+    const keepFocusInside = (event: FocusEvent) => {
+      if (dialog && event.target instanceof Node && !dialog.contains(event.target)) {
+        first?.focus({ preventScroll: true })
+      }
+    }
+    document.addEventListener('focusin', keepFocusInside)
+    return () => {
+      document.removeEventListener('focusin', keepFocusInside)
+      previous?.focus({ preventScroll: true })
+    }
+  }, [])
+
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && !submitting) onClose()
+      if (event.key === 'Tab') {
+        const elements = [...(dialogRef.current?.querySelectorAll<HTMLElement>(
+          'button:not(:disabled), input:not(:disabled), [tabindex]:not([tabindex="-1"])',
+        ) ?? [])]
+        if (!elements.length) return
+        const first = elements[0]
+        const last = elements[elements.length - 1]
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault()
+          last.focus()
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault()
+          first.focus()
+        }
+      }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
@@ -82,6 +118,7 @@ export default function ProjectSelectScreen({
 
   return createPortal(
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-label="选择适用片区"
@@ -191,7 +228,7 @@ export default function ProjectSelectScreen({
         </div>
         {loadingMore && <p role="status" className="py-4 text-center text-[12px] text-[#AAA299]">正在加载下一页…</p>}
         {loadMoreError && <div role="alert" className="py-4 text-center text-[12px] text-[#716B64]">{loadMoreError}
-          <button type="button" onClick={loadMore} className="ml-2 text-[#DF4800]">重试</button>
+          <button type="button" onClick={restartRequired ? reload : loadMore} className="ml-2 text-[#DF4800]">重试</button>
         </div>}
         {hasMore && !loadingMore && !loadMoreError && (
           <button type="button" onClick={loadMore} className="w-full py-4 text-center text-[12px] text-[#AA6C42]">
