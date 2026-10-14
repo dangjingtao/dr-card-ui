@@ -1,7 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({ request: vi.fn() }))
-vi.mock('./http', () => ({ httpClient: { request: mocks.request } }))
+vi.mock('./http', () => ({
+  httpClient: { request: mocks.request },
+  createBusinessError: (message: string) => new Error(message),
+}))
 import { fetchCouponProjects, COUPON_PROJECT_INDEX_PATH, COUPON_PROJECT_SEARCH_PATH } from './couponProjects'
 
 const response = (page: number) => ({
