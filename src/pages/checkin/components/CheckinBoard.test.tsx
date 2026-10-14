@@ -95,4 +95,31 @@ describe('Issue #220: homepage natural week entry', () => {
     expect(entry.textContent).not.toContain('已满勤')
     expect(entry.textContent).toContain('周奖励以后台活动规则为准')
   })
+
+  it('distinguishes completed-today and signed-day chip from their card backgrounds', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 9, 14, 12))
+    render(
+      <MemoryRouter>
+        <CheckinBoard
+          mode="home"
+          weekRecordsState="success"
+          records={[
+            { id: 1, user_id: 3, points: 10, consecutive_days: 1, status: 10, year: '2026', month: '10', day: '12' },
+            { id: 2, user_id: 3, points: 10, consecutive_days: 3, status: 10, year: '2026', month: '10', day: '14' },
+          ]}
+          signStatus={{ signed: true, consecutiveDays: 3, points: 10, rewardDesc: '' }}
+        />
+      </MemoryRouter>,
+    )
+
+    const today = document.querySelector('[data-checkin-week-day="2026-10-14"]')
+    const monday = document.querySelector('[data-checkin-week-day="2026-10-12"]')
+    expect(today?.textContent).toContain('已签')
+    expect(today?.querySelector('svg')).not.toBeNull()
+    expect(monday?.querySelector(':scope > span:nth-child(2)')?.className).toContain('bg-[var(--premium-100)]')
+    expect(screen.getByText('签到详情')).toBeTruthy()
+    expect(screen.queryByText('签到规则')).toBeNull()
+  })
+
 })
