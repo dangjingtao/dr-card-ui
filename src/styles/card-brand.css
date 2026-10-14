@@ -125,7 +125,14 @@
   --color-checkin-home-day-surface: var(--warm-100);
   --color-checkin-home-day-text: var(--ink-600);
   --color-checkin-home-muted: var(--ink-500);
-  --color-checkin-home-today: var(--premium-600);
+  /* V8 approved 2026-10-14: orange check-in card palette, scoped to home only. */
+  --color-checkin-home-accent: #F77C25;
+  --color-checkin-home-accent-strong: #D96613;
+  --color-checkin-home-icon-surface: #FFF0E4;
+  --color-checkin-home-tile: #F8F7F5;
+  --color-checkin-home-reward-surface: #FFF4EB;
+  --color-checkin-home-today-chip: #FFF5EC;
+  --color-checkin-home-today: var(--color-checkin-home-accent);
   --color-checkin-home-today-text: var(--color-text-inverse);
   /* 首页「每日任务」卡（用户 2026-09-29 参考图确认）：橙调图标底 /
    * 奖励文案走 premium-500；进度条仍走 checkin-success 绿；
