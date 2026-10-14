@@ -40,6 +40,7 @@ function showShell(initialPath: string) {
       children: [
         { path: 'profile', element: <p>会员首页</p> },
         { path: 'points', element: <p>泡泡值</p> },
+        { path: 'dearseed', element: <p>诗得丽</p> },
         { path: 'notifications', element: <p>消息列表</p> },
       ],
     },
@@ -63,6 +64,9 @@ describe('member-center unread badge lifecycle', () => {
     // useNotifications already performs its initial request; do not double-query on mount.
     expect(mocks.refresh).not.toHaveBeenCalled()
 
+    await act(async () => { await router.navigate('/dearseed') })
+    expect(screen.getByRole('button', { name: '通知' }).textContent).toBe('')
+    expect(mocks.refresh).not.toHaveBeenCalled()
     await act(async () => { await router.navigate('/points') })
     expect(mocks.refresh).not.toHaveBeenCalled()
     await act(async () => { await router.navigate('/profile') })
