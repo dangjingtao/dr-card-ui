@@ -413,6 +413,7 @@ export default function CheckinBoard({
               return (
                 <span
                   key={item.dateKey}
+                  data-checkin-week-day={item.dateKey}
                   className={'flex min-h-[106px] min-w-0 flex-col items-center rounded-[13px] px-0 py-[9px] text-center max-[350px]:rounded-[10px] ' + (
                     today ? 'bg-checkin-home-today'
                       : completed ? 'bg-reward-subtle'
@@ -426,15 +427,15 @@ export default function CheckinBoard({
                   </span>
                   <span className={'mt-2.5 flex h-[34px] w-[34px] items-center justify-center rounded-full text-[15px] font-semibold tabular-nums max-[350px]:h-[30px] max-[350px]:w-[30px] ' + (
                     today ? 'bg-reward-subtle text-reward-text'
-                      : completed ? 'bg-reward-subtle text-reward-text'
+                      : completed ? 'bg-[var(--premium-100)] text-reward-text'
                         : 'bg-checkin-home-day-surface text-checkin-home-day-text'
                   )}>
-                    {completed && !today ? <Check className="h-[21px] w-[21px]" strokeWidth={3} /> : item.day}
+                    {completed ? <Check className="h-[21px] w-[21px]" strokeWidth={3} /> : item.day}
                   </span>
                   <span className={'mt-2.5 min-h-[15px] text-[11px] leading-[15px] ' + (
                     today ? 'font-semibold text-checkin-home-today-text' : completed ? 'text-reward-text' : 'text-text-tertiary'
                   )}>
-                    {today ? '今天' : completed ? '已签' : missing ? '漏签' : ''}
+                    {completed ? '已签' : today ? '今天' : missing ? '漏签' : ''}
                   </span>
                 </span>
               )
@@ -458,7 +459,7 @@ export default function CheckinBoard({
 
           <span className="flex min-h-11 items-center justify-between gap-2 px-0.5 text-xs text-text-tertiary">
             <span className="min-w-0">周奖励以后台活动规则为准</span>
-            <span className="flex flex-none items-center gap-0.5 text-reward-text">签到规则 <ChevronRight className="h-3.5 w-3.5" aria-hidden /></span>
+            <span className="flex flex-none items-center gap-0.5 text-reward-text">签到详情 <ChevronRight className="h-3.5 w-3.5" aria-hidden /></span>
           </span>
           {signStatus && (
             <span
