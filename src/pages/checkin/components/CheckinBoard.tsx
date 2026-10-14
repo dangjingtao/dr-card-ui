@@ -406,12 +406,12 @@ export default function CheckinBoard({
                   key={item.dateKey}
                   data-checkin-week-day={item.dateKey}
                   className={'flex min-h-[65px] min-w-0 flex-col items-center rounded-[11px] px-px pb-1.5 pt-[7px] max-[350px]:min-h-[63px] max-[350px]:rounded-[9px] ' + (
-                    today ? 'bg-checkin-home-today shadow-[0_3px_9px_rgba(247,124,37,0.15)]'
+                    today ? 'bg-checkin-home-today shadow-[var(--shadow-checkin-home-today)]'
                       : 'bg-[var(--color-checkin-home-tile)]'
                   )}
                 >
                   <span className={'text-[11px] font-medium leading-[14px] ' + (
-                    today ? 'text-[var(--color-checkin-home-today-weekday)]' : 'text-checkin-home-muted'
+                    today ? 'text-checkin-home-today-text' : 'text-checkin-home-muted'
                   )}>
                     {CHECKIN_WEEK_LABELS[index]}
                   </span>
@@ -628,10 +628,6 @@ function DailyMissionSkeleton() {
   )
 }
 
-/**
- * 首页签到状态提示文案。
- * 未签到且 points=0 时不写「+0 泡泡值」，优先展示 reward_desc（2026-09-28 首页联调文档要求）。
- */
 function CalendarCell({
   item,
   onMakeup,
