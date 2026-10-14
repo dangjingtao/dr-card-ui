@@ -10,11 +10,12 @@ interface ProjectQueryState {
   loadingMore: boolean
   error: string | null
   loadMoreError: string | null
+  restartRequired: boolean
 }
 
 const initial: ProjectQueryState = {
   items: [], page: 0, lastPage: 1, total: 0,
-  loading: true, loadingMore: false, error: null, loadMoreError: null,
+  loading: true, loadingMore: false, error: null, loadMoreError: null, restartRequired: false,
 }
 const errorText = (error: unknown) => error instanceof Error ? error.message : '片区加载失败，请重试'
 
@@ -36,7 +37,7 @@ export function useCouponProjects(keyword: string) {
         setState({
           items: result.data, page: result.current_page, lastPage: result.last_page,
           total: result.total, loading: false, loadingMore: false,
-          error: null, loadMoreError: null,
+          error: null, loadMoreError: null, restartRequired: false,
         })
       },
       error => {
@@ -50,7 +51,7 @@ export function useCouponProjects(keyword: string) {
   const reload = useCallback(() => setRetry(value => value + 1), [])
   const hasMore = !state.loading && !state.error && state.page > 0 && state.page < state.lastPage
   const loadMore = useCallback(() => {
-    if (!hasMore || state.loadingMore || morePending.current) return
+    if (!hasMore || state.loadingMore || state.restartRequired || morePending.current) return
     morePending.current = true
     const current = generation.current
     const next = state.page + 1
@@ -61,12 +62,12 @@ export function useCouponProjects(keyword: string) {
         setState(prev => {
           // Never append a changed catalog as if it were a consistent page.
           if (result.total !== prev.total || result.last_page !== prev.lastPage) {
-            return { ...prev, loadingMore: false, loadMoreError: '列表已变化，请重新搜索' }
+            return { ...prev, loadingMore: false, loadMoreError: '列表已变化，请重新加载', restartRequired: true }
           }
           const rows = new Map(prev.items.map(item => [item.id, item]))
           result.data.forEach(item => rows.set(item.id, item))
           return { ...prev, items: [...rows.values()], page: result.current_page,
-            loadingMore: false, loadMoreError: null }
+            loadingMore: false, loadMoreError: null, restartRequired: false }
         })
         morePending.current = false
       },
