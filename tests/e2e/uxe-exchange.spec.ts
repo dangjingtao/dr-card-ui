@@ -28,9 +28,12 @@ test('@formal-h5 UX-E exchange tabs and full-screen project selection remain wit
   await selector.getByRole('searchbox', { name: '搜索片区或项目名称' }).fill('天河')
   await expect(selector.getByRole('radio', { name: /Mock·广州天河体育西/ })).toBeVisible()
   await expect(selector.getByRole('region', { name: '已选片区' })).toContainText('深圳南山科技园')
-  await expect(selector.getByRole('button', { name: '确认兑换' })).toBeEnabled()
-  await selector.getByRole('button', { name: '确认兑换' }).click()
-  await expect(page.getByRole('dialog', { name: '模拟兑换结果' })).toBeVisible()
+  // The stable preview fixture has 128 points while the coupon costs 200:
+  // preserve genuine insufficiency instead of mutating the fixture to force success.
+  await expect(selector.getByText('泡泡值不足，暂时无法兑换')).toBeVisible()
+  await expect(selector.getByRole('button', { name: '确认兑换' })).toBeDisabled()
+  await page.keyboard.press('Escape')
+  await expect(selector).toHaveCount(0)
   expect(new URL(page.url()).pathname + new URL(page.url()).search).toBe('/exchange')
 })
 
