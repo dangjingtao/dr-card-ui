@@ -379,76 +379,93 @@ export default function CheckinBoard({
           data-checkin-week-state={weekRecordsReady ? 'success' : weekRecordsState ?? 'loading'}
           aria-label={weeklyCompletedDays === null
             ? '查看本周签到，进入本月签到日历'
-            : `查看本周签到，已签到 ${weeklyCompletedDays} / 7 天，进入本月签到日历`}
-          className="mx-4 block w-[calc(100%-2rem)] rounded-[16px] bg-checkin-home-surface px-3.5 pb-3.5 pt-3.5 text-left shadow-bubble transition active:scale-[0.995] active:bg-surface-pressed"
+            : '查看本周签到，已签到 ' + weeklyCompletedDays + ' / 7 天，进入本月签到日历'}
+          className="mx-4 block w-[calc(100%-2rem)] rounded-[21px] border border-border-subtle bg-checkin-home-surface px-[15px] pb-3.5 pt-4 text-left shadow-bubble transition active:scale-[0.995] active:bg-surface-pressed max-[350px]:px-2.5"
         >
-          <div className="flex items-center justify-between gap-3">
-            <span className="flex min-w-0 items-center gap-2 text-[14px] font-semibold leading-5 text-text-primary">
-              <span className="flex h-7 w-7 flex-none items-center justify-center rounded-[8px] bg-secondary text-reward-strong" aria-hidden>
-                <CalendarDays className="h-4 w-4" />
+          {/* UIUX-1014：将已验收的 375px 七日视觉移植到 #220 的真实自然周签到数据。 */}
+          <span className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2">
+            <span className="flex min-w-0 items-center gap-2">
+              <span className="flex h-[34px] w-[34px] flex-none items-center justify-center rounded-[10px] bg-reward-subtle text-reward-strong" aria-hidden>
+                <CalendarDays className="h-[19px] w-[19px]" />
               </span>
-              <span>本周签到</span>
-              <span className="text-[12px] font-semibold text-reward-text">
-                {weeklyCompletedDays === null ? '—/7' : `${weeklyCompletedDays}/7`}
+              <span className="whitespace-nowrap text-[18px] font-bold tracking-tight text-text-primary max-[350px]:text-[16px]">本周签到</span>
+              <span className="whitespace-nowrap text-[17px] font-bold tabular-nums text-reward-text">
+                {weeklyCompletedDays === null ? '—/7' : weeklyCompletedDays + '/7'}
               </span>
             </span>
-            <span className="flex flex-none items-center gap-0.5 rounded-pill bg-surface-subtle px-2.5 py-1 text-[11px] font-medium leading-4 text-text-secondary">
+            <span className="flex min-h-11 flex-none items-center gap-0.5 rounded-full bg-surface-subtle px-2.5 text-xs font-medium text-text-secondary max-[350px]:px-2">
               {weeklyCompletedDays === null
                 ? weekRecordsState === 'error' ? '记录暂不可用' : '记录加载中'
-                : weeklyCompletedDays === 7 ? '本周已满勤' : `已签到 ${weeklyCompletedDays} 天`}
-              <ChevronRight className="h-3 w-3" aria-hidden />
+                : weeklyCompletedDays === 7 ? '本周已满勤' : '已签到 ' + weeklyCompletedDays + ' 天'}
+              <ChevronRight className="h-4 w-4" aria-hidden />
             </span>
-          </div>
+          </span>
 
-          <span className="mt-2 block text-[10px] text-text-tertiary">周一至周日 · {weekLabel}</span>
-          <div className="mt-3 grid grid-cols-7 gap-1" aria-hidden>
+          <span className="mt-1 block text-xs leading-[18px] text-text-tertiary">
+            周一至周日 · {weekLabel}
+          </span>
+
+          <span className="mt-[19px] grid grid-cols-7 gap-[3px] max-[350px]:gap-0.5" aria-hidden>
             {cycleDays.map((item, index) => {
               const completed = weekRecordsReady && item.signed
+              const today = item.state === 'today'
+              const missing = weekRecordsReady && item.state === 'makeup' && !completed
               return (
-                <span key={item.dateKey} className="flex min-w-0 flex-col items-center gap-1.5">
-                  <span className="text-[9px] leading-none text-checkin-home-muted">
+                <span
+                  key={item.dateKey}
+                  className={'flex min-h-[106px] min-w-0 flex-col items-center rounded-[13px] px-0 py-[9px] text-center max-[350px]:rounded-[10px] ' + (
+                    today ? 'bg-checkin-home-today'
+                      : completed ? 'bg-reward-subtle'
+                        : 'bg-surface-subtle'
+                  )}
+                >
+                  <span className={'text-xs font-medium leading-4 ' + (
+                    today ? 'text-checkin-home-today-text' : completed ? 'text-reward-text' : 'text-checkin-home-muted'
+                  )}>
                     {CHECKIN_WEEK_LABELS[index]}
                   </span>
-                  <span
-                    className={`flex h-7 w-7 items-center justify-center text-[10px] font-semibold ${
-                      item.state === 'today' && !completed
-                        ? 'flex-col rounded-[10px] bg-checkin-home-today text-checkin-home-today-text shadow-sm'
-                        : completed
-                          ? 'flex-col rounded-full bg-checkin-home-day-surface text-reward-strong'
-                          : item.state === 'upcoming'
-                            ? 'rounded-full bg-checkin-home-day-surface text-text-tertiary/60'
-                            : 'rounded-full bg-checkin-home-day-surface text-checkin-home-day-text'
-                    }`}
-                  >
-                    {item.state === 'today' && !completed ? (
-                      <>
-                        <span className="text-[10px] leading-3">{item.day}</span>
-                        <span className="mt-0.5 text-[8px] font-medium leading-3">今天</span>
-                      </>
-                    ) : completed ? (
-                      <>
-                        <Check className="h-2.5 w-2.5" strokeWidth={3} />
-                        <span className="mt-0.5 text-[8px] leading-none">{item.day}</span>
-                      </>
-                    ) : (
-                      item.day
-                    )}
+                  <span className={'mt-2.5 flex h-[34px] w-[34px] items-center justify-center rounded-full text-[15px] font-semibold tabular-nums max-[350px]:h-[30px] max-[350px]:w-[30px] ' + (
+                    today ? 'bg-reward-subtle text-reward-text'
+                      : completed ? 'bg-reward-subtle text-reward-text'
+                        : 'bg-checkin-home-day-surface text-checkin-home-day-text'
+                  )}>
+                    {completed && !today ? <Check className="h-[21px] w-[21px]" strokeWidth={3} /> : item.day}
+                  </span>
+                  <span className={'mt-2.5 min-h-[15px] text-[11px] leading-[15px] ' + (
+                    today ? 'font-semibold text-checkin-home-today-text' : completed ? 'text-reward-text' : 'text-text-tertiary'
+                  )}>
+                    {today ? '今天' : completed ? '已签' : missing ? '漏签' : ''}
                   </span>
                 </span>
               )
             })}
-          </div>
+          </span>
 
-          <span className="mt-3 flex items-center justify-between gap-2 text-[11px] leading-4 text-text-tertiary">
-            <span>周奖励以后台活动规则为准</span>
-            <span className="flex items-center gap-0.5 whitespace-nowrap text-reward-text">查看月历 <ChevronRight className="h-3 w-3" aria-hidden /></span>
+          <span className="mt-3.5 flex min-h-[70px] items-center gap-2.5 rounded-[13px] bg-reward-subtle px-2.5 py-3">
+            <span className="flex h-[30px] w-[30px] flex-none items-center justify-center text-reward-strong" aria-hidden>
+              <Gift className="h-6 w-6" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-semibold leading-5 text-text-primary">每日签到得泡泡值</span>
+              <span className="mt-0.5 block text-xs leading-[18px] text-text-tertiary">
+                {weeklyCompletedDays === null ? '签到记录加载后显示进度' : '本周累计已签 ' + weeklyCompletedDays + ' 天'}
+              </span>
+            </span>
+            <span className="flex min-h-11 flex-none items-center gap-0.5 whitespace-nowrap text-xs font-semibold text-reward-text">
+              查看月历 <ChevronRight className="h-4 w-4" aria-hidden />
+            </span>
+          </span>
+
+          <span className="flex min-h-11 items-center justify-between gap-2 px-0.5 text-xs text-text-tertiary">
+            <span className="min-w-0">周奖励以后台活动规则为准</span>
+            <span className="flex flex-none items-center gap-0.5 text-reward-text">签到规则 <ChevronRight className="h-3.5 w-3.5" aria-hidden /></span>
           </span>
           {signStatus && (
             <span
               data-checkin-sign-status={signStatus.signed ? 'signed' : 'unsigned'}
-              className={`mt-2 flex items-center gap-1 text-[11px] leading-4 ${
+              className={'flex items-center gap-1 border-t border-border-subtle pt-2 text-xs leading-5 ' + (
                 signStatus.signed ? 'text-reward-text' : 'text-text-tertiary'
-              }`}
+              )}
             >
               {signStatus.signed && <Check className="h-3 w-3" strokeWidth={3} aria-hidden />}
               {buildSignStatusHint(signStatus)}
