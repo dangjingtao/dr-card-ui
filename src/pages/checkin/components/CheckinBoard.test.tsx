@@ -141,4 +141,26 @@ describe('Issue #220: homepage natural week entry', () => {
     expect(entry.textContent).toContain('每日签到 · 领取泡泡值')
     expect(entry.textContent).not.toContain('+10')
   })
+
+  it('keeps loading distinct from failure and hides confirmed zero points', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 9, 14, 12))
+    render(
+      <MemoryRouter>
+        <CheckinBoard
+          mode="home"
+          weekRecordsState="loading"
+          records={null}
+          signStatus={{ signed: false, consecutiveDays: 0, points: 0, rewardDesc: '' }}
+        />
+      </MemoryRouter>,
+    )
+
+    const entry = screen.getByRole('button', { name: '查看本周签到，进入本月签到日历' })
+    expect(entry.textContent).toContain('—/7')
+    expect(entry.textContent).toContain('签到记录加载中')
+    expect(entry.textContent).not.toContain('签到记录暂不可用')
+    expect(entry.textContent).not.toContain('+0')
+  })
+
 })
