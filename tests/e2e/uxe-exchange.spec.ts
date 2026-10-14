@@ -31,7 +31,7 @@ test('@formal-h5 UX-E exchange tabs and full-screen project selection remain wit
   await expect(selector.getByRole('button', { name: '确认兑换' })).toBeEnabled()
   await selector.getByRole('button', { name: '确认兑换' }).click()
   await expect(page.getByRole('dialog', { name: '模拟兑换结果' })).toBeVisible()
-  expect(new URL(page.url()).pathname + new URL(page.url()).search).toBe('/exchange'
+  expect(new URL(page.url()).pathname + new URL(page.url()).search).toBe('/exchange')
 })
 
 test('@formal-h5 UX-E legacy result query must not show fake success', async ({ page }) => {
