@@ -96,7 +96,7 @@ describe('Issue #220: homepage natural week entry', () => {
     expect(entry.textContent).toContain('周奖励以后台活动规则为准')
   })
 
-  it('distinguishes completed-today and signed-day chip from their card backgrounds', () => {
+  it('renders V8 short day tiles, dates only for today, signed check for earlier dates, and API-driven points', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2026, 9, 14, 12))
     render(
@@ -106,20 +106,39 @@ describe('Issue #220: homepage natural week entry', () => {
           weekRecordsState="success"
           records={[
             { id: 1, user_id: 3, points: 10, consecutive_days: 1, status: 10, year: '2026', month: '10', day: '12' },
-            { id: 2, user_id: 3, points: 10, consecutive_days: 3, status: 10, year: '2026', month: '10', day: '14' },
+            { id: 2, user_id: 3, points: 30, consecutive_days: 3, status: 10, year: '2026', month: '10', day: '14' },
           ]}
-          signStatus={{ signed: true, consecutiveDays: 3, points: 10, rewardDesc: '' }}
+          signStatus={{ signed: true, consecutiveDays: 3, points: 30, rewardDesc: '' }}
         />
       </MemoryRouter>,
     )
 
     const today = document.querySelector('[data-checkin-week-day="2026-10-14"]')
     const monday = document.querySelector('[data-checkin-week-day="2026-10-12"]')
-    expect(today?.textContent).toContain('已签')
-    expect(today?.querySelector('svg')).not.toBeNull()
-    expect(monday?.querySelector(':scope > span:nth-child(2)')?.className).toContain('bg-[var(--premium-100)]')
-    expect(screen.getByText('签到详情')).toBeTruthy()
+    expect(today?.textContent).toContain('14')
+    expect(today?.textContent).not.toContain('今天')
+    expect(today?.textContent).not.toContain('已签')
+    expect(today?.querySelector('svg')).toBeNull()
+    expect(today?.className).toContain('min-h-[65px]')
+    expect(monday?.querySelector('svg')).not.toBeNull()
+    expect(screen.getByText('+30')).toBeTruthy()
+    expect(screen.getByText('查看月历')).toBeTruthy()
+    expect(screen.queryByText('签到详情')).toBeNull()
     expect(screen.queryByText('签到规则')).toBeNull()
   })
 
+  it('never fills missing daily points with a guessed +10', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 9, 14, 12))
+    render(
+      <MemoryRouter>
+        <CheckinBoard mode="home" weekRecordsState="error" records={null} signStatus={null} />
+      </MemoryRouter>,
+    )
+    const entry = screen.getByRole('button', { name: '查看本周签到，进入本月签到日历' })
+    expect(entry.textContent).toContain('—/7')
+    expect(entry.textContent).toContain('签到记录暂不可用')
+    expect(entry.textContent).toContain('每日签到 · 领取泡泡值')
+    expect(entry.textContent).not.toContain('+10')
+  })
 })
