@@ -46,7 +46,7 @@ describe('coupon exchange backend contract', () => {
       data: [],
     })
 
-    await expect(redeemExchangeProduct(3)).rejects.toThrow(message)
+    await expect(redeemExchangeProduct(3, 12)).rejects.toThrow(message)
   })
 
   it('rejects malformed successful data instead of showing a false success', async () => {
@@ -57,6 +57,6 @@ describe('coupon exchange backend contract', () => {
       data: { coupon_id: 3 },
     })
 
-    await expect(redeemExchangeProduct(3)).rejects.toThrow('coupons.exchange.data')
+    await expect(redeemExchangeProduct(3, 12)).rejects.toThrow('coupons.exchange.data')
   })
 })
