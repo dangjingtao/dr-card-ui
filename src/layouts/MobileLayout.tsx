@@ -217,6 +217,7 @@ export default function MobileLayout() {
           <NotificationBell
             unreadCount={unreadCount}
             countLoaded={countLoaded}
+            showBadge={location.pathname === '/profile'}
             onClick={() => navigateShell('/notifications')}
           />
         )
