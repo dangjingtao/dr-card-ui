@@ -251,11 +251,11 @@ describe('UX-E: page-local exchange flow', () => {
       .mockResolvedValueOnce({ couponId: 1, points: 300 })
     renderExchange()
     let sheet = openCoupon()
-    fireEvent.click(within(sheet).getByRole('button', { name: '立即兑换' }))
+    fireEvent.click(chooseProject(sheet))
     await waitFor(() => expect(within(sheet).getByRole('alert').textContent).toContain('后端拒绝兑换'))
     expect(screen.getByTestId('route').textContent).toBe('/exchange')
 
-    fireEvent.click(within(sheet).getByRole('button', { name: '立即兑换' }))
+    fireEvent.click(chooseProject(sheet))
     await waitFor(() => expect(screen.getByRole('dialog', { name: '模拟兑换结果' })).toBeTruthy())
     expect(mocks.redeem).toHaveBeenCalledTimes(2)
     expect(screen.getByTestId('route').textContent).toBe('/exchange')
@@ -269,7 +269,7 @@ describe('UX-E: page-local exchange flow', () => {
     }))
     renderExchange()
     const sheet = openCoupon()
-    const submit = within(sheet).getByRole('button', { name: '立即兑换' })
+    const submit = chooseProject(sheet)
     fireEvent.click(submit)
     fireEvent.click(submit)
     expect(mocks.redeem).toHaveBeenCalledTimes(1)
@@ -284,7 +284,7 @@ describe('UX-E: page-local exchange flow', () => {
     mocks.redeem.mockResolvedValue({ couponId: 1, points: 300 })
     renderExchange()
     const sheet = openCoupon()
-    fireEvent.click(within(sheet).getByRole('button', { name: '立即兑换' }))
+    fireEvent.click(chooseProject(sheet))
     const result = await screen.findByRole('dialog', { name: '模拟兑换结果' })
     expect(within(result).getByText('当前为 Mock 预览，仅验证正式兑换协议与页面状态，不代表真实扣值或发券。')).toBeTruthy()
     expect(mocks.reloadPoints).toHaveBeenCalledOnce()
@@ -308,7 +308,7 @@ describe('UX-E: page-local exchange flow', () => {
     renderExchange()
 
     const sheet = openCoupon()
-    const submit = within(sheet).getByRole('button', { name: '立即兑换' }) as HTMLButtonElement
+    const submit = chooseProject(sheet) as HTMLButtonElement
     expect(submit.disabled).toBe(false)
     fireEvent.click(submit)
 
