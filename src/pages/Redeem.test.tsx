@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -37,9 +37,14 @@ vi.mock('../components/mobile/PageContainer', () => ({
 import Redeem from './Redeem'
 import { AppError } from '../lib/appError'
 
-const renderRedeem = () => render(
-  <MemoryRouter initialEntries={['/redeem']}><Redeem /></MemoryRouter>,
-)
+const renderRedeem = () => {
+  const router = createMemoryRouter(
+    [{ path: '/before', element: <div>上一页</div> }, { path: '/redeem', element: <Redeem /> }],
+    { initialEntries: ['/before', '/redeem'] },
+  )
+  render(<RouterProvider router={router} />)
+  return router
+}
 const enterCode = (code = 'Abc- 123456') => {
   fireEvent.change(screen.getByRole('textbox', { name: '兑换码' }), {
     target: { value: code },
@@ -83,6 +88,17 @@ describe('Redeem updated API and shared full-screen project selector', () => {
     expect(within(dialog).getByRole('region', { name: '已选片区' }).textContent).toContain('南沙蕉门')
     fireEvent.click(within(dialog).getByRole('button', { name: '确认兑换' }))
     await waitFor(() => expect(mocks.redeemCardCode).toHaveBeenCalledWith('ABC123456789', 12))
+  })
+
+  it('system/browser back closes the selector first without adding a history entry', async () => {
+    const router = renderRedeem()
+    const dialog = enterCode('ABC123456789')
+    await router.navigate(-1)
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: '选择适用片区' })).toBeNull())
+    expect(router.state.location.pathname).toBe('/redeem')
+    expect(screen.getByRole('textbox', { name: '兑换码' })).toHaveProperty('value', 'ABC123456789')
+    expect(mocks.redeemCardCode).not.toHaveBeenCalled()
+    expect(dialog.isConnected).toBe(false)
   })
 
   it('keeps the picker and original code when the backend returns a business error', async () => {
