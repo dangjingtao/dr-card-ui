@@ -241,6 +241,13 @@ export default function ProjectSelectScreen({
 
       <footer className="shrink-0 border-t border-[#F1E9DF] bg-[#FFFBF5] px-4 pb-[max(16px,env(safe-area-inset-bottom))] pt-3">
         {submitError && <p role="alert" className="mb-2 text-[12px] text-danger-text">{submitError}</p>}
+        {coupon.soldOut && <p role="status" className="mb-2 text-[12px] text-danger-text">体验券已兑完</p>}
+        {!coupon.soldOut && balance !== null && balance < coupon.cost && (
+          <p role="status" className="mb-2 text-[12px] text-danger-text">泡泡值不足，暂时无法兑换</p>
+        )}
+        {!coupon.soldOut && balance === null && (
+          <p role="status" className="mb-2 text-[12px] text-danger-text">当前余额不可用，请稍后重试</p>
+        )
         <div className="mb-3 flex items-baseline justify-between gap-2 text-[12px] text-[#93867A]">
           <span>泡泡值余额 <b className="text-[#38302A]">{balance?.toLocaleString() ?? '--'}</b></span>
           <span>本次消耗 <b className="text-[14px] text-[#DF4800]">{coupon.cost}</b> 泡泡值</span>
