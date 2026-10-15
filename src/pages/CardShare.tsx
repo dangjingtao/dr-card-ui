@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Check, RefreshCw, Search, UserRound } from 'lucide-react'
+import { Check, RefreshCw, UserRound } from 'lucide-react'
 import PageContainer from '../components/mobile/PageContainer'
 import DebugPanel from '../components/mobile/DebugPanel'
 import { Button, SearchField } from '../components/ui'
