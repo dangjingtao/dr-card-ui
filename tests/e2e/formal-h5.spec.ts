@@ -329,14 +329,16 @@ test('@formal-h5 H022 shared claim-success implementation keeps route variants d
 test('@formal-h5 H022 prototype states stay on one route implementation', async ({ page }) => {
   const runtimeErrors = collectRuntimeErrors(page)
 
-  await page.goto('/card/share', { waitUntil: 'domcontentloaded' })
+  await page.goto('/card/share?coupon=91001', { waitUntil: 'domcontentloaded' })
   await expectHealthyFormalRoute(page)
-  await expect(page).toHaveURL(/\/card\/share$/)
+  await expect(page).toHaveURL(/\\/card\\/share\\?coupon=91001$/)
+  await expect(page.getByRole('button', { name: '确认选择' })).toBeDisabled()
 
+  // Historic success URL must not imply a transfer without coupon ID or API.
   await page.goto('/card/share?state=success', { waitUntil: 'domcontentloaded' })
   await expectHealthyFormalRoute(page)
-  await expect(page).toHaveURL(/\/card\/share\?state=success$/)
-  await expect(page.getByText('分享成功', { exact: true })).toBeVisible()
+  await expect(page.getByText('未选择待转赠卡券，请从卡包点击「转赠」进入')).toBeVisible()
+  await expect(page.getByText('分享成功', { exact: true })).toHaveCount(0)
 
   await page.goto('/service/chat/human?state=queuing', { waitUntil: 'domcontentloaded' })
   await expectHealthyFormalRoute(page)
@@ -352,7 +354,7 @@ test('@formal-h5 H022 prototype states stay on one route implementation', async 
 test('@formal-h5 H023 shared SearchField stays consistent across formal H5 consumers', async ({ page }) => {
   const runtimeErrors = collectRuntimeErrors(page)
 
-  await page.goto('/card/share', { waitUntil: 'domcontentloaded' })
+  await page.goto('/card/share?coupon=91001', { waitUntil: 'domcontentloaded' })
   await expectHealthyFormalRoute(page)
   const cardShareField = page.locator('[data-search-field="subtle"][data-search-field-size="regular"] input')
   await expect(cardShareField).toHaveCount(1)
