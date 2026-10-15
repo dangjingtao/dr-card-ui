@@ -331,7 +331,7 @@ test('@formal-h5 H022 prototype states stay on one route implementation', async 
 
   await page.goto('/card/share?coupon=91001', { waitUntil: 'domcontentloaded' })
   await expectHealthyFormalRoute(page)
-  await expect(page).toHaveURL(/\\/card\\/share\\?coupon=91001$/)
+  expect(new URL(page.url()).pathname + new URL(page.url()).search).toBe('/card/share?coupon=91001')
   await expect(page.getByRole('button', { name: '确认选择' })).toBeDisabled()
 
   // Historic success URL must not imply a transfer without coupon ID or API.
