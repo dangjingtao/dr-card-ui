@@ -7,15 +7,15 @@ test('@formal-h5 card ticket fits Chromium 88-compatible narrow flex sizing', as
     const title = page.getByText('Mock 新人体验活动')
     await expect(title).toBeVisible()
     const ticket = title.locator('xpath=ancestor::article')
-    await title.evaluate(node => {
-      node.textContent = '天津生物工程职业技术学院洗护体验与公益合作活动'.repeat(2)
-    })
+    // Change the heading and inspect its geometry in ONE locator evaluation.
+    // Playwright locators are lazy; querying by the old text after replacing it would time out.
     const layout = await ticket.evaluate(node => {
       const article = node as HTMLElement
       const pane = article.querySelector('h3')?.parentElement?.parentElement as HTMLElement | null
       const titleElement = article.querySelector('h3') as HTMLElement | null
       const buttons = Array.from(article.querySelectorAll('button')) as HTMLButtonElement[]
       if (!pane || !titleElement || buttons.length !== 2) throw new Error('ticket layout nodes missing')
+      titleElement.textContent = '天津生物工程职业技术学院洗护体验与公益合作活动'.repeat(2)
       const bounds = article.getBoundingClientRect()
       const right = pane.getBoundingClientRect()
       const titleBounds = titleElement.getBoundingClientRect()
