@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   getSession: vi.fn(() => ({ accessToken: 'secret-token', userInfo: null })),
   bootstrap: vi.fn(),
   refresh: vi.fn(),
+  getSignature: vi.fn(),
 }))
 vi.mock('../app/config/runtime', () => ({
   runtimePolicy: { dataMode: 'api', apiBaseUrl: 'https://api.test.example' },
@@ -14,6 +15,7 @@ vi.mock('./auth/session', () => ({
   getAuthSession: mocks.getSession,
   bootstrapAuthSession: mocks.bootstrap,
   refreshChatAuthAfterUnauthorized: mocks.refresh,
+  getApiSignatureCredentials: mocks.getSignature,
 }))
 
 const encode = (value: string) => new TextEncoder().encode(value)
@@ -32,6 +34,7 @@ beforeEach(() => {
   mocks.getSession.mockReset().mockReturnValue({ accessToken: 'secret-token', userInfo: null })
   mocks.bootstrap.mockReset().mockResolvedValue({ accessToken: 'new-token', userInfo: null })
   mocks.refresh.mockReset().mockResolvedValue(undefined)
+  mocks.getSignature.mockReset().mockResolvedValue({ token: 'upstream-token', salt: 'test-salt' })
   vi.stubGlobal('fetch', mocks.fetch)
 })
 afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals() })
@@ -46,7 +49,11 @@ describe('#136 non-idempotent AI stream transport', () => {
     expect(delta).toEqual(['你🙂好'])
     expect(mocks.fetch).toHaveBeenCalledTimes(1)
     const [url, options] = mocks.fetch.mock.calls[0]
-    expect(url).toBe('https://api.test.example' + CHAT_ADD_PATH)
+    const signedUrl = new URL(url)
+    expect(signedUrl.origin + signedUrl.pathname).toBe('https://api.test.example' + CHAT_ADD_PATH)
+    expect(signedUrl.searchParams.get('token')).toBe('upstream-token')
+    expect(signedUrl.searchParams.get('secstr')).toMatch(/^[0-9a-f]{32}$/)
+    expect(options.headers.salt).toBe('test-salt')
     expect(options.method).toBe('POST')
     expect(options.headers).toMatchObject({
       Authorization: 'Bearer secret-token',
