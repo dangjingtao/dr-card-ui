@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { connectChatSocket, transferChatToHuman } from './chatHuman'
+import { AppError } from './http'
 
 const mocks = vi.hoisted(() => {
   const handlers = new Map<string, (...args: any[]) => void>()
@@ -90,6 +91,19 @@ describe('#138 Socket.IO client contract', () => {
     expect(request.method).toBe('POST')
     expect(JSON.parse(request.body)).toEqual({})
     expect(mocks.fetch).toHaveBeenCalledTimes(1)
+  })
+
+  it.each([
+    'AUTH_SIGNATURE_CREDENTIALS_MISSING',
+    'AUTH_NATIVE_CREDENTIALS_INVALID',
+  ])('preserves %s before sending any transfer request', async code => {
+    const error = new AppError({
+      kind: 'contract', code, message: 'Native 登录凭据缺少 token 或 salt',
+    })
+    mocks.signature.mockRejectedValueOnce(error)
+    await expect(transferChatToHuman()).rejects.toBe(error)
+    expect(mocks.fetch).not.toHaveBeenCalled()
+    expect(mocks.refresh).not.toHaveBeenCalled()
   })
 
   it('does not fake transfer success on business error, network failure or invalid mode', async () => {
