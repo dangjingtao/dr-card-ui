@@ -89,6 +89,20 @@ test.describe('@formal-h5 active route smoke', () => {
   }
 })
 
+test('@formal-h5 chat long OSS URLs stay inside narrow WebView bubbles', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 700 })
+  await page.goto('/service/chat', { waitUntil: 'domcontentloaded' })
+  const longUrl = 'https://hexxueyantest.oss-cn-guangzhou.aliyuncs.com/storage/20261008/' + 'a'.repeat(90)
+  await page.getByRole('textbox', { name: '输入你的问题' }).fill(longUrl)
+  await page.getByRole('textbox', { name: '输入你的问题' }).press('Enter')
+  await expect(page.locator('[data-chat-role="user"]')).toContainText(longUrl)
+  await expectHealthyFormalRoute(page)
+  const overflowBubbles = await page.locator('[data-chat-bubble]').evaluateAll((nodes) =>
+    nodes.filter((node) => node.scrollWidth > node.clientWidth + 1).length,
+  )
+  expect(overflowBubbles).toBe(0)
+})
+
 test('@formal-h5 first-level tab uses CSS fade without root snapshot', async ({ page }) => {
   const runtimeErrors = collectRuntimeErrors(page)
 
@@ -153,12 +167,14 @@ test('@formal-h5 H021 title-bar actions remain available', async ({ page }) => {
 
   await page.goto('/service/chat', { waitUntil: 'domcontentloaded' })
   await expectHealthyFormalRoute(page)
-  // Compat: the TitleBar WeCom pill is hidden; the original QR sheet is opened by bottom 人工.
-  await expect(page.locator('[data-chat-wecom-entry]')).toHaveCount(0)
+  // The real human action stays in the chat; the QR is a distinct titlebar action.
   const humanEntry = page.locator('[data-chat-human-entry]')
   await expect(humanEntry).toBeVisible()
   await expect(humanEntry).toBeEnabled()
   await humanEntry.click()
+  await expect(page.locator('[data-human-stage]')).toHaveAttribute('data-human-stage', 'queuing')
+  await expect(page.locator('[data-chat-human-sheet]')).toHaveCount(0)
+  await page.getByRole('button', { name: '福利官二维码' }).click()
   await expect(page.locator('[data-chat-human-sheet]')).toBeVisible()
   await page.getByRole('button', { name: '取消' }).click()
   await expect(page.locator('[data-chat-human-sheet]')).toHaveCount(0)
