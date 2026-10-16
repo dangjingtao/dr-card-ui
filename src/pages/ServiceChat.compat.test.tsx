@@ -37,17 +37,14 @@ afterEach(() => {
 })
 
 describe('legacy/mock ServiceChat compatibility', () => {
-  it('opens the old WeCom sheet from 人工 without starting the preserved local queue', () => {
+  it('restores the original human button without opening the separate WeCom QR', () => {
     render(<MemoryRouter initialEntries={['/service/chat']}><ServiceChat /></MemoryRouter>)
-    const button = screen.getByRole('button', { name: '人工' })
-    expect(button.hasAttribute('disabled')).toBe(false)
+    const button = screen.getByRole('button', { name: '人工' }) as HTMLButtonElement
+    expect(button.disabled).toBe(false)
     fireEvent.click(button)
-    expect(screen.getByText('原企微二维码区域')).toBeTruthy()
-    expect(document.querySelector('[data-human-stage]')?.getAttribute('data-human-stage')).toBe('idle')
-    fireEvent.click(screen.getByRole('button', { name: '取消' }))
+    expect(document.querySelector('[data-human-stage]')?.getAttribute('data-human-stage')).toBe('queuing')
+    expect(button.disabled).toBe(true)
     expect(screen.queryByText('原企微二维码区域')).toBeNull()
-    fireEvent.click(button)
-    expect(screen.getByText('原企微二维码区域')).toBeTruthy()
   })
 
   it('keeps mock AI input available and original typed 人工 transfer reachable', () => {
