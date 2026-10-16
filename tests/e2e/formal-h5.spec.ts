@@ -94,7 +94,7 @@ test('@formal-h5 chat long OSS URLs stay inside narrow WebView bubbles', async (
   await page.goto('/service/chat', { waitUntil: 'domcontentloaded' })
   const longUrl = 'https://hexxueyantest.oss-cn-guangzhou.aliyuncs.com/storage/20261008/' + 'a'.repeat(90)
   await page.getByRole('textbox', { name: '输入你的问题' }).fill(longUrl)
-  await page.getByRole('button', { name: '发送' }).click()
+  await page.getByRole('textbox', { name: '输入你的问题' }).press('Enter')
   await expect(page.locator('[data-chat-role="user"]')).toContainText(longUrl)
   await expectHealthyFormalRoute(page)
   const overflowBubbles = await page.locator('[data-chat-bubble]').evaluateAll((nodes) =>
