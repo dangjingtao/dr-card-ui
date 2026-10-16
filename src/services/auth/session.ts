@@ -193,7 +193,15 @@ export async function getApiSignatureCredentials(): Promise<ApiSignatureCredenti
   if (!readSession()) {
     throw createContractError('未建立签名会话', { code: 'AUTH_SIGNATURE_CREDENTIALS_MISSING' })
   }
-  const native = await getLoginToken()
+  // Bridge failures happen before the HTTP request; preserve that distinction.
+  let native: Awaited<ReturnType<typeof getLoginToken>>
+  try {
+    native = await getLoginToken()
+  } catch {
+    throw createContractError('无法取得 Native 签名凭据，请检查 App 登录状态', {
+      code: 'AUTH_NATIVE_CREDENTIALS_UNAVAILABLE',
+    })
+  }
   if (!native.token.trim() || !native.salt?.trim()) {
     throw createContractError('Native 登录凭据缺少 token 或 salt', {
       code: 'AUTH_NATIVE_CREDENTIALS_INVALID',
@@ -201,6 +209,14 @@ export async function getApiSignatureCredentials(): Promise<ApiSignatureCredenti
   }
   signatureCredentials = { token: native.token, salt: native.salt }
   return signatureCredentials
+}
+
+/** Only these failures certify that signing stopped before HTTP transport. */
+export function isApiSignaturePreflightError(error: unknown): boolean {
+  return isAppError(error) &&
+    (error.code === 'AUTH_SIGNATURE_CREDENTIALS_MISSING' ||
+      error.code === 'AUTH_NATIVE_CREDENTIALS_INVALID' ||
+      error.code === 'AUTH_NATIVE_CREDENTIALS_UNAVAILABLE')
 }
 
 setHttpSignatureCredentialsProvider(getApiSignatureCredentials)
