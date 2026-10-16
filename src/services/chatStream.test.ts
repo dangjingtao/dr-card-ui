@@ -191,6 +191,11 @@ describe('#136 non-idempotent AI stream transport', () => {
 
   it('bootstraps session when missing before sending the only POST', async () => {
     mocks.getSession.mockReturnValue(undefined as unknown as { accessToken: string; userInfo: null })
+    mocks.bootstrap.mockImplementationOnce(async () => {
+      const session = { accessToken: 'new-token', userInfo: null }
+      mocks.getSession.mockReturnValue(session)
+      return session
+    })
     mocks.fetch.mockResolvedValueOnce(stream('data: {"type":"done"}\n\n'))
     await expect(sendChatStream('hello')).resolves.toMatchObject({ mode: 'ai', text: '' })
     expect(mocks.bootstrap).toHaveBeenCalledOnce()
