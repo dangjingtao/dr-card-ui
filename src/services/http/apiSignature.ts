@@ -1,4 +1,4 @@
-import md5 from 'js-md5'
+import { md5 } from 'js-md5'
 
 /** Card API /api/** request signing; matches backend src/middleware/auth.ts. */
 export interface ApiSignatureCredentials {
