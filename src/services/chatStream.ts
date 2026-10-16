@@ -61,6 +61,10 @@ export async function sendChatStream(content: string, options: ChatStreamOptions
     window.addEventListener('dr-card-ui:auth-session-cleared', onSessionChange)
     const body = { content: message, msg_type: 1 }
     const credentials = await getApiSignatureCredentials()
+    // Native credential resolution may complete after cancellation or account switch.
+    if (controller.signal.aborted || getAuthSession()?.accessToken !== authToken) {
+      throw new AppError({ kind: 'cancelled', message: '客服发送已取消或账号已变化' })
+    }
     const url = signCardApiUrl(base.replace(/\/+$/, '').replace(/\/api$/, '') + CHAT_ADD_PATH,
       undefined, body, credentials)
     const response = await fetch(url, {
