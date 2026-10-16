@@ -148,6 +148,19 @@ describe('#136 non-idempotent AI stream transport', () => {
     expect(mocks.fetch).toHaveBeenCalledTimes(1)
   })
 
+  it('cancels before fetch when signature credentials resolve after abort', async () => {
+    let resolveCredentials!: (value: { token: string; salt: string }) => void
+    mocks.getSignature.mockReturnValueOnce(new Promise(resolve => {
+      resolveCredentials = resolve
+    }))
+    const controller = new AbortController()
+    const request = sendChatStream('取消前置签名', { signal: controller.signal })
+    controller.abort()
+    resolveCredentials({ token: 'upstream-token', salt: 'test-salt' })
+    await expect(request).rejects.toMatchObject({ kind: 'cancelled' })
+    expect(mocks.fetch).not.toHaveBeenCalled()
+  })
+
   it('times out an unresponsive stream and does not issue another request', async () => {
     vi.useFakeTimers()
     mocks.fetch.mockImplementationOnce((_url: string, options: RequestInit) =>
