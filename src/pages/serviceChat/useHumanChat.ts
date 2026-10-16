@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { getAuthSession } from '../../services/auth/session'
+import { getAuthSession, isApiSignaturePreflightError } from '../../services/auth/session'
 import { connectChatSocket, transferChatToHuman, type ChatSocketHandle, type ChatSocketStatus } from '../../services/chatHuman'
 import type { BackendChatRecord } from '../../services/chatMessages'
-import { isAppError } from '../../services/http'
 
 type State = {
   key: string
@@ -142,9 +141,7 @@ export function useHumanChat(
       if (generation.current !== epoch || tokenKey() !== key) return false
       // Only these signature preflight failures guarantee that no HTTP transfer was sent.
       // Keep the history-check guard for failures after the network request may have started.
-      const noRequestSent = isAppError(error) &&
-        (error.code === 'AUTH_SIGNATURE_CREDENTIALS_MISSING' ||
-          error.code === 'AUTH_NATIVE_CREDENTIALS_INVALID')
+      const noRequestSent = isApiSignaturePreflightError(error)
       if (!noRequestSent) authInterrupted.current = true
       setSnapshot(old => ({
         ...old, transferring: false, needsHistoryCheck: !noRequestSent,
