@@ -96,6 +96,7 @@ describe('#138 Socket.IO client contract', () => {
   it.each([
     'AUTH_SIGNATURE_CREDENTIALS_MISSING',
     'AUTH_NATIVE_CREDENTIALS_INVALID',
+    'AUTH_NATIVE_CREDENTIALS_UNAVAILABLE',
   ])('preserves %s before sending any transfer request', async code => {
     const error = new AppError({
       kind: 'contract', code, message: 'Native 登录凭据缺少 token 或 salt',
