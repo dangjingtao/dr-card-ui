@@ -177,7 +177,7 @@ function MockServiceChat() {
 
   return (
     <PageContainer className="flex min-h-full min-w-0 w-full flex-col pb-0" inset={false}>
-      {/* T013R5：「企微客服」pill 移回壳层 TitleBar 右侧，页内顶部区只保留居中小字。 */}
+      {/* 标题栏提供独立的福利官二维码入口；底部人工按钮只负责聊天转接。 */}
       <div className="px-4 pt-3">
         <p className="text-center text-xs text-text-tertiary">
           AI 客服 {CHAT_BOT.name} 为您服务
