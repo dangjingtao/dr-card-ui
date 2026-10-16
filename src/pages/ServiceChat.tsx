@@ -142,7 +142,7 @@ function MockServiceChat() {
 
   const send = () => {
     const text = draft.trim()
-    if (!text) return
+    if (!text || humanStage === 'queuing') return
     setDraft('')
 
     /** T013R4：输入「人工客服」等同于点击页内「人工」按钮，触发人工客服状态机 */
@@ -225,7 +225,7 @@ function MockServiceChat() {
             type="button"
             data-chat-send
             onClick={send}
-            disabled={!draft.trim()}
+            disabled={inputDisabled || !draft.trim()}
             aria-label="发送"
             className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-primary text-text-inverse active:bg-primary-pressed disabled:bg-disabled disabled:text-text-disabled"
           >
