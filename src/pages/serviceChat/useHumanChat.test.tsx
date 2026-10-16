@@ -10,6 +10,10 @@ const mocks = vi.hoisted(() => ({
 }))
 vi.mock('../../services/auth/session', () => ({
   getAuthSession: () => mocks.token ? { accessToken: mocks.token } : undefined,
+  isApiSignaturePreflightError: (error: unknown) =>
+    error instanceof Error && 'code' in error &&
+    ['AUTH_SIGNATURE_CREDENTIALS_MISSING', 'AUTH_NATIVE_CREDENTIALS_INVALID',
+      'AUTH_NATIVE_CREDENTIALS_UNAVAILABLE'].includes(String(error.code)),
 }))
 vi.mock('../../services/chatHuman', () => ({
   connectChatSocket: mocks.connect,
@@ -86,6 +90,7 @@ describe('#138 human chat connection, transfer, and lifecycle', () => {
   it.each([
     'AUTH_SIGNATURE_CREDENTIALS_MISSING',
     'AUTH_NATIVE_CREDENTIALS_INVALID',
+    'AUTH_NATIVE_CREDENTIALS_UNAVAILABLE',
   ])('shows %s as a preflight error without an uncertain-transfer warning', async code => {
     mocks.transfer.mockRejectedValueOnce(new AppError({
       kind: 'contract', code, message: 'Native 登录凭据缺少 token 或 salt',
