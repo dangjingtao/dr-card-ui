@@ -1,6 +1,6 @@
 import { runtimePolicy } from '../../app/config/runtime'
 import { getLoginToken } from '../nativeBridge'
-import { createContractError, isAppError } from '../http/appError'
+import { createContractError, isAppError, type AppError } from '../http/appError'
 import { STORAGE_KEYS, storage } from '../../storage'
 import type { ApiSignatureCredentials } from '../http/apiSignature'
 import {
@@ -212,7 +212,7 @@ export async function getApiSignatureCredentials(): Promise<ApiSignatureCredenti
 }
 
 /** Only these failures certify that signing stopped before HTTP transport. */
-export function isApiSignaturePreflightError(error: unknown): boolean {
+export function isApiSignaturePreflightError(error: unknown): error is AppError {
   return isAppError(error) &&
     (error.code === 'AUTH_SIGNATURE_CREDENTIALS_MISSING' ||
       error.code === 'AUTH_NATIVE_CREDENTIALS_INVALID' ||
