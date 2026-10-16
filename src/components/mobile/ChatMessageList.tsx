@@ -44,6 +44,7 @@ export default function ChatMessageList({
 
             <div className={`flex min-w-0 max-w-[76%] flex-col ${isBot ? 'items-start' : 'items-end'}`}>
               <div
+                data-chat-bubble
                 className={`min-w-0 max-w-full whitespace-pre-wrap [overflow-wrap:anywhere] rounded-container px-3.5 py-2.5 text-sm leading-6 ${
                   isBot
                     ? 'bg-surface text-text-primary shadow-sm'
