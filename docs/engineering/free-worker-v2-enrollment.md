@@ -7,6 +7,7 @@
 - 此仓库 GitHub 默认分支为 `main`，仅用于登记 Actions 手动运行入口；**实际 H5 工程基线是 `dev`**，正式晋级遵循 `preview → dev → test → prod`。不得向 `main` 投交付 PR，也不得自动推进 `test/prod`。
 - 新入口 `.github/workflows/sanchuang-free-worker.yml` 与历史 `.github/workflows/sanchuang-opencode-worker.yml` **并存**，保留旧版，不自动切换，不对同一个 Issue 并行触发两套 Worker。
 - 新入口 pin 到组织安全加固版 `985ff50c297b844af65a920bd38f9c0b1ae31098`，保留两款官方免费模型 `mimo-v2.6-flash-free` / `deepseek-v4.1-flash-free`，无付费自动回退、无新 PAT。
+- **当前组织仓库可公开访问**：`sanchuang-dev/.github` 已是 Public，仓库公开可核实其 [V2 reusable workflow](https://github.com/sanchuang-dev/.github/blob/985ff50c297b844af65a920bd38f9c0b1ae31098/.github/workflows/sanchuang-free-worker-v2.yml)。历史 V1 文件顶部“组织仓库私有，所以须内嵌复制”的注释记录的是**迁移前的事实**，不能用它否定现行公共 V2 caller 的合法性。
 - 仓库级 `ENROLLED=false`：**即使本接入 PR 意外合并，也不能派工**。不得为通过检查而弱化此保护。
 
 ## 实际检查及当前阻塞
